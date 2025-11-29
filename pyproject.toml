@@ -1,0 +1,10 @@
+[project]
+name = "klassenzeit"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "pre-commit>=4.5.0",
+]
+
+[tool.uv.workspace]
+members = ["pre-commit"]
