@@ -63,3 +63,31 @@ Tools configured:
 - **Package Structure**: `com.klassenzeit.klassenzeit`
 - **Entry Point**: `KlassenzeitApplication.java`
 - **Configuration**: `src/main/resources/application.yaml`
+
+## Database
+
+- **Database**: PostgreSQL 17
+- **ORM**: Spring Data JPA
+- **Migrations**: Flyway (SQL-first)
+- **Migration Location**: `src/main/resources/db/migration/`
+
+### Flyway Naming Convention
+- `V{version}__{description}.sql` - Versioned migrations (e.g., `V1__create_tables.sql`)
+- `R__{description}.sql` - Repeatable migrations (for views, functions)
+
+### Schema Design
+- Flyway owns the schema (write DDL manually)
+- JPA entities map to the schema (`ddl-auto: validate`)
+
+## Testing
+
+Integration tests use Testcontainers to spin up a PostgreSQL container automatically.
+
+```java
+// Extend this base class for database integration tests
+class MyTest extends AbstractIntegrationTest {
+    // PostgreSQL container is available automatically
+}
+```
+
+For Testcontainers to work locally with Podman, ensure `DOCKER_HOST` is set (see root CLAUDE.md).

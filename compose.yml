@@ -1,0 +1,22 @@
+name: klassenzeit
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: klassenzeit-postgres
+    environment:
+      POSTGRES_DB: klassenzeit
+      POSTGRES_USER: klassenzeit
+      POSTGRES_PASSWORD: klassenzeit
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U klassenzeit -d klassenzeit"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
