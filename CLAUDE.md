@@ -51,3 +51,8 @@ Connection details (local dev):
 - Database: `klassenzeit`
 - User: `klassenzeit`
 - Password: `klassenzeit`
+
+## Project Planning
+
+Task tracking and roadmap documentation:
+- `tasks/roadmap.md` - Development roadmap and next steps
