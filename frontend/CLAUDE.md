@@ -63,3 +63,38 @@ Use `@/` to import from `src/`:
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 ```
+
+## Testing
+
+### Commands
+```bash
+npm run test            # Run tests once
+npm run test:watch      # Run tests in watch mode
+npm run test:coverage   # Run tests with coverage report
+npm run test:ui         # Open Vitest UI
+```
+
+### Test File Conventions
+- Test files are co-located with source files: `Component.tsx` -> `Component.test.tsx`
+- Use `*.test.ts` or `*.test.tsx` extension
+- Tests live in `src/` alongside the code they test
+
+### Test Setup
+- Framework: Vitest + React Testing Library
+- DOM Environment: jsdom
+- Setup file: `src/test/setup.ts`
+
+### Writing Tests
+```typescript
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import { Button } from "./button";
+
+describe("Button", () => {
+  it("renders children correctly", () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByRole("button", { name: /click me/i })).toBeInTheDocument();
+  });
+});
+```

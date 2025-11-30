@@ -1,4 +1,4 @@
-.PHONY: help dev dev-all db-up db-down db-logs db-reset db-docs backend frontend test test-backend lint lint-backend lint-frontend format format-backend format-frontend clean
+.PHONY: help dev dev-all db-up db-down db-logs db-reset db-docs backend frontend test test-backend test-frontend test-frontend-coverage test-e2e test-e2e-ui lint lint-backend lint-frontend format format-backend format-frontend clean
 
 # Default target
 help:
@@ -17,8 +17,12 @@ help:
 	@echo "  make frontend     Run frontend only"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make test         Run all tests"
-	@echo "  make test-backend Run backend tests"
+	@echo "  make test                  Run all unit tests (backend + frontend)"
+	@echo "  make test-backend          Run backend tests"
+	@echo "  make test-frontend         Run frontend unit tests"
+	@echo "  make test-frontend-coverage Run frontend tests with coverage"
+	@echo "  make test-e2e              Run E2E tests (requires running services)"
+	@echo "  make test-e2e-ui           Run E2E tests with Playwright UI"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make lint         Check all linting"
@@ -65,10 +69,22 @@ frontend:
 	cd frontend && npm run dev
 
 # Testing
-test: test-backend
+test: test-backend test-frontend
 
 test-backend:
 	cd backend && ./gradlew test
+
+test-frontend:
+	cd frontend && npm run test
+
+test-frontend-coverage:
+	cd frontend && npm run test:coverage
+
+test-e2e:
+	cd e2e && npm test
+
+test-e2e-ui:
+	cd e2e && npm run test:ui
 
 # Code Quality
 lint: lint-backend lint-frontend
@@ -90,4 +106,5 @@ format-frontend:
 # Cleanup
 clean:
 	cd backend && ./gradlew clean
-	rm -rf frontend/dist frontend/node_modules/.vite
+	rm -rf frontend/dist frontend/node_modules/.vite frontend/coverage
+	rm -rf e2e/playwright-report e2e/test-results

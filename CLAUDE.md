@@ -52,6 +52,32 @@ Connection details (local dev):
 - User: `klassenzeit`
 - Password: `klassenzeit`
 
+## Testing
+
+### Unit Tests
+```bash
+make test           # Run all unit tests (backend + frontend)
+make test-backend   # Run backend tests only
+make test-frontend  # Run frontend tests only
+```
+
+### E2E Tests
+E2E tests require both frontend and backend to be running:
+```bash
+# Option 1: Start services manually first
+make dev            # In one terminal (starts DB + backend)
+make frontend       # In another terminal
+make test-e2e       # In a third terminal
+
+# Option 2: Interactive mode (auto-starts frontend)
+make test-e2e-ui    # Opens Playwright UI
+```
+
+### Coverage Reports
+- Backend: `backend/build/reports/jacoco/test/html/index.html`
+- Frontend: `frontend/coverage/index.html`
+- E2E: `e2e/playwright-report/index.html`
+
 ## Project Planning
 
 Task tracking and roadmap documentation:
