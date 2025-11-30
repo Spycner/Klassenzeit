@@ -30,6 +30,32 @@ Klassenzeit is a timetabler application for schools. This is the backend compone
 ./gradlew clean build
 ```
 
+## Code Quality
+
+```bash
+# Format code (auto-fix)
+./gradlew spotlessApply
+
+# Check formatting only
+./gradlew spotlessCheck
+
+# Run all quality checks (Spotless, Checkstyle, SpotBugs, PMD, tests)
+./gradlew check
+
+# Run tests with coverage report
+./gradlew test jacocoTestReport
+
+# View coverage report
+open build/reports/jacoco/test/html/index.html
+```
+
+Tools configured:
+- **Spotless**: Code formatting (Google Java Format)
+- **Checkstyle**: Style rules (Google style)
+- **SpotBugs**: Bug detection
+- **PMD**: Code smell detection
+- **JaCoCo**: Coverage reports
+
 ## Architecture
 
 - **Framework**: Spring Boot 3.5.8 with Gradle (Kotlin DSL)

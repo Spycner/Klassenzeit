@@ -14,3 +14,18 @@ repos:
         language: system
         files: \.java$
         pass_filenames: false
+
+      # Frontend hooks
+      - id: biome-check
+        name: Biome lint and format check
+        entry: bash -c 'cd frontend && npx @biomejs/biome check --staged'
+        language: system
+        files: ^frontend/.*\.(ts|tsx|js|jsx|json)$
+        pass_filenames: false
+
+      - id: frontend-typecheck
+        name: TypeScript type check
+        entry: bash -c 'cd frontend && npm run typecheck'
+        language: system
+        files: ^frontend/.*\.(ts|tsx)$
+        pass_filenames: false

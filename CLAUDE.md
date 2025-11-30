@@ -8,11 +8,13 @@ Klassenzeit is a timetabler application for schools with a monorepo structure:
 - **backend/**: Spring Boot application
 - **frontend/**: Frontend application
 
-## Python Development Tools
+## Development Setup
 
-The root project uses uv for Python tooling (pre-commit hooks, etc.):
+The root project uses uv for Python tooling:
 
 ```bash
-uv sync                    # Install dependencies
-uv run <command>           # Run Python commands
+uv sync --extra dev           # Install dependencies (including pre-commit)
+uv run pre-commit install     # Install git hooks
 ```
+
+Pre-commit hooks run Spotless and Checkstyle on Java files before each commit.
