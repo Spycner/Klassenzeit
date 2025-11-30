@@ -1,1 +1,16 @@
-repos: []
+repos:
+  - repo: local
+    hooks:
+      - id: spotless-check
+        name: Spotless Format Check
+        entry: bash -c 'cd backend && ./gradlew spotlessCheck --quiet'
+        language: system
+        files: \.java$
+        pass_filenames: false
+
+      - id: checkstyle
+        name: Checkstyle
+        entry: bash -c 'cd backend && ./gradlew checkstyleMain checkstyleTest --quiet'
+        language: system
+        files: \.java$
+        pass_filenames: false

@@ -2,9 +2,7 @@
 name = "klassenzeit"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = [
-    "pre-commit>=4.5.0",
-]
+dependencies = []
 
-[tool.uv.workspace]
-members = ["pre-commit"]
+[project.optional-dependencies]
+dev = ["pre-commit>=4.5.0"]

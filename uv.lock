@@ -42,12 +42,15 @@ wheels = [
 name = "klassenzeit"
 version = "0.1.0"
 source = { virtual = "." }
-dependencies = [
+
+[package.optional-dependencies]
+dev = [
     { name = "pre-commit" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pre-commit", specifier = ">=4.5.0" }]
+requires-dist = [{ name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.5.0" }]
+provides-extras = ["dev"]
 
 [[package]]
 name = "nodeenv"
