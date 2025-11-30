@@ -11,7 +11,7 @@ This document outlines the next development steps for Klassenzeit, organized by 
 ## Phase 1: Foundation (Immediate)
 
 ### 1.1 Spring Data JPA Repositories
-- [ ] Create repository interfaces for all entities
+- [x] Create repository interfaces for all entities
 - **Files to create:**
   - `backend/src/main/java/com/klassenzeit/klassenzeit/school/SchoolRepository.java`
   - `backend/src/main/java/com/klassenzeit/klassenzeit/school/SchoolYearRepository.java`

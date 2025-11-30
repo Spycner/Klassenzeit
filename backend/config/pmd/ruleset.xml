@@ -40,6 +40,8 @@
         <exclude name="LinguisticNaming"/>
         <!-- Short class names like Term are acceptable for domain entities -->
         <exclude name="ShortClassName"/>
+        <!-- Test method naming convention uses underscores: methodName_stateUnderTest_expectedBehavior -->
+        <exclude name="MethodNamingConventions"/>
     </rule>
 
     <!-- Design -->
@@ -55,6 +57,10 @@
         <exclude name="AbstractClassWithoutAnyMethod"/>
         <!-- Testcontainers pattern requires mutable static container reference -->
         <exclude name="MutableStaticState"/>
+        <!-- TestDataBuilder intentionally has high coupling to entity classes -->
+        <exclude name="CouplingBetweenObjects"/>
+        <!-- Builder fields are intentionally mutable -->
+        <exclude name="ImmutableField"/>
     </rule>
 
     <!-- Error Prone -->
@@ -62,6 +68,14 @@
         <exclude name="MissingSerialVersionUID"/>
         <!-- Boolean fields like isActive with isActive() getters are standard Java convention -->
         <exclude name="AvoidFieldNameMatchingMethodName"/>
+        <!-- Intentional null assignment for optional builder fields -->
+        <exclude name="NullAssignment"/>
+        <!-- Locale not needed for internal slug generation -->
+        <exclude name="UseLocaleWithCaseConversions"/>
+        <!-- Test data often uses duplicate string literals for readability -->
+        <exclude name="AvoidDuplicateLiterals"/>
+        <!-- TestDataBuilder is a utility class for tests, not a test class itself -->
+        <exclude name="TestClassWithoutTestCases"/>
     </rule>
 
     <!-- Multithreading -->
@@ -70,7 +84,10 @@
     </rule>
 
     <!-- Performance -->
-    <rule ref="category/java/performance.xml"/>
+    <rule ref="category/java/performance.xml">
+        <!-- Explicit default values in builders improve readability -->
+        <exclude name="RedundantFieldInitializer"/>
+    </rule>
 
     <!-- Security -->
     <rule ref="category/java/security.xml"/>

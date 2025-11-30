@@ -6,4 +6,7 @@
 <suppressions>
     <!-- Spring Boot main classes are not utility classes -->
     <suppress checks="HideUtilityClassConstructor" files=".*Application\.java$"/>
+
+    <!-- Allow underscores in test method names (methodName_stateUnderTest_expectedBehavior) -->
+    <suppress checks="MethodName" files=".*Test\.java$"/>
 </suppressions>

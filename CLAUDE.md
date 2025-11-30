@@ -20,7 +20,7 @@ Run `make help` to see all available commands.
 
 ### Prerequisites
 - Java 21
-- Podman (with podman-compose)
+- Docker Desktop
 - uv (Python package manager)
 
 ### Initial Setup
@@ -28,7 +28,6 @@ Run `make help` to see all available commands.
 ```bash
 uv sync --extra dev           # Install dependencies (including pre-commit)
 uv run pre-commit install     # Install git hooks
-podman machine start          # Start Podman VM (macOS)
 make db-up                    # Start PostgreSQL database
 ```
 
@@ -38,7 +37,7 @@ Pre-commit hooks run automatically before each commit:
 
 ## Database
 
-PostgreSQL 17 runs via Podman. Manage with:
+PostgreSQL 17 runs via Docker. Manage with:
 ```bash
 make db-up      # Start database
 make db-down    # Stop database

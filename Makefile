@@ -37,21 +37,21 @@ help:
 
 # Database
 db-up:
-	podman-compose up -d
+	docker compose up -d
 
 db-down:
-	podman-compose down
+	docker compose down
 
 db-logs:
-	podman-compose logs -f
+	docker compose logs -f
 
 db-reset:
-	podman-compose down -v
-	podman-compose up -d
+	docker compose down -v
+	docker compose up -d
 
 db-docs:
 	@mkdir -p backend/build/schemaspy
-	podman run --rm --network=host \
+	docker run --rm --network=host \
 		-v $(PWD)/backend/build/schemaspy:/output \
 		schemaspy/schemaspy:latest \
 		-t pgsql -host localhost -port 5432 \

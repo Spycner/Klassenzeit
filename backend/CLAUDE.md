@@ -39,8 +39,14 @@ Klassenzeit is a timetabler application for schools. This is the backend compone
 # Check formatting only
 ./gradlew spotlessCheck
 
-# Run all quality checks (Spotless, Checkstyle, SpotBugs, PMD, tests)
-./gradlew check
+# Run all quality checks (Spotless, Checkstyle, SpotBugs, PMD, tests) in background
+./gradlew check > gradle-check.log 2>&1 &
+
+# Check if gradle check is still running (check every 30-60 seconds, not more frequently)
+pgrep -f "gradlew check" && echo "Still running..." || echo "Finished"
+
+# View results after completion
+cat gradle-check.log
 
 # Run tests with coverage report
 ./gradlew test jacocoTestReport
@@ -56,7 +62,7 @@ Tools configured:
 - **PMD**: Code smell detection
 - **JaCoCo**: Coverage reports
 
-**IMPORTANT**: Always run `./gradlew check` after adding or modifying code to ensure all quality checks pass before committing.
+**IMPORTANT**: Always run `./gradlew check` after adding or modifying code to ensure all quality checks pass before committing. Run it in the background (`> gradle-check.log 2>&1 &`) to avoid blocking the session. Wait at least 30 seconds before the first status check, then check every 30-60 seconds until complete. Do not poll more frequently to avoid wasting tokens.
 
 ## Architecture
 
@@ -150,5 +156,3 @@ class MyTest extends AbstractIntegrationTest {
     // PostgreSQL container is available automatically
 }
 ```
-
-For Testcontainers to work locally with Podman, ensure `DOCKER_HOST` is set (see root CLAUDE.md).
