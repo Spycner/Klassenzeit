@@ -17,4 +17,6 @@ uv sync --extra dev           # Install dependencies (including pre-commit)
 uv run pre-commit install     # Install git hooks
 ```
 
-Pre-commit hooks run Spotless and Checkstyle on Java files before each commit.
+Pre-commit hooks run automatically before each commit:
+- **Backend**: Spotless and Checkstyle on Java files
+- **Frontend**: Biome (lint + format) and TypeScript type checking
