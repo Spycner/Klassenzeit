@@ -45,6 +45,10 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 	finalizedBy(tasks.jacocoTestReport)
+
+	// Testcontainers configuration for Podman on macOS
+	// TESTCONTAINERS_RYUK_DISABLED prevents Ryuk from trying to mount the Docker socket
+	environment("TESTCONTAINERS_RYUK_DISABLED", "true")
 }
 
 // Spotless - Code formatting (like ruff format)

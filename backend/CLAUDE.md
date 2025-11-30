@@ -113,6 +113,35 @@ See `docs/data-model.md` for the complete ER diagram.
 
 ## Testing
 
+### Testing Philosophy
+
+This project follows **Test-Driven Development (TDD)** where possible:
+
+1. **Write tests first** - Before implementing a feature, write failing tests that define the expected behavior
+2. **Red-Green-Refactor** - Write failing test → Make it pass → Refactor
+3. **Test types**:
+   - **Unit tests**: For business logic in services (mock dependencies)
+   - **Integration tests**: For repositories and database interactions (use Testcontainers)
+   - **End-to-end tests**: For API endpoints (use MockMvc or WebTestClient)
+
+### Test Naming Convention
+
+```java
+@Test
+void methodName_stateUnderTest_expectedBehavior() {
+    // Given / When / Then
+}
+```
+
+### Test Organization
+
+- Mirror the main source structure: `src/test/java/com/klassenzeit/klassenzeit/{package}/`
+- Repository tests: `{Entity}RepositoryTest.java`
+- Service tests: `{Entity}ServiceTest.java`
+- Controller tests: `{Entity}ControllerTest.java`
+
+### Integration Tests
+
 Integration tests use Testcontainers to spin up a PostgreSQL container automatically.
 
 ```java
