@@ -1,4 +1,4 @@
-.PHONY: help dev dev-all db-up db-down db-logs db-reset backend frontend test test-backend lint lint-backend lint-frontend format format-backend format-frontend clean
+.PHONY: help dev dev-all db-up db-down db-logs db-reset db-docs backend frontend test test-backend lint lint-backend lint-frontend format format-backend format-frontend clean
 
 # Default target
 help:
@@ -9,6 +9,7 @@ help:
 	@echo "  make db-down      Stop PostgreSQL database"
 	@echo "  make db-logs      Show database logs"
 	@echo "  make db-reset     Reset database (destroy and recreate)"
+	@echo "  make db-docs      Generate database documentation with ER diagrams"
 	@echo ""
 	@echo "Development:"
 	@echo "  make dev          Start database and backend"
@@ -43,6 +44,16 @@ db-logs:
 db-reset:
 	podman-compose down -v
 	podman-compose up -d
+
+db-docs:
+	@mkdir -p backend/build/schemaspy
+	podman run --rm --network=host \
+		-v $(PWD)/backend/build/schemaspy:/output \
+		schemaspy/schemaspy:latest \
+		-t pgsql -host localhost -port 5432 \
+		-db klassenzeit -u klassenzeit -p klassenzeit
+	@echo "Documentation generated at backend/build/schemaspy/index.html"
+	@open backend/build/schemaspy/index.html 2>/dev/null || xdg-open backend/build/schemaspy/index.html 2>/dev/null || echo "Open backend/build/schemaspy/index.html in your browser"
 
 # Development
 dev: db-up backend

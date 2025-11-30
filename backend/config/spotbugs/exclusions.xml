@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter
+    xmlns="https://github.com/spotbugs/filter/3.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <!-- JPA entities need to return mutable objects (lists) for relationships -->
+    <Match>
+        <Package name="~com\.klassenzeit\.klassenzeit\..*"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+
+    <!-- JPA entities need to store mutable objects (lists) for relationships -->
+    <Match>
+        <Package name="~com\.klassenzeit\.klassenzeit\..*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- JPA entities extending BaseEntity is valid design -->
+    <Match>
+        <Package name="~com\.klassenzeit\.klassenzeit\..*"/>
+        <Bug pattern="RI_REDUNDANT_INTERFACES"/>
+    </Match>
+
+    <!-- Abstract base classes without abstract methods are valid for shared config/setup -->
+    <Match>
+        <Package name="~com\.klassenzeit\.klassenzeit\..*"/>
+        <Bug pattern="AbstractClassWithoutAbstractMethod"/>
+    </Match>
+
+    <!-- AbstractIntegrationTest uses abstract for test inheritance pattern -->
+    <Match>
+        <Class name="com.klassenzeit.klassenzeit.AbstractIntegrationTest"/>
+        <Bug pattern="AbstractClassWithoutAnyMethod"/>
+    </Match>
+
+    <!-- Testcontainers pattern requires mutable static container reference -->
+    <Match>
+        <Class name="com.klassenzeit.klassenzeit.AbstractIntegrationTest"/>
+        <Bug pattern="MutableStaticState"/>
+    </Match>
+
+</FindBugsFilter>

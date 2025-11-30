@@ -1,11 +1,12 @@
 package com.klassenzeit.klassenzeit;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class KlassenzeitApplicationTests {
+/** Basic smoke test to verify Spring context loads correctly with database. */
+class KlassenzeitApplicationTests extends AbstractIntegrationTest {
 
   @Test
-  void contextLoads() {}
+  void contextLoads() {
+    // If we reach here, Spring context with database loaded successfully
+  }
 }

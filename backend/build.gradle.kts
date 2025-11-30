@@ -70,6 +70,7 @@ spotbugs {
 	showStackTraces = true
 	showProgress = true
 	reportsDir = layout.buildDirectory.dir("reports/spotbugs")
+	excludeFilter = file("config/spotbugs/exclusions.xml")
 }
 
 tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {

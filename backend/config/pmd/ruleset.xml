@@ -16,6 +16,10 @@
     <rule ref="category/java/bestpractices.xml">
         <exclude name="GuardLogStatement"/>
         <exclude name="UnitTestShouldIncludeAssert"/>
+        <!-- Integration tests validating multiple properties need multiple asserts -->
+        <exclude name="UnitTestContainsTooManyAsserts"/>
+        <!-- BaseEntity and AbstractIntegrationTest use abstract for design, not polymorphism -->
+        <exclude name="AbstractClassWithoutAbstractMethod"/>
     </rule>
 
     <!-- Code Style -->
@@ -29,6 +33,13 @@
         <exclude name="ShortVariable"/>
         <exclude name="LongVariable"/>
         <exclude name="TooManyStaticImports"/>
+        <!-- JPA entities require no-arg constructors -->
+        <exclude name="UnnecessaryConstructor"/>
+        <exclude name="CallSuperInConstructor"/>
+        <!-- canTeachGrades is a valid name for a list of gradeable grades -->
+        <exclude name="LinguisticNaming"/>
+        <!-- Short class names like Term are acceptable for domain entities -->
+        <exclude name="ShortClassName"/>
     </rule>
 
     <!-- Design -->
@@ -38,11 +49,19 @@
         <exclude name="TooManyMethods"/>
         <exclude name="ExcessiveImports"/>
         <exclude name="UseUtilityClass"/>
+        <!-- JPA entities are intentionally data classes -->
+        <exclude name="DataClass"/>
+        <!-- AbstractIntegrationTest uses abstract for test inheritance pattern -->
+        <exclude name="AbstractClassWithoutAnyMethod"/>
+        <!-- Testcontainers pattern requires mutable static container reference -->
+        <exclude name="MutableStaticState"/>
     </rule>
 
     <!-- Error Prone -->
     <rule ref="category/java/errorprone.xml">
         <exclude name="MissingSerialVersionUID"/>
+        <!-- Boolean fields like isActive with isActive() getters are standard Java convention -->
+        <exclude name="AvoidFieldNameMatchingMethodName"/>
     </rule>
 
     <!-- Multithreading -->

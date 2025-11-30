@@ -56,13 +56,45 @@ Tools configured:
 - **PMD**: Code smell detection
 - **JaCoCo**: Coverage reports
 
+**IMPORTANT**: Always run `./gradlew check` after adding or modifying code to ensure all quality checks pass before committing.
+
 ## Architecture
 
 - **Framework**: Spring Boot 3.5.8 with Gradle (Kotlin DSL)
 - **Java Version**: 21
-- **Package Structure**: `com.klassenzeit.klassenzeit`
+- **Base Package**: `com.klassenzeit.klassenzeit`
 - **Entry Point**: `KlassenzeitApplication.java`
 - **Configuration**: `src/main/resources/application.yaml`
+
+### Package Structure (Package-by-Feature)
+
+```
+com.klassenzeit.klassenzeit/
+  common/       # Shared base classes and enums (BaseEntity, QualificationLevel, etc.)
+  school/       # School, SchoolYear, Term (multi-tenancy root)
+  teacher/      # Teacher, TeacherSubjectQualification, TeacherAvailability
+  subject/      # Subject definitions
+  room/         # Room with capacity and features
+  schoolclass/  # SchoolClass (student groups like "3a", "5b")
+  timeslot/     # TimeSlot (weekly time grid)
+  lesson/       # Lesson (scheduled timetable entries)
+```
+
+Each feature package contains: Entity, Repository, Service, Controller (when needed).
+
+### Data Model
+
+See `docs/data-model.md` for the complete ER diagram.
+
+**Core entities:**
+- `School` - Multi-tenant root (supports multiple schools)
+- `SchoolYear` / `Term` - Academic period hierarchy
+- `Teacher` - With qualifications and availability tracking
+- `Subject` - What's taught (Math, German, etc.)
+- `Room` - With capacity and features (JSONB)
+- `SchoolClass` - Student groups
+- `TimeSlot` - Weekly schedule grid
+- `Lesson` - The actual scheduled timetable entry
 
 ## Database
 
