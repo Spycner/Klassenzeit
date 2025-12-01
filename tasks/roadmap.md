@@ -19,9 +19,6 @@ Ordered by priority. Move tasks to `doing/` when starting work, then to `done/` 
 11. [F-005: Request Rate Limiting](todo/frontend/F-005-request-rate-limiting.md)
     - Depends on: F-001
 12. [F-006: React Query Cache Settings](todo/frontend/F-006-react-query-cache-settings.md)
-13. [G-003: Improve Test Isolation](todo/global/G-003-improve-test-isolation.md)
-14. [G-004: Cleanup Test Assertions](todo/global/G-004-cleanup-test-assertions.md)
-15. [G-005: Boundary Condition Tests](todo/global/G-005-boundary-condition-tests.md)
 
 ## Low Priority
 

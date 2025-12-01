@@ -201,4 +201,22 @@ export const errorHandlers = {
       { status: 400 },
     );
   }),
+
+  rateLimitError: http.get(`${API_BASE}/api/schools`, () => {
+    return HttpResponse.json(
+      { message: "Too many requests" },
+      {
+        status: 429,
+        headers: { "Retry-After": "60" },
+      },
+    );
+  }),
+
+  unauthorized: http.get(`${API_BASE}/api/schools`, () => {
+    return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }),
+
+  forbidden: http.get(`${API_BASE}/api/schools`, () => {
+    return HttpResponse.json({ message: "Forbidden" }, { status: 403 });
+  }),
 };

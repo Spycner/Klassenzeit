@@ -1,19 +1,47 @@
 /**
  * Query Client Configuration
+ *
+ * Configures React Query with:
+ * - Global error handling for mutations (shows toast notifications)
+ * - Smart retry logic that only retries on retryable errors
+ * - Reasonable cache and stale times
  */
 
-import { QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
+import { showErrorToast } from "../error-handler";
+import { isRetryableError } from "../errors";
 
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => {
+      // Log query errors for debugging but don't show toast
+      // (queries will show loading/error states in UI)
+      console.error("Query error:", error);
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      // Show toast notification for mutation errors
+      showErrorToast(error);
+    },
+  }),
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
       gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-      retry: 1,
+      retry: (failureCount, error) => {
+        // Only retry up to 3 times and only for retryable errors
+        if (failureCount >= 3) return false;
+        return isRetryableError(error);
+      },
       refetchOnWindowFocus: false,
     },
     mutations: {
-      retry: 0,
+      retry: (failureCount, error) => {
+        // Only retry once for mutations and only for retryable errors
+        if (failureCount >= 1) return false;
+        return isRetryableError(error);
+      },
     },
   },
 });

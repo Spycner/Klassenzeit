@@ -3,9 +3,10 @@
  */
 
 import { HttpResponse, http } from "msw";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/test/mocks/server";
 import { ApiClientError, apiClient } from "./client";
+import { ClientError, RateLimitError, ServerError } from "./errors";
 
 const API_BASE = "http://localhost:8080";
 
@@ -47,8 +48,13 @@ describe("apiClient", () => {
         }),
       );
 
-      await expect(apiClient.get("/api/test")).rejects.toThrow(ApiClientError);
-      await expect(apiClient.get("/api/test")).rejects.toMatchObject({
+      // Disable retries for this test
+      await expect(apiClient.get("/api/test", { retries: 0 })).rejects.toThrow(
+        ApiClientError,
+      );
+      await expect(
+        apiClient.get("/api/test", { retries: 0 }),
+      ).rejects.toMatchObject({
         status: 500,
       });
     });
@@ -156,10 +162,124 @@ describe("apiClient", () => {
         }),
       );
 
-      await expect(apiClient.get("/api/test")).rejects.toThrow(ApiClientError);
-      await expect(apiClient.get("/api/test")).rejects.toMatchObject({
+      // Disable retries for this test
+      await expect(apiClient.get("/api/test", { retries: 0 })).rejects.toThrow(
+        ApiClientError,
+      );
+      await expect(
+        apiClient.get("/api/test", { retries: 0 }),
+      ).rejects.toMatchObject({
         status: 500,
       });
+    });
+  });
+
+  describe("typed errors", () => {
+    it("should throw ServerError for 5xx responses", async () => {
+      server.use(
+        http.get(`${API_BASE}/api/test`, () => {
+          return HttpResponse.json(
+            { message: "Server error" },
+            { status: 500 },
+          );
+        }),
+      );
+
+      // Disable retries for this test
+      await expect(
+        apiClient.get("/api/test", { retries: 0 }),
+      ).rejects.toBeInstanceOf(ServerError);
+    });
+
+    it("should throw ClientError for 4xx responses", async () => {
+      server.use(
+        http.get(`${API_BASE}/api/test`, () => {
+          return HttpResponse.json({ message: "Bad request" }, { status: 400 });
+        }),
+      );
+
+      await expect(apiClient.get("/api/test")).rejects.toBeInstanceOf(
+        ClientError,
+      );
+    });
+
+    it("should throw RateLimitError for 429 responses", async () => {
+      server.use(
+        http.get(`${API_BASE}/api/test`, () => {
+          return HttpResponse.json(
+            { message: "Too many requests" },
+            {
+              status: 429,
+              headers: { "Retry-After": "60" },
+            },
+          );
+        }),
+      );
+
+      try {
+        // Disable retries for this test
+        await apiClient.get("/api/test", { retries: 0 });
+        expect.fail("Should have thrown");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RateLimitError);
+        const rateLimitError = error as RateLimitError;
+        expect(rateLimitError.retryAfterMs).toBe(60000);
+      }
+    });
+
+    it("should throw ClientError for 404", async () => {
+      server.use(
+        http.get(`${API_BASE}/api/test`, () => {
+          return HttpResponse.json({ message: "Not found" }, { status: 404 });
+        }),
+      );
+
+      try {
+        await apiClient.get("/api/test");
+        expect.fail("Should have thrown");
+      } catch (error) {
+        expect(error).toBeInstanceOf(ClientError);
+        const clientError = error as ClientError;
+        expect(clientError.isNotFound).toBe(true);
+      }
+    });
+  });
+
+  describe("retry logic", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("should not retry on client errors (4xx)", async () => {
+      let requestCount = 0;
+      server.use(
+        http.get(`${API_BASE}/api/test`, () => {
+          requestCount++;
+          return HttpResponse.json({ message: "Bad request" }, { status: 400 });
+        }),
+      );
+
+      await expect(apiClient.get("/api/test")).rejects.toThrow();
+      expect(requestCount).toBe(1);
+    });
+
+    it("should respect custom retry count", async () => {
+      let requestCount = 0;
+      server.use(
+        http.get(`${API_BASE}/api/test`, () => {
+          requestCount++;
+          return HttpResponse.json({ message: "Error" }, { status: 500 });
+        }),
+      );
+
+      const promise = apiClient.get("/api/test", { retries: 0 });
+
+      await expect(promise).rejects.toThrow();
+      expect(requestCount).toBe(1);
     });
   });
 });
