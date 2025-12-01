@@ -6,17 +6,17 @@ Create the main application layout with sidebar navigation and top header. This 
 
 ## Acceptance Criteria
 
-- [ ] Add required shadcn/ui components:
+- [x] Add required shadcn/ui components:
   ```bash
   npx shadcn@latest add sheet dropdown-menu separator tooltip
   ```
-- [ ] Create layout components in `components/layout/`:
-  - [ ] `AppLayout.tsx` - Main layout wrapper with Outlet
-  - [ ] `Sidebar.tsx` - Collapsible sidebar navigation
-  - [ ] `TopHeader.tsx` - Top header bar
-  - [ ] `NavItem.tsx` - Reusable navigation item
-- [ ] Update `App.tsx` with nested route structure
-- [ ] Update `Home.tsx` to navigate to dashboard
+- [x] Create layout components in `components/layout/`:
+  - [x] `AppLayout.tsx` - Main layout wrapper with Outlet
+  - [x] `Sidebar.tsx` - Collapsible sidebar navigation
+  - [x] `TopHeader.tsx` - Top header bar
+  - [x] `NavItem.tsx` - Reusable navigation item
+- [x] Update `App.tsx` with nested route structure
+- [x] Update `Home.tsx` to navigate to dashboard
 
 ## Technical Details
 
@@ -120,3 +120,36 @@ None
 ### Responsive Behavior
 - Desktop: Sidebar always visible, can collapse to icons
 - Mobile: Sidebar hidden, accessible via hamburger menu (Sheet component)
+
+## Completion Notes
+
+**Completed:** 2025-12-01
+
+### What was implemented
+- Added shadcn/ui components: sheet, dropdown-menu, separator, tooltip
+- Created layout components:
+  - `AppLayout.tsx` - Main wrapper with collapsible sidebar state
+  - `Sidebar.tsx` - Desktop sidebar with navigation items and collapse toggle
+  - `TopHeader.tsx` - Header with mobile menu trigger and user dropdown placeholder
+  - `NavItem.tsx` - Reusable nav item with tooltip support when collapsed
+  - `MobileSidebar.tsx` - Mobile-specific sidebar in Sheet component
+  - `index.ts` - Barrel exports
+- Created placeholder pages for all routes (Dashboard, Teachers, Subjects, Rooms, Classes, Time Slots, Timetable, Settings, NotFound)
+- Updated App.tsx with nested route structure
+- Updated Home.tsx with Link to /dashboard
+- Added lucide-react dependency for icons
+- Updated test-utils.tsx to include MemoryRouter for testing components with routing
+- Added tests for AppLayout, Sidebar, and NavItem components
+
+### Key decisions
+- Used state in AppLayout for sidebar collapse (not persisted yet)
+- Separate MobileSidebar component for Sheet content (cleaner than conditionals)
+- Desktop sidebar hidden on mobile via `hidden md:block`
+- TooltipProvider wrapped at Sidebar level for collapsed icon tooltips
+
+### Tests added
+- `AppLayout.test.tsx` (3 tests)
+- `Sidebar.test.tsx` (6 tests)
+- `NavItem.test.tsx` (5 tests)
+
+Total: 265 tests passing
