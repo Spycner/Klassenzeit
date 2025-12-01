@@ -116,8 +116,8 @@ jobs:
       - name: TypeScript type check
         run: npm run typecheck
 
-      - name: Lint (Biome)
-        run: npm run lint
+      - name: Lint and format check (Biome)
+        run: npm run check
 
       - name: Run tests with coverage
         run: npm run test:coverage
