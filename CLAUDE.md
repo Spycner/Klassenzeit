@@ -51,6 +51,16 @@ Connection details (local dev):
 - User: `klassenzeit`
 - Password: `klassenzeit`
 
+## Environment Variables
+
+Copy `.env.example` files to `.env` in each directory.
+
+| Location | Variable | Description | Default |
+|----------|----------|-------------|---------|
+| Root | `POSTGRES_*` | Database config for Docker | See `.env.example` |
+| `frontend/` | `VITE_API_BASE_URL` | Backend API URL | `http://localhost:8080` |
+| `e2e/` | `API_BASE_URL` | API URL for integration tests | `http://localhost:8080/api` |
+
 ## Testing
 
 ### Unit Tests
@@ -81,6 +91,8 @@ cd e2e && npm run test:api
 - E2E: `e2e/playwright-report/index.html`
 
 ## Project Planning
+
+the `tasks/` directory is used to plan and track the development of the project and is located in the root of the repository.
 
 ### Roadmap
 - `tasks/roadmap.md` - Development roadmap and next steps
