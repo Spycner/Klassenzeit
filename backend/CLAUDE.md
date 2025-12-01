@@ -69,7 +69,7 @@ Tools configured:
 
 ```
 com.klassenzeit.klassenzeit/
-  common/       # Shared base classes and enums (BaseEntity, QualificationLevel, etc.)
+  common/       # Shared base classes, i18n config, exception handlers
   school/       # School, SchoolYear, Term (multi-tenancy root)
   teacher/      # Teacher, TeacherSubjectQualification, TeacherAvailability
   subject/      # Subject definitions
@@ -78,6 +78,13 @@ com.klassenzeit.klassenzeit/
   timeslot/     # TimeSlot (weekly time grid)
   lesson/       # Lesson (scheduled timetable entries)
 ```
+
+## Internationalization (i18n)
+
+- **Default locale**: German
+- **Message bundles**: `src/main/resources/messages*.properties`
+- **Locale detection**: `Accept-Language` header
+- **Usage**: Inject `MessageSource`, call `getMessage(key, args, locale)`
 
 Each feature package contains: Entity, Repository, Service, Controller (when needed).
 

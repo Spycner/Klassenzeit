@@ -1,7 +1,9 @@
 import { Component, type ReactNode } from "react";
+import { type WithTranslation, withTranslation } from "react-i18next";
+
 import { Button } from "@/components/ui/button";
 
-interface ErrorBoundaryProps {
+interface ErrorBoundaryProps extends WithTranslation {
   children: ReactNode;
   fallback?: ReactNode;
 }
@@ -11,7 +13,7 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<
+class ErrorBoundaryClass extends Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
@@ -33,6 +35,8 @@ export class ErrorBoundary extends Component<
   };
 
   render(): ReactNode {
+    const { t } = this.props;
+
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
@@ -44,15 +48,15 @@ export class ErrorBoundary extends Component<
             <div className="text-center">
               <div className="text-red-500 text-5xl mb-4">!</div>
               <h1 className="text-xl font-semibold text-gray-900 mb-2">
-                Something went wrong
+                {t("errors:somethingWentWrong")}
               </h1>
               <p className="text-gray-600 mb-4">
-                An unexpected error occurred. Please try again.
+                {t("errors:unexpectedError")}
               </p>
               {this.state.error && (
                 <details className="text-left mb-4">
                   <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
-                    Error details
+                    {t("errors:errorDetails")}
                   </summary>
                   <pre className="mt-2 p-3 bg-gray-100 rounded text-xs text-gray-700 overflow-auto max-h-40">
                     {this.state.error.message}
@@ -61,7 +65,7 @@ export class ErrorBoundary extends Component<
                   </pre>
                 </details>
               )}
-              <Button onClick={this.handleReset}>Try Again</Button>
+              <Button onClick={this.handleReset}>{t("tryAgain")}</Button>
             </div>
           </div>
         </div>
@@ -71,3 +75,5 @@ export class ErrorBoundary extends Component<
     return this.props.children;
   }
 }
+
+export const ErrorBoundary = withTranslation()(ErrorBoundaryClass);

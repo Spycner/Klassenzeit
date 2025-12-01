@@ -13,13 +13,13 @@ describe("Home", () => {
 
   it("renders the tagline", () => {
     render(<Home />);
-    expect(screen.getByText(/timetabler for schools/i)).toBeInTheDocument();
+    // German: "Stundenplaner für Schulen"
+    expect(screen.getByText(/stundenplaner für schulen/i)).toBeInTheDocument();
   });
 
   it("renders the get started button", () => {
     render(<Home />);
-    expect(
-      screen.getByRole("link", { name: /get started/i }),
-    ).toBeInTheDocument();
+    // German: "Loslegen"
+    expect(screen.getByRole("link", { name: /loslegen/i })).toBeInTheDocument();
   });
 });

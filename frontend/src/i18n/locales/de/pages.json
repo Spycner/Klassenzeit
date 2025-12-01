@@ -1,0 +1,45 @@
+{
+  "home": {
+    "tagline": "Stundenplaner für Schulen"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Willkommen bei Klassenzeit. Wählen Sie einen Bereich aus der Seitenleiste, um zu beginnen."
+  },
+  "teachers": {
+    "title": "Lehrkräfte",
+    "description": "Verwalten Sie hier die Lehrkräfte Ihrer Schule.",
+    "editTitle": "Lehrkraft bearbeiten",
+    "newTitle": "Neue Lehrkraft",
+    "editingTeacher": "Lehrkraft mit ID bearbeiten: {{id}}",
+    "createNew": "Einen neuen Lehrkraft-Datensatz erstellen."
+  },
+  "subjects": {
+    "title": "Fächer",
+    "description": "Verwalten Sie hier die Fächer Ihrer Schule."
+  },
+  "rooms": {
+    "title": "Räume",
+    "description": "Verwalten Sie hier die Räume Ihrer Schule."
+  },
+  "classes": {
+    "title": "Klassen",
+    "description": "Verwalten Sie hier die Klassen Ihrer Schule."
+  },
+  "timeSlots": {
+    "title": "Zeitfenster",
+    "description": "Verwalten Sie hier die Zeitfenster Ihrer Schule."
+  },
+  "timetable": {
+    "title": "Stundenplan",
+    "description": "Stundenpläne hier anzeigen und erstellen."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "description": "Konfigurieren Sie hier Ihre Anwendungseinstellungen."
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Seite nicht gefunden"
+  }
+}

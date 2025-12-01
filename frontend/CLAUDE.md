@@ -50,12 +50,21 @@ npx shadcn@latest add <component-name>
 src/
 ├── api/             # API client, types, services, and React Query hooks
 ├── components/ui/   # shadcn/ui components
+├── i18n/            # Internationalization config and translations
 ├── pages/           # Route page components
 ├── lib/utils.ts     # Utility functions (cn helper)
 ├── App.tsx          # Router setup
 ├── main.tsx         # Application entry point
 └── index.css        # Tailwind styles + CSS variables
 ```
+
+## Internationalization (i18n)
+
+- **Library**: react-i18next
+- **Languages**: German (default), English
+- **Routing**: URL-prefixed (`/de/`, `/en/`)
+- **Translations**: `src/i18n/locales/{de,en}/*.json`
+- **Usage**: `const { t } = useTranslation('namespace')`
 
 ## API Integration
 

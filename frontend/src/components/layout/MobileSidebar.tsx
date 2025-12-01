@@ -8,6 +8,7 @@ import {
   Settings,
   Users,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
 
 import { Button } from "@/components/ui/button";
@@ -16,17 +17,17 @@ import { SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const mainNavItems = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/teachers", icon: Users, label: "Teachers" },
-  { to: "/subjects", icon: BookOpen, label: "Subjects" },
-  { to: "/rooms", icon: DoorOpen, label: "Rooms" },
-  { to: "/classes", icon: GraduationCap, label: "Classes" },
-  { to: "/timeslots", icon: Clock, label: "Time Slots" },
-  { to: "/timetable", icon: Calendar, label: "Timetable" },
+  { to: "dashboard", icon: LayoutDashboard, labelKey: "dashboard" },
+  { to: "teachers", icon: Users, labelKey: "teachers" },
+  { to: "subjects", icon: BookOpen, labelKey: "subjects" },
+  { to: "rooms", icon: DoorOpen, labelKey: "rooms" },
+  { to: "classes", icon: GraduationCap, labelKey: "classes" },
+  { to: "timeslots", icon: Clock, labelKey: "timeSlots" },
+  { to: "timetable", icon: Calendar, labelKey: "timetable" },
 ];
 
 const secondaryNavItems = [
-  { to: "/settings", icon: Settings, label: "Settings" },
+  { to: "settings", icon: Settings, labelKey: "settings" },
 ];
 
 interface MobileNavItemProps {
@@ -54,6 +55,8 @@ function MobileNavItem({ to, icon: Icon, label }: MobileNavItemProps) {
 }
 
 export function MobileSidebar() {
+  const { t, i18n } = useTranslation("nav");
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-14 items-center border-b px-4">
@@ -62,13 +65,23 @@ export function MobileSidebar() {
 
       <nav className="flex flex-1 flex-col gap-1 p-2">
         {mainNavItems.map((item) => (
-          <MobileNavItem key={item.to} {...item} />
+          <MobileNavItem
+            key={item.to}
+            to={`/${i18n.language}/${item.to}`}
+            icon={item.icon}
+            label={t(item.labelKey)}
+          />
         ))}
 
         <Separator className="my-2" />
 
         {secondaryNavItems.map((item) => (
-          <MobileNavItem key={item.to} {...item} />
+          <MobileNavItem
+            key={item.to}
+            to={`/${i18n.language}/${item.to}`}
+            icon={item.icon}
+            label={t(item.labelKey)}
+          />
         ))}
       </nav>
     </div>

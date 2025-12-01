@@ -19,19 +19,24 @@ describe("AppLayout", () => {
 
   it("renders navigation items", () => {
     render(<AppLayout />);
+    // German translations: Dashboard, Lehrkräfte, Fächer, Räume, Klassen, Zeitfenster, Stundenplan, Einstellungen
     expect(
       screen.getByRole("link", { name: /dashboard/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /teachers/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /subjects/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /rooms/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /classes/i })).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /time slots/i }),
+      screen.getByRole("link", { name: /lehrkräfte/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /fächer/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /räume/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /klassen/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /zeitfenster/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /timetable/i }),
+      screen.getByRole("link", { name: /stundenplan/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /settings/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /einstellungen/i }),
+    ).toBeInTheDocument();
   });
 });

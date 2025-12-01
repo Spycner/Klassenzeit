@@ -38,12 +38,15 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    // German translations
+    expect(screen.getByText("Etwas ist schiefgelaufen")).toBeInTheDocument();
     expect(
-      screen.getByText("An unexpected error occurred. Please try again."),
+      screen.getByText(
+        "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /try again/i }),
+      screen.getByRole("button", { name: /erneut versuchen/i }),
     ).toBeInTheDocument();
   });
 
@@ -54,7 +57,8 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
 
-    const details = screen.getByText("Error details");
+    // German: Fehlerdetails
+    const details = screen.getByText("Fehlerdetails");
     expect(details).toBeInTheDocument();
 
     // Expand details
@@ -72,7 +76,8 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    // German: Etwas ist schiefgelaufen
+    expect(screen.getByText("Etwas ist schiefgelaufen")).toBeInTheDocument();
 
     // Rerender with non-throwing component before clicking reset
     rerender(
@@ -81,13 +86,17 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
 
-    // Click reset - note we need to get the button again after rerender
-    const retryButton = screen.getByRole("button", { name: /try again/i });
+    // Click reset - German: Erneut versuchen
+    const retryButton = screen.getByRole("button", {
+      name: /erneut versuchen/i,
+    });
     await user.click(retryButton);
 
     // After reset, should show normal content
     expect(screen.getByText("Normal content")).toBeInTheDocument();
-    expect(screen.queryByText("Something went wrong")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Etwas ist schiefgelaufen"),
+    ).not.toBeInTheDocument();
   });
 
   it("should render custom fallback when provided", () => {
@@ -98,7 +107,9 @@ describe("ErrorBoundary", () => {
     );
 
     expect(screen.getByText("Custom fallback")).toBeInTheDocument();
-    expect(screen.queryByText("Something went wrong")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Etwas ist schiefgelaufen"),
+    ).not.toBeInTheDocument();
   });
 
   it("should call componentDidCatch with error info", () => {

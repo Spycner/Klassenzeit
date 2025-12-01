@@ -10,6 +10,7 @@ import {
   Settings,
   Users,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -19,17 +20,17 @@ import { cn } from "@/lib/utils";
 import { NavItem } from "./NavItem";
 
 const mainNavItems = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/teachers", icon: Users, label: "Teachers" },
-  { to: "/subjects", icon: BookOpen, label: "Subjects" },
-  { to: "/rooms", icon: DoorOpen, label: "Rooms" },
-  { to: "/classes", icon: GraduationCap, label: "Classes" },
-  { to: "/timeslots", icon: Clock, label: "Time Slots" },
-  { to: "/timetable", icon: Calendar, label: "Timetable" },
+  { to: "dashboard", icon: LayoutDashboard, labelKey: "dashboard" },
+  { to: "teachers", icon: Users, labelKey: "teachers" },
+  { to: "subjects", icon: BookOpen, labelKey: "subjects" },
+  { to: "rooms", icon: DoorOpen, labelKey: "rooms" },
+  { to: "classes", icon: GraduationCap, labelKey: "classes" },
+  { to: "timeslots", icon: Clock, labelKey: "timeSlots" },
+  { to: "timetable", icon: Calendar, labelKey: "timetable" },
 ];
 
 const secondaryNavItems = [
-  { to: "/settings", icon: Settings, label: "Settings" },
+  { to: "settings", icon: Settings, labelKey: "settings" },
 ];
 
 interface SidebarProps {
@@ -38,6 +39,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+  const { t, i18n } = useTranslation("nav");
+
   return (
     <TooltipProvider>
       <aside
@@ -66,13 +69,25 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
         <nav className="flex flex-1 flex-col gap-1 p-2">
           {mainNavItems.map((item) => (
-            <NavItem key={item.to} {...item} collapsed={collapsed} />
+            <NavItem
+              key={item.to}
+              to={`/${i18n.language}/${item.to}`}
+              icon={item.icon}
+              label={t(item.labelKey)}
+              collapsed={collapsed}
+            />
           ))}
 
           <Separator className="my-2" />
 
           {secondaryNavItems.map((item) => (
-            <NavItem key={item.to} {...item} collapsed={collapsed} />
+            <NavItem
+              key={item.to}
+              to={`/${i18n.language}/${item.to}`}
+              icon={item.icon}
+              label={t(item.labelKey)}
+              collapsed={collapsed}
+            />
           ))}
         </nav>
       </aside>

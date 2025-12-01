@@ -17,24 +17,30 @@ describe("Sidebar", () => {
 
   it("renders all main navigation items", () => {
     render(<Sidebar collapsed={false} onToggle={vi.fn()} />);
+    // German translations: Dashboard, Lehrkräfte, Fächer, Räume, Klassen, Zeitfenster, Stundenplan
     expect(
       screen.getByRole("link", { name: /dashboard/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /teachers/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /subjects/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /rooms/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /classes/i })).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /time slots/i }),
+      screen.getByRole("link", { name: /lehrkräfte/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /fächer/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /räume/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /klassen/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /zeitfenster/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /timetable/i }),
+      screen.getByRole("link", { name: /stundenplan/i }),
     ).toBeInTheDocument();
   });
 
   it("renders settings navigation item", () => {
     render(<Sidebar collapsed={false} onToggle={vi.fn()} />);
-    expect(screen.getByRole("link", { name: /settings/i })).toBeInTheDocument();
+    // German: Einstellungen
+    expect(
+      screen.getByRole("link", { name: /einstellungen/i }),
+    ).toBeInTheDocument();
   });
 
   it("calls onToggle when collapse button is clicked", async () => {
@@ -57,17 +63,17 @@ describe("Sidebar", () => {
   it("renders correct navigation links", () => {
     render(<Sidebar collapsed={false} onToggle={vi.fn()} />);
 
+    // Links now have language prefix /de/
     expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
       "href",
-      "/dashboard",
+      "/de/dashboard",
     );
-    expect(screen.getByRole("link", { name: /teachers/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /lehrkräfte/i })).toHaveAttribute(
       "href",
-      "/teachers",
+      "/de/teachers",
     );
-    expect(screen.getByRole("link", { name: /settings/i })).toHaveAttribute(
-      "href",
-      "/settings",
-    );
+    expect(
+      screen.getByRole("link", { name: /einstellungen/i }),
+    ).toHaveAttribute("href", "/de/settings");
   });
 });

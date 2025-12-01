@@ -1,10 +1,12 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { Toaster } from "sonner";
 
 import { queryClient } from "@/api";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { LanguageWrapper } from "@/components/LanguageWrapper";
 import { AppLayout } from "@/components/layout";
+import { defaultLanguage } from "@/i18n";
 import { ClassesPage } from "@/pages/ClassesPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { Home } from "@/pages/Home";
@@ -23,19 +25,26 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route
+              path="/"
+              element={<Navigate to={`/${defaultLanguage}`} replace />}
+            />
 
-            <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/teachers" element={<TeachersListPage />} />
-              <Route path="/teachers/new" element={<TeacherDetailPage />} />
-              <Route path="/teachers/:id" element={<TeacherDetailPage />} />
-              <Route path="/subjects" element={<SubjectsPage />} />
-              <Route path="/rooms" element={<RoomsPage />} />
-              <Route path="/classes" element={<ClassesPage />} />
-              <Route path="/timeslots" element={<TimeSlotsPage />} />
-              <Route path="/timetable" element={<TimetablePage />} />
-              <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/:lang" element={<LanguageWrapper />}>
+              <Route index element={<Home />} />
+
+              <Route element={<AppLayout />}>
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="teachers" element={<TeachersListPage />} />
+                <Route path="teachers/new" element={<TeacherDetailPage />} />
+                <Route path="teachers/:id" element={<TeacherDetailPage />} />
+                <Route path="subjects" element={<SubjectsPage />} />
+                <Route path="rooms" element={<RoomsPage />} />
+                <Route path="classes" element={<ClassesPage />} />
+                <Route path="timeslots" element={<TimeSlotsPage />} />
+                <Route path="timetable" element={<TimetablePage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
             </Route>
 
             <Route path="*" element={<NotFoundPage />} />
