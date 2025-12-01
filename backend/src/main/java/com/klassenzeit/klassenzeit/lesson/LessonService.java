@@ -54,7 +54,9 @@ public class LessonService {
 
   public List<LessonSummary> findAllByTerm(UUID schoolId, UUID termId) {
     validateTerm(schoolId, termId);
-    return lessonRepository.findByTermId(termId).stream().map(this::toSummary).toList();
+    return lessonRepository.findByTermIdWithAssociations(termId).stream()
+        .map(this::toSummary)
+        .toList();
   }
 
   public LessonResponse findById(UUID schoolId, UUID termId, UUID id) {

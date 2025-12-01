@@ -23,6 +23,8 @@ import jakarta.persistence.EntityManager;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,7 @@ class LessonServiceTest extends AbstractIntegrationTest {
 
   @Autowired private LessonService lessonService;
   @Autowired private EntityManager entityManager;
+  @Autowired private SessionFactory sessionFactory;
 
   private TestDataBuilder testData;
   private School school;
@@ -119,6 +122,45 @@ class LessonServiceTest extends AbstractIntegrationTest {
       assertThatThrownBy(() -> lessonService.findAllByTerm(school.getId(), otherTerm.getId()))
           .isInstanceOf(EntityNotFoundException.class)
           .hasMessageContaining("Term");
+    }
+
+    @Test
+    void shouldNotCauseNPlusOneQueries() {
+      // Create multiple lessons to detect N+1 problem
+      // Use period 2-6 to avoid conflict with timeSlot (period 1) created in setUp
+      for (int i = 0; i < 5; i++) {
+        TimeSlot ts =
+            testData
+                .timeSlot(school)
+                .withDayOfWeek((short) 0)
+                .withPeriod((short) (i + 2))
+                .persist();
+        testData.lesson(term, schoolClass, teacher, subject, ts).withRoom(room).persist();
+      }
+      entityManager.flush();
+      entityManager.clear();
+
+      // Enable statistics
+      Statistics stats = sessionFactory.getStatistics();
+      stats.setStatisticsEnabled(true);
+      stats.clear();
+
+      // Execute the query
+      List<LessonSummary> result = lessonService.findAllByTerm(school.getId(), term.getId());
+
+      // Verify results
+      assertThat(result).hasSize(5);
+
+      // With JOIN FETCH, we should have minimal queries:
+      // 1. Term validation query
+      // 2. Main lesson query with all joins
+      // Without JOIN FETCH (N+1), we'd have 1 + 5*5 = 26 queries
+      long queryCount = stats.getQueryExecutionCount();
+      assertThat(queryCount)
+          .as("Query count should be minimal (no N+1 problem)")
+          .isLessThanOrEqualTo(3);
+
+      stats.setStatisticsEnabled(false);
     }
   }
 

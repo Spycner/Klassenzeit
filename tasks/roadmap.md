@@ -242,3 +242,4 @@ This document outlines the next development steps for Klassenzeit, organized by 
 - **Partial Rooms:** Support rooms / facilities that are partially available for lessons like swimming pools or gyms that are limited available to school classes or school classes that are limited available to a specific room.
 - **Dedicated Rooms:** Support rooms / facilities that are dedicated to a specific subject or school class.
 - **Subject Room Relationships:** Signify which subjects can be taught in which rooms.
+- **Logging & Monitoring:** Add logging and monitoring for the application.

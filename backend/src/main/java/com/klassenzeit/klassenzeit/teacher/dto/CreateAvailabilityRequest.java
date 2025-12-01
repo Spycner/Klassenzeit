@@ -10,7 +10,7 @@ import java.util.UUID;
 /** Request DTO for creating a teacher availability. */
 public record CreateAvailabilityRequest(
     UUID termId,
-    @NotNull @Min(1) @Max(7) Short dayOfWeek,
-    @NotNull @Min(1) @Max(15) Short period,
+    @NotNull @Min(0) @Max(4) Short dayOfWeek,
+    @NotNull @Min(1) @Max(10) Short period,
     @NotNull AvailabilityType availabilityType,
     @Size(max = 255) String reason) {}

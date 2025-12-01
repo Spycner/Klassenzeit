@@ -2,6 +2,7 @@ package com.klassenzeit.klassenzeit.teacher;
 
 import com.klassenzeit.klassenzeit.common.BaseEntity;
 import com.klassenzeit.klassenzeit.school.School;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -42,10 +43,10 @@ public class Teacher extends BaseEntity {
   @Column(name = "is_active", nullable = false)
   private Boolean isActive = true;
 
-  @OneToMany(mappedBy = "teacher")
+  @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<TeacherSubjectQualification> qualifications = new ArrayList<>();
 
-  @OneToMany(mappedBy = "teacher")
+  @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<TeacherAvailability> availabilities = new ArrayList<>();
 
   public Teacher() {}

@@ -1,6 +1,7 @@
 package com.klassenzeit.klassenzeit.school;
 
 import com.klassenzeit.klassenzeit.common.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -33,7 +34,7 @@ public class SchoolYear extends BaseEntity {
   @Column(name = "is_current", nullable = false)
   private Boolean isCurrent = false;
 
-  @OneToMany(mappedBy = "schoolYear")
+  @OneToMany(mappedBy = "schoolYear", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Term> terms = new ArrayList<>();
 
   public SchoolYear() {}
