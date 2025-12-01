@@ -6,7 +6,7 @@ Implement the constraint provider for the Timefold solver. This defines all hard
 
 ## Acceptance Criteria
 
-- [ ] Create `TimetableConstraintProvider.java` in `solver/constraint/`
+- [ ] Implement constraints in existing `TimetableConstraintProvider.java` (placeholder created in B-010)
 - [ ] Implement hard constraints:
   - [ ] Teacher conflict - no teacher teaches two lessons at the same time
   - [ ] Room conflict - no room hosts two lessons at the same time
@@ -133,6 +133,27 @@ void teacherConflict() {
 - [B-012: Solver Service & API](B-012-schedule-validation.md)
 
 ## Notes
+
+### From B-010 Implementation
+
+The following helper methods are already available in the planning domain classes:
+
+**PlanningLesson:**
+- `weekPatternsOverlap(PlanningLesson other)` - already implements the week pattern conflict logic
+
+**PlanningTeacher:**
+- `isBlockedAt(PlanningTimeSlot)` - returns true if teacher is blocked at that slot
+- `prefersSlot(PlanningTimeSlot)` - returns true if teacher prefers that slot
+- `isQualifiedFor(UUID subjectId, short gradeLevel)` - checks teacher qualification
+
+**PlanningRoom:**
+- `hasFeatures(Set<String>)` - checks if room has required features
+
+**PlanningTimeSlot:**
+- `getDayPeriodKey()` - returns "dayOfWeek-period" string for lookups
+
+**PlanningSchoolClass:**
+- `getClassTeacherId()` - returns UUID of class teacher (for first period constraint)
 
 ### Constraint Weights (Soft)
 Default weights, can be tuned later:
