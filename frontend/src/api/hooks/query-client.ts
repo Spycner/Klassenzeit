@@ -137,4 +137,12 @@ export const queryKeys = {
     detail: (schoolId: string, termId: string, id: string) =>
       ["schools", schoolId, "terms", termId, "lessons", id] as const,
   },
+
+  // Solver
+  solver: {
+    status: (schoolId: string, termId: string) =>
+      ["schools", schoolId, "terms", termId, "solver", "status"] as const,
+    solution: (schoolId: string, termId: string) =>
+      ["schools", schoolId, "terms", termId, "solver", "solution"] as const,
+  },
 };

@@ -25,11 +25,14 @@ import com.klassenzeit.klassenzeit.teacher.Teacher;
 import com.klassenzeit.klassenzeit.teacher.TeacherRepository;
 import com.klassenzeit.klassenzeit.timeslot.TimeSlot;
 import com.klassenzeit.klassenzeit.timeslot.TimeSlotRepository;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +53,12 @@ public class TimetableSolverService {
 
   /** Cache of best solutions found during solving. */
   private final ConcurrentMap<UUID, Timetable> bestSolutions = new ConcurrentHashMap<>();
+
+  /** Timestamps for when solutions were last updated (for TTL cleanup). */
+  private final ConcurrentMap<UUID, Instant> solutionTimestamps = new ConcurrentHashMap<>();
+
+  /** Time-to-live for cached solutions (30 minutes). */
+  private static final Duration SOLUTION_TTL = Duration.ofMinutes(30);
 
   public TimetableSolverService(
       SolverManager<Timetable, UUID> solverManager,
@@ -100,14 +109,15 @@ public class TimetableSolverService {
 
     // Clear any previous solution
     bestSolutions.remove(termId);
+    solutionTimestamps.remove(termId);
 
     // Start async solving
     solverManager
         .solveBuilder()
         .withProblemId(termId)
         .withProblem(problem)
-        .withBestSolutionConsumer(solution -> bestSolutions.put(termId, solution))
-        .withFinalBestSolutionConsumer(solution -> bestSolutions.put(termId, solution))
+        .withBestSolutionConsumer(solution -> storeSolution(termId, solution))
+        .withFinalBestSolutionConsumer(solution -> storeSolution(termId, solution))
         .run();
 
     return new SolverJobResponse(termId, SolveStatus.SOLVING, null, null, null);
@@ -199,9 +209,34 @@ public class TimetableSolverService {
 
     // Clean up the solution from cache after applying
     bestSolutions.remove(termId);
+    solutionTimestamps.remove(termId);
+  }
+
+  /**
+   * Cleans up stale solutions that have exceeded the TTL. Runs every 5 minutes to prevent memory
+   * accumulation from abandoned solver jobs.
+   */
+  @Scheduled(fixedRate = 300_000) // Every 5 minutes
+  public void cleanupStaleSolutions() {
+    Instant cutoff = Instant.now().minus(SOLUTION_TTL);
+    solutionTimestamps
+        .entrySet()
+        .removeIf(
+            entry -> {
+              if (entry.getValue().isBefore(cutoff)) {
+                bestSolutions.remove(entry.getKey());
+                return true;
+              }
+              return false;
+            });
   }
 
   // ========== Private Helper Methods ==========
+
+  private void storeSolution(UUID termId, Timetable solution) {
+    bestSolutions.put(termId, solution);
+    solutionTimestamps.put(termId, Instant.now());
+  }
 
   private void applyAssignmentToLesson(UUID lessonId, TimetableMapper.LessonAssignment assignment) {
     Lesson lesson =
@@ -254,7 +289,10 @@ public class TimetableSolverService {
 
     List<TimeSlot> timeSlots = timeSlotRepository.findBySchoolId(schoolId);
     List<Room> rooms = roomRepository.findBySchoolId(schoolId);
-    List<Teacher> teachers = teacherRepository.findBySchoolId(schoolId);
+    // Two queries to avoid Hibernate MultipleBagFetchException (can't fetch multiple Lists)
+    List<Teacher> teachers = teacherRepository.findBySchoolIdWithQualifications(schoolId);
+    teacherRepository.findBySchoolIdWithAvailabilities(
+        schoolId); // Populates availabilities in cache
     List<SchoolClass> schoolClasses = schoolClassRepository.findBySchoolId(schoolId);
     List<Subject> subjects = subjectRepository.findBySchoolId(schoolId);
     List<Lesson> lessons = lessonRepository.findByTermId(term.getId());

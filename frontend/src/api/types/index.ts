@@ -10,5 +10,7 @@ export * from "./lesson";
 export * from "./resources";
 // School-related types
 export * from "./school";
+// Solver types
+export * from "./solver";
 // Teacher-related types
 export * from "./teacher";

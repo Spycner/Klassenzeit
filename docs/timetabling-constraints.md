@@ -177,12 +177,58 @@ The following constraints are planned for future implementation:
 - **Teacher Max Hours**: Penalize exceeding teacher's max hours per week
 - **Configurable Weights**: Allow schools to customize constraint weights via settings
 
+## Solver Configuration
+
+The solver is configured in `application.yaml`:
+
+```yaml
+timefold:
+  solver:
+    termination:
+      spent-limit: 5m              # Maximum solving time
+      best-score-limit: 0hard/*soft  # Stop early when this score is reached
+  solver-manager:
+    parallel-solver-count: 1       # One solve at a time per JVM
+```
+
+### Termination Behavior
+
+The solver uses a **two-phase approach**:
+
+1. **Construction Heuristic** (~6-26ms): Quickly builds an initial feasible solution
+2. **Local Search** (up to 5 minutes): Continuously improves the solution by exploring alternatives
+
+The solver terminates when **either** condition is met:
+- `spent-limit: 5m` - Time limit reached (5 minutes)
+- `best-score-limit: 0hard/*soft` - Any solution with 0 hard violations found
+
+**Current behavior**: With `0hard/*soft`, the solver stops as soon as it finds ANY feasible solution (0 hard violations), even if soft constraints could be further optimized.
+
+**Alternative configurations**:
+- `best-score-limit: 0hard/0soft` - Only stop on perfect solution (no violations at all)
+- Remove `best-score-limit` entirely - Always run for full time limit
+- `best-score-limit: 0hard/-10soft` - Stop when soft score is "good enough"
+
+### Performance Characteristics
+
+| Metric | Typical Value |
+|--------|---------------|
+| Construction heuristic | 6-26ms |
+| Move evaluation speed | 200,000-540,000 moves/sec |
+| Moves in 5 seconds | ~500,000-2,500,000 |
+
+For a typical school with ~100 lessons, the solver finds a feasible solution almost instantly and can evaluate millions of improvements within the time limit.
+
 ## Implementation Details
 
 The constraints are implemented in:
 - `TimetableConstraintProvider.java` - Constraint definitions using Timefold Constraint Streams
 - `TimetableConstraintProviderTest.java` - Unit tests for individual constraints
 - `TimetableSolverIntegrationTest.java` - Integration tests with realistic scenarios
+
+The solver service is implemented in:
+- `TimetableSolverService.java` - Async solving, status polling, solution persistence
+- `TimetableSolverController.java` - REST API endpoints
 
 See also:
 - [Data Model](data-model.md) - Entity relationships and database schema

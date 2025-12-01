@@ -8,8 +8,6 @@ Ordered by priority. Move tasks to `doing/` when starting work, then to `done/` 
 
 Build out the full frontend application with data management pages:
 
-0. [F-019: Solver Job API](todo/frontend/F-019-solver-job-api.md)
-   - Depends on: B-012
 1. [F-010: App Layout & Navigation](todo/frontend/F-010-app-layout-navigation.md)
 2. [F-011: Shared UI Components](todo/frontend/F-011-shared-components.md)
    - Depends on: F-010
@@ -59,9 +57,8 @@ These can be mixed in as needed while building core features:
 
 ### Phase: Solver UI (after core frontend + backend solver)
 
-- Solver controls UI (start/stop solving, progress indicator)
-- Solution review and apply workflow
-- Constraint violation visualization
+- [F-020: Solver UI Components](todo/frontend/F-020-solver-ui.md)
+  - Depends on: F-019 (done), F-017
 
 ---
 
@@ -81,3 +78,5 @@ Not tracked as tasks yet. Create task files when ready to work on these:
 - Dedicated Rooms: Support rooms dedicated to a specific subject or class
 - Subject Room Relationships: Signify which subjects can be taught in which rooms
 - Advanced Monitoring: Grafana + Prometheus, centralized logging, Sentry
+- Interactive solving: i.e. user can make manual changes to the schedule and the solver will automatically verify and update the schedule, based on constraints and preferences.
+- Copy ui from claude / anthropic for tasteful frontend.
