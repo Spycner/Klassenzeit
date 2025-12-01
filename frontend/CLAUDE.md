@@ -48,6 +48,7 @@ npx shadcn@latest add <component-name>
 
 ```
 src/
+├── api/             # API client, types, services, and React Query hooks
 ├── components/ui/   # shadcn/ui components
 ├── pages/           # Route page components
 ├── lib/utils.ts     # Utility functions (cn helper)
@@ -55,6 +56,18 @@ src/
 ├── main.tsx         # Application entry point
 └── index.css        # Tailwind styles + CSS variables
 ```
+
+## API Integration
+
+```bash
+npm run generate-api   # Generate types from OpenAPI (requires backend running)
+```
+
+- **Location**: `src/api/` - Types, services, and React Query hooks
+- **Type Generation**: Uses Orval to generate TypeScript types from backend OpenAPI spec
+- **Usage**: Import hooks from `@/api` (e.g., `useSchools`, `useCreateTeacher`)
+
+Run `generate-api` when backend API changes to keep frontend types in sync.
 
 ## Path Aliases
 

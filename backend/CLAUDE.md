@@ -88,6 +88,12 @@ com.klassenzeit.klassenzeit/
 
 Each feature package contains: Entity, Repository, Service, Controller (when needed).
 
+### API Documentation
+
+OpenAPI docs available at `http://localhost:8080/v3/api-docs` (Swagger UI at `/swagger-ui.html`).
+
+**When changing API endpoints or DTOs**: Run `npm run generate-api` in the frontend to regenerate TypeScript types.
+
 ### Data Model
 
 See `docs/data-model.md` for the complete ER diagram.
