@@ -39,8 +39,14 @@ Klassenzeit is a timetabler application for schools. This is the backend compone
 # Check formatting only
 ./gradlew spotlessCheck
 
-# Run all quality checks (Spotless, Checkstyle, SpotBugs, PMD, tests)
-./gradlew check
+# Run all quality checks (Spotless, Checkstyle, SpotBugs, PMD, tests) in background
+./gradlew check > gradle-check.log 2>&1 &
+
+# Check if gradle check is still running (check every 30-60 seconds, not more frequently)
+pgrep -f "gradlew check" && echo "Still running..." || echo "Finished"
+
+# View results after completion
+cat gradle-check.log
 
 # Run tests with coverage report
 ./gradlew test jacocoTestReport
@@ -56,10 +62,97 @@ Tools configured:
 - **PMD**: Code smell detection
 - **JaCoCo**: Coverage reports
 
+**IMPORTANT**: Always run `./gradlew check` after adding or modifying code to ensure all quality checks pass before committing. Run it in the background (`> gradle-check.log 2>&1 &`) to avoid blocking the session. Wait at least 30 seconds before the first status check, then check every 30-60 seconds until complete. Do not poll more frequently to avoid wasting tokens.
+
 ## Architecture
 
 - **Framework**: Spring Boot 3.5.8 with Gradle (Kotlin DSL)
 - **Java Version**: 21
-- **Package Structure**: `com.klassenzeit.klassenzeit`
+- **Base Package**: `com.klassenzeit.klassenzeit`
 - **Entry Point**: `KlassenzeitApplication.java`
 - **Configuration**: `src/main/resources/application.yaml`
+
+### Package Structure (Package-by-Feature)
+
+```
+com.klassenzeit.klassenzeit/
+  common/       # Shared base classes and enums (BaseEntity, QualificationLevel, etc.)
+  school/       # School, SchoolYear, Term (multi-tenancy root)
+  teacher/      # Teacher, TeacherSubjectQualification, TeacherAvailability
+  subject/      # Subject definitions
+  room/         # Room with capacity and features
+  schoolclass/  # SchoolClass (student groups like "3a", "5b")
+  timeslot/     # TimeSlot (weekly time grid)
+  lesson/       # Lesson (scheduled timetable entries)
+```
+
+Each feature package contains: Entity, Repository, Service, Controller (when needed).
+
+### Data Model
+
+See `docs/data-model.md` for the complete ER diagram.
+
+**Core entities:**
+- `School` - Multi-tenant root (supports multiple schools)
+- `SchoolYear` / `Term` - Academic period hierarchy
+- `Teacher` - With qualifications and availability tracking
+- `Subject` - What's taught (Math, German, etc.)
+- `Room` - With capacity and features (JSONB)
+- `SchoolClass` - Student groups
+- `TimeSlot` - Weekly schedule grid
+- `Lesson` - The actual scheduled timetable entry
+
+## Database
+
+- **Database**: PostgreSQL 17
+- **ORM**: Spring Data JPA
+- **Migrations**: Flyway (SQL-first)
+- **Migration Location**: `src/main/resources/db/migration/`
+
+### Flyway Naming Convention
+- `V{version}__{description}.sql` - Versioned migrations (e.g., `V1__create_tables.sql`)
+- `R__{description}.sql` - Repeatable migrations (for views, functions)
+
+### Schema Design
+- Flyway owns the schema (write DDL manually)
+- JPA entities map to the schema (`ddl-auto: validate`)
+
+## Testing
+
+### Testing Philosophy
+
+This project follows **Test-Driven Development (TDD)** where possible:
+
+1. **Write tests first** - Before implementing a feature, write failing tests that define the expected behavior
+2. **Red-Green-Refactor** - Write failing test → Make it pass → Refactor
+3. **Test types**:
+   - **Unit tests**: For business logic in services (mock dependencies)
+   - **Integration tests**: For repositories and database interactions (use Testcontainers)
+   - **End-to-end tests**: For API endpoints (use MockMvc or WebTestClient)
+
+### Test Naming Convention
+
+```java
+@Test
+void methodName_stateUnderTest_expectedBehavior() {
+    // Given / When / Then
+}
+```
+
+### Test Organization
+
+- Mirror the main source structure: `src/test/java/com/klassenzeit/klassenzeit/{package}/`
+- Repository tests: `{Entity}RepositoryTest.java`
+- Service tests: `{Entity}ServiceTest.java`
+- Controller tests: `{Entity}ControllerTest.java`
+
+### Integration Tests
+
+Integration tests use Testcontainers to spin up a PostgreSQL container automatically.
+
+```java
+// Extend this base class for database integration tests
+class MyTest extends AbstractIntegrationTest {
+    // PostgreSQL container is available automatically
+}
+```
