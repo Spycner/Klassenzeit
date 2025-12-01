@@ -1,6 +1,7 @@
 package com.klassenzeit.klassenzeit.school;
 
 import com.klassenzeit.klassenzeit.common.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
@@ -37,7 +38,7 @@ public class School extends BaseEntity {
   @Column(nullable = false, columnDefinition = "jsonb")
   private String settings = "{}";
 
-  @OneToMany(mappedBy = "school")
+  @OneToMany(mappedBy = "school", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<SchoolYear> schoolYears = new ArrayList<>();
 
   public School() {}

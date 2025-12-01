@@ -3,6 +3,8 @@ package com.klassenzeit.klassenzeit.common;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /** Global exception handler for REST controllers. */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+  private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
   @ExceptionHandler(EntityNotFoundException.class)
   public ResponseEntity<Map<String, Object>> handleEntityNotFound(EntityNotFoundException ex) {
@@ -29,11 +33,14 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(
       DataIntegrityViolationException ex) {
+    // Log the full error for debugging, but don't expose to client
+    LOG.error("Data integrity violation", ex);
+
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("timestamp", Instant.now());
     body.put("status", HttpStatus.CONFLICT.value());
     body.put("error", "Conflict");
-    body.put("message", "Data integrity violation: " + ex.getMostSpecificCause().getMessage());
+    body.put("message", "A data constraint was violated. The operation could not be completed.");
     return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
   }
 
@@ -62,5 +69,18 @@ public class GlobalExceptionHandler {
     body.put("errors", fieldErrors);
 
     return ResponseEntity.badRequest().body(body);
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<Map<String, Object>> handleUnexpectedException(Exception ex) {
+    // Log the full error for debugging, but don't expose details to client
+    LOG.error("Unexpected error occurred", ex);
+
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("timestamp", Instant.now());
+    body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+    body.put("error", "Internal Server Error");
+    body.put("message", "An unexpected error occurred. Please try again later.");
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
   }
 }

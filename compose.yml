@@ -5,9 +5,9 @@ services:
     image: postgres:17-alpine
     container_name: klassenzeit-postgres
     environment:
-      POSTGRES_DB: klassenzeit
-      POSTGRES_USER: klassenzeit
-      POSTGRES_PASSWORD: klassenzeit
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
