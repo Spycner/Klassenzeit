@@ -8,9 +8,6 @@ Ordered by priority. Move tasks to `doing/` when starting work, then to `done/` 
 
 Build out the full frontend application with data management pages:
 
-1. [F-010: App Layout & Navigation](todo/frontend/F-010-app-layout-navigation.md)
-2. [F-011: Shared UI Components](todo/frontend/F-011-shared-components.md)
-   - Depends on: F-010
 3. [F-012: Teachers CRUD Pages](todo/frontend/F-012-teachers-crud.md)
    - Depends on: F-010, F-011
 4. [F-013: Subjects CRUD Pages](todo/frontend/F-013-subjects-crud.md)

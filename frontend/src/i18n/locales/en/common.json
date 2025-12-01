@@ -7,5 +7,11 @@
   "logOut": "Log out",
   "myAccount": "My Account",
   "toggleNavigation": "Toggle navigation menu",
-  "userMenu": "User menu"
+  "userMenu": "User menu",
+  "loading": "Loading...",
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "delete": "Delete",
+  "errorOccurred": "An error occurred"
 }
