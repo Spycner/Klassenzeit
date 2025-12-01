@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
-
-const API_BASE = "http://localhost:8080/api";
+import { API_BASE } from "./config";
 
 test.describe("Rooms API", () => {
   let schoolId: string;
@@ -167,11 +166,13 @@ test.describe("Rooms API", () => {
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(204);
 
-    // Verify it's gone
+    // Verify soft delete - room still exists but is inactive
     const getResponse = await request.get(
       `${API_BASE}/schools/${schoolId}/rooms/${created.id}`
     );
-    expect(getResponse.status()).toBe(404);
+    expect(getResponse.status()).toBe(200);
+    const deletedRoom = await getResponse.json();
+    expect(deletedRoom.isActive).toBe(false);
   });
 
   test("POST /schools/{schoolId}/rooms - should validate capacity", async ({

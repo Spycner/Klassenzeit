@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
-
-const API_BASE = "http://localhost:8080/api";
+import { API_BASE } from "./config";
 
 test.describe("School Classes API", () => {
   let schoolId: string;
@@ -191,11 +190,13 @@ test.describe("School Classes API", () => {
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(204);
 
-    // Verify it's gone
+    // Verify soft delete - class still exists but is inactive
     const getResponse = await request.get(
       `${API_BASE}/schools/${schoolId}/classes/${created.id}`
     );
-    expect(getResponse.status()).toBe(404);
+    expect(getResponse.status()).toBe(200);
+    const deletedClass = await getResponse.json();
+    expect(deletedClass.isActive).toBe(false);
   });
 
   test("POST /schools/{schoolId}/classes - should validate grade level", async ({

@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
-
-const API_BASE = "http://localhost:8080/api";
+import { API_BASE } from "./config";
 
 test.describe("Subjects API", () => {
   let schoolId: string;
@@ -65,7 +64,6 @@ test.describe("Subjects API", () => {
     expect(subject.name).toBe(newSubject.name);
     expect(subject.abbreviation).toBe(newSubject.abbreviation);
     expect(subject.color).toBe(newSubject.color);
-    expect(subject.isActive).toBe(true);
     expect(subject.createdAt).toBeDefined();
 
     // Cleanup

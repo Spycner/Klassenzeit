@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
-
-const API_BASE = "http://localhost:8080/api";
+import { API_BASE } from "./config";
 
 test.describe("Schools API", () => {
   let createdSchoolId: string;

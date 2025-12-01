@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
-
-const API_BASE = "http://localhost:8080/api";
+import { API_BASE } from "./config";
 
 test.describe("Teachers API", () => {
   let schoolId: string;
@@ -184,11 +183,13 @@ test.describe("Teachers API", () => {
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(204);
 
-    // Verify it's gone
+    // Verify soft delete - teacher still exists but is inactive
     const getResponse = await request.get(
       `${API_BASE}/schools/${schoolId}/teachers/${created.id}`
     );
-    expect(getResponse.status()).toBe(404);
+    expect(getResponse.status()).toBe(200);
+    const deletedTeacher = await getResponse.json();
+    expect(deletedTeacher.isActive).toBe(false);
   });
 
   test("POST /schools/{schoolId}/teachers - should validate email format", async ({
