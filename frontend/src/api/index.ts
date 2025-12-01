@@ -40,3 +40,5 @@ export {
 export * from "./hooks";
 // Re-export all types
 export * from "./types";
+// Re-export validation module
+export * from "./validation";

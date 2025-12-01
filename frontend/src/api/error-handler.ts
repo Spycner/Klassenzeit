@@ -13,11 +13,16 @@ import {
   RateLimitError,
   ServerError,
 } from "./errors";
+import { ValidationError } from "./validation/validate";
 
 /**
  * Extract a user-friendly error message from any error type
  */
 export function getErrorMessage(error: unknown): string {
+  if (error instanceof ValidationError) {
+    return error.errors.join(". ");
+  }
+
   if (error instanceof NetworkError) {
     if (error.isTimeout) {
       return "Request timed out. Please check your connection and try again.";
@@ -64,6 +69,9 @@ export function getErrorMessage(error: unknown): string {
  * Get the error title based on error type
  */
 function getErrorTitle(error: unknown): string {
+  if (error instanceof ValidationError) {
+    return "Validation Error";
+  }
   if (error instanceof NetworkError) {
     return error.isTimeout ? "Request Timeout" : "Connection Error";
   }

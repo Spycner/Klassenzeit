@@ -4,7 +4,6 @@ Ordered by priority. Move tasks to `doing/` when starting work, then to `done/` 
 
 ## High Priority (Current Sprint)
 
-2. [F-002: Implement Input Validation](todo/frontend/F-002-implement-input-validation.md)
 3. [F-003: Add JSDoc Documentation](todo/frontend/F-003-add-jsdoc-documentation.md)
 4. [F-004: Verify Bundle Size](todo/frontend/F-004-verify-bundle-size.md)
 
