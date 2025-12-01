@@ -1,8 +1,16 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { afterEach } from "vitest";
+import { afterAll, afterEach, beforeAll } from "vitest";
+import { server } from "./mocks/server";
 
-// Cleanup after each test to prevent memory leaks
+// Start MSW server before all tests
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+
+// Reset handlers after each test (important for test isolation)
 afterEach(() => {
+  server.resetHandlers();
   cleanup();
 });
+
+// Clean up after all tests
+afterAll(() => server.close());
