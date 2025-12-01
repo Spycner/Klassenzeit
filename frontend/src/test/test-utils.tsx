@@ -5,6 +5,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type RenderOptions, render } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
+import { MemoryRouter } from "react-router";
 
 /**
  * Creates a new QueryClient configured for testing
@@ -29,15 +30,27 @@ interface WrapperProps {
   children: ReactNode;
 }
 
+interface RenderWithProvidersOptions extends Omit<RenderOptions, "wrapper"> {
+  queryClient?: QueryClient;
+  initialEntries?: string[];
+}
+
 /**
  * Creates a wrapper component with all necessary providers
  */
-export function createWrapper(queryClient?: QueryClient) {
+export function createWrapper(
+  queryClient?: QueryClient,
+  initialEntries?: string[],
+) {
   const client = queryClient ?? createTestQueryClient();
 
   return function Wrapper({ children }: WrapperProps) {
     return (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={initialEntries ?? ["/"]}>
+          {children}
+        </MemoryRouter>
+      </QueryClientProvider>
     );
   };
 }
@@ -47,12 +60,12 @@ export function createWrapper(queryClient?: QueryClient) {
  */
 export function renderWithProviders(
   ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper"> & { queryClient?: QueryClient },
+  options?: RenderWithProvidersOptions,
 ) {
-  const { queryClient, ...renderOptions } = options ?? {};
+  const { queryClient, initialEntries, ...renderOptions } = options ?? {};
 
   return render(ui, {
-    wrapper: createWrapper(queryClient),
+    wrapper: createWrapper(queryClient, initialEntries),
     ...renderOptions,
   });
 }

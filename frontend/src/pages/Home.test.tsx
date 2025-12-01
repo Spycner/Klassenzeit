@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { render, screen } from "@/test/test-utils";
+
 import { Home } from "./Home";
 
 describe("Home", () => {
@@ -18,7 +19,7 @@ describe("Home", () => {
   it("renders the get started button", () => {
     render(<Home />);
     expect(
-      screen.getByRole("button", { name: /get started/i }),
+      screen.getByRole("link", { name: /get started/i }),
     ).toBeInTheDocument();
   });
 });
