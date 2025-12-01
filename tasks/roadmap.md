@@ -25,13 +25,27 @@ This document outlines the next development steps for Klassenzeit, organized by 
 - **Details:** Extend `JpaRepository<Entity, UUID>`. Add custom query methods as needed (e.g., `findBySchoolId`, `findBySchoolIdAndIsActiveTrue`).
 
 ### 1.2 REST API Setup
-- [ ] Add `spring-boot-starter-web` dependency
-- [ ] Create REST controllers for CRUD operations
-- **Dependency to add in `build.gradle.kts`:**
+- [x] Add `spring-boot-starter-web` dependency
+- [x] Create REST controllers for CRUD operations
+- **Dependency added in `build.gradle.kts`:**
   ```kotlin
   implementation("org.springframework.boot:spring-boot-starter-web")
   ```
-- **Controllers to create:** Start with `SchoolController`, `TeacherController`, `SubjectController` for basic resource management.
+- **Controllers created:**
+  - `SchoolController` - `/api/schools`
+  - `SchoolYearController` - `/api/schools/{schoolId}/school-years`
+  - `TermController` - `/api/schools/{schoolId}/school-years/{schoolYearId}/terms`
+  - `TeacherController` - `/api/schools/{schoolId}/teachers`
+  - `TeacherQualificationController` - `/api/schools/{schoolId}/teachers/{teacherId}/qualifications`
+  - `TeacherAvailabilityController` - `/api/schools/{schoolId}/teachers/{teacherId}/availability`
+  - `SubjectController` - `/api/schools/{schoolId}/subjects`
+  - `RoomController` - `/api/schools/{schoolId}/rooms`
+  - `SchoolClassController` - `/api/schools/{schoolId}/classes`
+  - `TimeSlotController` - `/api/schools/{schoolId}/time-slots`
+  - `LessonController` - `/api/schools/{schoolId}/terms/{termId}/lessons`
+- **Supporting classes:**
+  - `EntityNotFoundException` - Custom 404 exception
+  - `GlobalExceptionHandler` - REST error handling
 - **Endpoints pattern:**
   - `GET /api/schools/{schoolId}/teachers` - List teachers for a school
   - `POST /api/schools/{schoolId}/teachers` - Create teacher
@@ -57,53 +71,68 @@ This document outlines the next development steps for Klassenzeit, organized by 
 ## Phase 2: Core Features (Short-term)
 
 ### 2.1 Bean Validation
-- [ ] Add `spring-boot-starter-validation` dependency
-- [ ] Add validation annotations to entities and DTOs
-- **Dependency:**
+- [x] Add `spring-boot-starter-validation` dependency
+- [x] Add validation annotations to DTOs
+- **Dependency added in `build.gradle.kts`:**
   ```kotlin
   implementation("org.springframework.boot:spring-boot-starter-validation")
   ```
-- **Annotations to use:**
+- **Annotations used:**
   - `@NotBlank` for required strings
   - `@Size(min, max)` for length constraints
   - `@Email` for email fields
   - `@Min`, `@Max` for numeric ranges
-  - `@Valid` for nested object validation
-- **Example on Teacher:**
-  ```java
-  @NotBlank @Size(max = 100) private String firstName;
-  @NotBlank @Size(max = 100) private String lastName;
-  @Email @Size(max = 255) private String email;
-  ```
+  - `@NotNull` for required non-string fields
+  - `@Pattern` for regex validation (e.g., slug format)
+  - `@Valid` for request body validation in controllers
+- **GlobalExceptionHandler** updated to handle `MethodArgumentNotValidException` with structured error response
 
 ### 2.2 DTOs (Data Transfer Objects)
-- [ ] Create request/response DTOs for all entities
+- [x] Create request/response DTOs for all entities
 - **Purpose:** Decouple API contract from JPA entities, control what's exposed, handle nested relationships cleanly.
-- **Pattern per entity:**
-  - `CreateTeacherRequest` - For POST requests
-  - `UpdateTeacherRequest` - For PUT requests
-  - `TeacherResponse` - For GET responses
-  - `TeacherSummaryResponse` - For list responses (fewer fields)
-- **Location:** Create `dto` subpackage in each feature package (e.g., `teacher/dto/`).
+- **Pattern per entity (Java Records):**
+  - `Create{Entity}Request` - For POST requests with required field validation
+  - `Update{Entity}Request` - For PUT requests with optional fields (partial updates)
+  - `{Entity}Response` - Full response with timestamps
+  - `{Entity}Summary` - For list responses (minimal fields)
+- **DTOs created for all entities:**
+  - `school/dto/` - School, SchoolYear, Term DTOs
+  - `teacher/dto/` - Teacher, Qualification, Availability DTOs
+  - `subject/dto/` - Subject DTOs
+  - `room/dto/` - Room DTOs
+  - `schoolclass/dto/` - SchoolClass DTOs
+  - `timeslot/dto/` - TimeSlot DTOs
+  - `lesson/dto/` - Lesson DTOs
 
 ### 2.3 Service Layer
-- [ ] Create service classes with business logic
-- **Files to create:**
-  - `SchoolService`, `TeacherService`, `SubjectService`, `RoomService`, `SchoolClassService`, `TimeSlotService`, `LessonService`
+- [x] Create service classes with business logic
+- **Services created:**
+  - `SchoolService` - School CRUD operations
+  - `SchoolYearService` - School year CRUD with school validation
+  - `TermService` - Term CRUD with school year validation
+  - `TeacherService` - Teacher CRUD with soft delete
+  - `TeacherQualificationService` - Teacher qualification management
+  - `TeacherAvailabilityService` - Teacher availability management
+  - `SubjectService` - Subject CRUD with soft delete
+  - `RoomService` - Room CRUD with soft delete
+  - `SchoolClassService` - School class CRUD with soft delete
+  - `TimeSlotService` - Time slot CRUD
+  - `LessonService` - Lesson CRUD with term/school validation
 - **Responsibilities:**
-  - Validation beyond bean validation (e.g., checking uniqueness)
-  - Transaction management
-  - Cross-entity operations
-  - Business rule enforcement (e.g., teacher can't exceed max hours)
+  - DTO to entity mapping (toResponse, toSummary methods)
+  - Transaction management (`@Transactional`)
+  - School/parent entity validation
+  - Soft delete for entities with `isActive` flag
 - **Pattern:**
   ```java
   @Service
   @Transactional(readOnly = true)
   public class TeacherService {
       @Transactional
-      public Teacher create(UUID schoolId, CreateTeacherRequest request) { ... }
+      public TeacherResponse create(UUID schoolId, CreateTeacherRequest request) { ... }
   }
   ```
+- **Controllers updated** to delegate to services (thin controller pattern)
 
 ---
 
@@ -210,3 +239,6 @@ This document outlines the next development steps for Klassenzeit, organized by 
 - **Notifications:** Email/push for schedule changes
 - **Mobile app:** Teacher-facing schedule viewer
 - **Analytics:** Teaching load distribution, room utilization reports
+- **Partial Rooms:** Support rooms / facilities that are partially available for lessons like swimming pools or gyms that are limited available to school classes or school classes that are limited available to a specific room.
+- **Dedicated Rooms:** Support rooms / facilities that are dedicated to a specific subject or school class.
+- **Subject Room Relationships:** Signify which subjects can be taught in which rooms.
