@@ -38,6 +38,9 @@ dependencies {
 	implementation("org.flywaydb:flyway-database-postgresql")
 	runtimeOnly("org.postgresql:postgresql")
 
+	// Timefold Solver
+	implementation("ai.timefold.solver:timefold-solver-spring-boot-starter:1.28.0")
+
 	// Testing
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -46,6 +49,9 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:junit-jupiter")
 	testImplementation("org.testcontainers:postgresql")
+
+	// Timefold Solver Test
+	testImplementation("ai.timefold.solver:timefold-solver-test:1.28.0")
 }
 
 tasks.withType<Test> {

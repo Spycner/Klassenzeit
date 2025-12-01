@@ -56,7 +56,6 @@ Tools configured:
 - **PMD**: Code smell detection
 - **JaCoCo**: Coverage reports
 
-**IMPORTANT**: Always run `./gradlew check` after adding or modifying code to ensure all quality checks pass before committing. Run it in the background (`> gradle-check.log 2>&1 &`) to avoid blocking the session. Wait at least 30 seconds before the first status check, then check every 30-60 seconds until complete. Do not poll more frequently to avoid wasting tokens.
 
 ## Architecture
 

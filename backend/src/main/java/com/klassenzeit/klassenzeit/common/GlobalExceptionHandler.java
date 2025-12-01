@@ -68,6 +68,25 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
   }
 
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<Map<String, Object>> handleIllegalState(IllegalStateException ex) {
+    // Distinguish between conflict (already running) and bad request (no solution)
+    String message = ex.getMessage();
+    boolean isConflict =
+        message != null
+            && (message.contains("already running") || message.contains("still running"));
+
+    HttpStatus status = isConflict ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+    String errorType = isConflict ? "Conflict" : "Bad Request";
+
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("timestamp", Instant.now());
+    body.put("status", status.value());
+    body.put("error", errorType);
+    body.put("message", message);
+    return ResponseEntity.status(status).body(body);
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Map<String, Object>> handleValidationErrors(
       MethodArgumentNotValidException ex) {

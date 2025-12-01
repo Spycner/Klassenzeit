@@ -28,14 +28,6 @@ Build out the full frontend application with data management pages:
 
 ### Backend Timetabling Solver (Timefold)
 
-Implement constraint-based automatic schedule generation:
-
-10. [B-010: Timefold Planning Domain Model](todo/backend/B-010-scheduling-constraints-model.md)
-11. [B-011: Timefold Constraint Definitions](todo/backend/B-011-timetabling-algorithm.md)
-    - Depends on: B-010
-12. [B-012: Timefold Solver Service & API](todo/backend/B-012-schedule-validation.md)
-    - Depends on: B-010, B-011
-
 ---
 
 ## Polish & Enhancement
@@ -65,9 +57,8 @@ These can be mixed in as needed while building core features:
 
 ### Phase: Solver UI (after core frontend + backend solver)
 
-- Solver controls UI (start/stop solving, progress indicator)
-- Solution review and apply workflow
-- Constraint violation visualization
+- [F-020: Solver UI Components](todo/frontend/F-020-solver-ui.md)
+  - Depends on: F-019 (done), F-017
 
 ---
 
@@ -87,3 +78,5 @@ Not tracked as tasks yet. Create task files when ready to work on these:
 - Dedicated Rooms: Support rooms dedicated to a specific subject or class
 - Subject Room Relationships: Signify which subjects can be taught in which rooms
 - Advanced Monitoring: Grafana + Prometheus, centralized logging, Sentry
+- Interactive solving: i.e. user can make manual changes to the schedule and the solver will automatically verify and update the schedule, based on constraints and preferences.
+- Copy ui from claude / anthropic for tasteful frontend.

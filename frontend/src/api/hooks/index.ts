@@ -44,6 +44,14 @@ export {
   useSchools,
   useUpdateSchool,
 } from "./use-schools";
+// Solver hooks
+export {
+  useApplySolution,
+  useSolution,
+  useSolverStatus,
+  useStartSolving,
+  useStopSolving,
+} from "./use-solver";
 // Subject hooks
 export {
   useCreateSubject,
