@@ -2,12 +2,9 @@ import { expect, test } from "@playwright/test";
 import { API_BASE } from "./config";
 
 test.describe("Schools API", () => {
-  let createdSchoolId: string;
-
   test("GET /schools - should return list of schools", async ({ request }) => {
     const response = await request.get(`${API_BASE}/schools`);
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const schools = await response.json();
@@ -37,7 +34,6 @@ test.describe("Schools API", () => {
       data: newSchool,
     });
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(201);
 
     const school = await response.json();
@@ -50,8 +46,8 @@ test.describe("Schools API", () => {
     expect(school.createdAt).toBeDefined();
     expect(school.updatedAt).toBeDefined();
 
-    // Store for subsequent tests
-    createdSchoolId = school.id;
+    // Cleanup
+    await request.delete(`${API_BASE}/schools/${school.id}`);
   });
 
   test("GET /schools/{id} - should return school details", async ({
@@ -74,7 +70,6 @@ test.describe("Schools API", () => {
     // Then get it by ID
     const response = await request.get(`${API_BASE}/schools/${created.id}`);
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const school = await response.json();
@@ -112,7 +107,6 @@ test.describe("Schools API", () => {
       data: updateData,
     });
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const updated = await response.json();
@@ -142,7 +136,6 @@ test.describe("Schools API", () => {
     // Delete it
     const response = await request.delete(`${API_BASE}/schools/${created.id}`);
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(204);
 
     // Verify it's gone
@@ -162,7 +155,6 @@ test.describe("Schools API", () => {
       data: invalidSchool,
     });
 
-    expect(response.ok()).toBeFalsy();
     expect(response.status()).toBe(400);
   });
 
@@ -172,7 +164,85 @@ test.describe("Schools API", () => {
     const fakeId = "00000000-0000-0000-0000-000000000000";
     const response = await request.get(`${API_BASE}/schools/${fakeId}`);
 
-    expect(response.ok()).toBeFalsy();
     expect(response.status()).toBe(404);
+  });
+
+  test.describe("Boundary Conditions", () => {
+    test("should reject empty school name", async ({ request }) => {
+      const response = await request.post(`${API_BASE}/schools`, {
+        data: {
+          name: "",
+          slug: `empty-name-${Date.now()}`,
+          schoolType: "Gymnasium",
+          minGrade: 5,
+          maxGrade: 13,
+        },
+      });
+
+      // Backend should reject - either 400 (validation) or 500 (constraint violation)
+      expect([400, 500]).toContain(response.status());
+    });
+
+    test("should handle unicode in school name", async ({ request }) => {
+      const response = await request.post(`${API_BASE}/schools`, {
+        data: {
+          name: `Ecole Muller Beijing ${Date.now()}`,
+          slug: `unicode-test-${Date.now()}`,
+          schoolType: "Gymnasium",
+          minGrade: 5,
+          maxGrade: 13,
+        },
+      });
+
+      expect(response.status()).toBe(201);
+      const school = await response.json();
+      expect(school.name).toContain("Muller");
+
+      // Cleanup
+      await request.delete(`${API_BASE}/schools/${school.id}`);
+    });
+
+    test("should handle special characters in school name", async ({
+      request,
+    }) => {
+      const response = await request.post(`${API_BASE}/schools`, {
+        data: {
+          name: `O'Brien-Smith Academy ${Date.now()}`,
+          slug: `special-chars-${Date.now()}`,
+          schoolType: "Gymnasium",
+          minGrade: 5,
+          maxGrade: 13,
+        },
+      });
+
+      expect(response.status()).toBe(201);
+      const school = await response.json();
+      expect(school.name).toContain("O'Brien-Smith");
+
+      // Cleanup
+      await request.delete(`${API_BASE}/schools/${school.id}`);
+    });
+
+    test("should safely handle SQL injection in name", async ({ request }) => {
+      const response = await request.post(`${API_BASE}/schools`, {
+        data: {
+          name: `Test'; DROP TABLE schools; -- ${Date.now()}`,
+          slug: `sql-test-${Date.now()}`,
+          schoolType: "Gymnasium",
+          minGrade: 5,
+          maxGrade: 13,
+        },
+      });
+
+      // Either creates safely or rejects - both are acceptable
+      if (response.status() === 201) {
+        const school = await response.json();
+        // Verify string was stored safely (not executed as SQL)
+        expect(school.name).toContain("DROP TABLE");
+        await request.delete(`${API_BASE}/schools/${school.id}`);
+      } else {
+        expect(response.status()).toBe(400);
+      }
+    });
   });
 });

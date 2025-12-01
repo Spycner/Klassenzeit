@@ -31,7 +31,6 @@ test.describe("Rooms API", () => {
   }) => {
     const response = await request.get(`${API_BASE}/schools/${schoolId}/rooms`);
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const rooms = await response.json();
@@ -55,7 +54,6 @@ test.describe("Rooms API", () => {
       }
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(201);
 
     const room = await response.json();
@@ -91,7 +89,6 @@ test.describe("Rooms API", () => {
       `${API_BASE}/schools/${schoolId}/rooms/${created.id}`
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const room = await response.json();
@@ -131,7 +128,6 @@ test.describe("Rooms API", () => {
       }
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const updated = await response.json();
@@ -163,7 +159,6 @@ test.describe("Rooms API", () => {
       `${API_BASE}/schools/${schoolId}/rooms/${created.id}`
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(204);
 
     // Verify soft delete - room still exists but is inactive
@@ -190,7 +185,120 @@ test.describe("Rooms API", () => {
       }
     );
 
-    expect(response.ok()).toBeFalsy();
     expect(response.status()).toBe(400);
+  });
+
+  test.describe("Boundary Conditions", () => {
+    test("should reject empty room name", async ({ request }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/rooms`,
+        {
+          data: {
+            name: "",
+            capacity: 20,
+          },
+        }
+      );
+
+      // Backend should reject - either 400 (validation) or 500 (constraint violation)
+      expect([400, 500]).toContain(response.status());
+    });
+
+    test("should reject negative capacity", async ({ request }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/rooms`,
+        {
+          data: {
+            name: "Negative Capacity Room",
+            capacity: -5,
+          },
+        }
+      );
+
+      expect(response.status()).toBe(400);
+    });
+
+    test("should accept capacity of 1", async ({ request }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/rooms`,
+        {
+          data: {
+            name: "Tiny Room",
+            capacity: 1,
+          },
+        }
+      );
+
+      expect(response.status()).toBe(201);
+      const room = await response.json();
+      expect(room.capacity).toBe(1);
+
+      // Cleanup
+      await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`);
+    });
+
+    test("should handle special characters in room name", async ({
+      request,
+    }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/rooms`,
+        {
+          data: {
+            name: "Room #101 (Main)",
+            capacity: 30,
+          },
+        }
+      );
+
+      expect(response.status()).toBe(201);
+      const room = await response.json();
+      expect(room.name).toBe("Room #101 (Main)");
+
+      // Cleanup
+      await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`);
+    });
+
+    test("should handle unicode in room name", async ({ request }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/rooms`,
+        {
+          data: {
+            name: "Horsaal A",
+            building: "Gebaude Ost",
+            capacity: 100,
+          },
+        }
+      );
+
+      expect(response.status()).toBe(201);
+      const room = await response.json();
+      expect(room.name).toContain("Horsaal");
+
+      // Cleanup
+      await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`);
+    });
+
+    test("should safely handle SQL injection in room name", async ({
+      request,
+    }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/rooms`,
+        {
+          data: {
+            name: "'; DROP TABLE rooms; --",
+            capacity: 20,
+          },
+        }
+      );
+
+      // Either creates safely or rejects - both are acceptable
+      if (response.status() === 201) {
+        const room = await response.json();
+        expect(room.name).toContain("DROP TABLE");
+        await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`);
+      } else {
+        expect(response.status()).toBe(400);
+      }
+    });
   });
 });

@@ -33,7 +33,6 @@ test.describe("Subjects API", () => {
       `${API_BASE}/schools/${schoolId}/subjects`
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const subjects = await response.json();
@@ -56,7 +55,6 @@ test.describe("Subjects API", () => {
       }
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(201);
 
     const subject = await response.json();
@@ -92,7 +90,6 @@ test.describe("Subjects API", () => {
       `${API_BASE}/schools/${schoolId}/subjects/${created.id}`
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const subject = await response.json();
@@ -133,7 +130,6 @@ test.describe("Subjects API", () => {
       }
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const updated = await response.json();
@@ -167,7 +163,6 @@ test.describe("Subjects API", () => {
       `${API_BASE}/schools/${schoolId}/subjects/${created.id}`
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(204);
 
     // Verify it's gone
@@ -175,5 +170,106 @@ test.describe("Subjects API", () => {
       `${API_BASE}/schools/${schoolId}/subjects/${created.id}`
     );
     expect(getResponse.status()).toBe(404);
+  });
+
+  test.describe("Boundary Conditions", () => {
+    test("should reject empty subject name", async ({ request }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/subjects`,
+        {
+          data: {
+            name: "",
+            abbreviation: "EMP",
+          },
+        }
+      );
+
+      // Backend should reject - either 400 (validation) or 500 (constraint violation)
+      expect([400, 500]).toContain(response.status());
+    });
+
+    test("should reject empty abbreviation", async ({ request }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/subjects`,
+        {
+          data: {
+            name: "Test Subject",
+            abbreviation: "",
+          },
+        }
+      );
+
+      // Backend should reject - either 400 (validation) or 500 (constraint violation)
+      expect([400, 500]).toContain(response.status());
+    });
+
+    test("should handle unicode in subject name", async ({ request }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/subjects`,
+        {
+          data: {
+            name: "Franzosisch",
+            abbreviation: "FR",
+          },
+        }
+      );
+
+      expect(response.status()).toBe(201);
+      const subject = await response.json();
+      expect(subject.name).toContain("Franz");
+
+      // Cleanup
+      await request.delete(
+        `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`
+      );
+    });
+
+    test("should handle special characters in subject name", async ({
+      request,
+    }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/subjects`,
+        {
+          data: {
+            name: "Art & Design",
+            abbreviation: "AD",
+          },
+        }
+      );
+
+      expect(response.status()).toBe(201);
+      const subject = await response.json();
+      expect(subject.name).toBe("Art & Design");
+
+      // Cleanup
+      await request.delete(
+        `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`
+      );
+    });
+
+    test("should safely handle SQL injection in subject name", async ({
+      request,
+    }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/subjects`,
+        {
+          data: {
+            name: "'; DROP TABLE subjects; --",
+            abbreviation: "SQL",
+          },
+        }
+      );
+
+      // Either creates safely or rejects - both are acceptable
+      if (response.status() === 201) {
+        const subject = await response.json();
+        expect(subject.name).toContain("DROP TABLE");
+        await request.delete(
+          `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`
+        );
+      } else {
+        expect(response.status()).toBe(400);
+      }
+    });
   });
 });

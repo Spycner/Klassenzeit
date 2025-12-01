@@ -49,7 +49,6 @@ test.describe("School Classes API", () => {
       `${API_BASE}/schools/${schoolId}/classes`
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const classes = await response.json();
@@ -73,7 +72,6 @@ test.describe("School Classes API", () => {
       }
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(201);
 
     const schoolClass = await response.json();
@@ -112,7 +110,6 @@ test.describe("School Classes API", () => {
       `${API_BASE}/schools/${schoolId}/classes/${created.id}`
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const schoolClass = await response.json();
@@ -154,7 +151,6 @@ test.describe("School Classes API", () => {
       }
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
 
     const updated = await response.json();
@@ -187,7 +183,6 @@ test.describe("School Classes API", () => {
       `${API_BASE}/schools/${schoolId}/classes/${created.id}`
     );
 
-    expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(204);
 
     // Verify soft delete - class still exists but is inactive
@@ -214,7 +209,125 @@ test.describe("School Classes API", () => {
       }
     );
 
-    expect(response.ok()).toBeFalsy();
     expect(response.status()).toBe(400);
+  });
+
+  test.describe("Boundary Conditions", () => {
+    test("should reject empty class name", async ({ request }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/classes`,
+        {
+          data: {
+            name: "",
+            gradeLevel: 5,
+          },
+        }
+      );
+
+      // Backend should reject - either 400 (validation) or 500 (constraint violation)
+      expect([400, 500]).toContain(response.status());
+    });
+
+    test("should handle unicode in class name", async ({ request }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/classes`,
+        {
+          data: {
+            name: "Klasse 5a",
+            gradeLevel: 5,
+          },
+        }
+      );
+
+      expect(response.status()).toBe(201);
+      const schoolClass = await response.json();
+      expect(schoolClass.name).toBe("Klasse 5a");
+
+      // Cleanup
+      await request.delete(
+        `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`
+      );
+    });
+
+    test("should reject grade level below minimum", async ({ request }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/classes`,
+        {
+          data: {
+            name: "Below Min",
+            gradeLevel: 0,
+          },
+        }
+      );
+
+      expect(response.status()).toBe(400);
+    });
+
+    test("should accept grade level at school minimum", async ({ request }) => {
+      // School has minGrade: 5
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/classes`,
+        {
+          data: {
+            name: "At Min Grade",
+            gradeLevel: 5,
+          },
+        }
+      );
+
+      expect(response.status()).toBe(201);
+      const schoolClass = await response.json();
+
+      // Cleanup
+      await request.delete(
+        `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`
+      );
+    });
+
+    test("should accept grade level at school maximum", async ({ request }) => {
+      // School has maxGrade: 13
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/classes`,
+        {
+          data: {
+            name: "At Max Grade",
+            gradeLevel: 13,
+          },
+        }
+      );
+
+      expect(response.status()).toBe(201);
+      const schoolClass = await response.json();
+
+      // Cleanup
+      await request.delete(
+        `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`
+      );
+    });
+
+    test("should safely handle SQL injection in class name", async ({
+      request,
+    }) => {
+      const response = await request.post(
+        `${API_BASE}/schools/${schoolId}/classes`,
+        {
+          data: {
+            name: "'; DROP TABLE classes; --",
+            gradeLevel: 5,
+          },
+        }
+      );
+
+      // Either creates safely or rejects - both are acceptable
+      if (response.status() === 201) {
+        const schoolClass = await response.json();
+        expect(schoolClass.name).toContain("DROP TABLE");
+        await request.delete(
+          `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`
+        );
+      } else {
+        expect(response.status()).toBe(400);
+      }
+    });
   });
 });

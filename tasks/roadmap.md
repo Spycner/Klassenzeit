@@ -8,9 +8,6 @@ Ordered by priority. Move tasks to `doing/` when starting work, then to `done/` 
 2. [F-002: Implement Input Validation](todo/frontend/F-002-implement-input-validation.md)
 3. [F-003: Add JSDoc Documentation](todo/frontend/F-003-add-jsdoc-documentation.md)
 4. [F-004: Verify Bundle Size](todo/frontend/F-004-verify-bundle-size.md)
-5. [G-001: Extract Hardcoded API URLs](todo/global/G-001-extract-hardcoded-api-urls.md)
-6. [G-002: Document Env Variables](todo/global/G-002-document-env-variables.md)
-   - Depends on: G-001
 
 ## Medium Priority
 
