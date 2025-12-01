@@ -227,6 +227,65 @@ This document outlines the next development steps for Klassenzeit, organized by 
   - Example requests/responses
 - **Access:** Swagger UI at `/swagger-ui.html`, OpenAPI spec at `/v3/api-docs`
 
+### 4.4 Actuator & Health Checks
+- [ ] Add Spring Boot Actuator for production readiness
+- **Dependencies:**
+  ```kotlin
+  implementation("org.springframework.boot:spring-boot-starter-actuator")
+  ```
+- **Configuration in `application.yaml`:**
+  ```yaml
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health
+    endpoint:
+      health:
+        show-details: always  # shows db, diskSpace, flyway status
+  ```
+- **Endpoints:**
+  - `/actuator/health` - Application and dependency health (DB, disk)
+- **Note:** Required for CI to detect when backend is ready during E2E tests
+
+### 4.5 Logging
+- [ ] Configure structured logging for backend and frontend
+
+**Backend (Spring Boot):**
+- **Default:** Logback (already included)
+- **Usage in code:**
+  ```java
+  private static final Logger log = LoggerFactory.getLogger(MyService.class);
+  log.info("Processing lesson {}", lessonId);
+  log.error("Failed to save", exception);
+  ```
+- **Configuration in `application.yaml`:**
+  ```yaml
+  logging:
+    level:
+      com.klassenzeit: DEBUG
+      org.hibernate.SQL: DEBUG  # see SQL queries (dev only)
+  ```
+- **For production (structured JSON logs):**
+  ```kotlin
+  implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+  ```
+
+**Frontend (React):**
+- **Error tracking options:**
+  - Sentry (`@sentry/react`) - Error boundaries, performance monitoring
+  - LogRocket - Session replay + error tracking
+- **Basic setup with Sentry:**
+  ```bash
+  npm install @sentry/react
+  ```
+  ```typescript
+  // main.tsx
+  Sentry.init({ dsn: "...", environment: import.meta.env.MODE });
+  ```
+- **Error boundary:** Wrap app to catch React errors gracefully
+- **Console logging:** Use sparingly in dev, strip in production builds
+
 ---
 
 ## Future Considerations (Not in MVP)
@@ -242,4 +301,4 @@ This document outlines the next development steps for Klassenzeit, organized by 
 - **Partial Rooms:** Support rooms / facilities that are partially available for lessons like swimming pools or gyms that are limited available to school classes or school classes that are limited available to a specific room.
 - **Dedicated Rooms:** Support rooms / facilities that are dedicated to a specific subject or school class.
 - **Subject Room Relationships:** Signify which subjects can be taught in which rooms.
-- **Logging & Monitoring:** Add logging and monitoring for the application.
+- **Advanced Monitoring:** Grafana + Prometheus for metrics dashboards, centralized logging with Loki/ELK stack, Sentry for error tracking. Consider when production traffic warrants the operational overhead.
