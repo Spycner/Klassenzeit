@@ -29,6 +29,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 
+	// API Documentation
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
+
 	// Database and JPA
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.flywaydb:flyway-core")

@@ -54,8 +54,8 @@ This document outlines the next development steps for Klassenzeit, organized by 
   - `DELETE /api/schools/{schoolId}/teachers/{id}` - Soft delete teacher
 
 ### 1.3 Development Seed Data
-- [ ] Create Flyway migration with sample data for local development
-- **File:** `backend/src/main/resources/db/migration/V5__seed_dev_data.sql`
+- [x] Create Flyway migration with sample data for local development
+- **File:** `backend/src/main/resources/db/seed/V100__seed_dev_data.sql`
 - **Contents:**
   - One sample school ("Demo Grundschule")
   - One school year (2024/2025) with two terms
@@ -64,7 +64,8 @@ This document outlines the next development steps for Klassenzeit, organized by 
   - Sample rooms (Klassenräume, Turnhalle, Musikraum)
   - Sample school classes (1a, 1b, 2a, 2b, 3a, 3b, 4a, 4b)
   - Time slot grid (Monday-Friday, periods 1-6)
-- **Note:** Use a Spring profile (`dev`) to conditionally apply this migration only in development.
+  - Teacher availability (blocked/preferred time slots for part-time teachers)
+- **Note:** Seed data is in a separate `db/seed/` folder and only loaded in dev profile via Flyway locations config.
 
 ---
 
@@ -216,20 +217,19 @@ This document outlines the next development steps for Klassenzeit, organized by 
 - **Recommended for v1:** Explicit approach with service-layer validation
 
 ### 4.3 API Documentation
-- [ ] Add SpringDoc for automatic OpenAPI generation
-- **Dependencies:**
+- [x] Add SpringDoc for automatic OpenAPI generation
+- **Dependencies added in `build.gradle.kts`:**
   ```kotlin
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.x.x")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
   ```
-- **Configuration:**
+- **Configuration in `application.yaml`:**
   - API title, description, version
-  - Security scheme documentation
-  - Example requests/responses
+  - Swagger UI sorting options
 - **Access:** Swagger UI at `/swagger-ui.html`, OpenAPI spec at `/v3/api-docs`
 
 ### 4.4 Actuator & Health Checks
-- [ ] Add Spring Boot Actuator for production readiness
-- **Dependencies:**
+- [x] Add Spring Boot Actuator for production readiness
+- **Dependencies added in `build.gradle.kts`:**
   ```kotlin
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   ```
@@ -242,7 +242,7 @@ This document outlines the next development steps for Klassenzeit, organized by 
           include: health
     endpoint:
       health:
-        show-details: always  # shows db, diskSpace, flyway status
+        show-details: never
   ```
 - **Endpoints:**
   - `/actuator/health` - Application and dependency health (DB, disk)

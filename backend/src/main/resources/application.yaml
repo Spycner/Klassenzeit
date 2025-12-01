@@ -31,6 +31,19 @@ management:
     health:
       show-details: never
 
+# OpenAPI / Swagger UI configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  info:
+    title: Klassenzeit API
+    description: Timetabler application for schools
+    version: 0.0.1-SNAPSHOT
+
 ---
 # Development profile
 spring:
@@ -40,6 +53,9 @@ spring:
 
   jpa:
     show-sql: true
+
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed
 
 ---
 # Test profile
