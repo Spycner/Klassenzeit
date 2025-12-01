@@ -13,4 +13,5 @@ public record UpdateTeacherRequest(
     @Size(max = 5) String abbreviation,
     @Min(1) @Max(50) Integer maxHoursPerWeek,
     Boolean isPartTime,
-    Boolean isActive) {}
+    Boolean isActive,
+    Long version) {}

@@ -111,7 +111,8 @@ public class TimeSlotService {
         t.isBreak(),
         t.getLabel(),
         t.getCreatedAt(),
-        t.getUpdatedAt());
+        t.getUpdatedAt(),
+        t.getVersion());
   }
 
   private TimeSlotSummary toSummary(TimeSlot t) {

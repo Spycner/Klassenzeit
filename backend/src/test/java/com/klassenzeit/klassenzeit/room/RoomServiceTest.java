@@ -140,7 +140,8 @@ class RoomServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateRoomRequest request = new UpdateRoomRequest("Room 102", "Building B", 40, null, false);
+      UpdateRoomRequest request =
+          new UpdateRoomRequest("Room 102", "Building B", 40, null, false, null);
 
       RoomResponse result = roomService.update(school.getId(), room.getId(), request);
 
@@ -162,7 +163,7 @@ class RoomServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateRoomRequest request = new UpdateRoomRequest("Room 102", null, null, null, null);
+      UpdateRoomRequest request = new UpdateRoomRequest("Room 102", null, null, null, null, null);
 
       RoomResponse result = roomService.update(school.getId(), room.getId(), request);
 
@@ -174,7 +175,7 @@ class RoomServiceTest extends AbstractIntegrationTest {
     @Test
     void throwsWhenRoomNotFound() {
       UUID nonExistentId = UUID.randomUUID();
-      UpdateRoomRequest request = new UpdateRoomRequest("Updated", null, null, null, null);
+      UpdateRoomRequest request = new UpdateRoomRequest("Updated", null, null, null, null, null);
 
       assertThatThrownBy(() -> roomService.update(school.getId(), nonExistentId, request))
           .isInstanceOf(EntityNotFoundException.class);

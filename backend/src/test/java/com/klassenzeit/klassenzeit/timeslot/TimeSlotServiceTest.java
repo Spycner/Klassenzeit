@@ -159,7 +159,7 @@ class TimeSlotServiceTest extends AbstractIntegrationTest {
 
       UpdateTimeSlotRequest request =
           new UpdateTimeSlotRequest(
-              (short) 1, (short) 2, LocalTime.of(9, 0), LocalTime.of(9, 45), true, "Break");
+              (short) 1, (short) 2, LocalTime.of(9, 0), LocalTime.of(9, 45), true, "Break", null);
 
       TimeSlotResponse result = timeSlotService.update(school.getId(), timeSlot.getId(), request);
 
@@ -184,7 +184,7 @@ class TimeSlotServiceTest extends AbstractIntegrationTest {
       entityManager.clear();
 
       UpdateTimeSlotRequest request =
-          new UpdateTimeSlotRequest(null, (short) 2, null, null, null, null);
+          new UpdateTimeSlotRequest(null, (short) 2, null, null, null, null, null);
 
       TimeSlotResponse result = timeSlotService.update(school.getId(), timeSlot.getId(), request);
 
@@ -197,7 +197,7 @@ class TimeSlotServiceTest extends AbstractIntegrationTest {
     void throwsWhenTimeSlotNotFound() {
       UUID nonExistentId = UUID.randomUUID();
       UpdateTimeSlotRequest request =
-          new UpdateTimeSlotRequest(null, (short) 2, null, null, null, null);
+          new UpdateTimeSlotRequest(null, (short) 2, null, null, null, null, null);
 
       assertThatThrownBy(() -> timeSlotService.update(school.getId(), nonExistentId, request))
           .isInstanceOf(EntityNotFoundException.class);

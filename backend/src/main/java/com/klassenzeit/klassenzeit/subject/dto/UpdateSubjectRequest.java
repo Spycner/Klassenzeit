@@ -6,4 +6,5 @@ import jakarta.validation.constraints.Size;
 public record UpdateSubjectRequest(
     @Size(max = 100) String name,
     @Size(max = 10) String abbreviation,
-    @Size(max = 7) String color) {}
+    @Size(max = 7) String color,
+    Long version) {}

@@ -104,7 +104,8 @@ public class RoomService {
         r.getFeatures(),
         r.isActive(),
         r.getCreatedAt(),
-        r.getUpdatedAt());
+        r.getUpdatedAt(),
+        r.getVersion());
   }
 
   private RoomSummary toSummary(Room r) {

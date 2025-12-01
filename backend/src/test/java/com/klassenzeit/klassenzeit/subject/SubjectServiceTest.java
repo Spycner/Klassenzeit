@@ -173,7 +173,7 @@ class SubjectServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", "MTH", "#FF0000");
+      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", "MTH", "#FF0000", null);
 
       SubjectResponse result = subjectService.update(school.getId(), subject.getId(), request);
 
@@ -194,7 +194,7 @@ class SubjectServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", null, null);
+      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", null, null, null);
 
       SubjectResponse result = subjectService.update(school.getId(), subject.getId(), request);
 
@@ -206,7 +206,7 @@ class SubjectServiceTest extends AbstractIntegrationTest {
     @Test
     void throwsWhenSubjectNotFound() {
       UUID nonExistentId = UUID.randomUUID();
-      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", null, null);
+      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", null, null, null);
 
       assertThatThrownBy(() -> subjectService.update(school.getId(), nonExistentId, request))
           .isInstanceOf(EntityNotFoundException.class);
@@ -219,7 +219,7 @@ class SubjectServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateSubjectRequest request = new UpdateSubjectRequest("Updated", null, null);
+      UpdateSubjectRequest request = new UpdateSubjectRequest("Updated", null, null, null);
 
       assertThatThrownBy(() -> subjectService.update(school.getId(), subject.getId(), request))
           .isInstanceOf(EntityNotFoundException.class);

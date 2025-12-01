@@ -362,7 +362,8 @@ class LessonServiceTest extends AbstractIntegrationTest {
               newSubject.getId(),
               newTimeSlot.getId(),
               newRoom.getId(),
-              WeekPattern.B);
+              WeekPattern.B,
+              null);
 
       LessonResponse result =
           lessonService.update(school.getId(), term.getId(), lesson.getId(), request);
@@ -387,7 +388,7 @@ class LessonServiceTest extends AbstractIntegrationTest {
       entityManager.clear();
 
       UpdateLessonRequest request =
-          new UpdateLessonRequest(null, null, null, null, null, WeekPattern.A);
+          new UpdateLessonRequest(null, null, null, null, null, WeekPattern.A, null);
 
       LessonResponse result =
           lessonService.update(school.getId(), term.getId(), lesson.getId(), request);
@@ -404,7 +405,7 @@ class LessonServiceTest extends AbstractIntegrationTest {
     void throwsWhenLessonNotFound() {
       UUID nonExistentId = UUID.randomUUID();
       UpdateLessonRequest request =
-          new UpdateLessonRequest(null, null, null, null, null, WeekPattern.A);
+          new UpdateLessonRequest(null, null, null, null, null, WeekPattern.A, null);
 
       assertThatThrownBy(
               () -> lessonService.update(school.getId(), term.getId(), nonExistentId, request))

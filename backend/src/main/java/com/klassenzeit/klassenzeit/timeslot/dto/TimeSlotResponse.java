@@ -14,4 +14,5 @@ public record TimeSlotResponse(
     Boolean isBreak,
     String label,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    Long version) {}

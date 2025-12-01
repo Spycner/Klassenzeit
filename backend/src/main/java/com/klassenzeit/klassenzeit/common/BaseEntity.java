@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -23,6 +24,10 @@ public abstract class BaseEntity {
 
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
+
+  @Version
+  @Column(name = "version", nullable = false)
+  private Long version;
 
   @PrePersist
   protected void onCreate() {
@@ -49,5 +54,9 @@ public abstract class BaseEntity {
 
   public Instant getUpdatedAt() {
     return updatedAt;
+  }
+
+  public Long getVersion() {
+    return version;
   }
 }

@@ -12,4 +12,5 @@ public record TermResponse(
     LocalDate endDate,
     Boolean isCurrent,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    Long version) {}

@@ -116,7 +116,8 @@ public class TeacherService {
         t.isPartTime(),
         t.isActive(),
         t.getCreatedAt(),
-        t.getUpdatedAt());
+        t.getUpdatedAt(),
+        t.getVersion());
   }
 
   private TeacherSummary toSummary(Teacher t) {

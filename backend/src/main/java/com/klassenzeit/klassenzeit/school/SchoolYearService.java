@@ -100,7 +100,8 @@ public class SchoolYearService {
         sy.getEndDate(),
         sy.isCurrent(),
         sy.getCreatedAt(),
-        sy.getUpdatedAt());
+        sy.getUpdatedAt(),
+        sy.getVersion());
   }
 
   private SchoolYearSummary toSummary(SchoolYear sy) {

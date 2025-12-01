@@ -14,4 +14,5 @@ public record TeacherResponse(
     Boolean isPartTime,
     Boolean isActive,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    Long version) {}

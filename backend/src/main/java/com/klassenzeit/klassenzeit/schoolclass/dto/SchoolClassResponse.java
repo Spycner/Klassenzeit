@@ -13,4 +13,5 @@ public record SchoolClassResponse(
     String classTeacherName,
     Boolean isActive,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    Long version) {}

@@ -4,7 +4,6 @@ Ordered by priority. Move tasks to `doing/` when starting work, then to `done/` 
 
 ## High Priority (Current Sprint)
 
-1. [F-001: Add API Error Handling](todo/frontend/F-001-add-api-error-handling.md)
 2. [F-002: Implement Input Validation](todo/frontend/F-002-implement-input-validation.md)
 3. [F-003: Add JSDoc Documentation](todo/frontend/F-003-add-jsdoc-documentation.md)
 4. [F-004: Verify Bundle Size](todo/frontend/F-004-verify-bundle-size.md)
@@ -14,8 +13,6 @@ Ordered by priority. Move tasks to `doing/` when starting work, then to `done/` 
 7. [B-001: Implement Pagination](todo/backend/B-001-implement-pagination.md)
 8. [F-007: Frontend Pagination](todo/frontend/F-007-frontend-pagination.md)
    - Depends on: B-001
-9. [B-002: Cascading Delete Tests](todo/backend/B-002-cascading-delete-tests.md)
-10. [B-003: Concurrent Operation Handling](todo/backend/B-003-concurrent-operation-handling.md)
 11. [F-005: Request Rate Limiting](todo/frontend/F-005-request-rate-limiting.md)
     - Depends on: F-001
 12. [F-006: React Query Cache Settings](todo/frontend/F-006-react-query-cache-settings.md)

@@ -10,4 +10,5 @@ public record SubjectResponse(
     String abbreviation,
     String color,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    Long version) {}

@@ -196,7 +196,7 @@ class SchoolYearServiceTest extends AbstractIntegrationTest {
 
       UpdateSchoolYearRequest request =
           new UpdateSchoolYearRequest(
-              "2025/2026", LocalDate.of(2025, 8, 1), LocalDate.of(2026, 7, 31), true);
+              "2025/2026", LocalDate.of(2025, 8, 1), LocalDate.of(2026, 7, 31), true, null);
 
       SchoolYearResponse result =
           schoolYearService.update(school.getId(), schoolYear.getId(), request);
@@ -220,7 +220,7 @@ class SchoolYearServiceTest extends AbstractIntegrationTest {
       entityManager.clear();
 
       UpdateSchoolYearRequest request =
-          new UpdateSchoolYearRequest("Updated Name", null, null, null);
+          new UpdateSchoolYearRequest("Updated Name", null, null, null, null);
 
       SchoolYearResponse result =
           schoolYearService.update(school.getId(), schoolYear.getId(), request);
@@ -234,7 +234,8 @@ class SchoolYearServiceTest extends AbstractIntegrationTest {
     @Test
     void throwsWhenSchoolYearNotFound() {
       UUID nonExistentId = UUID.randomUUID();
-      UpdateSchoolYearRequest request = new UpdateSchoolYearRequest("Updated", null, null, null);
+      UpdateSchoolYearRequest request =
+          new UpdateSchoolYearRequest("Updated", null, null, null, null);
 
       assertThatThrownBy(() -> schoolYearService.update(school.getId(), nonExistentId, request))
           .isInstanceOf(EntityNotFoundException.class);
@@ -247,7 +248,8 @@ class SchoolYearServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateSchoolYearRequest request = new UpdateSchoolYearRequest("Updated", null, null, null);
+      UpdateSchoolYearRequest request =
+          new UpdateSchoolYearRequest("Updated", null, null, null, null);
 
       assertThatThrownBy(
               () -> schoolYearService.update(school.getId(), schoolYear.getId(), request))
