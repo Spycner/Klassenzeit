@@ -1,0 +1,219 @@
+import { expect, test } from "@playwright/test";
+
+const API_BASE = "http://localhost:8080/api";
+
+test.describe("School Classes API", () => {
+  let schoolId: string;
+  let teacherId: string;
+
+  test.beforeAll(async ({ request }) => {
+    // Create a school to use for class tests
+    const schoolResponse = await request.post(`${API_BASE}/schools`, {
+      data: {
+        name: `Classes Test School ${Date.now()}`,
+        slug: `classes-test-${Date.now()}`,
+        schoolType: "Gymnasium",
+        minGrade: 5,
+        maxGrade: 13,
+      },
+    });
+    const school = await schoolResponse.json();
+    schoolId = school.id;
+
+    // Create a teacher for class teacher assignment
+    const teacherResponse = await request.post(
+      `${API_BASE}/schools/${schoolId}/teachers`,
+      {
+        data: {
+          firstName: "Class",
+          lastName: "Teacher",
+          email: `class.teacher.${Date.now()}@school.com`,
+          abbreviation: "CT",
+        },
+      }
+    );
+    const teacher = await teacherResponse.json();
+    teacherId = teacher.id;
+  });
+
+  test.afterAll(async ({ request }) => {
+    // Cleanup the test school (cascades to teachers and classes)
+    if (schoolId) {
+      await request.delete(`${API_BASE}/schools/${schoolId}`);
+    }
+  });
+
+  test("GET /schools/{schoolId}/classes - should return list of classes", async ({
+    request,
+  }) => {
+    const response = await request.get(
+      `${API_BASE}/schools/${schoolId}/classes`
+    );
+
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
+
+    const classes = await response.json();
+    expect(Array.isArray(classes)).toBeTruthy();
+  });
+
+  test("POST /schools/{schoolId}/classes - should create a new class", async ({
+    request,
+  }) => {
+    const newClass = {
+      name: "5a",
+      gradeLevel: 5,
+      studentCount: 25,
+      classTeacherId: teacherId,
+    };
+
+    const response = await request.post(
+      `${API_BASE}/schools/${schoolId}/classes`,
+      {
+        data: newClass,
+      }
+    );
+
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(201);
+
+    const schoolClass = await response.json();
+    expect(schoolClass.id).toBeDefined();
+    expect(schoolClass.name).toBe(newClass.name);
+    expect(schoolClass.gradeLevel).toBe(newClass.gradeLevel);
+    expect(schoolClass.studentCount).toBe(newClass.studentCount);
+    expect(schoolClass.classTeacherId).toBe(teacherId);
+    expect(schoolClass.isActive).toBe(true);
+    expect(schoolClass.createdAt).toBeDefined();
+
+    // Cleanup
+    await request.delete(
+      `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`
+    );
+  });
+
+  test("GET /schools/{schoolId}/classes/{id} - should return class details", async ({
+    request,
+  }) => {
+    // Create a class
+    const createResponse = await request.post(
+      `${API_BASE}/schools/${schoolId}/classes`,
+      {
+        data: {
+          name: "6b",
+          gradeLevel: 6,
+          studentCount: 28,
+        },
+      }
+    );
+    const created = await createResponse.json();
+
+    // Get class details
+    const response = await request.get(
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`
+    );
+
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
+
+    const schoolClass = await response.json();
+    expect(schoolClass.id).toBe(created.id);
+    expect(schoolClass.name).toBe("6b");
+    expect(schoolClass.gradeLevel).toBe(6);
+
+    // Cleanup
+    await request.delete(
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`
+    );
+  });
+
+  test("PUT /schools/{schoolId}/classes/{id} - should update a class", async ({
+    request,
+  }) => {
+    // Create a class
+    const createResponse = await request.post(
+      `${API_BASE}/schools/${schoolId}/classes`,
+      {
+        data: {
+          name: "7a",
+          gradeLevel: 7,
+        },
+      }
+    );
+    const created = await createResponse.json();
+
+    // Update the class
+    const response = await request.put(
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`,
+      {
+        data: {
+          name: "7a",
+          gradeLevel: 7,
+          studentCount: 30,
+          classTeacherId: teacherId,
+        },
+      }
+    );
+
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
+
+    const updated = await response.json();
+    expect(updated.studentCount).toBe(30);
+    expect(updated.classTeacherId).toBe(teacherId);
+
+    // Cleanup
+    await request.delete(
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`
+    );
+  });
+
+  test("DELETE /schools/{schoolId}/classes/{id} - should delete a class", async ({
+    request,
+  }) => {
+    // Create a class
+    const createResponse = await request.post(
+      `${API_BASE}/schools/${schoolId}/classes`,
+      {
+        data: {
+          name: "8c",
+          gradeLevel: 8,
+        },
+      }
+    );
+    const created = await createResponse.json();
+
+    // Delete the class
+    const response = await request.delete(
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`
+    );
+
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(204);
+
+    // Verify it's gone
+    const getResponse = await request.get(
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`
+    );
+    expect(getResponse.status()).toBe(404);
+  });
+
+  test("POST /schools/{schoolId}/classes - should validate grade level", async ({
+    request,
+  }) => {
+    const invalidClass = {
+      name: "Invalid",
+      gradeLevel: 15, // Should be 1-13
+    };
+
+    const response = await request.post(
+      `${API_BASE}/schools/${schoolId}/classes`,
+      {
+        data: invalidClass,
+      }
+    );
+
+    expect(response.ok()).toBeFalsy();
+    expect(response.status()).toBe(400);
+  });
+});
