@@ -34,8 +34,6 @@ Build out the full frontend application with data management pages:
 
 These can be mixed in as needed while building core features:
 
-- [F-003: Add JSDoc Documentation](todo/frontend/F-003-add-jsdoc-documentation.md)
-- [F-004: Verify Bundle Size](todo/frontend/F-004-verify-bundle-size.md)
 - [B-001: Implement Pagination](todo/backend/B-001-implement-pagination.md)
 - [F-007: Frontend Pagination](todo/frontend/F-007-frontend-pagination.md) - Depends on: B-001
 - [F-005: Request Rate Limiting](todo/frontend/F-005-request-rate-limiting.md)
