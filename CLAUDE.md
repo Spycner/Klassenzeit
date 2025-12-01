@@ -70,6 +70,9 @@ make test-e2e       # In a third terminal
 
 # Option 2: Interactive mode (auto-starts frontend)
 make test-e2e-ui    # Opens Playwright UI
+
+# API integration tests only (no frontend needed)
+cd e2e && npm run test:api
 ```
 
 ### Coverage Reports
