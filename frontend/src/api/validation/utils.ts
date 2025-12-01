@@ -7,7 +7,7 @@ import { z } from "zod";
 /** Create required string schema with length limits */
 export function requiredString(max: number, fieldName: string) {
   return z
-    .string({ required_error: `${fieldName} is required` })
+    .string({ error: `${fieldName} is required` })
     .min(1, `${fieldName} is required`)
     .max(max, `${fieldName} must be at most ${max} characters`);
 }
@@ -33,7 +33,7 @@ export function optionalEmail(max = 255) {
 /** Integer range schema */
 export function intRange(min: number, max: number, fieldName: string) {
   return z
-    .number({ required_error: `${fieldName} is required` })
+    .number({ error: `${fieldName} is required` })
     .int(`${fieldName} must be a whole number`)
     .min(min, `${fieldName} must be at least ${min}`)
     .max(max, `${fieldName} must be at most ${max}`);
@@ -61,7 +61,7 @@ export function optionalIntRange(min: number, max: number, fieldName: string) {
 /** Required UUID string */
 export function requiredUuid(fieldName: string) {
   return z
-    .string({ required_error: `${fieldName} is required` })
+    .string({ error: `${fieldName} is required` })
     .uuid(`${fieldName} must be a valid UUID`);
 }
 
@@ -73,14 +73,14 @@ export function optionalUuid(fieldName: string) {
 /** Required ISO date string (YYYY-MM-DD) */
 export function requiredDate(fieldName: string) {
   return z
-    .string({ required_error: `${fieldName} is required` })
+    .string({ error: `${fieldName} is required` })
     .regex(/^\d{4}-\d{2}-\d{2}$/, `${fieldName} must be in YYYY-MM-DD format`);
 }
 
 /** Required time string (HH:mm or HH:mm:ss) */
 export function requiredTime(fieldName: string) {
   return z
-    .string({ required_error: `${fieldName} is required` })
+    .string({ error: `${fieldName} is required` })
     .regex(
       /^\d{2}:\d{2}(:\d{2})?$/,
       `${fieldName} must be in HH:mm or HH:mm:ss format`,

@@ -1,5 +1,8 @@
 /**
  * React Query hooks for School Years
+ *
+ * Provides data fetching and mutation hooks for managing school years.
+ * All hooks automatically handle caching, invalidation, and refetching.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +15,12 @@ import type {
 } from "../types";
 import { queryKeys } from "./query-client";
 
-/** Fetch all school years for a school */
+/**
+ * Fetches all school years for a specific school.
+ *
+ * @param schoolId - The unique identifier of the parent school (query is disabled if undefined)
+ * @returns Query result containing an array of school year summaries
+ */
 export function useSchoolYears(schoolId: string | undefined) {
   return useQuery<SchoolYearSummary[]>({
     queryKey: queryKeys.schoolYears.all(schoolId!),
@@ -21,7 +29,13 @@ export function useSchoolYears(schoolId: string | undefined) {
   });
 }
 
-/** Fetch a single school year by ID */
+/**
+ * Fetches a single school year by ID.
+ *
+ * @param schoolId - The unique identifier of the parent school (query is disabled if undefined)
+ * @param id - The unique identifier of the school year (query is disabled if undefined)
+ * @returns Query result containing full school year details
+ */
 export function useSchoolYear(
   schoolId: string | undefined,
   id: string | undefined,
@@ -33,7 +47,13 @@ export function useSchoolYear(
   });
 }
 
-/** Create a new school year */
+/**
+ * Creates a new school year within a school.
+ * On success, automatically invalidates the school years list cache.
+ *
+ * @param schoolId - The unique identifier of the parent school
+ * @returns Mutation object with mutate/mutateAsync functions
+ */
 export function useCreateSchoolYear(schoolId: string) {
   const queryClient = useQueryClient();
 
@@ -48,7 +68,13 @@ export function useCreateSchoolYear(schoolId: string) {
   });
 }
 
-/** Update an existing school year */
+/**
+ * Updates an existing school year.
+ * On success, automatically invalidates both the school years list and detail cache.
+ *
+ * @param schoolId - The unique identifier of the parent school
+ * @returns Mutation object with mutate/mutateAsync functions
+ */
 export function useUpdateSchoolYear(schoolId: string) {
   const queryClient = useQueryClient();
 
@@ -66,7 +92,13 @@ export function useUpdateSchoolYear(schoolId: string) {
   });
 }
 
-/** Delete a school year */
+/**
+ * Deletes a school year and all its associated terms and lessons.
+ * On success, automatically invalidates the school years list cache.
+ *
+ * @param schoolId - The unique identifier of the parent school
+ * @returns Mutation object with mutate/mutateAsync functions
+ */
 export function useDeleteSchoolYear(schoolId: string) {
   const queryClient = useQueryClient();
 

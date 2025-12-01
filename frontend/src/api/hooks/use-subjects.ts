@@ -1,5 +1,8 @@
 /**
  * React Query hooks for Subjects
+ *
+ * Provides data fetching and mutation hooks for managing subjects.
+ * All hooks automatically handle caching, invalidation, and refetching.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +15,12 @@ import type {
 } from "../types";
 import { queryKeys } from "./query-client";
 
-/** Fetch all subjects for a school */
+/**
+ * Fetches all subjects for a specific school.
+ *
+ * @param schoolId - The unique identifier of the parent school (query is disabled if undefined)
+ * @returns Query result containing an array of subject summaries
+ */
 export function useSubjects(schoolId: string | undefined) {
   return useQuery<SubjectSummary[]>({
     queryKey: queryKeys.subjects.all(schoolId!),
@@ -21,7 +29,13 @@ export function useSubjects(schoolId: string | undefined) {
   });
 }
 
-/** Fetch a single subject by ID */
+/**
+ * Fetches a single subject by ID.
+ *
+ * @param schoolId - The unique identifier of the parent school (query is disabled if undefined)
+ * @param id - The unique identifier of the subject (query is disabled if undefined)
+ * @returns Query result containing full subject details
+ */
 export function useSubject(
   schoolId: string | undefined,
   id: string | undefined,
@@ -33,7 +47,13 @@ export function useSubject(
   });
 }
 
-/** Create a new subject */
+/**
+ * Creates a new subject within a school.
+ * On success, automatically invalidates the subjects list cache.
+ *
+ * @param schoolId - The unique identifier of the parent school
+ * @returns Mutation object with mutate/mutateAsync functions
+ */
 export function useCreateSubject(schoolId: string) {
   const queryClient = useQueryClient();
 
@@ -48,7 +68,13 @@ export function useCreateSubject(schoolId: string) {
   });
 }
 
-/** Update an existing subject */
+/**
+ * Updates an existing subject.
+ * On success, automatically invalidates both the subjects list and detail cache.
+ *
+ * @param schoolId - The unique identifier of the parent school
+ * @returns Mutation object with mutate/mutateAsync functions
+ */
 export function useUpdateSubject(schoolId: string) {
   const queryClient = useQueryClient();
 
@@ -66,7 +92,13 @@ export function useUpdateSubject(schoolId: string) {
   });
 }
 
-/** Delete a subject */
+/**
+ * Deletes a subject.
+ * On success, automatically invalidates the subjects list cache.
+ *
+ * @param schoolId - The unique identifier of the parent school
+ * @returns Mutation object with mutate/mutateAsync functions
+ */
 export function useDeleteSubject(schoolId: string) {
   const queryClient = useQueryClient();
 

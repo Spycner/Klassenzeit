@@ -60,8 +60,11 @@ export function withValidation<TInput, TOutput>(
 
 /** Custom error for validation failures */
 export class ValidationError extends Error {
-  constructor(public readonly errors: string[]) {
+  readonly errors: string[];
+
+  constructor(errors: string[]) {
     super(errors[0]);
     this.name = "ValidationError";
+    this.errors = errors;
   }
 }
