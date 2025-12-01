@@ -8,6 +8,8 @@ Ordered by priority. Move tasks to `doing/` when starting work, then to `done/` 
 
 Build out the full frontend application with data management pages:
 
+0. [F-019: Solver Job API](todo/frontend/F-019-solver-job-api.md)
+   - Depends on: B-012
 1. [F-010: App Layout & Navigation](todo/frontend/F-010-app-layout-navigation.md)
 2. [F-011: Shared UI Components](todo/frontend/F-011-shared-components.md)
    - Depends on: F-010
@@ -27,14 +29,6 @@ Build out the full frontend application with data management pages:
    - Depends on: F-010, F-011
 
 ### Backend Timetabling Solver (Timefold)
-
-Implement constraint-based automatic schedule generation:
-
-10. [B-010: Timefold Planning Domain Model](todo/backend/B-010-scheduling-constraints-model.md)
-11. [B-011: Timefold Constraint Definitions](todo/backend/B-011-timetabling-algorithm.md)
-    - Depends on: B-010
-12. [B-012: Timefold Solver Service & API](todo/backend/B-012-schedule-validation.md)
-    - Depends on: B-010, B-011
 
 ---
 

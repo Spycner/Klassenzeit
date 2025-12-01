@@ -31,6 +31,15 @@ management:
     health:
       show-details: never
 
+# Timefold Solver configuration
+timefold:
+  solver:
+    termination:
+      spent-limit: 5m
+      best-score-limit: 0hard/*soft
+  solver-manager:
+    parallel-solver-count: 1
+
 # OpenAPI / Swagger UI configuration
 springdoc:
   api-docs:
