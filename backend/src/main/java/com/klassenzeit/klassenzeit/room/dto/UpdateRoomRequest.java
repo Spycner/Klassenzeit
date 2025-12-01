@@ -9,4 +9,5 @@ public record UpdateRoomRequest(
     @Size(max = 100) String building,
     @Min(1) Integer capacity,
     String features,
-    Boolean isActive) {}
+    Boolean isActive,
+    Long version) {}

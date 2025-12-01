@@ -12,4 +12,5 @@ public record RoomResponse(
     String features,
     Boolean isActive,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    Long version) {}

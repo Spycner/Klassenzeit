@@ -232,7 +232,7 @@ class TermServiceTest extends AbstractIntegrationTest {
 
       UpdateTermRequest request =
           new UpdateTermRequest(
-              "2. Halbjahr", LocalDate.of(2025, 2, 1), LocalDate.of(2025, 7, 31), true);
+              "2. Halbjahr", LocalDate.of(2025, 2, 1), LocalDate.of(2025, 7, 31), true, null);
 
       TermResponse result =
           termService.update(school.getId(), schoolYear.getId(), term.getId(), request);
@@ -255,7 +255,7 @@ class TermServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateTermRequest request = new UpdateTermRequest("Updated Name", null, null, null);
+      UpdateTermRequest request = new UpdateTermRequest("Updated Name", null, null, null, null);
 
       TermResponse result =
           termService.update(school.getId(), schoolYear.getId(), term.getId(), request);
@@ -269,7 +269,7 @@ class TermServiceTest extends AbstractIntegrationTest {
     @Test
     void throwsWhenTermNotFound() {
       UUID nonExistentId = UUID.randomUUID();
-      UpdateTermRequest request = new UpdateTermRequest("Updated", null, null, null);
+      UpdateTermRequest request = new UpdateTermRequest("Updated", null, null, null, null);
 
       assertThatThrownBy(
               () -> termService.update(school.getId(), schoolYear.getId(), nonExistentId, request))
@@ -283,7 +283,7 @@ class TermServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateTermRequest request = new UpdateTermRequest("Updated", null, null, null);
+      UpdateTermRequest request = new UpdateTermRequest("Updated", null, null, null, null);
 
       assertThatThrownBy(
               () -> termService.update(school.getId(), schoolYear.getId(), term.getId(), request))

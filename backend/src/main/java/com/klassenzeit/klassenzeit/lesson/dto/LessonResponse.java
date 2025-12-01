@@ -23,4 +23,5 @@ public record LessonResponse(
     String roomName,
     WeekPattern weekPattern,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    Long version) {}

@@ -5,4 +5,8 @@ import java.time.LocalDate;
 
 /** Request DTO for updating a school year. */
 public record UpdateSchoolYearRequest(
-    @Size(max = 50) String name, LocalDate startDate, LocalDate endDate, Boolean isCurrent) {}
+    @Size(max = 50) String name,
+    LocalDate startDate,
+    LocalDate endDate,
+    Boolean isCurrent,
+    Long version) {}

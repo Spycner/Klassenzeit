@@ -107,7 +107,8 @@ public class TermService {
         t.getEndDate(),
         t.isCurrent(),
         t.getCreatedAt(),
-        t.getUpdatedAt());
+        t.getUpdatedAt(),
+        t.getVersion());
   }
 
   private TermSummary toSummary(Term t) {

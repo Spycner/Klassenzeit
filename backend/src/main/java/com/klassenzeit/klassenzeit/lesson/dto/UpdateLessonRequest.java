@@ -10,4 +10,5 @@ public record UpdateLessonRequest(
     UUID subjectId,
     UUID timeslotId,
     UUID roomId,
-    WeekPattern weekPattern) {}
+    WeekPattern weekPattern,
+    Long version) {}

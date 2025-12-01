@@ -12,4 +12,5 @@ public record SchoolYearResponse(
     LocalDate endDate,
     Boolean isCurrent,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    Long version) {}

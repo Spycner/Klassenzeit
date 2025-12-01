@@ -126,7 +126,8 @@ public class SchoolClassService {
         classTeacher != null ? classTeacher.getFullName() : null,
         c.isActive(),
         c.getCreatedAt(),
-        c.getUpdatedAt());
+        c.getUpdatedAt(),
+        c.getVersion());
   }
 
   private SchoolClassSummary toSummary(SchoolClass c) {

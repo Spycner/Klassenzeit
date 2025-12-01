@@ -224,7 +224,8 @@ public class LessonService {
         room != null ? room.getName() : null,
         l.getWeekPattern(),
         l.getCreatedAt(),
-        l.getUpdatedAt());
+        l.getUpdatedAt(),
+        l.getVersion());
   }
 
   private LessonSummary toSummary(Lesson l) {

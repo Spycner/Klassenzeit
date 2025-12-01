@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -41,6 +42,19 @@ public class GlobalExceptionHandler {
     body.put("status", HttpStatus.CONFLICT.value());
     body.put("error", "Conflict");
     body.put("message", "A data constraint was violated. The operation could not be completed.");
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+  }
+
+  @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+  public ResponseEntity<Map<String, Object>> handleOptimisticLockingFailure(
+      ObjectOptimisticLockingFailureException ex) {
+    LOG.warn("Optimistic locking failure: {}", ex.getMessage());
+
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("timestamp", Instant.now());
+    body.put("status", HttpStatus.CONFLICT.value());
+    body.put("error", "Conflict");
+    body.put("message", "The resource was modified by another user. Please refresh and try again.");
     return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
   }
 

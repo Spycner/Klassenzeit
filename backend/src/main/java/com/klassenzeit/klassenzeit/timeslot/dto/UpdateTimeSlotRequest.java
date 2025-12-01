@@ -10,4 +10,5 @@ public record UpdateTimeSlotRequest(
     LocalTime startTime,
     LocalTime endTime,
     Boolean isBreak,
-    @Size(max = 50) String label) {}
+    @Size(max = 50) String label,
+    Long version) {}

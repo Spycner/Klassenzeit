@@ -92,7 +92,8 @@ public class SubjectService {
         s.getAbbreviation(),
         s.getColor(),
         s.getCreatedAt(),
-        s.getUpdatedAt());
+        s.getUpdatedAt(),
+        s.getVersion());
   }
 
   private SubjectSummary toSummary(Subject s) {

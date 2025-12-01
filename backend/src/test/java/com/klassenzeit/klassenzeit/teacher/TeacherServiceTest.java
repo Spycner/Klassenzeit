@@ -197,7 +197,8 @@ class TeacherServiceTest extends AbstractIntegrationTest {
       entityManager.clear();
 
       UpdateTeacherRequest request =
-          new UpdateTeacherRequest("Anna", "Schmidt", "anna@example.com", "ASC", 20, true, false);
+          new UpdateTeacherRequest(
+              "Anna", "Schmidt", "anna@example.com", "ASC", 20, true, false, null);
 
       TeacherResponse result = teacherService.update(school.getId(), teacher.getId(), request);
 
@@ -225,7 +226,7 @@ class TeacherServiceTest extends AbstractIntegrationTest {
       entityManager.clear();
 
       UpdateTeacherRequest request =
-          new UpdateTeacherRequest("Anna", null, null, null, null, null, null);
+          new UpdateTeacherRequest("Anna", null, null, null, null, null, null, null);
 
       TeacherResponse result = teacherService.update(school.getId(), teacher.getId(), request);
 
@@ -240,7 +241,7 @@ class TeacherServiceTest extends AbstractIntegrationTest {
     void throwsWhenTeacherNotFound() {
       UUID nonExistentId = UUID.randomUUID();
       UpdateTeacherRequest request =
-          new UpdateTeacherRequest("Anna", null, null, null, null, null, null);
+          new UpdateTeacherRequest("Anna", null, null, null, null, null, null, null);
 
       assertThatThrownBy(() -> teacherService.update(school.getId(), nonExistentId, request))
           .isInstanceOf(EntityNotFoundException.class);
@@ -254,7 +255,7 @@ class TeacherServiceTest extends AbstractIntegrationTest {
       entityManager.clear();
 
       UpdateTeacherRequest request =
-          new UpdateTeacherRequest("Updated", null, null, null, null, null, null);
+          new UpdateTeacherRequest("Updated", null, null, null, null, null, null, null);
 
       assertThatThrownBy(() -> teacherService.update(school.getId(), teacher.getId(), request))
           .isInstanceOf(EntityNotFoundException.class);

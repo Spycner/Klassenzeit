@@ -39,14 +39,8 @@ Klassenzeit is a timetabler application for schools. This is the backend compone
 # Check formatting only
 ./gradlew spotlessCheck
 
-# Run all quality checks (Spotless, Checkstyle, SpotBugs, PMD, tests) in background
-./gradlew check > gradle-check.log 2>&1 &
-
-# Check if gradle check is still running (check every 30-60 seconds, not more frequently)
-pgrep -f "gradlew check" && echo "Still running..." || echo "Finished"
-
-# View results after completion
-cat gradle-check.log
+# Run all quality checks (Spotless, Checkstyle, SpotBugs, PMD, tests)
+./gradlew check 2>&1 
 
 # Run tests with coverage report
 ./gradlew test jacocoTestReport
@@ -87,6 +81,12 @@ com.klassenzeit.klassenzeit/
 ```
 
 Each feature package contains: Entity, Repository, Service, Controller (when needed).
+
+### API Documentation
+
+OpenAPI docs available at `http://localhost:8080/v3/api-docs` (Swagger UI at `/swagger-ui.html`).
+
+**When changing API endpoints or DTOs**: Run `npm run generate-api` in the frontend to regenerate TypeScript types.
 
 ### Data Model
 
