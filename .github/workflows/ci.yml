@@ -134,10 +134,8 @@ jobs:
 
   e2e:
     needs: [changes, backend, frontend]
-    # Run E2E on main branch pushes only (not on PRs to save CI time)
     if: |
       always() &&
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
       needs.changes.outputs.e2e == 'true' &&
       (needs.backend.result == 'success' || needs.backend.result == 'skipped') &&
       (needs.frontend.result == 'success' || needs.frontend.result == 'skipped')
