@@ -23,6 +23,15 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: false
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 ---
 # Development profile
 spring:
