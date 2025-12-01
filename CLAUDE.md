@@ -82,5 +82,52 @@ cd e2e && npm run test:api
 
 ## Project Planning
 
-Task tracking and roadmap documentation:
+### Roadmap
 - `tasks/roadmap.md` - Development roadmap and next steps
+
+### Task Management
+
+Tasks use a kanban-style workflow organized by area:
+
+```
+tasks/
+├── todo/
+│   ├── backend/
+│   ├── frontend/
+│   └── global/
+├── doing/
+│   ├── backend/
+│   ├── frontend/
+│   └── global/
+└── done/
+    ├── backend/
+    ├── frontend/
+    └── global/
+```
+
+**Task Format:**
+- Each task is a separate markdown file with a unique ID prefix (e.g., `001-implement-teacher-crud.md`)
+- Use action verbs: `implement-`, `fix-`, `update-`, `research-`
+- Tasks can link to related tasks using markdown links: `[related task](../../todo/frontend/002-other-task.md)`
+
+**Workflow:**
+1. **todo → doing**: Move file when starting work
+2. **doing → done**: Move file when complete, document what was done, decisions made, and any issues encountered
+
+**Task File Template:**
+```markdown
+# Task Title
+
+## Description
+What needs to be done and why.
+
+## Acceptance Criteria
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+## Notes
+Progress updates, blockers, related commits.
+
+## Completion Notes (add when done)
+What was implemented, key decisions, issues encountered.
+```
