@@ -1,4 +1,4 @@
-.PHONY: help dev dev-all db-up db-down db-logs db-reset db-docs backend frontend test test-backend test-frontend test-frontend-coverage test-e2e test-e2e-ui lint lint-backend lint-frontend format format-backend format-frontend clean
+.PHONY: help dev dev-all db-up db-down db-logs db-reset db-docs backend frontend test test-backend test-frontend test-frontend-coverage test-e2e test-e2e-ui test-a11y lint lint-backend lint-frontend format format-backend format-frontend clean
 
 # Default target
 help:
@@ -23,6 +23,7 @@ help:
 	@echo "  make test-frontend-coverage Run frontend tests with coverage"
 	@echo "  make test-e2e              Run E2E tests (requires running services)"
 	@echo "  make test-e2e-ui           Run E2E tests with Playwright UI"
+	@echo "  make test-a11y             Run accessibility tests"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make lint         Check all linting"
@@ -85,6 +86,9 @@ test-e2e:
 
 test-e2e-ui:
 	cd e2e && npm run test:ui
+
+test-a11y:
+	cd e2e && npm run test:a11y
 
 # Code Quality
 lint: lint-backend lint-frontend

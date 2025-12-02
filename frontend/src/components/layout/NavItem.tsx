@@ -18,7 +18,7 @@ export interface NavItemProps {
 
 export function NavItem({ to, icon: Icon, label, collapsed }: NavItemProps) {
   return (
-    <Tooltip delayDuration={0}>
+    <Tooltip delayDuration={0} key={collapsed ? "collapsed" : "expanded"}>
       <TooltipTrigger asChild>
         <NavLink to={to}>
           {({ isActive }) => (
