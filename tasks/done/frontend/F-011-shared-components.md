@@ -6,17 +6,17 @@ Create reusable UI components that establish consistent patterns across all page
 
 ## Acceptance Criteria
 
-- [ ] Add required shadcn/ui components:
+- [x] Add required shadcn/ui components:
   ```bash
   npx shadcn@latest add table card badge skeleton dialog breadcrumb
   ```
-- [ ] Create shared components in `components/shared/`:
-  - [ ] `PageHeader.tsx` - Page title, description, actions, breadcrumbs
-  - [ ] `DataTable.tsx` - Generic data table with row click
-  - [ ] `LoadingState.tsx` - Loading spinner/skeleton
-  - [ ] `EmptyState.tsx` - No data placeholder with action
-  - [ ] `ErrorState.tsx` - Error display with retry button
-  - [ ] `ConfirmDialog.tsx` - Confirmation modal for destructive actions
+- [x] Create shared components in `components/shared/`:
+  - [x] `PageHeader.tsx` - Page title, description, actions, breadcrumbs
+  - [x] `DataTable.tsx` - Generic data table with row click and sorting
+  - [x] `LoadingState.tsx` - Loading spinner/skeleton
+  - [x] `EmptyState.tsx` - No data placeholder with action
+  - [x] `ErrorState.tsx` - Error display with retry button
+  - [x] `ConfirmDialog.tsx` - Confirmation modal for destructive actions
 
 ## Technical Details
 
@@ -172,6 +172,62 @@ components/
 - Support for dark mode (CSS variables already set up)
 
 ### Future Enhancements
-- DataTable: Sorting, filtering, pagination
+- DataTable: Filtering, pagination (sorting implemented)
 - LoadingState: Different skeleton shapes
 - Form components with Zod validation (separate task F-002)
+
+## Completion Notes
+
+**Completed:** 2025-12-01
+
+### What was implemented
+
+All 6 shared UI components with full test coverage (68 tests total):
+
+| Component | Tests | Key Features |
+|-----------|-------|--------------|
+| LoadingState | 8 | Spinner + message, optional skeleton rows, uses `<output>` for a11y |
+| EmptyState | 9 | Icon, title, description, action button |
+| ErrorState | 9 | Error message display, retry button, alert role |
+| PageHeader | 11 | Title, description, actions, i18n-aware breadcrumbs |
+| DataTable | 18 | Generic typing, custom cell renderers, **column sorting**, keyboard navigation |
+| ConfirmDialog | 13 | Destructive variant, loading state, accessible dialog |
+
+### Key decisions
+
+1. **DataTable sorting**: Implemented client-side sorting with click-to-toggle (asc → desc → asc). Server-side sorting can be added later with B-001 pagination.
+
+2. **LoadingState skeleton**: Generic rectangular blocks rather than table-specific skeletons for flexibility across different contexts.
+
+3. **Breadcrumb structure**: Used `Fragment` to properly separate `BreadcrumbItem` and `BreadcrumbSeparator` siblings (avoiding nested `<li>` elements).
+
+4. **i18n keys**: Added to `common.json` for both DE and EN:
+   - `loading`, `retry`, `cancel`, `confirm`, `delete`, `errorOccurred`
+
+### Files created
+
+```
+src/components/shared/
+├── ConfirmDialog.tsx + .test.tsx
+├── DataTable.tsx + .test.tsx
+├── EmptyState.tsx + .test.tsx
+├── ErrorState.tsx + .test.tsx
+├── LoadingState.tsx + .test.tsx
+├── PageHeader.tsx + .test.tsx
+└── index.ts
+```
+
+### Usage
+
+```tsx
+import {
+  PageHeader,
+  DataTable,
+  LoadingState,
+  EmptyState,
+  ErrorState,
+  ConfirmDialog,
+  type Column,
+  type BreadcrumbItem,
+} from '@/components/shared';
+```

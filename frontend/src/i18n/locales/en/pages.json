@@ -1,0 +1,45 @@
+{
+  "home": {
+    "tagline": "Timetabler for schools"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome to Klassenzeit. Select a section from the sidebar to get started."
+  },
+  "teachers": {
+    "title": "Teachers",
+    "description": "Manage your school's teachers here.",
+    "editTitle": "Edit Teacher",
+    "newTitle": "New Teacher",
+    "editingTeacher": "Editing teacher with ID: {{id}}",
+    "createNew": "Create a new teacher record."
+  },
+  "subjects": {
+    "title": "Subjects",
+    "description": "Manage your school's subjects here."
+  },
+  "rooms": {
+    "title": "Rooms",
+    "description": "Manage your school's rooms here."
+  },
+  "classes": {
+    "title": "Classes",
+    "description": "Manage your school's classes here."
+  },
+  "timeSlots": {
+    "title": "Time Slots",
+    "description": "Manage your school's time slots here."
+  },
+  "timetable": {
+    "title": "Timetable",
+    "description": "View and generate timetables here."
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Configure your application settings here."
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Page not found"
+  }
+}

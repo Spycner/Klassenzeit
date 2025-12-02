@@ -1,0 +1,1 @@
+export { useLocalizedPath } from "./useLocalizedPath";

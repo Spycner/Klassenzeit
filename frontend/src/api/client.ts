@@ -7,6 +7,8 @@
  * - Typed error classes for different error scenarios
  */
 
+import i18n from "@/i18n";
+
 import { ApiClientError } from "./base-error";
 import {
   ClientError,
@@ -176,6 +178,7 @@ async function request<T>(
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      "Accept-Language": i18n.language,
       ...headers,
     },
   };

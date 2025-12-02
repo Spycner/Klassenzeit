@@ -1,7 +1,14 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
+
+// Initialize i18n for tests
+import i18n from "@/i18n";
+
 import { server } from "./mocks/server";
+
+// Set default language to German for tests
+i18n.changeLanguage("de");
 
 // Disable API client retries in tests for faster execution
 declare global {

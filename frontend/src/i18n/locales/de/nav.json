@@ -1,0 +1,12 @@
+{
+  "dashboard": "Dashboard",
+  "teachers": "Lehrkräfte",
+  "subjects": "Fächer",
+  "rooms": "Räume",
+  "classes": "Klassen",
+  "timeSlots": "Zeitfenster",
+  "timetable": "Stundenplan",
+  "settings": "Einstellungen",
+  "expandSidebar": "Seitenleiste ausklappen",
+  "collapseSidebar": "Seitenleiste einklappen"
+}

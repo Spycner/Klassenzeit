@@ -3,13 +3,15 @@ import { API_BASE } from "./config";
 
 test.describe("Subjects API", () => {
   let schoolId: string;
+  // Use unique suffix per worker to avoid conflicts in parallel execution
+  const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   test.beforeAll(async ({ request }) => {
     // Create a school to use for subject tests
     const response = await request.post(`${API_BASE}/schools`, {
       data: {
-        name: `Subjects Test School ${Date.now()}`,
-        slug: `subjects-test-${Date.now()}`,
+        name: `Subjects Test School ${uniqueSuffix}`,
+        slug: `subjects-test-${uniqueSuffix}`,
         schoolType: "Gymnasium",
         minGrade: 5,
         maxGrade: 13,

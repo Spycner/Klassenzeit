@@ -1,0 +1,17 @@
+{
+  "appName": "Klassenzeit",
+  "getStarted": "Loslegen",
+  "goToDashboard": "Zum Dashboard",
+  "tryAgain": "Erneut versuchen",
+  "profile": "Profil",
+  "logOut": "Abmelden",
+  "myAccount": "Mein Konto",
+  "toggleNavigation": "Navigationsmenü umschalten",
+  "userMenu": "Benutzermenü",
+  "loading": "Wird geladen...",
+  "retry": "Wiederholen",
+  "cancel": "Abbrechen",
+  "confirm": "Bestätigen",
+  "delete": "Löschen",
+  "errorOccurred": "Ein Fehler ist aufgetreten"
+}

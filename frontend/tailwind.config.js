@@ -4,6 +4,24 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Figtree Variable", "system-ui", "sans-serif"],
+        serif: ["Literata Variable", "Georgia", "serif"],
+        mono: ["JetBrains Mono", "Menlo", "monospace"],
+      },
+      fontSize: {
+        display: ["3rem", { lineHeight: "1.1", fontWeight: "300" }],
+        h1: ["2.25rem", { lineHeight: "1.2", fontWeight: "600" }],
+        h2: ["1.5rem", { lineHeight: "1.3", fontWeight: "500" }],
+        h3: ["1.25rem", { lineHeight: "1.4", fontWeight: "500" }],
+        body: ["1rem", { lineHeight: "1.65" }],
+        small: ["0.875rem", { lineHeight: "1.5" }],
+      },
+      boxShadow: {
+        subtle: "0 1px 2px rgba(0, 0, 0, 0.05)",
+        elevated: "0 2px 4px rgba(0, 0, 0, 0.1)",
+        "elevated-dark": "0 2px 4px rgba(0, 0, 0, 0.2)",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -39,6 +57,10 @@ export default {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

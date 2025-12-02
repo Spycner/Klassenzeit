@@ -10,9 +10,11 @@
     "test:debug": "playwright test --debug",
     "test:api": "playwright test tests/api/",
     "test:e2e": "playwright test tests/*.spec.ts",
+    "test:a11y": "playwright test tests/accessibility.spec.ts",
     "report": "playwright show-report"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@playwright/test": "^1.49.0",
     "@types/node": "^22.0.0",
     "typescript": "~5.9.3"
