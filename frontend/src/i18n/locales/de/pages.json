@@ -12,7 +12,70 @@
     "editTitle": "Lehrkraft bearbeiten",
     "newTitle": "Neue Lehrkraft",
     "editingTeacher": "Lehrkraft mit ID bearbeiten: {{id}}",
-    "createNew": "Einen neuen Lehrkraft-Datensatz erstellen."
+    "createNew": "Einen neuen Lehrkraft-Datensatz erstellen.",
+    "addTeacher": "Lehrkraft hinzufügen",
+    "delete": "Löschen",
+    "columns": {
+      "name": "Name",
+      "abbreviation": "Kürzel"
+    },
+    "empty": {
+      "title": "Noch keine Lehrkräfte",
+      "description": "Fügen Sie Ihre erste Lehrkraft hinzu, um mit der Stundenplanung zu beginnen."
+    },
+    "form": {
+      "firstName": "Vorname",
+      "firstNamePlaceholder": "Vorname eingeben",
+      "lastName": "Nachname",
+      "lastNamePlaceholder": "Nachname eingeben",
+      "abbreviation": "Kürzel",
+      "abbreviationPlaceholder": "z.B. MÜL",
+      "email": "E-Mail",
+      "emailPlaceholder": "lehrkraft@schule.de",
+      "maxHoursPerWeek": "Max. Stunden/Woche",
+      "maxHoursPerWeekPlaceholder": "z.B. 25",
+      "isPartTime": "Teilzeitkraft",
+      "create": "Lehrkraft erstellen"
+    },
+    "confirmDelete": {
+      "title": "Lehrkraft löschen?",
+      "description": "Diese Lehrkraft und alle zugehörigen Qualifikationen und Verfügbarkeitsdaten werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "qualifications": {
+      "title": "Fachqualifikationen",
+      "add": "Hinzufügen",
+      "remove": "Qualifikation entfernen",
+      "empty": "Noch keine Fachqualifikationen. Fügen Sie Fächer hinzu, die diese Lehrkraft unterrichten kann.",
+      "subject": "Fach",
+      "selectSubject": "Fach auswählen...",
+      "level": "Stufe",
+      "levels": {
+        "PRIMARY": "Hauptfach",
+        "SECONDARY": "Nebenfach",
+        "SUBSTITUTE": "Vertretung"
+      }
+    },
+    "availability": {
+      "title": "Wöchentliche Verfügbarkeit",
+      "description": "Klicken Sie auf Zellen, um durch die Verfügbarkeitszustände zu wechseln. Änderungen werden beim Klicken auf Speichern gespeichert.",
+      "reset": "Zurücksetzen",
+      "period": "Stunde",
+      "days": {
+        "monday": "Mo",
+        "tuesday": "Di",
+        "wednesday": "Mi",
+        "thursday": "Do",
+        "friday": "Fr"
+      },
+      "types": {
+        "AVAILABLE": "Verfügbar",
+        "PREFERRED": "Bevorzugt",
+        "BLOCKED": "Gesperrt"
+      },
+      "setAllAvailable": "Alle verfügbar setzen",
+      "setAllBlocked": "Alle gesperrt setzen",
+      "unsavedChanges": "{{count}} ungespeicherte Änderung(en)"
+    }
   },
   "subjects": {
     "title": "Fächer",

@@ -12,7 +12,70 @@
     "editTitle": "Edit Teacher",
     "newTitle": "New Teacher",
     "editingTeacher": "Editing teacher with ID: {{id}}",
-    "createNew": "Create a new teacher record."
+    "createNew": "Create a new teacher record.",
+    "addTeacher": "Add Teacher",
+    "delete": "Delete",
+    "columns": {
+      "name": "Name",
+      "abbreviation": "Abbr."
+    },
+    "empty": {
+      "title": "No teachers yet",
+      "description": "Add your first teacher to get started with scheduling."
+    },
+    "form": {
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Enter first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Enter last name",
+      "abbreviation": "Abbreviation",
+      "abbreviationPlaceholder": "e.g. SMI",
+      "email": "Email",
+      "emailPlaceholder": "teacher@school.edu",
+      "maxHoursPerWeek": "Max Hours/Week",
+      "maxHoursPerWeekPlaceholder": "e.g. 25",
+      "isPartTime": "Part-time teacher",
+      "create": "Create Teacher"
+    },
+    "confirmDelete": {
+      "title": "Delete Teacher?",
+      "description": "This will permanently delete this teacher and all their qualifications and availability data. This action cannot be undone."
+    },
+    "qualifications": {
+      "title": "Subject Qualifications",
+      "add": "Add",
+      "remove": "Remove qualification",
+      "empty": "No subject qualifications yet. Add subjects this teacher can teach.",
+      "subject": "Subject",
+      "selectSubject": "Select a subject...",
+      "level": "Level",
+      "levels": {
+        "PRIMARY": "Primary",
+        "SECONDARY": "Secondary",
+        "SUBSTITUTE": "Substitute"
+      }
+    },
+    "availability": {
+      "title": "Weekly Availability",
+      "description": "Click cells to cycle through availability states. Changes are saved when you click Save.",
+      "reset": "Reset",
+      "period": "Period",
+      "days": {
+        "monday": "Mon",
+        "tuesday": "Tue",
+        "wednesday": "Wed",
+        "thursday": "Thu",
+        "friday": "Fri"
+      },
+      "types": {
+        "AVAILABLE": "Available",
+        "PREFERRED": "Preferred",
+        "BLOCKED": "Blocked"
+      },
+      "setAllAvailable": "Set All Available",
+      "setAllBlocked": "Set All Blocked",
+      "unsavedChanges": "{{count}} unsaved change(s)"
+    }
   },
   "subjects": {
     "title": "Subjects",
