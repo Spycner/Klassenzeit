@@ -15,17 +15,22 @@ test.describe("Home Page", () => {
   });
 
   test("displays the tagline", async ({ page }) => {
-    const tagline = page.getByText(/timetabler for schools/i);
+    // Matches both German "Stundenplaner für Schulen" and English "Timetabler for schools"
+    const tagline = page.getByText(
+      /timetabler for schools|stundenplaner für schulen/i,
+    );
     await expect(tagline).toBeVisible();
   });
 
-  test("displays the get started button", async ({ page }) => {
-    const button = page.getByRole("button", { name: /get started/i });
-    await expect(button).toBeVisible();
+  test("displays the get started link", async ({ page }) => {
+    // The "Get Started" button is actually a link (Button asChild with Link)
+    // Matches both German "Loslegen" and English "Get Started"
+    const link = page.getByRole("link", { name: /get started|loslegen/i });
+    await expect(link).toBeVisible();
   });
 
-  test("get started button is clickable", async ({ page }) => {
-    const button = page.getByRole("button", { name: /get started/i });
-    await expect(button).toBeEnabled();
+  test("get started link navigates to dashboard", async ({ page }) => {
+    const link = page.getByRole("link", { name: /get started|loslegen/i });
+    await expect(link).toHaveAttribute("href", /\/dashboard$/);
   });
 });

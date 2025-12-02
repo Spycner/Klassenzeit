@@ -5,8 +5,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        serif: ["Source Serif 4", "Georgia", "serif"],
+        sans: ["Figtree Variable", "system-ui", "sans-serif"],
+        serif: ["Literata Variable", "Georgia", "serif"],
         mono: ["JetBrains Mono", "Menlo", "monospace"],
       },
       fontSize: {

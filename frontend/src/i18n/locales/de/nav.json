@@ -6,5 +6,7 @@
   "classes": "Klassen",
   "timeSlots": "Zeitfenster",
   "timetable": "Stundenplan",
-  "settings": "Einstellungen"
+  "settings": "Einstellungen",
+  "expandSidebar": "Seitenleiste ausklappen",
+  "collapseSidebar": "Seitenleiste einklappen"
 }

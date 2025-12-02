@@ -48,16 +48,26 @@ describe("Sidebar", () => {
     const onToggle = vi.fn();
     render(<Sidebar collapsed={false} onToggle={onToggle} />);
 
-    // The collapse button is the first button (not inside a link)
-    const buttons = screen.getAllByRole("button");
-    // Filter to find the toggle button - it's the one not inside a nav link
-    const toggleButton = buttons.find(
-      (btn) => !btn.closest("a") && btn.closest(".border-b"),
-    );
-    expect(toggleButton).toBeDefined();
-    await user.click(toggleButton!);
+    const toggleButton = screen.getByRole("button", {
+      name: /seitenleiste einklappen/i,
+    });
+    await user.click(toggleButton);
 
     expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("has accessible label for collapse button when expanded", () => {
+    render(<Sidebar collapsed={false} onToggle={vi.fn()} />);
+    expect(
+      screen.getByRole("button", { name: /seitenleiste einklappen/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("has accessible label for expand button when collapsed", () => {
+    render(<Sidebar collapsed={true} onToggle={vi.fn()} />);
+    expect(
+      screen.getByRole("button", { name: /seitenleiste ausklappen/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders correct navigation links", () => {

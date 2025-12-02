@@ -6,5 +6,7 @@
   "classes": "Classes",
   "timeSlots": "Time Slots",
   "timetable": "Timetable",
-  "settings": "Settings"
+  "settings": "Settings",
+  "expandSidebar": "Expand sidebar",
+  "collapseSidebar": "Collapse sidebar"
 }
