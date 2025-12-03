@@ -15,6 +15,20 @@ repos:
         files: \.java$
         pass_filenames: false
 
+      - id: pmd
+        name: PMD
+        entry: bash -c 'cd backend && ./gradlew pmdMain pmdTest --quiet'
+        language: system
+        files: \.java$
+        pass_filenames: false
+
+      - id: spotbugs
+        name: SpotBugs
+        entry: bash -c 'cd backend && ./gradlew spotbugsMain --quiet'
+        language: system
+        files: \.java$
+        pass_filenames: false
+
       # Frontend hooks
       - id: biome-check
         name: Biome lint and format check
