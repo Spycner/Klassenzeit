@@ -12,6 +12,11 @@ erDiagram
     School ||--o{ Room : contains
     School ||--o{ SchoolClass : has
     School ||--o{ TimeSlot : defines
+    School ||--o{ SchoolMembership : "has members"
+
+    AppUser ||--o{ SchoolMembership : "belongs to"
+    AppUser ||--o{ SchoolAccessRequest : requests
+    SchoolMembership }o--o| Teacher : "linked to"
 
     SchoolYear ||--o{ Term : contains
 
@@ -139,6 +144,52 @@ erDiagram
         uuid timeslot_id FK
         string week_pattern
     }
+
+    AppUser {
+        uuid id PK
+        string keycloak_id UK
+        string email UK
+        string display_name
+        boolean is_platform_admin
+        boolean is_active
+        timestamptz last_login_at
+    }
+
+    SchoolMembership {
+        uuid id PK
+        uuid user_id FK
+        uuid school_id FK
+        enum role
+        uuid linked_teacher_id FK
+        boolean is_active
+        uuid granted_by FK
+        timestamptz granted_at
+    }
+
+    SchoolAccessRequest {
+        uuid id PK
+        uuid user_id FK
+        uuid school_id FK
+        enum requested_role
+        enum status
+        text message
+        text response_message
+        uuid reviewed_by FK
+        timestamptz reviewed_at
+    }
+
+    SchoolInvitation {
+        uuid id PK
+        uuid school_id FK
+        string email
+        string token UK
+        enum role
+        enum status
+        timestamptz expires_at
+        int max_uses
+        int use_count
+        uuid created_by FK
+    }
 ```
 
 ## Entity Descriptions
@@ -169,6 +220,17 @@ erDiagram
 | **TeacherAvailability** | When a teacher is AVAILABLE, BLOCKED, or PREFERRED for scheduling. |
 | **Lesson** | The actual scheduled timetable entry linking class, teacher, subject, room, and time slot. |
 
+### User & Permission Entities
+
+| Entity | Description |
+|--------|-------------|
+| **AppUser** | Application user linked to Keycloak identity. Stores platform-level data. |
+| **SchoolMembership** | Many-to-many relationship between users and schools with roles (SCHOOL_ADMIN, PLANNER, TEACHER, VIEWER). |
+| **SchoolAccessRequest** | Users requesting access to schools. Workflow: PENDING → APPROVED/REJECTED. |
+| **SchoolInvitation** | Email or link-based invitations to join a school. |
+
+See [docs/authentication.md](authentication.md) for full details on the permission model.
+
 ## Key Constraints
 
 ### Uniqueness Constraints
@@ -193,6 +255,9 @@ erDiagram
 | `qualification_level` | PRIMARY, SECONDARY, SUBSTITUTE | Teacher's qualification for a subject |
 | `availability_type` | AVAILABLE, BLOCKED, PREFERRED | Teacher's availability status for a time slot |
 | `week_pattern` | EVERY, A, B | For A/B week rotation (default: EVERY) |
+| `school_role` | SCHOOL_ADMIN, PLANNER, TEACHER, VIEWER | User's role within a school |
+| `access_request_status` | PENDING, APPROVED, REJECTED, CANCELLED | Status of a school access request |
+| `invitation_status` | PENDING, ACCEPTED, EXPIRED, CANCELLED | Status of a school invitation |
 
 ## Generating Documentation
 

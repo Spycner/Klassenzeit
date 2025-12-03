@@ -10,6 +10,8 @@ import org.springframework.test.context.ActiveProfiles;
  * <p>Uses Testcontainers to spin up a PostgreSQL container that is shared across all test classes
  * that extend this base class. The container is managed as a Spring bean via
  * TestContainersConfiguration to ensure proper lifecycle management across test classes.
+ *
+ * <p>The test profile activates TestSecurityConfig which disables authentication.
  */
 @SpringBootTest
 @Import(TestContainersConfiguration.class)
