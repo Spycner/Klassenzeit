@@ -1,5 +1,7 @@
 package com.klassenzeit.klassenzeit;
 
+import com.klassenzeit.klassenzeit.accessrequest.AccessRequestStatus;
+import com.klassenzeit.klassenzeit.accessrequest.SchoolAccessRequest;
 import com.klassenzeit.klassenzeit.common.AvailabilityType;
 import com.klassenzeit.klassenzeit.common.QualificationLevel;
 import com.klassenzeit.klassenzeit.common.WeekPattern;
@@ -93,6 +95,10 @@ public class TestDataBuilder {
 
   public SchoolMembershipBuilder membership(School school, AppUser user) {
     return new SchoolMembershipBuilder(school, user);
+  }
+
+  public SchoolAccessRequestBuilder accessRequest(School school, AppUser user) {
+    return new SchoolAccessRequestBuilder(school, user);
   }
 
   // School Builder
@@ -757,6 +763,65 @@ public class TestDataBuilder {
       SchoolMembership membership = build();
       entityManager.persist(membership);
       return membership;
+    }
+  }
+
+  // SchoolAccessRequest Builder
+  public class SchoolAccessRequestBuilder {
+    private final School school;
+    private final AppUser user;
+    private SchoolRole requestedRole = SchoolRole.VIEWER;
+    private String message;
+    private AccessRequestStatus status = AccessRequestStatus.PENDING;
+    private AppUser reviewedBy;
+    private String responseMessage;
+
+    public SchoolAccessRequestBuilder(School school, AppUser user) {
+      this.school = school;
+      this.user = user;
+    }
+
+    public SchoolAccessRequestBuilder withRequestedRole(SchoolRole role) {
+      this.requestedRole = role;
+      return this;
+    }
+
+    public SchoolAccessRequestBuilder withMessage(String message) {
+      this.message = message;
+      return this;
+    }
+
+    public SchoolAccessRequestBuilder withStatus(AccessRequestStatus status) {
+      this.status = status;
+      return this;
+    }
+
+    public SchoolAccessRequestBuilder reviewedBy(AppUser reviewer) {
+      this.reviewedBy = reviewer;
+      return this;
+    }
+
+    public SchoolAccessRequestBuilder withResponseMessage(String responseMessage) {
+      this.responseMessage = responseMessage;
+      return this;
+    }
+
+    public SchoolAccessRequest build() {
+      SchoolAccessRequest request = new SchoolAccessRequest(user, school, requestedRole, message);
+      if (status == AccessRequestStatus.APPROVED && reviewedBy != null) {
+        request.approve(reviewedBy, responseMessage);
+      } else if (status == AccessRequestStatus.REJECTED && reviewedBy != null) {
+        request.reject(reviewedBy, responseMessage);
+      } else if (status == AccessRequestStatus.CANCELLED) {
+        request.cancel();
+      }
+      return request;
+    }
+
+    public SchoolAccessRequest persist() {
+      SchoolAccessRequest request = build();
+      entityManager.persist(request);
+      return request;
     }
   }
 }

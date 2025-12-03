@@ -6,7 +6,7 @@ Implement Keycloak-based authentication with application-level school-scoped aut
 
 ## Status: In Progress
 
-**Phase 1, 2, 3 & 4 Complete** - Foundation, School Membership, Endpoint Security, and Platform Admin implemented. Remaining phases pending.
+**Phase 1, 2, 3, 4 & 5 Complete** - Foundation, School Membership, Endpoint Security, Platform Admin, and Access Requests implemented. Remaining phases pending.
 
 ## Architecture Decision
 
@@ -52,11 +52,12 @@ See [docs/authentication.md](../../../docs/authentication.md) for full architect
 
 Note: `POST /api/admin/schools` is not needed since `POST /api/schools` already exists with platform admin auth.
 
-### Phase 5: Access Requests
-- [ ] Create SchoolAccessRequest entity
-- [ ] Create AccessRequestService
-- [ ] Create AccessRequestController
-- [ ] Request/approve/reject workflow endpoints
+### Phase 5: Access Requests ✅
+- [x] Create SchoolAccessRequest entity
+- [x] Create AccessRequestService
+- [x] Create AccessRequestController
+- [x] Request/approve/reject workflow endpoints
+- [x] Cancel endpoint in AppUserController
 
 ### Phase 6: Frontend Integration
 - [ ] Configure React for Keycloak OIDC
@@ -114,6 +115,18 @@ None
 - `backend/src/main/java/com/klassenzeit/klassenzeit/admin/PlatformAdminController.java` (Phase 4)
 - `backend/src/main/java/com/klassenzeit/klassenzeit/admin/dto/AssignAdminRequest.java` (Phase 4)
 - `backend/src/test/java/com/klassenzeit/klassenzeit/admin/PlatformAdminControllerTest.java` (Phase 4)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/accessrequest/AccessRequestStatus.java` (Phase 5)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/accessrequest/SchoolAccessRequest.java` (Phase 5)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/accessrequest/SchoolAccessRequestRepository.java` (Phase 5)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/accessrequest/AccessRequestService.java` (Phase 5)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/accessrequest/AccessRequestController.java` (Phase 5)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/accessrequest/dto/CreateAccessRequestRequest.java` (Phase 5)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/accessrequest/dto/ReviewAccessRequestRequest.java` (Phase 5)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/accessrequest/dto/ReviewDecision.java` (Phase 5)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/accessrequest/dto/AccessRequestResponse.java` (Phase 5)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/accessrequest/dto/AccessRequestSummary.java` (Phase 5)
+- `backend/src/test/java/com/klassenzeit/klassenzeit/accessrequest/AccessRequestServiceTest.java` (Phase 5)
+- `backend/src/test/java/com/klassenzeit/klassenzeit/accessrequest/AccessRequestControllerTest.java` (Phase 5)
 
 ### Modified Files
 - `backend/build.gradle.kts` - Added security dependencies
@@ -123,6 +136,9 @@ None
 - `backend/src/main/java/com/klassenzeit/klassenzeit/membership/SchoolMembershipService.java` - Added `assignSchoolAdmin()` method (Phase 4)
 - `backend/src/test/java/com/klassenzeit/klassenzeit/membership/SchoolMembershipServiceTest.java` - Added tests for `assignSchoolAdmin()` (Phase 4)
 - `docs/authentication.md` - Updated Phase 4 status, API docs, package structure (Phase 4)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/user/AppUserController.java` - Added cancel access request endpoint (Phase 5)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/membership/SchoolMembershipService.java` - Made create method public (Phase 5)
+- `backend/src/test/java/com/klassenzeit/klassenzeit/TestDataBuilder.java` - Added accessRequest builder (Phase 5)
 
 ## Roles
 
@@ -146,10 +162,12 @@ None
 | PUT | `/api/schools/{id}/members/{id}` | Update member | 2 ✅ |
 | DELETE | `/api/schools/{id}/members/{id}` | Remove member | 2 ✅ |
 | POST | `/api/admin/schools` | Create school | 4 |
-| POST | `/api/admin/schools/{id}/admins` | Assign admin | 4 |
-| POST | `/api/schools/{id}/access-requests` | Request access | 5 |
-| GET | `/api/schools/{id}/access-requests` | List requests | 5 |
-| PUT | `/api/schools/{id}/access-requests/{id}` | Review request | 5 |
+| POST | `/api/admin/schools/{id}/admins` | Assign admin | 4 ✅ |
+| POST | `/api/schools/{id}/access-requests` | Request access | 5 ✅ |
+| GET | `/api/schools/{id}/access-requests` | List requests | 5 ✅ |
+| GET | `/api/schools/{id}/access-requests/{id}` | Get request details | 5 ✅ |
+| PUT | `/api/schools/{id}/access-requests/{id}` | Review request | 5 ✅ |
+| DELETE | `/api/users/me/access-requests/{id}` | Cancel request | 5 ✅ |
 
 ## Notes
 

@@ -174,13 +174,27 @@ com.klassenzeit.klassenzeit/
 │   ├── AppUser.java                  # Entity
 │   ├── AppUserRepository.java
 │   ├── AppUserService.java
-│   ├── AppUserController.java        # /api/users/me
+│   ├── AppUserController.java        # /api/users/me, cancel access request
 │   └── dto/
 │       └── UserProfileResponse.java
-└── membership/
-    ├── SchoolMembership.java         # Entity
-    ├── SchoolRole.java               # Enum
-    └── SchoolMembershipRepository.java
+├── membership/
+│   ├── SchoolMembership.java         # Entity
+│   ├── SchoolRole.java               # Enum
+│   ├── SchoolMembershipRepository.java
+│   ├── SchoolMembershipService.java
+│   └── SchoolMembershipController.java
+└── accessrequest/
+    ├── SchoolAccessRequest.java      # Entity
+    ├── AccessRequestStatus.java      # Enum
+    ├── SchoolAccessRequestRepository.java
+    ├── AccessRequestService.java
+    ├── AccessRequestController.java  # /api/schools/{id}/access-requests
+    └── dto/
+        ├── CreateAccessRequestRequest.java
+        ├── ReviewAccessRequestRequest.java
+        ├── ReviewDecision.java
+        ├── AccessRequestResponse.java
+        └── AccessRequestSummary.java
 ```
 
 ### Security Flow
@@ -267,12 +281,13 @@ PUT    /api/schools/{schoolId}/members/{id}  # Update role (SCHOOL_ADMIN)
 DELETE /api/schools/{schoolId}/members/{id}  # Remove member (SCHOOL_ADMIN)
 ```
 
-### Access Requests (future)
+### Access Requests
 ```
-POST   /api/schools/{schoolId}/access-requests
-GET    /api/schools/{schoolId}/access-requests
-PUT    /api/schools/{schoolId}/access-requests/{id}
-DELETE /api/users/me/access-requests/{id}
+POST   /api/schools/{schoolId}/access-requests      # Any authenticated user can request
+GET    /api/schools/{schoolId}/access-requests      # School admin - list pending requests
+GET    /api/schools/{schoolId}/access-requests/{id} # School admin - get request details
+PUT    /api/schools/{schoolId}/access-requests/{id} # School admin - approve/reject
+DELETE /api/users/me/access-requests/{id}           # Owner can cancel pending request
 ```
 
 ## Keycloak Setup
@@ -342,9 +357,13 @@ spring:
 - [x] Create PlatformAdminController
 - [x] School admin assignment endpoint (`POST /api/admin/schools/{id}/admins`)
 
-### Phase 5: Access Requests (Pending)
-- [ ] Access request entity and endpoints
-- [ ] Request/approve/reject workflow
+### Phase 5: Access Requests ✅
+- [x] SchoolAccessRequest entity
+- [x] SchoolAccessRequestRepository
+- [x] AccessRequestService with create, review, cancel methods
+- [x] AccessRequestController with REST endpoints
+- [x] Cancel endpoint in AppUserController
+- [x] Tests for service and controller
 
 ### Phase 6: Frontend Integration (Pending)
 - [ ] Configure React for Keycloak OIDC

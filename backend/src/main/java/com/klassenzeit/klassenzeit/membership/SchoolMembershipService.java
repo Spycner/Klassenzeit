@@ -77,9 +77,10 @@ public class SchoolMembershipService {
     return create(schoolId, request, authorizationService.getCurrentUser().id());
   }
 
-  /** Package-private overload for testing without security context. */
+  /** Create a membership on behalf of a user (e.g., when approving access requests). */
   @Transactional
-  MembershipResponse create(UUID schoolId, CreateMembershipRequest request, UUID grantedById) {
+  public MembershipResponse create(
+      UUID schoolId, CreateMembershipRequest request, UUID grantedById) {
     School school =
         schoolRepository
             .findById(schoolId)
