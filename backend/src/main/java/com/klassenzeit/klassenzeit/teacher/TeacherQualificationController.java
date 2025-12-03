@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,12 +31,14 @@ public class TeacherQualificationController {
   }
 
   @GetMapping
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
   public List<QualificationSummary> findAll(
       @PathVariable UUID schoolId, @PathVariable UUID teacherId) {
     return qualificationService.findAllByTeacher(schoolId, teacherId);
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
   public QualificationResponse findById(
       @PathVariable UUID schoolId, @PathVariable UUID teacherId, @PathVariable UUID id) {
     return qualificationService.findById(schoolId, teacherId, id);
@@ -43,6 +46,7 @@ public class TeacherQualificationController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public QualificationResponse create(
       @PathVariable UUID schoolId,
       @PathVariable UUID teacherId,
@@ -51,6 +55,7 @@ public class TeacherQualificationController {
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public QualificationResponse update(
       @PathVariable UUID schoolId,
       @PathVariable UUID teacherId,
@@ -61,6 +66,7 @@ public class TeacherQualificationController {
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public void delete(
       @PathVariable UUID schoolId, @PathVariable UUID teacherId, @PathVariable UUID id) {
     qualificationService.delete(schoolId, teacherId, id);

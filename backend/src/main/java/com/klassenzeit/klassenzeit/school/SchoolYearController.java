@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,23 +31,27 @@ public class SchoolYearController {
   }
 
   @GetMapping
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
   public List<SchoolYearSummary> findAll(@PathVariable UUID schoolId) {
     return schoolYearService.findAllBySchool(schoolId);
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
   public SchoolYearResponse findById(@PathVariable UUID schoolId, @PathVariable UUID id) {
     return schoolYearService.findById(schoolId, id);
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public SchoolYearResponse create(
       @PathVariable UUID schoolId, @Valid @RequestBody CreateSchoolYearRequest request) {
     return schoolYearService.create(schoolId, request);
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public SchoolYearResponse update(
       @PathVariable UUID schoolId,
       @PathVariable UUID id,
@@ -56,6 +61,7 @@ public class SchoolYearController {
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public void delete(@PathVariable UUID schoolId, @PathVariable UUID id) {
     schoolYearService.delete(schoolId, id);
   }

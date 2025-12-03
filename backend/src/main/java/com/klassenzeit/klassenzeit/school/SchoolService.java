@@ -5,6 +5,7 @@ import com.klassenzeit.klassenzeit.school.dto.CreateSchoolRequest;
 import com.klassenzeit.klassenzeit.school.dto.SchoolResponse;
 import com.klassenzeit.klassenzeit.school.dto.SchoolSummary;
 import com.klassenzeit.klassenzeit.school.dto.UpdateSchoolRequest;
+import com.klassenzeit.klassenzeit.security.CurrentUser;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,29 @@ public class SchoolService {
 
   public List<SchoolSummary> findAll() {
     return schoolRepository.findAll().stream().map(this::toSummary).toList();
+  }
+
+  /**
+   * Find all schools accessible to the given user.
+   *
+   * <p>Platform admins can see all schools. Regular users can only see schools where they have a
+   * membership.
+   *
+   * @param currentUser the authenticated user
+   * @return list of schools the user can access
+   */
+  public List<SchoolSummary> findAllForUser(CurrentUser currentUser) {
+    if (currentUser.isPlatformAdmin()) {
+      return findAll();
+    }
+
+    if (currentUser.schoolRoles().isEmpty()) {
+      return List.of();
+    }
+
+    return schoolRepository.findByIdIn(currentUser.schoolRoles().keySet()).stream()
+        .map(this::toSummary)
+        .toList();
   }
 
   public SchoolResponse findById(UUID id) {

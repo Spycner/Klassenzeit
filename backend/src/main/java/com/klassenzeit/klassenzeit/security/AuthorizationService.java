@@ -53,11 +53,20 @@ public class AuthorizationService {
     return user.isPlatformAdmin() || !user.schoolRoles().isEmpty();
   }
 
-  /** Get the current authenticated user from the security context. */
+  /**
+   * Get the current authenticated user from the security context.
+   *
+   * <p>This method supports both production authentication (CurrentUserAuthentication) and test
+   * authentication (where the principal is a CurrentUser).
+   */
   public CurrentUser getCurrentUser() {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     if (auth instanceof CurrentUserAuthentication cua) {
       return cua.getCurrentUser();
+    }
+    // Support test authentication where principal is CurrentUser
+    if (auth != null && auth.getPrincipal() instanceof CurrentUser currentUser) {
+      return currentUser;
     }
     throw new AccessDeniedException("No authenticated user");
   }

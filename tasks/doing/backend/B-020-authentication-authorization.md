@@ -6,7 +6,7 @@ Implement Keycloak-based authentication with application-level school-scoped aut
 
 ## Status: In Progress
 
-**Phase 1 & 2 Complete** - Foundation and School Membership implemented. Remaining phases pending.
+**Phase 1, 2 & 3 Complete** - Foundation, School Membership, and Endpoint Security implemented. Remaining phases pending.
 
 ## Architecture Decision
 
@@ -34,16 +34,17 @@ See [docs/authentication.md](../../../docs/authentication.md) for full architect
 - [x] Membership CRUD endpoints (`/api/schools/{schoolId}/members`)
 - [x] Add `@PreAuthorize` to TeacherController as POC
 
-### Phase 3: Secure All Endpoints
-- [ ] Add `@PreAuthorize` to all controllers:
-  - SchoolController
+### Phase 3: Secure All Endpoints ✅
+- [x] Add `@PreAuthorize` to all controllers:
+  - SchoolController (special pattern: `canListSchools`, `canAccessSchool`, `isPlatformAdmin`, `isSchoolAdmin`)
   - TeacherController, TeacherAvailabilityController, TeacherQualificationController
   - SubjectController, RoomController, SchoolClassController
   - TimeSlotController, LessonController
   - SchoolYearController, TermController
   - TimetableSolverController
-- [ ] Create `@WithMockCurrentUser` test annotation
-- [ ] Update tests with security context
+- [x] Create `@WithMockCurrentUser` test annotation
+- [x] Update tests with security context
+- [x] Add `findAllForUser(CurrentUser)` to SchoolService for user-scoped school listing
 
 ### Phase 4: Platform Admin
 - [ ] Create PlatformAdminController
@@ -106,6 +107,9 @@ None
   - `dto/MembershipSummary.java` (Phase 2)
 - `backend/src/test/java/com/klassenzeit/klassenzeit/security/TestSecurityConfig.java`
 - `backend/src/test/java/com/klassenzeit/klassenzeit/membership/SchoolMembershipServiceTest.java` (Phase 2)
+- `backend/src/test/java/com/klassenzeit/klassenzeit/security/WithMockCurrentUser.java` (Phase 3)
+- `backend/src/test/java/com/klassenzeit/klassenzeit/security/WithMockCurrentUserSecurityContextFactory.java` (Phase 3)
+- `backend/src/test/java/com/klassenzeit/klassenzeit/security/MockCurrentUserAuthentication.java` (Phase 3)
 
 ### Modified Files
 - `backend/build.gradle.kts` - Added security dependencies
@@ -144,8 +148,9 @@ None
 
 ### Testing
 - Production security config uses `@Profile("!test")`
-- Test security config uses `@Profile("test")` and permits all requests
-- All 456 existing tests pass
+- Test security config uses `@Profile("test")` with `@EnableMethodSecurity(prePostEnabled = true)`
+- Use `@WithMockCurrentUser` annotation to set up security context in tests
+- All 481 tests pass
 
 ### Keycloak Access
 - URL: http://localhost:8180

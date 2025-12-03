@@ -188,18 +188,44 @@ com.klassenzeit.klassenzeit/
 
 ### Using Authorization in Controllers
 
+**Standard Pattern** (for school-scoped resources):
+
 ```java
+// READ operations - any school member can access
 @GetMapping
 @PreAuthorize("@authz.canAccessSchool(#schoolId)")
 public List<TeacherSummary> findAll(@PathVariable UUID schoolId) {
     return teacherService.findAllBySchool(schoolId);
 }
 
+// WRITE operations - requires admin or planner role
 @PostMapping
 @PreAuthorize("@authz.canManageSchool(#schoolId)")
 public TeacherResponse create(@PathVariable UUID schoolId, ...) {
     return teacherService.create(schoolId, request);
 }
+```
+
+**SchoolController Pattern** (special case):
+
+```java
+// List schools - returns only user's schools
+@GetMapping
+@PreAuthorize("@authz.canListSchools()")
+public List<SchoolSummary> findAll() {
+    CurrentUser currentUser = authorizationService.getCurrentUser();
+    return schoolService.findAllForUser(currentUser);
+}
+
+// Create school - platform admin only
+@PostMapping
+@PreAuthorize("@authz.isPlatformAdmin()")
+public SchoolResponse create(...) { ... }
+
+// Update/delete school - school admin only
+@PutMapping("/{id}")
+@PreAuthorize("@authz.isSchoolAdmin(#id)")
+public SchoolResponse update(@PathVariable UUID id, ...) { ... }
 ```
 
 ### AuthorizationService Methods
@@ -302,9 +328,10 @@ spring:
 - [x] Membership CRUD endpoints (`/api/schools/{schoolId}/members`)
 - [x] Add `@PreAuthorize` to TeacherController (POC)
 
-### Phase 3: Secure All Endpoints (Pending)
-- [ ] Add `@PreAuthorize` to all controllers
-- [ ] Update tests with security context
+### Phase 3: Secure All Endpoints ✅
+- [x] Add `@PreAuthorize` to all controllers
+- [x] Create `@WithMockCurrentUser` test annotation
+- [x] Update tests with security context
 
 ### Phase 4: Platform Admin (Pending)
 - [ ] Create PlatformAdminController
@@ -329,11 +356,12 @@ spring:
 
 ### Test Security Configuration
 
-Tests use a separate security configuration that disables authentication:
+Tests use a separate security configuration that enables method security:
 
 ```java
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 @Profile("test")
 public class TestSecurityConfig {
   @Bean
@@ -345,17 +373,51 @@ public class TestSecurityConfig {
 }
 ```
 
-### Testing with Security Context (Future)
+### Testing with @WithMockCurrentUser
 
-For tests that need to verify authorization:
+Use the `@WithMockCurrentUser` annotation to set up a security context in tests:
 
 ```java
+@Test
 @WithMockCurrentUser(
     email = "admin@school.com",
-    schoolRoles = {"schoolId:SCHOOL_ADMIN"}
+    isPlatformAdmin = true
 )
+void platformAdminCanCreateSchool() { ... }
+
 @Test
-void adminCanCreateTeacher() { ... }
+@WithMockCurrentUser(
+    email = "planner@school.com",
+    schoolRoles = {"550e8400-e29b-41d4-a716-446655440000:PLANNER"}
+)
+void plannerCanCreateTeacher() { ... }
+```
+
+**Annotation parameters:**
+- `email` - User's email (default: "test@example.com")
+- `displayName` - User's display name (default: "Test User")
+- `isPlatformAdmin` - Whether user is platform admin (default: false)
+- `schoolRoles` - Array of "schoolId:ROLE" strings (default: empty)
+
+### Testing @WebMvcTest Controllers
+
+For `@WebMvcTest` controller tests, mock the `AuthorizationService` bean:
+
+```java
+@WebMvcTest(MyController.class)
+@Import(TestSecurityConfig.class)
+@ActiveProfiles("test")
+class MyControllerTest {
+
+  @MockitoBean(name = "authz")
+  private AuthorizationService authorizationService;
+
+  @BeforeEach
+  void setUp() {
+    when(authorizationService.canAccessSchool(any())).thenReturn(true);
+    when(authorizationService.canManageSchool(any())).thenReturn(true);
+  }
+}
 ```
 
 ## Design Decisions

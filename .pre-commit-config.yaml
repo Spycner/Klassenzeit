@@ -18,7 +18,7 @@ repos:
       # Frontend hooks
       - id: biome-check
         name: Biome lint and format check
-        entry: bash -c 'cd frontend && npx @biomejs/biome check --staged'
+        entry: bash -c 'cd frontend && if git diff --cached --name-only | grep -qE "^frontend/.*\.(ts|tsx|js|jsx|json)$"; then npx @biomejs/biome check --staged; else echo "No frontend files staged, skipping"; fi'
         language: system
         files: ^frontend/.*\.(ts|tsx|js|jsx|json)$
         pass_filenames: false
