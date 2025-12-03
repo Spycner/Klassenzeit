@@ -1,6 +1,7 @@
 package com.klassenzeit.klassenzeit.security;
 
 import com.klassenzeit.klassenzeit.membership.SchoolRole;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
@@ -17,7 +18,8 @@ public record CurrentUser(
     String email,
     String displayName,
     boolean isPlatformAdmin,
-    Map<UUID, SchoolRole> schoolRoles) {
+    Map<UUID, SchoolRole> schoolRoles)
+    implements Serializable {
 
   /** Check if the user has access to the given school. */
   public boolean hasSchoolAccess(UUID schoolId) {

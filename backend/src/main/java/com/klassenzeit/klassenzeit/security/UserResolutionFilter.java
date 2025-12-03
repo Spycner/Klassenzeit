@@ -63,27 +63,37 @@ public class UserResolutionFilter extends OncePerRequestFilter {
   /** Extract display name from JWT, falling back to email if not present. */
   private String extractDisplayName(Jwt jwt) {
     // Try preferred_username first (Keycloak default)
-    String preferredUsername = jwt.getClaimAsString("preferred_username");
-    if (preferredUsername != null && !preferredUsername.isBlank()) {
-      return preferredUsername;
+    String result = getClaimIfPresent(jwt, "preferred_username");
+    if (result != null) {
+      return result;
     }
 
     // Try name claim
-    String name = jwt.getClaimAsString("name");
-    if (name != null && !name.isBlank()) {
-      return name;
+    result = getClaimIfPresent(jwt, "name");
+    if (result != null) {
+      return result;
     }
 
     // Try combining given_name and family_name
     String givenName = jwt.getClaimAsString("given_name");
     String familyName = jwt.getClaimAsString("family_name");
     if (givenName != null || familyName != null) {
-      return ((givenName != null ? givenName : "") + " " + (familyName != null ? familyName : ""))
-          .trim();
+      String combined =
+          String.join(" ", givenName != null ? givenName : "", familyName != null ? familyName : "")
+              .trim();
+      if (!combined.isEmpty()) {
+        return combined;
+      }
     }
 
     // Fall back to email
-    String email = jwt.getClaimAsString("email");
-    return email != null ? email : "Unknown User";
+    result = getClaimIfPresent(jwt, "email");
+    return result != null ? result : "Unknown User";
+  }
+
+  /** Get a claim value if present and not blank. */
+  private String getClaimIfPresent(Jwt jwt, String claimName) {
+    String value = jwt.getClaimAsString(claimName);
+    return (value != null && !value.isBlank()) ? value : null;
   }
 }

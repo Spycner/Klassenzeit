@@ -197,6 +197,45 @@ public class SchoolMembershipService {
     membershipRepository.save(membership);
   }
 
+  /**
+   * Assign a user as SCHOOL_ADMIN.
+   *
+   * <p>This method is for platform admins to assign the initial admin when a school has no admins.
+   *
+   * <p>Business rules:
+   *
+   * <ul>
+   *   <li>User must exist
+   *   <li>School must exist
+   *   <li>User must not already have an active membership in this school
+   * </ul>
+   */
+  @Transactional
+  public MembershipResponse assignSchoolAdmin(UUID schoolId, UUID userId, UUID grantedById) {
+    School school =
+        schoolRepository
+            .findById(schoolId)
+            .orElseThrow(() -> new EntityNotFoundException("School", schoolId));
+
+    AppUser user =
+        appUserRepository
+            .findById(userId)
+            .orElseThrow(() -> new EntityNotFoundException("User", userId));
+
+    // Check for existing membership
+    if (membershipRepository.existsByUserIdAndSchoolIdAndActiveTrue(userId, schoolId)) {
+      throw new ForbiddenOperationException("User already has an active membership in this school");
+    }
+
+    AppUser grantedBy =
+        grantedById != null ? appUserRepository.findById(grantedById).orElse(null) : null;
+
+    SchoolMembership membership =
+        new SchoolMembership(user, school, SchoolRole.SCHOOL_ADMIN, grantedBy);
+
+    return toResponse(membershipRepository.save(membership));
+  }
+
   private MembershipSummary toSummary(SchoolMembership m) {
     return new MembershipSummary(
         m.getId(),

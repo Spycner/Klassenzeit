@@ -18,6 +18,8 @@ import org.springframework.security.test.context.support.WithSecurityContextFact
 public class WithMockCurrentUserSecurityContextFactory
     implements WithSecurityContextFactory<WithMockCurrentUser> {
 
+  private static final int EXPECTED_PARTS = 2;
+
   @Override
   public SecurityContext createSecurityContext(WithMockCurrentUser annotation) {
     SecurityContext context = SecurityContextHolder.createEmptyContext();
@@ -39,11 +41,11 @@ public class WithMockCurrentUserSecurityContextFactory
     return context;
   }
 
-  private Map<UUID, SchoolRole> parseSchoolRoles(String[] schoolRoles) {
+  private Map<UUID, SchoolRole> parseSchoolRoles(String... schoolRoles) {
     Map<UUID, SchoolRole> roles = new HashMap<>();
     for (String roleSpec : schoolRoles) {
       String[] parts = roleSpec.split(":");
-      if (parts.length != 2) {
+      if (parts.length != EXPECTED_PARTS) {
         throw new IllegalArgumentException(
             "Invalid school role format. Expected 'schoolId:ROLE', got: " + roleSpec);
       }

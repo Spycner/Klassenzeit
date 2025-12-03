@@ -27,6 +27,7 @@ public class SecurityConfig {
   }
 
   @Bean
+  @SuppressWarnings("PMD.SignatureDeclareThrowsException") // Required by Spring Security API
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.cors(Customizer.withDefaults())
         .csrf(AbstractHttpConfigurer::disable)

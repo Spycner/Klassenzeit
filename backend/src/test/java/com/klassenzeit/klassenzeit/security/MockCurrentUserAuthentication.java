@@ -10,6 +10,11 @@ import org.springframework.security.core.GrantedAuthority;
  *
  * <p>This is used by {@link WithMockCurrentUser} to set up the security context in tests.
  */
+@SuppressWarnings({
+  "PMD.NonSerializableClass", // Test class, serialization not needed
+  "PMD.CallSuperInConstructor", // AbstractAuthenticationToken handles this
+  "PMD.ConstructorCallsOverridableMethod" // Safe in test context, setAuthenticated is final
+})
 public class MockCurrentUserAuthentication extends AbstractAuthenticationToken {
 
   private final CurrentUser currentUser;

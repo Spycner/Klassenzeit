@@ -160,6 +160,10 @@ Email and link-based invitations.
 
 ```
 com.klassenzeit.klassenzeit/
+├── admin/
+│   ├── PlatformAdminController.java  # /api/admin/schools endpoints
+│   └── dto/
+│       └── AssignAdminRequest.java
 ├── security/
 │   ├── SecurityConfig.java           # Spring Security + JWT config
 │   ├── CurrentUser.java              # User context record
@@ -247,11 +251,12 @@ GET  /api/users/me              # Current user profile with school memberships
 PUT  /api/users/me              # Update display name (future)
 ```
 
-### Platform Admin (future)
+### Platform Admin ✅
 ```
-POST /api/admin/schools              # Create school
-POST /api/admin/schools/{id}/admins  # Assign school admin
+POST /api/admin/schools/{id}/admins  # Assign school admin (PLATFORM_ADMIN)
 ```
+
+Note: School creation uses `POST /api/schools` (see SchoolController) with `@authz.isPlatformAdmin()`.
 
 ### School Membership ✅
 ```
@@ -333,10 +338,9 @@ spring:
 - [x] Create `@WithMockCurrentUser` test annotation
 - [x] Update tests with security context
 
-### Phase 4: Platform Admin (Pending)
-- [ ] Create PlatformAdminController
-- [ ] School creation endpoint
-- [ ] School admin assignment
+### Phase 4: Platform Admin ✅
+- [x] Create PlatformAdminController
+- [x] School admin assignment endpoint (`POST /api/admin/schools/{id}/admins`)
 
 ### Phase 5: Access Requests (Pending)
 - [ ] Access request entity and endpoints

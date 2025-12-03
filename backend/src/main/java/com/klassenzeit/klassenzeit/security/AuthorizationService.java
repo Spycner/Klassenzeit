@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
  * <p>Usage in controllers:
  *
  * <pre>{@code
- * @PreAuthorize("@authz.canAccessSchool(#schoolId)")
+ * &#64;PreAuthorize("@authz.canAccessSchool(#schoolId)")
  * public List<TeacherSummary> findAll(@PathVariable UUID schoolId) { ... }
  * }</pre>
  */
@@ -25,10 +25,9 @@ public class AuthorizationService {
     return getCurrentUser().isPlatformAdmin();
   }
 
-  /** Check if the current user can access the given school. */
+  /** Check if the current user can access the given school (requires explicit membership). */
   public boolean canAccessSchool(UUID schoolId) {
-    CurrentUser user = getCurrentUser();
-    return user.isPlatformAdmin() || user.hasSchoolAccess(schoolId);
+    return getCurrentUser().hasSchoolAccess(schoolId);
   }
 
   /** Check if the current user can manage the school (admin or planner). */

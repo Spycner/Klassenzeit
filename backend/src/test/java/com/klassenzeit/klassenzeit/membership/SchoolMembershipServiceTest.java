@@ -461,4 +461,71 @@ class SchoolMembershipServiceTest extends AbstractIntegrationTest {
           .isInstanceOf(EntityNotFoundException.class);
     }
   }
+
+  @Nested
+  class AssignSchoolAdmin {
+
+    @Test
+    void assignsUserAsSchoolAdmin() {
+      AppUser newUser = testData.appUser().withEmail("newadmin@example.com").persist();
+      entityManager.flush();
+      entityManager.clear();
+
+      MembershipResponse result =
+          membershipService.assignSchoolAdmin(school.getId(), newUser.getId(), adminUser.getId());
+
+      assertThat(result.id()).isNotNull();
+      assertThat(result.userId()).isEqualTo(newUser.getId());
+      assertThat(result.role()).isEqualTo(SchoolRole.SCHOOL_ADMIN);
+      assertThat(result.isActive()).isTrue();
+      assertThat(result.grantedById()).isEqualTo(adminUser.getId());
+      assertThat(result.grantedAt()).isNotNull();
+    }
+
+    @Test
+    void throwsWhenSchoolNotFound() {
+      AppUser newUser = testData.appUser().withEmail("newadmin@example.com").persist();
+      entityManager.flush();
+      entityManager.clear();
+
+      UUID nonExistentSchoolId = UUID.randomUUID();
+
+      assertThatThrownBy(
+              () ->
+                  membershipService.assignSchoolAdmin(
+                      nonExistentSchoolId, newUser.getId(), adminUser.getId()))
+          .isInstanceOf(EntityNotFoundException.class)
+          .hasMessageContaining("School");
+    }
+
+    @Test
+    void throwsWhenUserNotFound() {
+      entityManager.flush();
+      entityManager.clear();
+
+      UUID nonExistentUserId = UUID.randomUUID();
+
+      assertThatThrownBy(
+              () ->
+                  membershipService.assignSchoolAdmin(
+                      school.getId(), nonExistentUserId, adminUser.getId()))
+          .isInstanceOf(EntityNotFoundException.class)
+          .hasMessageContaining("User");
+    }
+
+    @Test
+    void throwsWhenUserAlreadyHasMembership() {
+      AppUser existingUser = testData.appUser().withEmail("existing@example.com").persist();
+      testData.membership(school, existingUser).withRole(SchoolRole.VIEWER).persist();
+      entityManager.flush();
+      entityManager.clear();
+
+      assertThatThrownBy(
+              () ->
+                  membershipService.assignSchoolAdmin(
+                      school.getId(), existingUser.getId(), adminUser.getId()))
+          .isInstanceOf(ForbiddenOperationException.class)
+          .hasMessageContaining("already has an active membership");
+    }
+  }
 }

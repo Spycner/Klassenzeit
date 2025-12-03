@@ -1,7 +1,5 @@
 package com.klassenzeit.klassenzeit.security;
 
-import java.util.Collection;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 /**
@@ -26,10 +24,5 @@ public class CurrentUserAuthentication extends JwtAuthenticationToken {
   @Override
   public Object getPrincipal() {
     return currentUser;
-  }
-
-  @Override
-  public Collection<GrantedAuthority> getAuthorities() {
-    return super.getAuthorities();
   }
 }

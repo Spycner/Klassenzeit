@@ -6,7 +6,7 @@ Implement Keycloak-based authentication with application-level school-scoped aut
 
 ## Status: In Progress
 
-**Phase 1, 2 & 3 Complete** - Foundation, School Membership, and Endpoint Security implemented. Remaining phases pending.
+**Phase 1, 2, 3 & 4 Complete** - Foundation, School Membership, Endpoint Security, and Platform Admin implemented. Remaining phases pending.
 
 ## Architecture Decision
 
@@ -46,10 +46,11 @@ See [docs/authentication.md](../../../docs/authentication.md) for full architect
 - [x] Update tests with security context
 - [x] Add `findAllForUser(CurrentUser)` to SchoolService for user-scoped school listing
 
-### Phase 4: Platform Admin
-- [ ] Create PlatformAdminController
-- [ ] `POST /api/admin/schools` - Create school
-- [ ] `POST /api/admin/schools/{id}/admins` - Assign school admin
+### Phase 4: Platform Admin ✅
+- [x] Create PlatformAdminController
+- [x] `POST /api/admin/schools/{id}/admins` - Assign school admin
+
+Note: `POST /api/admin/schools` is not needed since `POST /api/schools` already exists with platform admin auth.
 
 ### Phase 5: Access Requests
 - [ ] Create SchoolAccessRequest entity
@@ -110,12 +111,18 @@ None
 - `backend/src/test/java/com/klassenzeit/klassenzeit/security/WithMockCurrentUser.java` (Phase 3)
 - `backend/src/test/java/com/klassenzeit/klassenzeit/security/WithMockCurrentUserSecurityContextFactory.java` (Phase 3)
 - `backend/src/test/java/com/klassenzeit/klassenzeit/security/MockCurrentUserAuthentication.java` (Phase 3)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/admin/PlatformAdminController.java` (Phase 4)
+- `backend/src/main/java/com/klassenzeit/klassenzeit/admin/dto/AssignAdminRequest.java` (Phase 4)
+- `backend/src/test/java/com/klassenzeit/klassenzeit/admin/PlatformAdminControllerTest.java` (Phase 4)
 
 ### Modified Files
 - `backend/build.gradle.kts` - Added security dependencies
 - `backend/src/main/resources/application.yaml` - Added OAuth2 config
 - `.env.example` - Added Keycloak env vars
 - `.env` - Added Keycloak env vars
+- `backend/src/main/java/com/klassenzeit/klassenzeit/membership/SchoolMembershipService.java` - Added `assignSchoolAdmin()` method (Phase 4)
+- `backend/src/test/java/com/klassenzeit/klassenzeit/membership/SchoolMembershipServiceTest.java` - Added tests for `assignSchoolAdmin()` (Phase 4)
+- `docs/authentication.md` - Updated Phase 4 status, API docs, package structure (Phase 4)
 
 ## Roles
 

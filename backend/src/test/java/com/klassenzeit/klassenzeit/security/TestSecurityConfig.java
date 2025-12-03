@@ -24,9 +24,11 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @Profile("test")
+@SuppressWarnings("PMD.UnitTestShouldUseTestAnnotation") // Configuration class, not a test
 public class TestSecurityConfig {
 
   @Bean
+  @SuppressWarnings("PMD.SignatureDeclareThrowsException") // Required by Spring Security API
   public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());

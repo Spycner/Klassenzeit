@@ -12,6 +12,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -115,6 +117,16 @@ public class GlobalExceptionHandler {
     body.put("status", HttpStatus.FORBIDDEN.value());
     body.put("error", messageSource.getMessage("error.forbidden", null, locale));
     body.put("message", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+  }
+
+  @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
+  public ResponseEntity<Map<String, Object>> handleAccessDenied(Exception ex, Locale locale) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("timestamp", Instant.now());
+    body.put("status", HttpStatus.FORBIDDEN.value());
+    body.put("error", messageSource.getMessage("error.forbidden", null, locale));
+    body.put("message", messageSource.getMessage("error.accessDenied", null, locale));
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
   }
 
