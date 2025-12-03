@@ -227,12 +227,13 @@ POST /api/admin/schools              # Create school
 POST /api/admin/schools/{id}/admins  # Assign school admin
 ```
 
-### School Membership (future)
+### School Membership ✅
 ```
-GET    /api/schools/{schoolId}/members
-POST   /api/schools/{schoolId}/members
-PUT    /api/schools/{schoolId}/members/{id}
-DELETE /api/schools/{schoolId}/members/{id}
+GET    /api/schools/{schoolId}/members       # List members (SCHOOL_ADMIN)
+GET    /api/schools/{schoolId}/members/{id}  # Get member details (SCHOOL_ADMIN)
+POST   /api/schools/{schoolId}/members       # Add member (SCHOOL_ADMIN)
+PUT    /api/schools/{schoolId}/members/{id}  # Update role (SCHOOL_ADMIN)
+DELETE /api/schools/{schoolId}/members/{id}  # Remove member (SCHOOL_ADMIN)
 ```
 
 ### Access Requests (future)
@@ -297,9 +298,9 @@ spring:
 - [x] Create `/api/users/me` endpoint
 - [x] Test configuration for existing tests
 
-### Phase 2: School Membership (Pending)
-- [ ] Membership CRUD endpoints
-- [ ] Add `@PreAuthorize` to TeacherController (POC)
+### Phase 2: School Membership ✅
+- [x] Membership CRUD endpoints (`/api/schools/{schoolId}/members`)
+- [x] Add `@PreAuthorize` to TeacherController (POC)
 
 ### Phase 3: Secure All Endpoints (Pending)
 - [ ] Add `@PreAuthorize` to all controllers

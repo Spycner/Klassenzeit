@@ -24,4 +24,7 @@ public interface SchoolMembershipRepository extends JpaRepository<SchoolMembersh
           + "JOIN FETCH m.school "
           + "WHERE m.user.id = :userId AND m.active = true")
   List<SchoolMembership> findByUserIdWithSchool(UUID userId);
+
+  /** Count active members with a specific role in a school. Used for orphan protection. */
+  long countBySchoolIdAndRoleAndActiveTrue(UUID schoolId, SchoolRole role);
 }

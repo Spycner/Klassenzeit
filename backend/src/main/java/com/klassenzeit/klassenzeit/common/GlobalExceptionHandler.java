@@ -1,5 +1,6 @@
 package com.klassenzeit.klassenzeit.common;
 
+import com.klassenzeit.klassenzeit.membership.ForbiddenOperationException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -104,6 +105,17 @@ public class GlobalExceptionHandler {
     body.put("error", messageSource.getMessage(errorKey, null, locale));
     body.put("message", message);
     return ResponseEntity.status(status).body(body);
+  }
+
+  @ExceptionHandler(ForbiddenOperationException.class)
+  public ResponseEntity<Map<String, Object>> handleForbiddenOperation(
+      ForbiddenOperationException ex, Locale locale) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("timestamp", Instant.now());
+    body.put("status", HttpStatus.FORBIDDEN.value());
+    body.put("error", messageSource.getMessage("error.forbidden", null, locale));
+    body.put("message", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

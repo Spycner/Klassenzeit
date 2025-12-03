@@ -6,7 +6,7 @@ Implement Keycloak-based authentication with application-level school-scoped aut
 
 ## Status: In Progress
 
-**Phase 1 Complete** - Foundation implemented. Remaining phases pending.
+**Phase 1 & 2 Complete** - Foundation and School Membership implemented. Remaining phases pending.
 
 ## Architecture Decision
 
@@ -28,11 +28,11 @@ See [docs/authentication.md](../../../docs/authentication.md) for full architect
 - [x] Create `/api/users/me` endpoint
 - [x] Test configuration (disable auth for tests)
 
-### Phase 2: School Membership
-- [ ] Create SchoolMembershipService
-- [ ] Create SchoolMembershipController
-- [ ] Membership CRUD endpoints (`/api/schools/{schoolId}/members`)
-- [ ] Add `@PreAuthorize` to TeacherController as POC
+### Phase 2: School Membership ✅
+- [x] Create SchoolMembershipService
+- [x] Create SchoolMembershipController
+- [x] Membership CRUD endpoints (`/api/schools/{schoolId}/members`)
+- [x] Add `@PreAuthorize` to TeacherController as POC
 
 ### Phase 3: Secure All Endpoints
 - [ ] Add `@PreAuthorize` to all controllers:
@@ -97,7 +97,15 @@ None
   - `SchoolMembership.java`
   - `SchoolRole.java`
   - `SchoolMembershipRepository.java`
+  - `SchoolMembershipService.java` (Phase 2)
+  - `SchoolMembershipController.java` (Phase 2)
+  - `ForbiddenOperationException.java` (Phase 2)
+  - `dto/CreateMembershipRequest.java` (Phase 2)
+  - `dto/UpdateMembershipRequest.java` (Phase 2)
+  - `dto/MembershipResponse.java` (Phase 2)
+  - `dto/MembershipSummary.java` (Phase 2)
 - `backend/src/test/java/com/klassenzeit/klassenzeit/security/TestSecurityConfig.java`
+- `backend/src/test/java/com/klassenzeit/klassenzeit/membership/SchoolMembershipServiceTest.java` (Phase 2)
 
 ### Modified Files
 - `backend/build.gradle.kts` - Added security dependencies
@@ -120,11 +128,12 @@ None
 | Method | Endpoint | Description | Phase |
 |--------|----------|-------------|-------|
 | GET | `/api/users/me` | Current user profile | 1 ✅ |
-| PUT | `/api/users/me` | Update profile | 2 |
-| GET | `/api/schools/{id}/members` | List members | 2 |
-| POST | `/api/schools/{id}/members` | Add member | 2 |
-| PUT | `/api/schools/{id}/members/{id}` | Update member | 2 |
-| DELETE | `/api/schools/{id}/members/{id}` | Remove member | 2 |
+| PUT | `/api/users/me` | Update profile | 3 |
+| GET | `/api/schools/{id}/members` | List members | 2 ✅ |
+| GET | `/api/schools/{id}/members/{id}` | Get member details | 2 ✅ |
+| POST | `/api/schools/{id}/members` | Add member | 2 ✅ |
+| PUT | `/api/schools/{id}/members/{id}` | Update member | 2 ✅ |
+| DELETE | `/api/schools/{id}/members/{id}` | Remove member | 2 ✅ |
 | POST | `/api/admin/schools` | Create school | 4 |
 | POST | `/api/admin/schools/{id}/admins` | Assign admin | 4 |
 | POST | `/api/schools/{id}/access-requests` | Request access | 5 |
