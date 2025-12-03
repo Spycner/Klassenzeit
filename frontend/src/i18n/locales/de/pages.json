@@ -29,7 +29,7 @@
       "lastName": "Nachname",
       "lastNamePlaceholder": "Nachname eingeben",
       "abbreviation": "Kürzel",
-      "abbreviationPlaceholder": "z.B. MÜL",
+      "abbreviationPlaceholder": "MÜL",
       "email": "E-Mail",
       "emailPlaceholder": "lehrkraft@schule.de",
       "maxHoursPerWeek": "Max. Stunden/Woche",
@@ -55,6 +55,7 @@
         "SUBSTITUTE": "Vertretung"
       }
     },
+    "noSchoolAvailable": "Keine Schule verfügbar. Bitte erstellen Sie zuerst eine Schule.",
     "availability": {
       "title": "Wöchentliche Verfügbarkeit",
       "description": "Klicken Sie auf Zellen, um durch die Verfügbarkeitszustände zu wechseln. Änderungen werden beim Klicken auf Speichern gespeichert.",

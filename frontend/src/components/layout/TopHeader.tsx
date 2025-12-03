@@ -75,7 +75,11 @@ export function TopHeader() {
               <DropdownMenuItem
                 key={lang}
                 onClick={() => switchLanguage(lang)}
-                className={i18n.language === lang ? "bg-accent" : ""}
+                className={
+                  i18n.language === lang
+                    ? "bg-secondary text-secondary-foreground"
+                    : ""
+                }
               >
                 {languageNames[lang]}
               </DropdownMenuItem>

@@ -1,21 +1,19 @@
 import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import type { TeacherResponse } from "@/api";
+import {
+  type CreateTeacherInput,
+  createTeacherSchema,
+  type TeacherResponse,
+  validate,
+} from "@/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export interface TeacherFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  abbreviation: string;
-  maxHoursPerWeek: number | null;
-  isPartTime: boolean;
-}
+export type TeacherFormData = CreateTeacherInput;
 
 interface TeacherFormProps {
   teacher?: TeacherResponse;
@@ -43,14 +41,19 @@ export function TeacherForm({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await onSubmit({
+    const formData = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      email: email.trim(),
+      email: email.trim() || undefined,
       abbreviation: abbreviation.trim(),
-      maxHoursPerWeek: maxHoursPerWeek ? Number.parseInt(maxHoursPerWeek, 10) : null,
-      isPartTime,
-    });
+      maxHoursPerWeek: maxHoursPerWeek
+        ? Number.parseInt(maxHoursPerWeek, 10)
+        : undefined,
+      isPartTime: isPartTime || undefined,
+    };
+    const result = validate(createTeacherSchema, formData);
+    if (!result.success) return;
+    await onSubmit(result.data);
   };
 
   const handleCancel = () => {
@@ -77,9 +80,7 @@ export function TeacherForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="lastName">
-                {t("teachers.form.lastName")} *
-              </Label>
+              <Label htmlFor="lastName">{t("teachers.form.lastName")} *</Label>
               <Input
                 id="lastName"
                 value={lastName}
@@ -129,7 +130,7 @@ export function TeacherForm({
                 id="maxHoursPerWeek"
                 type="number"
                 min={1}
-                max={60}
+                max={50}
                 value={maxHoursPerWeek}
                 onChange={(e) => setMaxHoursPerWeek(e.target.value)}
                 placeholder={t("teachers.form.maxHoursPerWeekPlaceholder")}

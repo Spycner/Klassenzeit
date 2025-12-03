@@ -29,7 +29,7 @@
       "lastName": "Last Name",
       "lastNamePlaceholder": "Enter last name",
       "abbreviation": "Abbreviation",
-      "abbreviationPlaceholder": "e.g. SMI",
+      "abbreviationPlaceholder": "SMI",
       "email": "Email",
       "emailPlaceholder": "teacher@school.edu",
       "maxHoursPerWeek": "Max Hours/Week",
@@ -55,6 +55,7 @@
         "SUBSTITUTE": "Substitute"
       }
     },
+    "noSchoolAvailable": "No school available. Please create a school first.",
     "availability": {
       "title": "Weekly Availability",
       "description": "Click cells to cycle through availability states. Changes are saved when you click Save.",

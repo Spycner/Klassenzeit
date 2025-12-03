@@ -46,10 +46,13 @@ export function TeacherDetailPage() {
   const deleteMutation = useDeleteTeacher(schoolId ?? "");
 
   const isLoading = schoolsLoading || (!isNew && teacherLoading);
-  const isSubmitting =
-    createMutation.isPending || updateMutation.isPending;
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = async (data: TeacherFormData) => {
+    if (!schoolId) {
+      // No school available - cannot create/update teacher
+      return;
+    }
     if (isNew) {
       const created = await createMutation.mutateAsync({
         firstName: data.firstName,
@@ -82,17 +85,24 @@ export function TeacherDetailPage() {
     }
   };
 
-  if (error) {
+  // Show error if schools loaded but none available
+  const noSchoolAvailable =
+    !schoolsLoading && (!schools || schools.length === 0);
+
+  if (error || noSchoolAvailable) {
     return (
       <div>
         <PageHeader
-          title={t("teachers.editTitle")}
+          title={isNew ? t("teachers.newTitle") : t("teachers.editTitle")}
           breadcrumbs={[
             { label: t("teachers.title"), href: "/teachers" },
-            { label: t("teachers.editTitle") },
+            { label: isNew ? t("teachers.newTitle") : t("teachers.editTitle") },
           ]}
         />
-        <ErrorState error={error} onRetry={refetch} />
+        <ErrorState
+          error={error ?? new Error(t("teachers.noSchoolAvailable"))}
+          onRetry={noSchoolAvailable ? undefined : refetch}
+        />
       </div>
     );
   }
