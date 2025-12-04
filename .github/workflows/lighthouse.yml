@@ -21,6 +21,7 @@ jobs:
         run: |
           docker run -d --name keycloak \
             -p 8180:8080 \
+            -p 9000:9000 \
             -v ${{ github.workspace }}/docker/keycloak:/opt/keycloak/data/import \
             -e KC_HOSTNAME_STRICT=false \
             -e KC_HTTP_ENABLED=true \
@@ -31,8 +32,12 @@ jobs:
             start-dev --import-realm
 
           echo "Waiting for Keycloak to be ready..."
-          timeout 120 bash -c 'until curl -sf http://localhost:8180/health/ready > /dev/null 2>&1; do sleep 2; done'
+          timeout 120 bash -c 'until curl -sf http://localhost:9000/health/ready > /dev/null 2>&1; do sleep 2; done'
           echo "Keycloak is ready"
+
+          echo "Waiting for realm import to complete..."
+          timeout 60 bash -c 'until curl -sf http://localhost:8180/realms/klassenzeit/.well-known/openid-configuration > /dev/null 2>&1; do sleep 2; done'
+          echo "Realm 'klassenzeit' is available"
 
       - name: Install and build frontend
         run: |
