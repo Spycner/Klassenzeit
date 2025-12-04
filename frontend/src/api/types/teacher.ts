@@ -18,7 +18,7 @@ import type {
 export interface CreateTeacherRequest {
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string;
   abbreviation: string;
   maxHoursPerWeek?: number;
   isPartTime?: boolean;
@@ -27,7 +27,7 @@ export interface CreateTeacherRequest {
 export interface UpdateTeacherRequest {
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string;
   abbreviation: string;
   maxHoursPerWeek?: number;
   isPartTime?: boolean;

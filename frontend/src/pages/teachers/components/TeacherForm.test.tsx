@@ -12,7 +12,8 @@ class ResizeObserverMock {
 }
 
 beforeAll(() => {
-  global.ResizeObserver = ResizeObserverMock;
+  globalThis.ResizeObserver =
+    ResizeObserverMock as unknown as typeof ResizeObserver;
 });
 
 describe("TeacherForm", () => {
@@ -58,7 +59,11 @@ describe("TeacherForm", () => {
             lastName: "Mustermann",
             abbreviation: "MUS",
             email: "max@school.de",
+            maxHoursPerWeek: null,
             isPartTime: false,
+            isActive: true,
+            createdAt: "2024-01-01T00:00:00Z",
+            updatedAt: "2024-01-01T00:00:00Z",
           }}
         />,
       );
@@ -80,6 +85,9 @@ describe("TeacherForm", () => {
             email: "max@school.de",
             maxHoursPerWeek: 25,
             isPartTime: true,
+            isActive: true,
+            createdAt: "2024-01-01T00:00:00Z",
+            updatedAt: "2024-01-01T00:00:00Z",
           }}
         />,
       );
@@ -200,7 +208,12 @@ describe("TeacherForm", () => {
             firstName: "Max",
             lastName: "Mustermann",
             abbreviation: "MUS",
+            email: "max@school.de",
+            maxHoursPerWeek: null,
             isPartTime: false,
+            isActive: true,
+            createdAt: "2024-01-01T00:00:00Z",
+            updatedAt: "2024-01-01T00:00:00Z",
           }}
         />,
       );
