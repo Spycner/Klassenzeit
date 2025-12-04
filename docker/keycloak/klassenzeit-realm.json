@@ -51,8 +51,10 @@
         "pkce.code.challenge.method": "S256"
       },
       "defaultClientScopes": [
+        "openid",
         "web-origins",
         "acr",
+        "basic",
         "profile",
         "email"
       ],
@@ -79,5 +81,22 @@
     "de",
     "en"
   ],
-  "defaultLocale": "de"
+  "defaultLocale": "de",
+  "users": [
+    {
+      "username": "e2e-test@klassenzeit.com",
+      "email": "e2e-test@klassenzeit.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "E2E",
+      "lastName": "Test",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "e2e-test-password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
 }

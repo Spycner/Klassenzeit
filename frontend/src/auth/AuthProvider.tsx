@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from "react";
+import type { ReactNode } from "react";
 import {
   AuthProvider as OidcAuthProvider,
   useAuth as useOidcAuth,
@@ -26,13 +26,16 @@ interface AuthProviderProps {
 /**
  * Internal component that syncs the access token with the API client.
  * Must be rendered inside the OIDC provider.
+ *
+ * Sets the token getter synchronously during render (not in useEffect)
+ * to ensure it's available before any child components make API calls.
  */
 function TokenSync() {
   const auth = useOidcAuth();
 
-  useEffect(() => {
-    setTokenGetter(() => auth.user?.access_token ?? null);
-  }, [auth.user?.access_token]);
+  // Set synchronously during render, before children render.
+  // This ensures the token is available for any API calls made by child components.
+  setTokenGetter(() => auth.user?.access_token ?? null);
 
   return null;
 }
