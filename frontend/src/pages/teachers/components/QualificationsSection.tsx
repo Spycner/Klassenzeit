@@ -2,12 +2,12 @@ import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  type QualificationLevel,
+  type QualificationSummary,
   useCreateQualification,
   useDeleteQualification,
   useQualifications,
   useSubjects,
-  type QualificationLevel,
-  type QualificationSummary,
 } from "@/api";
 import { LoadingState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,8 @@ export function QualificationsSection({
   const { t } = useTranslation("pages");
 
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
-  const [selectedLevel, setSelectedLevel] = useState<QualificationLevel>("PRIMARY");
+  const [selectedLevel, setSelectedLevel] =
+    useState<QualificationLevel>("PRIMARY");
   const [isAdding, setIsAdding] = useState(false);
 
   const { data: qualifications, isLoading: qualificationsLoading } =
@@ -66,8 +67,7 @@ export function QualificationsSection({
 
   // Filter out subjects that are already qualified
   const availableSubjects = subjects?.filter(
-    (subject) =>
-      !qualifications?.some((q) => q.subjectId === subject.id),
+    (subject) => !qualifications?.some((q) => q.subjectId === subject.id),
   );
 
   const handleAdd = async () => {
@@ -94,11 +94,7 @@ export function QualificationsSection({
           {t("teachers.qualifications.title")}
         </CardTitle>
         {!isAdding && availableSubjects && availableSubjects.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsAdding(true)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setIsAdding(true)}>
             <Plus className="mr-1.5 h-4 w-4" />
             {t("teachers.qualifications.add")}
           </Button>
@@ -120,7 +116,9 @@ export function QualificationsSection({
                     value={selectedSubjectId}
                     onValueChange={setSelectedSubjectId}
                   >
-                    <SelectTrigger aria-label={t("teachers.qualifications.subject")}>
+                    <SelectTrigger
+                      aria-label={t("teachers.qualifications.subject")}
+                    >
                       <SelectValue
                         placeholder={t("teachers.qualifications.selectSubject")}
                       />
@@ -141,9 +139,13 @@ export function QualificationsSection({
                   </span>
                   <Select
                     value={selectedLevel}
-                    onValueChange={(v) => setSelectedLevel(v as QualificationLevel)}
+                    onValueChange={(v) =>
+                      setSelectedLevel(v as QualificationLevel)
+                    }
                   >
-                    <SelectTrigger aria-label={t("teachers.qualifications.level")}>
+                    <SelectTrigger
+                      aria-label={t("teachers.qualifications.level")}
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -227,7 +229,11 @@ function QualificationPill({
     >
       <span>{qualification.subjectName}</span>
       <span className="text-xs opacity-70">
-        ({t(`teachers.qualifications.levels.${qualification.qualificationLevel}`)})
+        (
+        {t(
+          `teachers.qualifications.levels.${qualification.qualificationLevel}`,
+        )}
+        )
       </span>
       <button
         type="button"

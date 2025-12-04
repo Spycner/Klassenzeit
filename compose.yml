@@ -32,7 +32,9 @@ services:
       KC_HEALTH_ENABLED: "true"
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-    command: start-dev
+    command: start-dev --import-realm
+    volumes:
+      - ./docker/keycloak/klassenzeit-realm.json:/opt/keycloak/data/import/klassenzeit-realm.json:ro
     ports:
       - "8180:8080"
     depends_on:

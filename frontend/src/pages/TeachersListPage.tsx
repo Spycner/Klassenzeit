@@ -1,14 +1,14 @@
 import { Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { useSchools, useTeachers, type TeacherSummary } from "@/api";
+import { type TeacherSummary, useSchools, useTeachers } from "@/api";
 import {
+  type Column,
   DataTable,
   EmptyState,
   ErrorState,
   LoadingState,
   PageHeader,
-  type Column,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 

@@ -19,6 +19,18 @@ import {
   ServerError,
 } from "./errors";
 
+// Token getter for auth header injection
+let getAccessToken: (() => string | null) | null = null;
+
+/**
+ * Set the token getter function (called by AuthProvider).
+ * This allows the auth module to provide the current access token
+ * without creating a circular dependency.
+ */
+export function setTokenGetter(getter: () => string | null): void {
+  getAccessToken = getter;
+}
+
 // Re-export for backwards compatibility
 export { ApiClientError, type ApiError } from "./base-error";
 
@@ -173,12 +185,22 @@ async function request<T>(
   const defaultRetries = method === "GET" ? MAX_RETRIES : 1;
   const maxRetries = areRetriesDisabled() ? 0 : (retries ?? defaultRetries);
 
+  // Build headers with optional auth token
+  const token = getAccessToken?.();
+  const baseHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    "Accept-Language": i18n.language,
+  };
+
+  if (token) {
+    baseHeaders.Authorization = `Bearer ${token}`;
+  }
+
   const config: RequestInit = {
     ...restOptions,
     headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "Accept-Language": i18n.language,
+      ...baseHeaders,
       ...headers,
     },
   };

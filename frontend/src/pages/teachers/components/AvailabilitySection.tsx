@@ -2,13 +2,13 @@ import { Check, RotateCcw, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  useAvailability,
-  useCreateAvailability,
-  useDeleteAvailability,
   type AvailabilitySummary,
   type AvailabilityType,
   type DayOfWeek,
   type Period,
+  useAvailability,
+  useCreateAvailability,
+  useDeleteAvailability,
 } from "@/api";
 import { LoadingState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -62,13 +62,16 @@ export function AvailabilitySection({
 }: AvailabilitySectionProps) {
   const { t } = useTranslation("pages");
 
-  const { data: availability, isLoading } = useAvailability(schoolId, teacherId);
+  const { data: availability, isLoading } = useAvailability(
+    schoolId,
+    teacherId,
+  );
   const createMutation = useCreateAvailability(schoolId, teacherId);
   const deleteMutation = useDeleteAvailability(schoolId, teacherId);
 
-  const [pendingChanges, setPendingChanges] = useState<Map<string, AvailabilityType>>(
-    new Map(),
-  );
+  const [pendingChanges, setPendingChanges] = useState<
+    Map<string, AvailabilityType>
+  >(new Map());
 
   // Build a map of day-period to availability for quick lookup
   const availabilityMap = useMemo(() => {
@@ -98,12 +101,16 @@ export function AvailabilitySection({
         // Get current type from pending changes or availability map
         const pendingType = prev.get(key);
         const existing = availabilityMap.get(key);
-        const current = pendingType ?? existing?.availabilityType ?? "AVAILABLE";
+        const current =
+          pendingType ?? existing?.availabilityType ?? "AVAILABLE";
         const next = getNextAvailability(current);
 
         const newMap = new Map(prev);
         // If next state matches original state, remove from pending
-        if (existing?.availabilityType === next || (!existing && next === "AVAILABLE")) {
+        if (
+          existing?.availabilityType === next ||
+          (!existing && next === "AVAILABLE")
+        ) {
           newMap.delete(key);
         } else {
           newMap.set(key, next);
@@ -131,11 +138,13 @@ export function AvailabilitySection({
       if (newType !== "AVAILABLE") {
         // Create new entry (AVAILABLE is the default, so no need to create)
         promises.push(
-          createMutation.mutateAsync({
-            dayOfWeek: day,
-            period: period,
-            availabilityType: newType,
-          }).then(() => {}),
+          createMutation
+            .mutateAsync({
+              dayOfWeek: day,
+              period: period,
+              availabilityType: newType,
+            })
+            .then(() => {}),
         );
       }
     }
@@ -155,7 +164,10 @@ export function AvailabilitySection({
         const key = getKey(day, period);
         const existing = availabilityMap.get(key);
         // Only add to pending if different from current state
-        if (existing?.availabilityType !== type && !(type === "AVAILABLE" && !existing)) {
+        if (
+          existing?.availabilityType !== type &&
+          !(type === "AVAILABLE" && !existing)
+        ) {
           newChanges.set(key, type);
         }
       }
@@ -291,7 +303,8 @@ export function AvailabilitySection({
                           className={cn(
                             "flex h-10 items-center justify-center rounded border transition-all",
                             getCellStyles(type),
-                            hasPendingChange && "ring-2 ring-primary ring-offset-1",
+                            hasPendingChange &&
+                              "ring-2 ring-primary ring-offset-1",
                             "hover:scale-[1.02] active:scale-[0.98]",
                             "focus:outline-none focus:ring-2 focus:ring-primary",
                           )}
