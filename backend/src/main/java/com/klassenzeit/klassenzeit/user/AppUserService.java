@@ -51,6 +51,12 @@ public class AppUserService {
                   if (!existingUser.getDisplayName().equals(displayName)) {
                     existingUser.setDisplayName(displayName);
                   }
+                  // Re-check platform admin status on each login
+                  boolean shouldBePlatformAdmin =
+                      platformAdminEmails.contains(existingUser.getEmail());
+                  if (existingUser.isPlatformAdmin() != shouldBePlatformAdmin) {
+                    existingUser.setPlatformAdmin(shouldBePlatformAdmin);
+                  }
                   existingUser.setLastLoginAt(Instant.now());
                   return appUserRepository.save(existingUser);
                 })
