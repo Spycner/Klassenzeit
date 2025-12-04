@@ -1,14 +1,18 @@
 import { expect, test } from "@playwright/test";
+import { getAuthHeaders } from "./auth";
 import { API_BASE } from "./config";
 
 test.describe("Rooms API", () => {
   let schoolId: string;
+  let headers: Record<string, string>;
   // Use unique suffix per worker to avoid conflicts in parallel execution
   const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   test.beforeAll(async ({ request }) => {
+    headers = await getAuthHeaders();
     // Create a school to use for room tests
     const response = await request.post(`${API_BASE}/schools`, {
+      headers,
       data: {
         name: `Rooms Test School ${uniqueSuffix}`,
         slug: `rooms-test-${uniqueSuffix}`,
@@ -24,14 +28,17 @@ test.describe("Rooms API", () => {
   test.afterAll(async ({ request }) => {
     // Cleanup the test school
     if (schoolId) {
-      await request.delete(`${API_BASE}/schools/${schoolId}`);
+      await request.delete(`${API_BASE}/schools/${schoolId}`, { headers });
     }
   });
 
   test("GET /schools/{schoolId}/rooms - should return list of rooms", async ({
     request,
   }) => {
-    const response = await request.get(`${API_BASE}/schools/${schoolId}/rooms`);
+    const response = await request.get(
+      `${API_BASE}/schools/${schoolId}/rooms`,
+      { headers }
+    );
 
     expect(response.status()).toBe(200);
 
@@ -52,6 +59,7 @@ test.describe("Rooms API", () => {
     const response = await request.post(
       `${API_BASE}/schools/${schoolId}/rooms`,
       {
+        headers,
         data: newRoom,
       }
     );
@@ -67,7 +75,9 @@ test.describe("Rooms API", () => {
     expect(room.createdAt).toBeDefined();
 
     // Cleanup
-    await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`);
+    await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`, {
+      headers,
+    });
   });
 
   test("GET /schools/{schoolId}/rooms/{id} - should return room details", async ({
@@ -77,6 +87,7 @@ test.describe("Rooms API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/rooms`,
       {
+        headers,
         data: {
           name: "Lab 1",
           building: "Science Wing",
@@ -88,7 +99,8 @@ test.describe("Rooms API", () => {
 
     // Get room details
     const response = await request.get(
-      `${API_BASE}/schools/${schoolId}/rooms/${created.id}`
+      `${API_BASE}/schools/${schoolId}/rooms/${created.id}`,
+      { headers }
     );
 
     expect(response.status()).toBe(200);
@@ -100,7 +112,10 @@ test.describe("Rooms API", () => {
     expect(room.capacity).toBe(25);
 
     // Cleanup
-    await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${created.id}`);
+    await request.delete(
+      `${API_BASE}/schools/${schoolId}/rooms/${created.id}`,
+      { headers }
+    );
   });
 
   test("PUT /schools/{schoolId}/rooms/{id} - should update a room", async ({
@@ -110,6 +125,7 @@ test.describe("Rooms API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/rooms`,
       {
+        headers,
         data: {
           name: "Room A",
           capacity: 20,
@@ -122,6 +138,7 @@ test.describe("Rooms API", () => {
     const response = await request.put(
       `${API_BASE}/schools/${schoolId}/rooms/${created.id}`,
       {
+        headers,
         data: {
           name: "Room A (Updated)",
           building: "East Wing",
@@ -138,7 +155,10 @@ test.describe("Rooms API", () => {
     expect(updated.capacity).toBe(35);
 
     // Cleanup
-    await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${created.id}`);
+    await request.delete(
+      `${API_BASE}/schools/${schoolId}/rooms/${created.id}`,
+      { headers }
+    );
   });
 
   test("DELETE /schools/{schoolId}/rooms/{id} - should delete a room", async ({
@@ -148,6 +168,7 @@ test.describe("Rooms API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/rooms`,
       {
+        headers,
         data: {
           name: "Temp Room",
           capacity: 15,
@@ -158,14 +179,16 @@ test.describe("Rooms API", () => {
 
     // Delete the room
     const response = await request.delete(
-      `${API_BASE}/schools/${schoolId}/rooms/${created.id}`
+      `${API_BASE}/schools/${schoolId}/rooms/${created.id}`,
+      { headers }
     );
 
     expect(response.status()).toBe(204);
 
     // Verify soft delete - room still exists but is inactive
     const getResponse = await request.get(
-      `${API_BASE}/schools/${schoolId}/rooms/${created.id}`
+      `${API_BASE}/schools/${schoolId}/rooms/${created.id}`,
+      { headers }
     );
     expect(getResponse.status()).toBe(200);
     const deletedRoom = await getResponse.json();
@@ -183,6 +206,7 @@ test.describe("Rooms API", () => {
     const response = await request.post(
       `${API_BASE}/schools/${schoolId}/rooms`,
       {
+        headers,
         data: invalidRoom,
       }
     );
@@ -195,6 +219,7 @@ test.describe("Rooms API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/rooms`,
         {
+          headers,
           data: {
             name: "",
             capacity: 20,
@@ -210,6 +235,7 @@ test.describe("Rooms API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/rooms`,
         {
+          headers,
           data: {
             name: "Negative Capacity Room",
             capacity: -5,
@@ -224,6 +250,7 @@ test.describe("Rooms API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/rooms`,
         {
+          headers,
           data: {
             name: "Tiny Room",
             capacity: 1,
@@ -236,7 +263,9 @@ test.describe("Rooms API", () => {
       expect(room.capacity).toBe(1);
 
       // Cleanup
-      await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`);
+      await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`, {
+        headers,
+      });
     });
 
     test("should handle special characters in room name", async ({
@@ -245,6 +274,7 @@ test.describe("Rooms API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/rooms`,
         {
+          headers,
           data: {
             name: "Room #101 (Main)",
             capacity: 30,
@@ -257,13 +287,16 @@ test.describe("Rooms API", () => {
       expect(room.name).toBe("Room #101 (Main)");
 
       // Cleanup
-      await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`);
+      await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`, {
+        headers,
+      });
     });
 
     test("should handle unicode in room name", async ({ request }) => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/rooms`,
         {
+          headers,
           data: {
             name: "Horsaal A",
             building: "Gebaude Ost",
@@ -277,7 +310,9 @@ test.describe("Rooms API", () => {
       expect(room.name).toContain("Horsaal");
 
       // Cleanup
-      await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`);
+      await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`, {
+        headers,
+      });
     });
 
     test("should safely handle SQL injection in room name", async ({
@@ -286,6 +321,7 @@ test.describe("Rooms API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/rooms`,
         {
+          headers,
           data: {
             name: "'; DROP TABLE rooms; --",
             capacity: 20,
@@ -297,7 +333,10 @@ test.describe("Rooms API", () => {
       if (response.status() === 201) {
         const room = await response.json();
         expect(room.name).toContain("DROP TABLE");
-        await request.delete(`${API_BASE}/schools/${schoolId}/rooms/${room.id}`);
+        await request.delete(
+          `${API_BASE}/schools/${schoolId}/rooms/${room.id}`,
+          { headers }
+        );
       } else {
         expect(response.status()).toBe(400);
       }

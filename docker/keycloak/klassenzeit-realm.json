@@ -63,6 +63,31 @@
         "phone",
         "offline_access"
       ]
+    },
+    {
+      "clientId": "klassenzeit-e2e-api",
+      "name": "Klassenzeit E2E API Testing",
+      "description": "Client for E2E API tests with direct access grants (password grant)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "defaultClientScopes": [
+        "openid",
+        "web-origins",
+        "acr",
+        "basic",
+        "profile",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access"
+      ]
     }
   ],
   "browserSecurityHeaders": {

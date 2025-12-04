@@ -1,14 +1,18 @@
 import { expect, test } from "@playwright/test";
+import { getAuthHeaders } from "./auth";
 import { API_BASE } from "./config";
 
 test.describe("Teachers API", () => {
   let schoolId: string;
+  let headers: Record<string, string>;
   // Use unique suffix per worker to avoid conflicts in parallel execution
   const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   test.beforeAll(async ({ request }) => {
+    headers = await getAuthHeaders();
     // Create a school to use for teacher tests
     const response = await request.post(`${API_BASE}/schools`, {
+      headers,
       data: {
         name: `Teachers Test School ${uniqueSuffix}`,
         slug: `teachers-test-${uniqueSuffix}`,
@@ -24,7 +28,7 @@ test.describe("Teachers API", () => {
   test.afterAll(async ({ request }) => {
     // Cleanup the test school
     if (schoolId) {
-      await request.delete(`${API_BASE}/schools/${schoolId}`);
+      await request.delete(`${API_BASE}/schools/${schoolId}`, { headers });
     }
   });
 
@@ -32,7 +36,8 @@ test.describe("Teachers API", () => {
     request,
   }) => {
     const response = await request.get(
-      `${API_BASE}/schools/${schoolId}/teachers`
+      `${API_BASE}/schools/${schoolId}/teachers`,
+      { headers }
     );
 
     expect(response.status()).toBe(200);
@@ -56,6 +61,7 @@ test.describe("Teachers API", () => {
     const response = await request.post(
       `${API_BASE}/schools/${schoolId}/teachers`,
       {
+        headers,
         data: newTeacher,
       }
     );
@@ -73,7 +79,8 @@ test.describe("Teachers API", () => {
 
     // Cleanup
     await request.delete(
-      `${API_BASE}/schools/${schoolId}/teachers/${teacher.id}`
+      `${API_BASE}/schools/${schoolId}/teachers/${teacher.id}`,
+      { headers }
     );
   });
 
@@ -84,6 +91,7 @@ test.describe("Teachers API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/teachers`,
       {
+        headers,
         data: {
           firstName: "Jane",
           lastName: "Smith",
@@ -96,7 +104,8 @@ test.describe("Teachers API", () => {
 
     // Get teacher details
     const response = await request.get(
-      `${API_BASE}/schools/${schoolId}/teachers/${created.id}`
+      `${API_BASE}/schools/${schoolId}/teachers/${created.id}`,
+      { headers }
     );
 
     expect(response.status()).toBe(200);
@@ -108,7 +117,8 @@ test.describe("Teachers API", () => {
 
     // Cleanup
     await request.delete(
-      `${API_BASE}/schools/${schoolId}/teachers/${created.id}`
+      `${API_BASE}/schools/${schoolId}/teachers/${created.id}`,
+      { headers }
     );
   });
 
@@ -119,6 +129,7 @@ test.describe("Teachers API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/teachers`,
       {
+        headers,
         data: {
           firstName: "Update",
           lastName: "Test",
@@ -133,6 +144,7 @@ test.describe("Teachers API", () => {
     const response = await request.put(
       `${API_BASE}/schools/${schoolId}/teachers/${created.id}`,
       {
+        headers,
         data: {
           firstName: "Updated",
           lastName: "Teacher",
@@ -152,7 +164,8 @@ test.describe("Teachers API", () => {
 
     // Cleanup
     await request.delete(
-      `${API_BASE}/schools/${schoolId}/teachers/${created.id}`
+      `${API_BASE}/schools/${schoolId}/teachers/${created.id}`,
+      { headers }
     );
   });
 
@@ -163,6 +176,7 @@ test.describe("Teachers API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/teachers`,
       {
+        headers,
         data: {
           firstName: "Delete",
           lastName: "Me",
@@ -175,14 +189,16 @@ test.describe("Teachers API", () => {
 
     // Delete the teacher
     const response = await request.delete(
-      `${API_BASE}/schools/${schoolId}/teachers/${created.id}`
+      `${API_BASE}/schools/${schoolId}/teachers/${created.id}`,
+      { headers }
     );
 
     expect(response.status()).toBe(204);
 
     // Verify soft delete - teacher still exists but is inactive
     const getResponse = await request.get(
-      `${API_BASE}/schools/${schoolId}/teachers/${created.id}`
+      `${API_BASE}/schools/${schoolId}/teachers/${created.id}`,
+      { headers }
     );
     expect(getResponse.status()).toBe(200);
     const deletedTeacher = await getResponse.json();
@@ -202,6 +218,7 @@ test.describe("Teachers API", () => {
     const response = await request.post(
       `${API_BASE}/schools/${schoolId}/teachers`,
       {
+        headers,
         data: invalidTeacher,
       }
     );
@@ -214,6 +231,7 @@ test.describe("Teachers API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/teachers`,
         {
+          headers,
           data: {
             firstName: "",
             lastName: "Test",
@@ -231,6 +249,7 @@ test.describe("Teachers API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/teachers`,
         {
+          headers,
           data: {
             firstName: "Test",
             lastName: "",
@@ -248,6 +267,7 @@ test.describe("Teachers API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/teachers`,
         {
+          headers,
           data: {
             firstName: "Jose",
             lastName: "Garcia",
@@ -264,7 +284,8 @@ test.describe("Teachers API", () => {
 
       // Cleanup
       await request.delete(
-        `${API_BASE}/schools/${schoolId}/teachers/${teacher.id}`
+        `${API_BASE}/schools/${schoolId}/teachers/${teacher.id}`,
+        { headers }
       );
     });
 
@@ -272,6 +293,7 @@ test.describe("Teachers API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/teachers`,
         {
+          headers,
           data: {
             firstName: "Mary-Jane",
             lastName: "O'Connor",
@@ -288,7 +310,8 @@ test.describe("Teachers API", () => {
 
       // Cleanup
       await request.delete(
-        `${API_BASE}/schools/${schoolId}/teachers/${teacher.id}`
+        `${API_BASE}/schools/${schoolId}/teachers/${teacher.id}`,
+        { headers }
       );
     });
 
@@ -296,6 +319,7 @@ test.describe("Teachers API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/teachers`,
         {
+          headers,
           data: {
             firstName: "SQL",
             lastName: "Test",
