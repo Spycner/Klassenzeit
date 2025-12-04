@@ -17,17 +17,56 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
+    // Authentication setup - runs first when Keycloak is available
+    {
+      name: "setup",
+      testMatch: /.*\.setup\.ts/,
+    },
+
+    // Browser projects without auth (for public pages like home)
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      testIgnore: /.*\.setup\.ts/,
     },
     {
       name: "firefox",
       use: { ...devices["Desktop Firefox"] },
+      testIgnore: /.*\.setup\.ts/,
     },
     {
       name: "webkit",
       use: { ...devices["Desktop Safari"] },
+      testIgnore: /.*\.setup\.ts/,
+    },
+
+    // Browser projects with auth (for authenticated pages)
+    {
+      name: "chromium-auth",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth/user.json",
+      },
+      dependencies: ["setup"],
+      testMatch: /.*\.auth\.spec\.ts/,
+    },
+    {
+      name: "firefox-auth",
+      use: {
+        ...devices["Desktop Firefox"],
+        storageState: "e2e/.auth/user.json",
+      },
+      dependencies: ["setup"],
+      testMatch: /.*\.auth\.spec\.ts/,
+    },
+    {
+      name: "webkit-auth",
+      use: {
+        ...devices["Desktop Safari"],
+        storageState: "e2e/.auth/user.json",
+      },
+      dependencies: ["setup"],
+      testMatch: /.*\.auth\.spec\.ts/,
     },
   ],
   // Web server configuration for local development
