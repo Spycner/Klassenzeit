@@ -30,3 +30,6 @@ Thumbs.db
 *.sql.bak
 
 logs
+
+.lighthouseci
+*.log

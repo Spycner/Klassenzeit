@@ -64,6 +64,14 @@ tasks.withType<Test> {
 	finalizedBy(tasks.jacocoTestReport)
 }
 
+// Pass environment variables to bootRun JVM
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+	// Pass through specific environment variables to the JVM
+	System.getenv("PLATFORM_ADMIN_EMAIL")?.let {
+		systemProperty("klassenzeit.security.platform-admin-emails", it)
+	}
+}
+
 // Spotless - Code formatting (like ruff format)
 spotless {
 	java {

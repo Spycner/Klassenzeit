@@ -8,7 +8,10 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AppUserService {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(AppUserService.class);
+
   private final AppUserRepository appUserRepository;
   private final SchoolMembershipRepository schoolMembershipRepository;
   private final List<String> platformAdminEmails;
@@ -32,6 +37,7 @@ public class AppUserService {
     this.appUserRepository = appUserRepository;
     this.schoolMembershipRepository = schoolMembershipRepository;
     this.platformAdminEmails = platformAdminEmails;
+    LOGGER.info("AppUserService initialized with platformAdminEmails: {}", platformAdminEmails);
   }
 
   /**
@@ -39,42 +45,65 @@ public class AppUserService {
    *
    * <p>On first login, creates a new user record. On subsequent logins, updates the display name
    * and last login time.
+   *
+   * <p>This method is designed to handle concurrent requests safely by:
+   *
+   * <ul>
+   *   <li>Using atomic updates for existing users to avoid optimistic locking conflicts
+   *   <li>Using pessimistic locking when creating new users to prevent duplicate inserts
+   * </ul>
    */
   @Transactional
   public CurrentUser resolveOrCreateUser(String keycloakId, String email, String displayName) {
-    AppUser user =
-        appUserRepository
-            .findByKeycloakId(keycloakId)
-            .map(
-                existingUser -> {
-                  // Update display name if changed
-                  if (!existingUser.getDisplayName().equals(displayName)) {
-                    existingUser.setDisplayName(displayName);
-                  }
-                  // Re-check platform admin status on each login
-                  boolean shouldBePlatformAdmin =
-                      platformAdminEmails.contains(existingUser.getEmail());
-                  if (existingUser.isPlatformAdmin() != shouldBePlatformAdmin) {
-                    existingUser.setPlatformAdmin(shouldBePlatformAdmin);
-                  }
-                  existingUser.setLastLoginAt(Instant.now());
-                  return appUserRepository.save(existingUser);
-                })
-            .orElseGet(
-                () -> {
-                  // Create new user
-                  AppUser newUser = new AppUser(keycloakId, email, displayName);
-                  newUser.setLastLoginAt(Instant.now());
+    boolean shouldBePlatformAdmin = platformAdminEmails.contains(email);
+    Instant now = Instant.now();
 
-                  // Check if this email should be a platform admin
-                  if (platformAdminEmails.contains(email)) {
-                    newUser.setPlatformAdmin(true);
-                  }
+    // Try atomic update first (handles most cases without locking)
+    int updated =
+        appUserRepository.updateLoginInfo(keycloakId, displayName, shouldBePlatformAdmin, now);
 
-                  return appUserRepository.save(newUser);
-                });
+    AppUser user;
+    if (updated > 0) {
+      // User exists and was updated atomically, now fetch it for building CurrentUser
+      user =
+          appUserRepository
+              .findByKeycloakId(keycloakId)
+              .orElseThrow(() -> new IllegalStateException("User was updated but not found"));
+    } else {
+      // User doesn't exist, need to create with pessimistic lock to prevent duplicates
+      user = createUserWithLock(keycloakId, email, displayName, shouldBePlatformAdmin, now);
+    }
 
     return buildCurrentUser(user);
+  }
+
+  /**
+   * Create a new user with pessimistic locking to prevent duplicate creation from concurrent
+   * requests.
+   */
+  private AppUser createUserWithLock(
+      String keycloakId,
+      String email,
+      String displayName,
+      boolean shouldBePlatformAdmin,
+      Instant now) {
+    // Use pessimistic lock to check if another transaction created the user
+    Optional<AppUser> existingUser = appUserRepository.findByKeycloakIdForUpdate(keycloakId);
+
+    if (existingUser.isPresent()) {
+      // Another transaction already created the user, update it
+      AppUser user = existingUser.get();
+      user.setDisplayName(displayName);
+      user.setPlatformAdmin(shouldBePlatformAdmin);
+      user.setLastLoginAt(now);
+      return appUserRepository.save(user);
+    }
+
+    // Create new user
+    AppUser newUser = new AppUser(keycloakId, email, displayName);
+    newUser.setLastLoginAt(now);
+    newUser.setPlatformAdmin(shouldBePlatformAdmin);
+    return appUserRepository.save(newUser);
   }
 
   /** Build a CurrentUser from an AppUser entity by loading their school memberships. */

@@ -25,20 +25,34 @@ public class AuthorizationService {
     return getCurrentUser().isPlatformAdmin();
   }
 
-  /** Check if the current user can access the given school (requires explicit membership). */
+  /**
+   * Check if the current user can access the given school.
+   *
+   * <p>Platform admins can access all schools. Other users require explicit membership.
+   */
   public boolean canAccessSchool(UUID schoolId) {
-    return getCurrentUser().hasSchoolAccess(schoolId);
+    CurrentUser user = getCurrentUser();
+    return user.isPlatformAdmin() || user.hasSchoolAccess(schoolId);
   }
 
-  /** Check if the current user can manage the school (admin or planner). */
+  /**
+   * Check if the current user can manage the school (admin or planner).
+   *
+   * <p>Platform admins can manage all schools. Other users require SCHOOL_ADMIN or PLANNER role.
+   */
   public boolean canManageSchool(UUID schoolId) {
     CurrentUser user = getCurrentUser();
-    return user.canManageSchool(schoolId);
+    return user.isPlatformAdmin() || user.canManageSchool(schoolId);
   }
 
-  /** Check if the current user is a school admin for the given school. */
+  /**
+   * Check if the current user is a school admin for the given school.
+   *
+   * <p>Platform admins are treated as school admins for all schools.
+   */
   public boolean isSchoolAdmin(UUID schoolId) {
-    return getCurrentUser().isSchoolAdmin(schoolId);
+    CurrentUser user = getCurrentUser();
+    return user.isPlatformAdmin() || user.isSchoolAdmin(schoolId);
   }
 
   /** Check if the current user has one of the specified roles in the given school. */

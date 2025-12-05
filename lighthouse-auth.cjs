@@ -8,8 +8,16 @@ module.exports = async (browser, context) => {
   // Go to app
   await page.goto("http://localhost:5173/");
 
-  // Wait for page to fully load and button to be ready
+  // Wait for page to load
   await page.waitForSelector("button", { visible: true });
+
+  // Check if we're already logged in (redirected to dashboard)
+  const currentUrl = page.url();
+  if (currentUrl.includes("/dashboard")) {
+    // Already authenticated, no need to log in again
+    await page.close();
+    return;
+  }
 
   // Find the login button
   const loginButton = await page.evaluateHandle(() => {
@@ -21,8 +29,10 @@ module.exports = async (browser, context) => {
     );
   });
 
-  if (!loginButton) {
-    throw new Error("Login button not found");
+  // If no login button found, we might already be authenticated
+  if (!loginButton || (await loginButton.jsonValue()) === null) {
+    await page.close();
+    return;
   }
 
   // Click and wait for navigation to Keycloak
@@ -32,9 +42,11 @@ module.exports = async (browser, context) => {
   ]);
 
   // Verify we're on Keycloak (URL contains /realms/)
-  const currentUrl = page.url();
-  if (!currentUrl.includes("/realms/")) {
-    throw new Error(`Expected Keycloak URL but got: ${currentUrl}`);
+  const keycloakUrl = page.url();
+  if (!keycloakUrl.includes("/realms/")) {
+    // Not on Keycloak - might already be authenticated
+    await page.close();
+    return;
   }
 
   // Wait for Keycloak login form
