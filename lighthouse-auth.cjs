@@ -11,15 +11,20 @@ module.exports = async (browser, context) => {
   // Wait for page to load
   await page.waitForSelector("button");
 
-  // Click login button using XPath (supports both English and German)
-  const [loginButton] = await page.$x(
-    '//button[contains(text(), "Log in") or contains(text(), "Anmelden")]'
-  );
-  if (loginButton) {
-    await loginButton.click();
-  } else {
-    throw new Error("Login button not found");
-  }
+  // Click login button by finding it via text content (supports English and German)
+  await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll("button"));
+    const loginButton = buttons.find(
+      (btn) =>
+        btn.textContent.includes("Log in") ||
+        btn.textContent.includes("Anmelden")
+    );
+    if (loginButton) {
+      loginButton.click();
+    } else {
+      throw new Error("Login button not found");
+    }
+  });
 
   // Wait for Keycloak login page
   await page.waitForSelector("#username", { timeout: 10000 });
