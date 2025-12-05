@@ -11,23 +11,26 @@ module.exports = async (browser, context) => {
   // Wait for page to load
   await page.waitForSelector("button");
 
-  // Click login button by finding it via text content (supports English and German)
-  await page.evaluate(() => {
-    const buttons = Array.from(document.querySelectorAll("button"));
-    const loginButton = buttons.find(
-      (btn) =>
-        btn.textContent.includes("Log in") ||
-        btn.textContent.includes("Anmelden")
-    );
-    if (loginButton) {
-      loginButton.click();
-    } else {
-      throw new Error("Login button not found");
-    }
-  });
+  // Click login button and wait for navigation to Keycloak
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "networkidle0", timeout: 30000 }),
+    page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll("button"));
+      const loginButton = buttons.find(
+        (btn) =>
+          btn.textContent.includes("Log in") ||
+          btn.textContent.includes("Anmelden")
+      );
+      if (loginButton) {
+        loginButton.click();
+      } else {
+        throw new Error("Login button not found");
+      }
+    }),
+  ]);
 
   // Wait for Keycloak login page
-  await page.waitForSelector("#username", { timeout: 10000 });
+  await page.waitForSelector("#username", { timeout: 30000 });
 
   // Fill credentials
   await page.type("#username", "e2e-test@klassenzeit.com");

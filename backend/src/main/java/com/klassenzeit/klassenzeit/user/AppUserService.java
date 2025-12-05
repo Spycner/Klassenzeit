@@ -82,7 +82,7 @@ public class AppUserService {
     Map<UUID, SchoolRole> schoolRoles = new HashMap<>();
 
     List<SchoolMembership> memberships =
-        schoolMembershipRepository.findByUserIdAndActiveTrue(user.getId());
+        schoolMembershipRepository.findByUserIdWithSchool(user.getId());
 
     for (SchoolMembership membership : memberships) {
       schoolRoles.put(membership.getSchool().getId(), membership.getRole());
