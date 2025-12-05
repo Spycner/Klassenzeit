@@ -8,11 +8,11 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,11 +46,11 @@ public class AppUserService {
    * <p>On first login, creates a new user record. On subsequent logins, updates the display name
    * and last login time.
    *
-   * <p>This method is designed to handle concurrent requests safely by:
+   * <p>This method handles concurrent requests safely by:
    *
    * <ul>
    *   <li>Using atomic updates for existing users to avoid optimistic locking conflicts
-   *   <li>Using pessimistic locking when creating new users to prevent duplicate inserts
+   *   <li>Catching duplicate key violations on first login and retrying with fetch
    * </ul>
    */
   @Transactional
@@ -70,40 +70,51 @@ public class AppUserService {
               .findByKeycloakId(keycloakId)
               .orElseThrow(() -> new IllegalStateException("User was updated but not found"));
     } else {
-      // User doesn't exist, need to create with pessimistic lock to prevent duplicates
-      user = createUserWithLock(keycloakId, email, displayName, shouldBePlatformAdmin, now);
+      // User doesn't exist, create with retry logic to handle concurrent requests
+      user = createUserWithRetry(keycloakId, email, displayName, shouldBePlatformAdmin, now);
     }
 
     return buildCurrentUser(user);
   }
 
   /**
-   * Create a new user with pessimistic locking to prevent duplicate creation from concurrent
-   * requests.
+   * Create a new user, handling the race condition where concurrent requests may try to create the
+   * same user simultaneously.
+   *
+   * <p>If a duplicate key violation occurs (another request created the user first), we catch the
+   * exception and fetch the existing user instead.
    */
-  private AppUser createUserWithLock(
+  private AppUser createUserWithRetry(
       String keycloakId,
       String email,
       String displayName,
       boolean shouldBePlatformAdmin,
       Instant now) {
-    // Use pessimistic lock to check if another transaction created the user
-    Optional<AppUser> existingUser = appUserRepository.findByKeycloakIdForUpdate(keycloakId);
-
-    if (existingUser.isPresent()) {
-      // Another transaction already created the user, update it
-      AppUser user = existingUser.get();
-      user.setDisplayName(displayName);
-      user.setPlatformAdmin(shouldBePlatformAdmin);
-      user.setLastLoginAt(now);
-      return appUserRepository.save(user);
+    try {
+      // Try to create new user
+      AppUser newUser = new AppUser(keycloakId, email, displayName);
+      newUser.setLastLoginAt(now);
+      newUser.setPlatformAdmin(shouldBePlatformAdmin);
+      AppUser savedUser = appUserRepository.saveAndFlush(newUser);
+      LOGGER.debug("Created new user for keycloakId: {}", keycloakId);
+      return savedUser;
+    } catch (DataIntegrityViolationException e) {
+      // Another request created the user first - fetch and update it
+      LOGGER.debug(
+          "Concurrent user creation detected for keycloakId: {}, fetching existing user",
+          keycloakId);
+      AppUser existingUser =
+          appUserRepository
+              .findByKeycloakId(keycloakId)
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "User creation failed but user not found: " + keycloakId, e));
+      existingUser.setDisplayName(displayName);
+      existingUser.setPlatformAdmin(shouldBePlatformAdmin);
+      existingUser.setLastLoginAt(now);
+      return appUserRepository.save(existingUser);
     }
-
-    // Create new user
-    AppUser newUser = new AppUser(keycloakId, email, displayName);
-    newUser.setLastLoginAt(now);
-    newUser.setPlatformAdmin(shouldBePlatformAdmin);
-    return appUserRepository.save(newUser);
   }
 
   /** Build a CurrentUser from an AppUser entity by loading their school memberships. */
