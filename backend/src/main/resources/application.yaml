@@ -54,6 +54,12 @@ timefold:
   solver-manager:
     parallel-solver-count: 1
 
+# Logging configuration (DEBUG for CI debugging)
+logging:
+  level:
+    com.klassenzeit: DEBUG
+    org.springframework.security: DEBUG
+
 # OpenAPI / Swagger UI configuration
 springdoc:
   api-docs:

@@ -8,28 +8,36 @@ module.exports = async (browser, context) => {
   // Go to app
   await page.goto("http://localhost:5173/");
 
-  // Wait for page to load
-  await page.waitForSelector("button");
+  // Wait for page to fully load and button to be ready
+  await page.waitForSelector("button", { visible: true });
 
-  // Click login button and wait for navigation to Keycloak
+  // Find the login button
+  const loginButton = await page.evaluateHandle(() => {
+    const buttons = Array.from(document.querySelectorAll("button"));
+    return buttons.find(
+      (btn) =>
+        btn.textContent.includes("Log in") ||
+        btn.textContent.includes("Anmelden")
+    );
+  });
+
+  if (!loginButton) {
+    throw new Error("Login button not found");
+  }
+
+  // Click and wait for navigation to Keycloak
   await Promise.all([
     page.waitForNavigation({ waitUntil: "networkidle0", timeout: 30000 }),
-    page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll("button"));
-      const loginButton = buttons.find(
-        (btn) =>
-          btn.textContent.includes("Log in") ||
-          btn.textContent.includes("Anmelden")
-      );
-      if (loginButton) {
-        loginButton.click();
-      } else {
-        throw new Error("Login button not found");
-      }
-    }),
+    loginButton.click(),
   ]);
 
-  // Wait for Keycloak login page
+  // Verify we're on Keycloak (URL contains /realms/)
+  const currentUrl = page.url();
+  if (!currentUrl.includes("/realms/")) {
+    throw new Error(`Expected Keycloak URL but got: ${currentUrl}`);
+  }
+
+  // Wait for Keycloak login form
   await page.waitForSelector("#username", { timeout: 30000 });
 
   // Fill credentials
