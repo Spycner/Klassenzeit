@@ -1,4 +1,4 @@
-import { Check, RotateCcw, X } from "lucide-react";
+import { AlertCircle, Check, RotateCcw, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,6 +9,7 @@ import {
   useAvailability,
   useCreateAvailability,
   useDeleteAvailability,
+  useTimeSlots,
 } from "@/api";
 import { LoadingState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,6 @@ interface AvailabilitySectionProps {
 }
 
 const DAYS: DayOfWeek[] = [0, 1, 2, 3, 4];
-const PERIODS: Period[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const AVAILABILITY_CYCLE: AvailabilityType[] = [
   "AVAILABLE",
@@ -62,12 +62,23 @@ export function AvailabilitySection({
 }: AvailabilitySectionProps) {
   const { t } = useTranslation("pages");
 
-  const { data: availability, isLoading } = useAvailability(
-    schoolId,
-    teacherId,
-  );
+  const { data: timeSlots, isLoading: isLoadingTimeSlots } =
+    useTimeSlots(schoolId);
+  const { data: availability, isLoading: isLoadingAvailability } =
+    useAvailability(schoolId, teacherId);
   const createMutation = useCreateAvailability(schoolId, teacherId);
   const deleteMutation = useDeleteAvailability(schoolId, teacherId);
+
+  // Derive unique periods from school's TimeSlots (exclude breaks)
+  const periods: Period[] = useMemo(() => {
+    if (!timeSlots || timeSlots.length === 0) return [];
+    const uniquePeriods = [...new Set(timeSlots.map((ts) => ts.period))].sort(
+      (a, b) => a - b,
+    );
+    return uniquePeriods;
+  }, [timeSlots]);
+
+  const isLoading = isLoadingTimeSlots || isLoadingAvailability;
 
   const [pendingChanges, setPendingChanges] = useState<
     Map<string, AvailabilityType>
@@ -160,7 +171,7 @@ export function AvailabilitySection({
   const handleSetAll = (type: AvailabilityType) => {
     const newChanges = new Map<string, AvailabilityType>();
     for (const day of DAYS) {
-      for (const period of PERIODS) {
+      for (const period of periods) {
         const key = getKey(day, period);
         const existing = availabilityMap.get(key);
         // Only add to pending if different from current state
@@ -221,6 +232,11 @@ export function AvailabilitySection({
       <CardContent>
         {isLoading ? (
           <LoadingState />
+        ) : periods.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <p className="text-sm">{t("teachers.availability.noTimeSlots")}</p>
+          </div>
         ) : (
           <div className="space-y-4">
             {/* Legend */}
@@ -278,7 +294,7 @@ export function AvailabilitySection({
                 </div>
 
                 {/* Period rows */}
-                {PERIODS.map((period) => (
+                {periods.map((period) => (
                   <div
                     key={period}
                     className="grid grid-cols-[auto_repeat(5,1fr)] gap-1"

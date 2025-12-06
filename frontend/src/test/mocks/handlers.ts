@@ -191,12 +191,12 @@ export const handlers = [
   // User Search
   http.get(`${API_BASE}/api/users/search`, ({ request }) => {
     const url = new URL(request.url);
-    const email = url.searchParams.get("email");
-    if (email === "admin@example.com") {
-      return HttpResponse.json(mockUserSearchResult);
+    const query = url.searchParams.get("query");
+    if (query && "admin".includes(query.toLowerCase())) {
+      return HttpResponse.json([mockUserSearchResult]);
     }
-    // Return null (200 with null body) for not found
-    return HttpResponse.json(null);
+    // Return empty array for not found
+    return HttpResponse.json([]);
   }),
 ];
 

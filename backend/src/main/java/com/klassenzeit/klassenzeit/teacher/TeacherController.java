@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,8 +33,9 @@ public class TeacherController {
 
   @GetMapping
   @PreAuthorize("@authz.canAccessSchool(#schoolId)")
-  public List<TeacherSummary> findAll(@PathVariable UUID schoolId) {
-    return teacherService.findAllBySchool(schoolId);
+  public List<TeacherSummary> findAll(
+      @PathVariable UUID schoolId, @RequestParam(required = false) Boolean includeInactive) {
+    return teacherService.findAllBySchool(schoolId, Boolean.TRUE.equals(includeInactive));
   }
 
   @GetMapping("/{id}")
@@ -64,5 +66,12 @@ public class TeacherController {
   @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public void delete(@PathVariable UUID schoolId, @PathVariable UUID id) {
     teacherService.delete(schoolId, id);
+  }
+
+  @DeleteMapping("/{id}/permanent")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
+  public void deletePermanent(@PathVariable UUID schoolId, @PathVariable UUID id) {
+    teacherService.deletePermanent(schoolId, id);
   }
 }

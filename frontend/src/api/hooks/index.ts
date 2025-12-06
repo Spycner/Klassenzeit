@@ -88,6 +88,7 @@ export {
   useDeleteAvailability,
   useDeleteQualification,
   useDeleteTeacher,
+  usePermanentDeleteTeacher,
   useQualification,
   useQualifications,
   useTeacher,

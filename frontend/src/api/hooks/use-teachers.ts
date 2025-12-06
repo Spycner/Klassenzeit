@@ -36,6 +36,8 @@ import { queryKeys } from "./query-client";
  * Fetches all teachers for a specific school.
  *
  * @param schoolId - The unique identifier of the parent school (query is disabled if undefined)
+ * @param options - Optional parameters for filtering
+ * @param options.includeInactive - If true, includes deactivated teachers
  * @returns Query result containing an array of teacher summaries
  * @example
  * ```tsx
@@ -51,10 +53,16 @@ import { queryKeys } from "./query-client";
  * }
  * ```
  */
-export function useTeachers(schoolId: string | undefined) {
+export function useTeachers(
+  schoolId: string | undefined,
+  options?: { includeInactive?: boolean },
+) {
   return useQuery<TeacherSummary[]>({
-    queryKey: queryKeys.teachers.all(schoolId!),
-    queryFn: () => teachersApi.list(schoolId!),
+    queryKey: [
+      ...queryKeys.teachers.all(schoolId!),
+      { includeInactive: options?.includeInactive },
+    ],
+    queryFn: () => teachersApi.list(schoolId!, options),
     enabled: !!schoolId,
   });
 }
@@ -157,18 +165,18 @@ export function useUpdateTeacher(schoolId: string) {
 }
 
 /**
- * Deletes a teacher and all their associated qualifications and availability entries.
+ * Soft-deletes (deactivates) a teacher.
  * On success, automatically invalidates the teachers list cache.
  *
  * @param schoolId - The unique identifier of the parent school
  * @returns Mutation object with mutate/mutateAsync functions
  * @example
  * ```tsx
- * function DeleteTeacherButton({ schoolId, teacherId }: Props) {
+ * function DeactivateTeacherButton({ schoolId, teacherId }: Props) {
  *   const deleteTeacher = useDeleteTeacher(schoolId);
  *   return (
  *     <button onClick={() => deleteTeacher.mutate(teacherId)}>
- *       Delete Teacher
+ *       Deactivate Teacher
  *     </button>
  *   );
  * }
@@ -179,6 +187,38 @@ export function useDeleteTeacher(schoolId: string) {
 
   return useMutation({
     mutationFn: (id: string) => teachersApi.delete(schoolId, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.teachers.all(schoolId),
+      });
+    },
+  });
+}
+
+/**
+ * Permanently deletes a teacher and all their associated data.
+ * This action cannot be undone.
+ * On success, automatically invalidates the teachers list cache.
+ *
+ * @param schoolId - The unique identifier of the parent school
+ * @returns Mutation object with mutate/mutateAsync functions
+ * @example
+ * ```tsx
+ * function PermanentDeleteButton({ schoolId, teacherId }: Props) {
+ *   const permanentDelete = usePermanentDeleteTeacher(schoolId);
+ *   return (
+ *     <button onClick={() => permanentDelete.mutate(teacherId)}>
+ *       Permanently Delete
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export function usePermanentDeleteTeacher(schoolId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => teachersApi.deletePermanent(schoolId, id),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.teachers.all(schoolId),
@@ -272,8 +312,13 @@ export function useCreateQualification(schoolId: string, teacherId: string) {
     mutationFn: (data: CreateQualificationRequest) =>
       qualificationsApi.create(schoolId, teacherId, data),
     onSuccess: () => {
+      // Invalidate qualifications list to refresh available subjects filter
       queryClient.invalidateQueries({
         queryKey: queryKeys.teachers.qualifications.all(schoolId, teacherId),
+      });
+      // Also invalidate subjects to ensure the list is fresh
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.subjects.all(schoolId),
       });
     },
   });

@@ -13,20 +13,20 @@ import { useUserSearch } from "./use-users";
 const API_BASE = "http://localhost:8080";
 
 describe("useUserSearch", () => {
-  it("should find user by email", async () => {
+  it("should find users by query", async () => {
     // Override with explicit handler to ensure MSW intercepts
     server.use(
       http.get(`${API_BASE}/api/users/search`, ({ request }) => {
         const url = new URL(request.url);
-        const email = url.searchParams.get("email");
-        if (email === "admin@example.com") {
-          return HttpResponse.json(mockUserSearchResult);
+        const query = url.searchParams.get("query");
+        if (query === "admin") {
+          return HttpResponse.json([mockUserSearchResult]);
         }
-        return HttpResponse.json(null);
+        return HttpResponse.json([]);
       }),
     );
 
-    const { result } = renderHook(() => useUserSearch("admin@example.com"), {
+    const { result } = renderHook(() => useUserSearch("admin"), {
       wrapper: createWrapper(),
     });
 
@@ -34,48 +34,45 @@ describe("useUserSearch", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual(mockUserSearchResult);
+    expect(result.current.data).toEqual([mockUserSearchResult]);
   });
 
-  it("should return null when user not found", async () => {
+  it("should return empty array when no users found", async () => {
     server.use(
       http.get(`${API_BASE}/api/users/search`, () => {
-        return HttpResponse.json(null);
+        return HttpResponse.json([]);
       }),
     );
 
-    const { result } = renderHook(
-      () => useUserSearch("nonexistent@example.com"),
-      {
-        wrapper: createWrapper(),
-      },
-    );
+    const { result } = renderHook(() => useUserSearch("nonexistent"), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toBeNull();
+    expect(result.current.data).toEqual([]);
   });
 
-  it("should not fetch when email is too short", () => {
-    const { result } = renderHook(() => useUserSearch("ab"), {
+  it("should not fetch when query is too short", () => {
+    const { result } = renderHook(() => useUserSearch("a"), {
       wrapper: createWrapper(),
     });
 
-    // Should not be loading or fetching because email is < 3 chars
+    // Should not be loading or fetching because query is < 2 chars
     expect(result.current.isLoading).toBe(false);
     expect(result.current.isFetching).toBe(false);
   });
 
-  it("should fetch when email has 3+ characters", async () => {
+  it("should fetch when query has 2+ characters", async () => {
     server.use(
       http.get(`${API_BASE}/api/users/search`, () => {
-        return HttpResponse.json(null);
+        return HttpResponse.json([]);
       }),
     );
 
-    const { result } = renderHook(() => useUserSearch("abc"), {
+    const { result } = renderHook(() => useUserSearch("ab"), {
       wrapper: createWrapper(),
     });
 
@@ -103,7 +100,7 @@ describe("useUserSearch", () => {
       }),
     );
 
-    const { result } = renderHook(() => useUserSearch("admin@example.com"), {
+    const { result } = renderHook(() => useUserSearch("admin"), {
       wrapper: createWrapper(),
     });
 
@@ -114,30 +111,27 @@ describe("useUserSearch", () => {
     expect(result.current.error).toBeDefined();
   });
 
-  it("should trim email before searching", async () => {
+  it("should trim query before searching", async () => {
     server.use(
       http.get(`${API_BASE}/api/users/search`, ({ request }) => {
         const url = new URL(request.url);
-        const email = url.searchParams.get("email");
-        // The hook should trim, so we should receive trimmed email
-        if (email === "admin@example.com") {
-          return HttpResponse.json(mockUserSearchResult);
+        const query = url.searchParams.get("query");
+        // The hook should trim, so we should receive trimmed query
+        if (query === "admin") {
+          return HttpResponse.json([mockUserSearchResult]);
         }
-        return HttpResponse.json(null);
+        return HttpResponse.json([]);
       }),
     );
 
-    const { result } = renderHook(
-      () => useUserSearch("  admin@example.com  "),
-      {
-        wrapper: createWrapper(),
-      },
-    );
+    const { result } = renderHook(() => useUserSearch("  admin  "), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(result.current.data).toEqual(mockUserSearchResult);
+    expect(result.current.data).toEqual([mockUserSearchResult]);
   });
 });

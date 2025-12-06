@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { UserSearchResult } from "@/api";
 import { useUserSearch } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +21,7 @@ interface UserSearchFieldProps {
 }
 
 /**
- * A field that searches for users by email and allows selection.
+ * A field that searches for users by email or name and allows selection.
  */
 export function UserSearchField({
   label,
@@ -30,32 +31,30 @@ export function UserSearchField({
   disabled = false,
 }: UserSearchFieldProps) {
   const { t } = useTranslation("pages");
-  const [email, setEmail] = useState("");
-  const [debouncedEmail, setDebouncedEmail] = useState("");
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedName, setSelectedName] = useState<string | null>(null);
 
-  // Debounce email input
+  // Debounce query input
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedEmail(email.trim());
+      setDebouncedQuery(query.trim());
     }, 300);
     return () => clearTimeout(timer);
-  }, [email]);
+  }, [query]);
 
-  const { data: user, isLoading, isFetched } = useUserSearch(debouncedEmail);
+  const { data: users, isLoading, isFetched } = useUserSearch(debouncedQuery);
 
-  const handleSelect = () => {
-    if (user) {
-      onSelect(user.id, user.displayName);
-      setSelectedName(user.displayName);
-      setEmail("");
-    }
+  const handleSelect = (user: UserSearchResult) => {
+    onSelect(user.id, user.displayName);
+    setSelectedName(user.displayName);
+    setQuery("");
   };
 
   const handleClear = () => {
     onSelect(null, null);
     setSelectedName(null);
-    setEmail("");
+    setQuery("");
   };
 
   // If a user is already selected, show their info
@@ -83,46 +82,49 @@ export function UserSearchField({
     );
   }
 
-  const showNotFound = isFetched && !user && debouncedEmail.length >= 3;
-  const showUserFound = user && !value;
+  const hasResults = users && users.length > 0;
+  const showNotFound =
+    isFetched && (!users || users.length === 0) && debouncedQuery.length >= 2;
 
   return (
     <div className="space-y-2">
       <Label htmlFor="admin-search">
         {label} {required && "*"}
       </Label>
-      <div className="flex gap-2">
-        <Input
-          id="admin-search"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder={t("schools.form.admin.searchPlaceholder")}
-          disabled={disabled}
-          className="flex-1"
-        />
-        {showUserFound && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleSelect}
-            disabled={disabled}
-          >
-            {t("schools.form.admin.select")}
-          </Button>
-        )}
-      </div>
+      <Input
+        id="admin-search"
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={t("schools.form.admin.searchPlaceholder")}
+        disabled={disabled}
+      />
 
-      {isLoading && debouncedEmail.length >= 3 && (
+      {isLoading && debouncedQuery.length >= 2 && (
         <p className="text-sm text-muted-foreground">
           {t("schools.form.admin.searching")}
         </p>
       )}
 
-      {showUserFound && (
-        <div className="rounded-md border bg-muted/50 p-3">
-          <p className="font-medium">{user.displayName}</p>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
+      {hasResults && (
+        <div className="space-y-1 rounded-md border bg-muted/50 p-2">
+          {users.map((user) => (
+            <button
+              key={user.id}
+              type="button"
+              onClick={() => handleSelect(user)}
+              disabled={disabled}
+              className="flex w-full items-center justify-between rounded-md p-2 text-left hover:bg-muted"
+            >
+              <div>
+                <p className="font-medium">{user.displayName}</p>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+              </div>
+              <span className="text-sm text-primary">
+                {t("schools.form.admin.select")}
+              </span>
+            </button>
+          ))}
         </div>
       )}
 

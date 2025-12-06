@@ -15,9 +15,18 @@
     "createNew": "Einen neuen Lehrkraft-Datensatz erstellen.",
     "addTeacher": "Lehrkraft hinzufügen",
     "delete": "Löschen",
+    "deactivate": "Deaktivieren",
+    "reactivate": "Reaktivieren",
+    "permanentDelete": "Endgültig löschen",
+    "showInactive": "Inaktive anzeigen",
     "columns": {
       "name": "Name",
-      "abbreviation": "Kürzel"
+      "abbreviation": "Kürzel",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
     },
     "empty": {
       "title": "Noch keine Lehrkräfte",
@@ -41,6 +50,14 @@
       "title": "Lehrkraft löschen?",
       "description": "Diese Lehrkraft und alle zugehörigen Qualifikationen und Verfügbarkeitsdaten werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
     },
+    "confirmReactivate": {
+      "title": "Lehrkraft reaktivieren?",
+      "description": "Diese Lehrkraft wird reaktiviert und erscheint wieder in der Liste der aktiven Lehrkräfte."
+    },
+    "confirmPermanentDelete": {
+      "title": "Lehrkraft endgültig löschen?",
+      "description": "Diese Lehrkraft und alle zugehörigen Qualifikationen und Verfügbarkeitsdaten werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
+    },
     "qualifications": {
       "title": "Fachqualifikationen",
       "add": "Hinzufügen",
@@ -48,6 +65,12 @@
       "empty": "Noch keine Fachqualifikationen. Fügen Sie Fächer hinzu, die diese Lehrkraft unterrichten kann.",
       "subject": "Fach",
       "selectSubject": "Fach auswählen...",
+      "searchSubject": "Fächer suchen...",
+      "noSubjectsFound": "Keine Fächer gefunden.",
+      "createNew": "\"{{name}}\" erstellen",
+      "newSubjectName": "Fachname",
+      "newSubjectNamePlaceholder": "z.B. Mathematik",
+      "abbreviation": "Abkürzung",
       "level": "Stufe",
       "levels": {
         "PRIMARY": "Hauptfach",
@@ -75,7 +98,8 @@
       },
       "setAllAvailable": "Alle verfügbar setzen",
       "setAllBlocked": "Alle gesperrt setzen",
-      "unsavedChanges": "{{count}} ungespeicherte Änderung(en)"
+      "unsavedChanges": "{{count}} ungespeicherte Änderung(en)",
+      "noTimeSlots": "Keine Unterrichtszeiten für diese Schule konfiguriert. Bitte richten Sie zuerst die Unterrichtszeiten ein, um die Verfügbarkeit von Lehrkräften zu verwalten."
     }
   },
   "subjects": {

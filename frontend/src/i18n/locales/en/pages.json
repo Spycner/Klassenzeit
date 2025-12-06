@@ -15,9 +15,18 @@
     "createNew": "Create a new teacher record.",
     "addTeacher": "Add Teacher",
     "delete": "Delete",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "permanentDelete": "Permanently Delete",
+    "showInactive": "Show inactive",
     "columns": {
       "name": "Name",
-      "abbreviation": "Abbr."
+      "abbreviation": "Abbr.",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
     },
     "empty": {
       "title": "No teachers yet",
@@ -41,6 +50,14 @@
       "title": "Delete Teacher?",
       "description": "This will permanently delete this teacher and all their qualifications and availability data. This action cannot be undone."
     },
+    "confirmReactivate": {
+      "title": "Reactivate Teacher?",
+      "description": "This teacher will be reactivated and appear in the active teachers list again."
+    },
+    "confirmPermanentDelete": {
+      "title": "Permanently Delete Teacher?",
+      "description": "This will permanently delete this teacher and all their qualifications and availability data. This action cannot be undone."
+    },
     "qualifications": {
       "title": "Subject Qualifications",
       "add": "Add",
@@ -48,6 +65,12 @@
       "empty": "No subject qualifications yet. Add subjects this teacher can teach.",
       "subject": "Subject",
       "selectSubject": "Select a subject...",
+      "searchSubject": "Search subjects...",
+      "noSubjectsFound": "No subjects found.",
+      "createNew": "Create \"{{name}}\"",
+      "newSubjectName": "Subject Name",
+      "newSubjectNamePlaceholder": "e.g. Mathematics",
+      "abbreviation": "Abbreviation",
       "level": "Level",
       "levels": {
         "PRIMARY": "Primary",
@@ -75,7 +98,8 @@
       },
       "setAllAvailable": "Set All Available",
       "setAllBlocked": "Set All Blocked",
-      "unsavedChanges": "{{count}} unsaved change(s)"
+      "unsavedChanges": "{{count}} unsaved change(s)",
+      "noTimeSlots": "No time slots configured for this school. Please set up time slots first to manage teacher availability."
     }
   },
   "subjects": {

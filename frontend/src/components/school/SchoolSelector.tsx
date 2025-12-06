@@ -1,4 +1,4 @@
-import { Building2, Check } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSchoolContext } from "@/contexts/SchoolContext";
+import { cn } from "@/lib/utils";
 
 /**
  * Dropdown for selecting the current school.
@@ -56,17 +57,16 @@ export function SchoolSelector() {
           <DropdownMenuItem
             key={school.schoolId}
             onClick={() => setCurrentSchool(school)}
-            className="flex items-center justify-between"
+            className={cn(
+              "flex items-center justify-between",
+              currentSchool?.schoolId === school.schoolId &&
+                "bg-secondary text-secondary-foreground",
+            )}
           >
             <span className="truncate">{school.schoolName}</span>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {school.role}
-              </Badge>
-              {currentSchool?.schoolId === school.schoolId && (
-                <Check className="h-4 w-4" />
-              )}
-            </div>
+            <Badge variant="secondary" className="text-xs">
+              {school.role}
+            </Badge>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

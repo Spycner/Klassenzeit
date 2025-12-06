@@ -16,13 +16,13 @@ export const usersApi = {
   },
 
   /**
-   * Search for a user by email.
-   * Backend endpoint: GET /api/users/search?email={email}
-   * Returns null if no user is found.
+   * Search for users by email or display name.
+   * Backend endpoint: GET /api/users/search?query={query}
+   * Returns a list of matching users (up to 10).
    */
-  searchByEmail(email: string): Promise<UserSearchResult | null> {
-    return apiClient.get<UserSearchResult | null>(
-      `/api/users/search?email=${encodeURIComponent(email)}`,
+  search(query: string): Promise<UserSearchResult[]> {
+    return apiClient.get<UserSearchResult[]>(
+      `/api/users/search?query=${encodeURIComponent(query)}`,
     );
   },
 };

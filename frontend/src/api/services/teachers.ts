@@ -33,6 +33,8 @@ export const teachersApi = {
    * Retrieves all teachers for a specific school.
    *
    * @param schoolId - The unique identifier (UUID) of the parent school
+   * @param options - Optional parameters for filtering
+   * @param options.includeInactive - If true, includes deactivated teachers (admin only)
    * @returns Promise resolving to an array of teacher summaries
    * @throws {ClientError} When the school is not found (404)
    * @throws {NetworkError} When the API is unreachable or request times out
@@ -40,11 +42,17 @@ export const teachersApi = {
    * @example
    * ```ts
    * const teachers = await teachersApi.list("school-uuid");
-   * console.log(teachers.map(t => `${t.firstName} ${t.lastName}`));
+   * const allTeachers = await teachersApi.list("school-uuid", { includeInactive: true });
    * ```
    */
-  list(schoolId: string): Promise<TeacherSummary[]> {
-    return apiClient.get<TeacherSummary[]>(getBasePath(schoolId));
+  list(
+    schoolId: string,
+    options?: { includeInactive?: boolean },
+  ): Promise<TeacherSummary[]> {
+    const params = options?.includeInactive
+      ? `?includeInactive=${options.includeInactive}`
+      : "";
+    return apiClient.get<TeacherSummary[]>(`${getBasePath(schoolId)}${params}`);
   },
 
   /**
@@ -121,11 +129,12 @@ export const teachersApi = {
   },
 
   /**
-   * Deletes a teacher and all their qualifications and availability entries.
+   * Soft-deletes a teacher (deactivates them).
+   * The teacher can be reactivated later by updating their isActive status.
    *
    * @param schoolId - The unique identifier (UUID) of the parent school
    * @param id - The unique identifier (UUID) of the teacher to delete
-   * @returns Promise resolving when the teacher is successfully deleted
+   * @returns Promise resolving when the teacher is successfully deactivated
    * @throws {ClientError} When the school or teacher is not found (404)
    * @throws {NetworkError} When the API is unreachable or request times out
    * @throws {ServerError} When the server returns a 5xx error
@@ -136,6 +145,25 @@ export const teachersApi = {
    */
   delete(schoolId: string, id: string): Promise<void> {
     return apiClient.delete<void>(`${getBasePath(schoolId)}/${id}`);
+  },
+
+  /**
+   * Permanently deletes a teacher and all their qualifications and availability entries.
+   * This action cannot be undone.
+   *
+   * @param schoolId - The unique identifier (UUID) of the parent school
+   * @param id - The unique identifier (UUID) of the teacher to permanently delete
+   * @returns Promise resolving when the teacher is successfully deleted
+   * @throws {ClientError} When the school or teacher is not found (404)
+   * @throws {NetworkError} When the API is unreachable or request times out
+   * @throws {ServerError} When the server returns a 5xx error
+   * @example
+   * ```ts
+   * await teachersApi.deletePermanent("school-uuid", "teacher-uuid");
+   * ```
+   */
+  deletePermanent(schoolId: string, id: string): Promise<void> {
+    return apiClient.delete<void>(`${getBasePath(schoolId)}/${id}/permanent`);
   },
 };
 

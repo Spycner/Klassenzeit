@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { type SchoolRole, useCreateMembership, useUserSearch } from "@/api";
+import {
+  type SchoolRole,
+  type UserSearchResult,
+  useCreateMembership,
+  useUserSearch,
+} from "@/api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,25 +47,25 @@ export function AddMemberDialog({
   const { t } = useTranslation("pages");
   const { t: tc } = useTranslation("common");
 
-  const [email, setEmail] = useState("");
-  const [debouncedEmail, setDebouncedEmail] = useState("");
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
   const [role, setRole] = useState<SchoolRole>("VIEWER");
 
-  // Debounce email input
+  // Debounce query input
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedEmail(email.trim());
+      setDebouncedQuery(query.trim());
     }, 300);
     return () => clearTimeout(timer);
-  }, [email]);
+  }, [query]);
 
   // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
-      setEmail("");
-      setDebouncedEmail("");
+      setQuery("");
+      setDebouncedQuery("");
       setSelectedUserId(null);
       setSelectedUserName(null);
       setRole("VIEWER");
@@ -68,26 +73,24 @@ export function AddMemberDialog({
   }, [open]);
 
   const {
-    data: user,
+    data: users,
     isLoading: isSearching,
     isFetched,
-  } = useUserSearch(debouncedEmail);
+  } = useUserSearch(debouncedQuery);
 
   const createMutation = useCreateMembership(schoolId);
 
-  const handleSelectUser = () => {
-    if (user) {
-      setSelectedUserId(user.id);
-      setSelectedUserName(user.displayName);
-      setEmail("");
-    }
+  const handleSelectUser = (user: UserSearchResult) => {
+    setSelectedUserId(user.id);
+    setSelectedUserName(user.displayName);
+    setQuery("");
   };
 
   const handleClearUser = () => {
     setSelectedUserId(null);
     setSelectedUserName(null);
-    setEmail("");
-    setDebouncedEmail("");
+    setQuery("");
+    setDebouncedQuery("");
   };
 
   const handleSubmit = async () => {
@@ -101,8 +104,9 @@ export function AddMemberDialog({
     onOpenChange(false);
   };
 
-  const showNotFound = isFetched && !user && debouncedEmail.length >= 3;
-  const showUserFound = user && !selectedUserId;
+  const hasResults = users && users.length > 0;
+  const showNotFound =
+    isFetched && (!users || users.length === 0) && debouncedQuery.length >= 2;
   const canSubmit = selectedUserId && !createMutation.isPending;
 
   return (
@@ -136,38 +140,40 @@ export function AddMemberDialog({
               </div>
             ) : (
               <>
-                <div className="flex gap-2">
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t("schools.form.admin.searchPlaceholder")}
-                    className="flex-1"
-                  />
-                  {showUserFound && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleSelectUser}
-                    >
-                      {t("schools.form.admin.select")}
-                    </Button>
-                  )}
-                </div>
+                <Input
+                  id="email"
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t("schools.form.admin.searchPlaceholder")}
+                />
 
-                {isSearching && debouncedEmail.length >= 3 && (
+                {isSearching && debouncedQuery.length >= 2 && (
                   <p className="text-sm text-muted-foreground">
                     {t("schools.form.admin.searching")}
                   </p>
                 )}
 
-                {showUserFound && (
-                  <div className="rounded-md border bg-muted/50 p-3">
-                    <p className="font-medium">{user.displayName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {user.email}
-                    </p>
+                {hasResults && (
+                  <div className="space-y-1 rounded-md border bg-muted/50 p-2">
+                    {users.map((user) => (
+                      <button
+                        key={user.id}
+                        type="button"
+                        onClick={() => handleSelectUser(user)}
+                        className="flex w-full items-center justify-between rounded-md p-2 text-left hover:bg-muted"
+                      >
+                        <div>
+                          <p className="font-medium">{user.displayName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {user.email}
+                          </p>
+                        </div>
+                        <span className="text-sm text-primary">
+                          {t("schools.form.admin.select")}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 )}
 

@@ -4,7 +4,6 @@ import { useNavigate, useParams } from "react-router";
 import {
   useCreateTeacher,
   useDeleteTeacher,
-  useSchools,
   useTeacher,
   useUpdateTeacher,
 } from "@/api";
@@ -15,6 +14,7 @@ import {
   PageHeader,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { useSchoolContext } from "@/contexts/SchoolContext";
 import {
   AvailabilitySection,
   QualificationsSection,
@@ -30,9 +30,8 @@ export function TeacherDetailPage() {
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // MVP: Single school mode - use first available school
-  const { data: schools, isLoading: schoolsLoading } = useSchools();
-  const schoolId = schools?.[0]?.id;
+  const { currentSchool, isLoading: schoolLoading } = useSchoolContext();
+  const schoolId = currentSchool?.schoolId;
 
   const {
     data: teacher,
@@ -45,7 +44,7 @@ export function TeacherDetailPage() {
   const updateMutation = useUpdateTeacher(schoolId ?? "");
   const deleteMutation = useDeleteTeacher(schoolId ?? "");
 
-  const isLoading = schoolsLoading || (!isNew && teacherLoading);
+  const isLoading = schoolLoading || (!isNew && teacherLoading);
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = async (data: TeacherFormData) => {
@@ -85,9 +84,8 @@ export function TeacherDetailPage() {
     }
   };
 
-  // Show error if schools loaded but none available
-  const noSchoolAvailable =
-    !schoolsLoading && (!schools || schools.length === 0);
+  // Show error if no school selected
+  const noSchoolAvailable = !schoolLoading && !currentSchool;
 
   if (error || noSchoolAvailable) {
     return (
@@ -137,7 +135,7 @@ export function TeacherDetailPage() {
         actions={
           !isNew && (
             <Button
-              variant="destructive"
+              variant="outline-destructive"
               onClick={() => setShowDeleteDialog(true)}
             >
               {t("teachers.delete")}

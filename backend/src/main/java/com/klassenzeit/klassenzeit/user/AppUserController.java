@@ -10,6 +10,7 @@ import com.klassenzeit.klassenzeit.user.dto.UserProfileResponse.SchoolMembership
 import com.klassenzeit.klassenzeit.user.dto.UserSearchResponse;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -64,18 +65,22 @@ public class AppUserController {
   }
 
   /**
-   * Search for a user by email.
+   * Search for users by email or display name.
    *
-   * <p>Returns the user if found, or null if not found. Only platform admins and users with at
-   * least one school membership can search for users.
+   * <p>Performs a case-insensitive partial match on email and display name. Returns up to 10
+   * matching users. Only platform admins and users with at least one school membership can search.
    */
   @GetMapping("/search")
   @PreAuthorize("@authz.canSearchUsers()")
-  public UserSearchResponse searchByEmail(@RequestParam String email) {
+  public List<UserSearchResponse> searchUsers(@RequestParam String query) {
+    if (query == null || query.trim().length() < 2) {
+      return List.of();
+    }
     return appUserRepository
-        .findByEmail(email)
+        .searchByEmailOrDisplayName(query.trim(), PageRequest.of(0, 10))
+        .stream()
         .map(u -> new UserSearchResponse(u.getId(), u.getEmail(), u.getDisplayName()))
-        .orElse(null);
+        .toList();
   }
 
   /**
