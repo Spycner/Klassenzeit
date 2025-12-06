@@ -1,6 +1,10 @@
 package com.klassenzeit.klassenzeit.security;
 
 import com.klassenzeit.klassenzeit.membership.SchoolRole;
+import com.klassenzeit.klassenzeit.school.School;
+import com.klassenzeit.klassenzeit.school.SchoolRepository;
+import com.klassenzeit.klassenzeit.school.SchoolSlugHistoryRepository;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -20,6 +24,15 @@ import org.springframework.stereotype.Service;
 @Service("authz")
 public class AuthorizationService {
 
+  private final SchoolRepository schoolRepository;
+  private final SchoolSlugHistoryRepository slugHistoryRepository;
+
+  public AuthorizationService(
+      SchoolRepository schoolRepository, SchoolSlugHistoryRepository slugHistoryRepository) {
+    this.schoolRepository = schoolRepository;
+    this.slugHistoryRepository = slugHistoryRepository;
+  }
+
   /** Check if the current user is a platform admin. */
   public boolean isPlatformAdmin() {
     return getCurrentUser().isPlatformAdmin();
@@ -33,6 +46,51 @@ public class AuthorizationService {
   public boolean canAccessSchool(UUID schoolId) {
     CurrentUser user = getCurrentUser();
     return user.isPlatformAdmin() || user.hasSchoolAccess(schoolId);
+  }
+
+  /**
+   * Check if the current user can access a school by identifier (UUID or slug).
+   *
+   * <p>Resolves the identifier to a school ID and checks access. Returns true for old slugs (the
+   * redirect will be handled by the service layer).
+   */
+  public boolean canAccessSchoolByIdentifier(String identifier) {
+    Optional<UUID> schoolId = resolveSchoolIdentifier(identifier);
+    return schoolId.map(this::canAccessSchool).orElse(false);
+  }
+
+  /**
+   * Resolve an identifier (UUID or slug) to a school ID.
+   *
+   * @return the school ID if found, empty if not found
+   */
+  private Optional<UUID> resolveSchoolIdentifier(String identifier) {
+    // Try parsing as UUID first
+    UUID id = parseUuid(identifier);
+    if (id != null) {
+      if (schoolRepository.existsById(id)) {
+        return Optional.of(id);
+      }
+      return Optional.empty();
+    }
+
+    // Check current slug
+    return schoolRepository
+        .findBySlug(identifier)
+        .map(School::getId)
+        .or(
+            () ->
+                // Check historical slug
+                slugHistoryRepository.findBySlug(identifier).map(h -> h.getSchool().getId()));
+  }
+
+  /** Safely parse a string as UUID, returns null if not valid. */
+  private static UUID parseUuid(String str) {
+    try {
+      return UUID.fromString(str);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   /**
@@ -64,6 +122,25 @@ public class AuthorizationService {
   public boolean canListSchools() {
     CurrentUser user = getCurrentUser();
     return user.isPlatformAdmin() || !user.schoolRoles().isEmpty();
+  }
+
+  /**
+   * Check if the current user can search for users.
+   *
+   * <p>Platform admins and users with at least one school membership can search for users.
+   */
+  public boolean canSearchUsers() {
+    CurrentUser user = getCurrentUser();
+    return user.isPlatformAdmin() || !user.schoolRoles().isEmpty();
+  }
+
+  /**
+   * Check if the current user can manage members for the given school.
+   *
+   * <p>Platform admins can manage members for all schools. School admins can manage their own.
+   */
+  public boolean canManageMembers(UUID schoolId) {
+    return isSchoolAdmin(schoolId);
   }
 
   /**

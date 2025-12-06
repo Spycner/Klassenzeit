@@ -127,7 +127,16 @@
       "maxGrade": "Höchste Klassenstufe",
       "timezone": "Zeitzone",
       "timezonePlaceholder": "Zeitzone auswählen...",
-      "create": "Schule erstellen"
+      "create": "Schule erstellen",
+      "admin": {
+        "label": "Initialer Schuladministrator",
+        "searchPlaceholder": "E-Mail-Adresse eingeben...",
+        "searching": "Suche...",
+        "notFound": "Kein Benutzer mit dieser E-Mail-Adresse gefunden.",
+        "help": "Suchen Sie einen Benutzer anhand seiner E-Mail-Adresse. Diese Person wird der Schuladministrator.",
+        "select": "Auswählen",
+        "change": "Ändern"
+      }
     },
     "confirmDelete": {
       "title": "Schule löschen?",
@@ -157,6 +166,10 @@
       "confirmDelete": {
         "title": "Mitglied entfernen?",
         "description": "{{name}} wird aus dieser Schule entfernt und verliert den Zugang."
+      },
+      "addDialog": {
+        "description": "Fügen Sie ein neues Mitglied hinzu, indem Sie nach dessen E-Mail-Adresse suchen.",
+        "submit": "Mitglied hinzufügen"
       }
     },
     "settings": {

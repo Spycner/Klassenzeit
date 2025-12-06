@@ -51,7 +51,7 @@ export function SchoolsListPage() {
   };
 
   const handleRowClick = (school: SchoolSummary) => {
-    navigate(`/${i18n.language}/schools/${school.id}`);
+    navigate(`/${i18n.language}/schools/${school.slug}`);
   };
 
   if (error) {

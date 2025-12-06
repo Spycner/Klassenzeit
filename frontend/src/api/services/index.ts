@@ -13,3 +13,4 @@ export { subjectsApi } from "./subjects";
 export { availabilityApi, qualificationsApi, teachersApi } from "./teachers";
 export { termsApi } from "./terms";
 export { timeSlotsApi } from "./time-slots";
+export { usersApi } from "./users";

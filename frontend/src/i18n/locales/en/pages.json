@@ -127,7 +127,16 @@
       "maxGrade": "Maximum Grade",
       "timezone": "Timezone",
       "timezonePlaceholder": "Select timezone...",
-      "create": "Create School"
+      "create": "Create School",
+      "admin": {
+        "label": "Initial School Administrator",
+        "searchPlaceholder": "Enter email address to search...",
+        "searching": "Searching...",
+        "notFound": "No user found with this email address.",
+        "help": "Search for a user by their email address. This user will become the school administrator.",
+        "select": "Select",
+        "change": "Change"
+      }
     },
     "confirmDelete": {
       "title": "Delete School?",
@@ -157,6 +166,10 @@
       "confirmDelete": {
         "title": "Remove Member?",
         "description": "{{name}} will be removed from this school and lose access."
+      },
+      "addDialog": {
+        "description": "Add a new member to this school by searching for their email address.",
+        "submit": "Add Member"
       }
     },
     "settings": {

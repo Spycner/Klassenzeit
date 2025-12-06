@@ -26,6 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { AddMemberDialog } from "./AddMemberDialog";
+
 interface MembersSectionProps {
   schoolId: string;
 }
@@ -60,6 +62,7 @@ export function MembersSection({ schoolId }: MembersSectionProps) {
   const [memberToDelete, setMemberToDelete] =
     useState<MembershipSummary | null>(null);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   const { data: members, isLoading } = useMemberships(schoolId);
   const updateMutation = useUpdateMembership(schoolId);
@@ -162,7 +165,11 @@ export function MembersSection({ schoolId }: MembersSectionProps) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg">{t("schools.members.title")}</CardTitle>
-        <Button variant="outline" size="sm" disabled>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAddDialog(true)}
+        >
           <Plus className="mr-1.5 h-4 w-4" />
           {t("schools.members.add")}
         </Button>
@@ -195,6 +202,12 @@ export function MembersSection({ schoolId }: MembersSectionProps) {
         variant="destructive"
         onConfirm={handleDelete}
         isLoading={deleteMutation.isPending}
+      />
+
+      <AddMemberDialog
+        schoolId={schoolId}
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
       />
     </Card>
   );

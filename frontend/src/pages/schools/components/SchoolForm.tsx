@@ -6,6 +6,8 @@ import {
   type CreateSchoolInput,
   createSchoolSchema,
   type SchoolResponse,
+  type UpdateSchoolInput,
+  updateSchoolSchema,
   validate,
 } from "@/api";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export type SchoolFormData = CreateSchoolInput;
+import { UserSearchField } from "./UserSearchField";
+
+export type SchoolFormData = CreateSchoolInput | UpdateSchoolInput;
 
 interface SchoolFormProps {
   school?: SchoolResponse;
@@ -72,6 +76,8 @@ export function SchoolForm({
   const { t: tc } = useTranslation("common");
   const navigate = useNavigate();
 
+  const isNew = !school;
+
   const [name, setName] = useState(school?.name ?? "");
   const [slug, setSlug] = useState(school?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(false);
@@ -83,6 +89,9 @@ export function SchoolForm({
     school?.maxGrade?.toString() ?? "13",
   );
   const [timezone, setTimezone] = useState(school?.timezone ?? "Europe/Berlin");
+  const [initialAdminUserId, setInitialAdminUserId] = useState<string | null>(
+    null,
+  );
 
   // Auto-generate slug from name (only if not editing and not manually touched)
   useEffect(() => {
@@ -93,7 +102,7 @@ export function SchoolForm({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const formData = {
+    const baseFormData = {
       name: name.trim(),
       slug: slug.trim(),
       schoolType: schoolType.trim(),
@@ -102,9 +111,22 @@ export function SchoolForm({
       timezone: timezone || undefined,
       settings: school?.settings ?? undefined,
     };
-    const result = validate(createSchoolSchema, formData);
-    if (!result.success) return;
-    await onSubmit(result.data);
+
+    if (isNew) {
+      // Creating a new school requires an initial admin
+      const createFormData = {
+        ...baseFormData,
+        initialAdminUserId: initialAdminUserId ?? "",
+      };
+      const result = validate(createSchoolSchema, createFormData);
+      if (!result.success) return;
+      await onSubmit(result.data);
+    } else {
+      // Updating an existing school
+      const result = validate(updateSchoolSchema, baseFormData);
+      if (!result.success) return;
+      await onSubmit(result.data);
+    }
   };
 
   const handleCancel = () => {
@@ -230,6 +252,18 @@ export function SchoolForm({
               />
             </div>
           </div>
+
+          {isNew && (
+            <div className="border-t pt-6">
+              <UserSearchField
+                label={t("schools.form.admin.label")}
+                value={initialAdminUserId}
+                onSelect={(userId) => setInitialAdminUserId(userId)}
+                required
+                disabled={disabled}
+              />
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 border-t pt-6">
             <Button

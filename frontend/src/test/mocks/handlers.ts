@@ -10,6 +10,7 @@ import type {
   SubjectSummary,
   TeacherResponse,
   TeacherSummary,
+  UserSearchResult,
 } from "@/api";
 
 // Base URL for API
@@ -93,6 +94,12 @@ export const mockSubjectDetail: SubjectResponse = {
   isActive: true,
   createdAt: "2024-01-01T00:00:00Z",
   updatedAt: "2024-01-01T00:00:00Z",
+};
+
+export const mockUserSearchResult: UserSearchResult = {
+  id: "user-1",
+  email: "admin@example.com",
+  displayName: "Admin User",
 };
 
 // Request handlers
@@ -179,6 +186,17 @@ export const handlers = [
       return HttpResponse.json(mockSubjectDetail);
     }
     return new HttpResponse(null, { status: 404 });
+  }),
+
+  // User Search
+  http.get(`${API_BASE}/api/users/search`, ({ request }) => {
+    const url = new URL(request.url);
+    const email = url.searchParams.get("email");
+    if (email === "admin@example.com") {
+      return HttpResponse.json(mockUserSearchResult);
+    }
+    // Return null (200 with null body) for not found
+    return HttpResponse.json(null);
   }),
 ];
 

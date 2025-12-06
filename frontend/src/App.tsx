@@ -68,7 +68,10 @@ function App() {
                     <Route path="timetable" element={<TimetablePage />} />
                     <Route path="schools" element={<SchoolsListPage />} />
                     <Route path="schools/new" element={<SchoolDetailPage />} />
-                    <Route path="schools/:id" element={<SchoolDetailPage />} />
+                    <Route
+                      path="schools/:slug"
+                      element={<SchoolDetailPage />}
+                    />
                     <Route path="settings" element={<SettingsPage />} />
                   </Route>
                 </Route>

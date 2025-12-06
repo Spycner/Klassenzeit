@@ -112,3 +112,5 @@ export {
   useTimeSlots,
   useUpdateTimeSlot,
 } from "./use-time-slots";
+// User hooks
+export { userQueryKeys, useUserSearch } from "./use-users";

@@ -16,6 +16,7 @@ import {
   NetworkError,
   parseRetryAfter,
   RateLimitError,
+  RedirectError,
   ServerError,
 } from "./errors";
 
@@ -106,6 +107,25 @@ function createErrorFromResponse(
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
+  // Handle 301 redirect (slug has changed)
+  if (response.status === 301) {
+    let newSlug = response.headers.get("X-Redirect-Slug");
+    let redirectUrl = response.headers.get("Location") || "";
+
+    // Also try to get from JSON body
+    try {
+      const body = await response.json();
+      newSlug = newSlug || body.newSlug;
+      redirectUrl = redirectUrl || body.redirectUrl;
+    } catch {
+      // Body is not JSON, use headers
+    }
+
+    if (newSlug) {
+      throw new RedirectError(newSlug, redirectUrl);
+    }
+  }
+
   if (!response.ok) {
     let errorMessage = `Request failed with status ${response.status}`;
     let details: unknown;
@@ -203,6 +223,8 @@ async function request<T>(
       ...baseHeaders,
       ...headers,
     },
+    // Don't follow redirects automatically so we can handle 301 for slug changes
+    redirect: "manual",
   };
 
   if (body !== undefined) {

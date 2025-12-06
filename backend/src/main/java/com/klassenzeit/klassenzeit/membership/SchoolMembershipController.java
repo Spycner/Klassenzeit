@@ -35,27 +35,27 @@ public class SchoolMembershipController {
   }
 
   @GetMapping
-  @PreAuthorize("@authz.isSchoolAdmin(#schoolId)")
+  @PreAuthorize("@authz.canManageMembers(#schoolId)")
   public List<MembershipSummary> findAll(@PathVariable UUID schoolId) {
     return membershipService.findAllBySchool(schoolId);
   }
 
   @GetMapping("/{id}")
-  @PreAuthorize("@authz.isSchoolAdmin(#schoolId)")
+  @PreAuthorize("@authz.canManageMembers(#schoolId)")
   public MembershipResponse findById(@PathVariable UUID schoolId, @PathVariable UUID id) {
     return membershipService.findById(schoolId, id);
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @PreAuthorize("@authz.isSchoolAdmin(#schoolId)")
+  @PreAuthorize("@authz.canManageMembers(#schoolId)")
   public MembershipResponse create(
       @PathVariable UUID schoolId, @Valid @RequestBody CreateMembershipRequest request) {
     return membershipService.create(schoolId, request);
   }
 
   @PutMapping("/{id}")
-  @PreAuthorize("@authz.isSchoolAdmin(#schoolId)")
+  @PreAuthorize("@authz.canManageMembers(#schoolId)")
   public MembershipResponse update(
       @PathVariable UUID schoolId,
       @PathVariable UUID id,
@@ -65,7 +65,7 @@ public class SchoolMembershipController {
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  @PreAuthorize("@authz.isSchoolAdmin(#schoolId)")
+  @PreAuthorize("@authz.canManageMembers(#schoolId)")
   public void delete(@PathVariable UUID schoolId, @PathVariable UUID id) {
     membershipService.delete(schoolId, id);
   }

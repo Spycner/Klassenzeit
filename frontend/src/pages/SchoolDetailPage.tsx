@@ -25,27 +25,30 @@ import {
 } from "./schools/components";
 
 export function SchoolDetailPage() {
-  const { id } = useParams();
-  const isNew = !id;
+  const { slug } = useParams();
+  const isNew = !slug;
   const { t, i18n } = useTranslation("pages");
   const navigate = useNavigate();
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  // Use slug to fetch school (the hook handles redirects if slug changed)
+  const {
+    data: school,
+    isLoading: schoolLoading,
+    error,
+    refetch,
+  } = useSchool(slug);
+
+  // Use school.id for permission checks (once we have the school)
+  const schoolId = school?.id;
   const {
     canCreateSchool,
     canEditSchool,
     canDeleteSchool,
     canManageMembers,
     isLoading: accessLoading,
-  } = useSchoolAccess(id);
-
-  const {
-    data: school,
-    isLoading: schoolLoading,
-    error,
-    refetch,
-  } = useSchool(id);
+  } = useSchoolAccess(schoolId);
 
   const createMutation = useCreateSchool();
   const updateMutation = useUpdateSchool();
@@ -55,13 +58,15 @@ export function SchoolDetailPage() {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   // Check permissions
-  const canEdit = isNew ? canCreateSchool : canEditSchool(id);
-  const canDelete = !isNew && canDeleteSchool(id);
-  const canViewMembers = !isNew && canManageMembers(id);
+  const canEdit = isNew ? canCreateSchool : canEditSchool(schoolId);
+  const canDelete = !isNew && schoolId && canDeleteSchool(schoolId);
+  const canViewMembers = !isNew && schoolId && canManageMembers(schoolId);
 
   const handleSubmit = async (data: SchoolFormData) => {
     if (isNew) {
       if (!canCreateSchool) return;
+      // Type guard: createSchoolSchema includes initialAdminUserId
+      if (!("initialAdminUserId" in data)) return;
       const created = await createMutation.mutateAsync({
         name: data.name,
         slug: data.slug,
@@ -70,12 +75,14 @@ export function SchoolDetailPage() {
         maxGrade: data.maxGrade,
         timezone: data.timezone,
         settings: data.settings,
+        initialAdminUserId: data.initialAdminUserId,
       });
-      navigate(`/${i18n.language}/schools/${created.id}`);
-    } else if (id) {
-      if (!canEditSchool(id)) return;
+      // Navigate to the new school's slug
+      navigate(`/${i18n.language}/schools/${created.slug}`);
+    } else if (schoolId) {
+      if (!canEditSchool(schoolId)) return;
       await updateMutation.mutateAsync({
-        id,
+        id: schoolId,
         data: {
           name: data.name,
           slug: data.slug,
@@ -86,12 +93,16 @@ export function SchoolDetailPage() {
           settings: data.settings,
         },
       });
+      // If slug changed, navigate to new URL
+      if (data.slug !== slug) {
+        navigate(`/${i18n.language}/schools/${data.slug}`, { replace: true });
+      }
     }
   };
 
   const handleDelete = async () => {
-    if (id && canDelete) {
-      await deleteMutation.mutateAsync(id);
+    if (schoolId && canDelete) {
+      await deleteMutation.mutateAsync(schoolId);
       navigate(`/${i18n.language}/schools`);
     }
   };
@@ -171,9 +182,9 @@ export function SchoolDetailPage() {
         disabled={!canEdit}
       />
 
-      {canViewMembers && id && <MembersSection schoolId={id} />}
+      {canViewMembers && schoolId && <MembersSection schoolId={schoolId} />}
 
-      {!isNew && id && school && (
+      {!isNew && schoolId && school && (
         <SchoolSettingsSection school={school} disabled={!canEdit} />
       )}
 

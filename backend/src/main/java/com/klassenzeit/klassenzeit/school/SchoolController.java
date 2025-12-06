@@ -41,10 +41,15 @@ public class SchoolController {
     return schoolService.findAllForUser(currentUser);
   }
 
-  @GetMapping("/{id}")
-  @PreAuthorize("@authz.canAccessSchool(#id)")
-  public SchoolResponse findById(@PathVariable UUID id) {
-    return schoolService.findById(id);
+  /**
+   * Find a school by identifier (UUID or slug).
+   *
+   * <p>If accessing via an old slug that has since been changed, returns 301 redirect.
+   */
+  @GetMapping("/{identifier}")
+  @PreAuthorize("@authz.canAccessSchoolByIdentifier(#identifier)")
+  public SchoolResponse findByIdentifier(@PathVariable String identifier) {
+    return schoolService.findByIdentifier(identifier);
   }
 
   @PostMapping

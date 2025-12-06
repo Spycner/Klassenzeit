@@ -16,3 +16,5 @@ export * from "./school";
 export * from "./solver";
 // Teacher-related types
 export * from "./teacher";
+// User types
+export * from "./user";

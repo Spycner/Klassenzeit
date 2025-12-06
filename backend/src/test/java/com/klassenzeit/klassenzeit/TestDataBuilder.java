@@ -10,6 +10,7 @@ import com.klassenzeit.klassenzeit.membership.SchoolMembership;
 import com.klassenzeit.klassenzeit.membership.SchoolRole;
 import com.klassenzeit.klassenzeit.room.Room;
 import com.klassenzeit.klassenzeit.school.School;
+import com.klassenzeit.klassenzeit.school.SchoolSlugHistory;
 import com.klassenzeit.klassenzeit.school.SchoolYear;
 import com.klassenzeit.klassenzeit.school.Term;
 import com.klassenzeit.klassenzeit.schoolclass.SchoolClass;
@@ -99,6 +100,10 @@ public class TestDataBuilder {
 
   public SchoolAccessRequestBuilder accessRequest(School school, AppUser user) {
     return new SchoolAccessRequestBuilder(school, user);
+  }
+
+  public SchoolSlugHistoryBuilder slugHistory(School school) {
+    return new SchoolSlugHistoryBuilder(school);
   }
 
   // School Builder
@@ -822,6 +827,32 @@ public class TestDataBuilder {
       SchoolAccessRequest request = build();
       entityManager.persist(request);
       return request;
+    }
+  }
+
+  // SchoolSlugHistory Builder
+  public class SchoolSlugHistoryBuilder {
+    private final School school;
+    private String slug;
+
+    public SchoolSlugHistoryBuilder(School school) {
+      this.school = school;
+      this.slug = "old-slug-" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    public SchoolSlugHistoryBuilder withSlug(String slug) {
+      this.slug = slug;
+      return this;
+    }
+
+    public SchoolSlugHistory build() {
+      return new SchoolSlugHistory(school, slug);
+    }
+
+    public SchoolSlugHistory persist() {
+      SchoolSlugHistory history = build();
+      entityManager.persist(history);
+      return history;
     }
   }
 }
