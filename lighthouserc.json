@@ -12,7 +12,11 @@
         "http://localhost:5173/de/timetable",
         "http://localhost:5173/de/settings"
       ],
-      "numberOfRuns": 1
+      "numberOfRuns": 1,
+      "puppeteerScript": "./lighthouse-auth.cjs",
+      "settings": {
+        "disableStorageReset": true
+      }
     },
     "assert": {
       "assertions": {

@@ -116,8 +116,8 @@ public class TimetableSolverService {
         .solveBuilder()
         .withProblemId(termId)
         .withProblem(problem)
-        .withBestSolutionConsumer(solution -> storeSolution(termId, solution))
-        .withFinalBestSolutionConsumer(solution -> storeSolution(termId, solution))
+        .withBestSolutionEventConsumer(event -> storeSolution(termId, event.solution()))
+        .withFinalBestSolutionEventConsumer(event -> storeSolution(termId, event.solution()))
         .run();
 
     return new SolverJobResponse(termId, SolveStatus.SOLVING, null, null, null);

@@ -160,6 +160,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Start Keycloak
+        run: |
+          docker run -d --name keycloak \
+            -p 8180:8080 \
+            -p 9000:9000 \
+            -v ${{ github.workspace }}/docker/keycloak:/opt/keycloak/data/import \
+            -e KC_HOSTNAME_STRICT=false \
+            -e KC_HTTP_ENABLED=true \
+            -e KC_HEALTH_ENABLED=true \
+            -e KEYCLOAK_ADMIN=admin \
+            -e KEYCLOAK_ADMIN_PASSWORD=admin \
+            quay.io/keycloak/keycloak:26.0 \
+            start-dev --import-realm
+
+          echo "Waiting for Keycloak to be ready..."
+          timeout 120 bash -c 'until curl -sf http://localhost:9000/health/ready > /dev/null 2>&1; do sleep 2; done'
+          echo "Keycloak is ready"
+
+          echo "Waiting for realm import to complete..."
+          timeout 60 bash -c 'until curl -sf http://localhost:8180/realms/klassenzeit/.well-known/openid-configuration > /dev/null 2>&1; do sleep 2; done'
+          echo "Realm 'klassenzeit' is available"
+
       - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
@@ -190,15 +212,21 @@ jobs:
       - name: Build frontend
         run: npm run build
         working-directory: frontend
+        env:
+          VITE_KEYCLOAK_URL: http://localhost:8180
+          VITE_KEYCLOAK_REALM: klassenzeit
+          VITE_KEYCLOAK_CLIENT_ID: klassenzeit-frontend
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Start backend
         run: |
-          cd backend && ./gradlew bootRun &
+          cd backend && ./gradlew bootRun > ../backend.log 2>&1 &
           # Wait for backend to be ready
           timeout 120 bash -c 'until curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; do sleep 2; done' || echo "Backend may not have health endpoint, continuing..."
+        env:
+          PLATFORM_ADMIN_EMAIL: e2e-test@klassenzeit.com
 
       - name: Start frontend (preview mode)
         run: |
@@ -225,3 +253,10 @@ jobs:
         with:
           name: e2e-test-results
           path: e2e/test-results/
+
+      - name: Upload backend logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-logs
+          path: backend.log

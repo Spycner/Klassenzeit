@@ -22,15 +22,9 @@ test.describe("Home Page", () => {
     await expect(tagline).toBeVisible();
   });
 
-  test("displays the get started link", async ({ page }) => {
-    // The "Get Started" button is actually a link (Button asChild with Link)
-    // Matches both German "Loslegen" and English "Get Started"
-    const link = page.getByRole("link", { name: /get started|loslegen/i });
-    await expect(link).toBeVisible();
-  });
-
-  test("get started link navigates to dashboard", async ({ page }) => {
-    const link = page.getByRole("link", { name: /get started|loslegen/i });
-    await expect(link).toHaveAttribute("href", /\/dashboard$/);
+  test("displays the login button", async ({ page }) => {
+    // Matches both German "Anmelden" and English "Log in"
+    const button = page.getByRole("button", { name: /log in|anmelden/i });
+    await expect(button).toBeVisible();
   });
 });

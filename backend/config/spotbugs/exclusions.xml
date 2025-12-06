@@ -13,4 +13,14 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
+    <!--
+        Exclude SE_BAD_FIELD for Spring Security Authentication implementations.
+        These extend JwtAuthenticationToken which implements Serializable, but in our
+        stateless JWT-based auth flow, we never serialize authentication objects.
+    -->
+    <Match>
+        <Class name="com.klassenzeit.klassenzeit.security.CurrentUserAuthentication"/>
+        <Bug pattern="SE_BAD_FIELD"/>
+    </Match>
+
 </FindBugsFilter>

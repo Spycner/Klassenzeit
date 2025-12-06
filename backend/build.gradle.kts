@@ -38,11 +38,16 @@ dependencies {
 	implementation("org.flywaydb:flyway-database-postgresql")
 	runtimeOnly("org.postgresql:postgresql")
 
+	// Security (Keycloak / OAuth2)
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+
 	// Timefold Solver
 	implementation("ai.timefold.solver:timefold-solver-spring-boot-starter:1.28.0")
 
 	// Testing
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework.security:spring-security-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 	// Testcontainers
@@ -57,6 +62,14 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 	finalizedBy(tasks.jacocoTestReport)
+}
+
+// Pass environment variables to bootRun JVM
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+	// Pass through specific environment variables to the JVM
+	System.getenv("PLATFORM_ADMIN_EMAIL")?.let {
+		systemProperty("klassenzeit.security.platform-admin-emails", it)
+	}
 }
 
 // Spotless - Code formatting (like ruff format)

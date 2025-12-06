@@ -5,4 +5,4 @@ import java.util.UUID;
 
 /** Summary DTO for a teacher qualification (for list responses). */
 public record QualificationSummary(
-    UUID id, String subjectName, QualificationLevel qualificationLevel) {}
+    UUID id, UUID subjectId, String subjectName, QualificationLevel qualificationLevel) {}

@@ -71,9 +71,29 @@ export class RateLimitError extends ApiClientError {
 }
 
 /**
+ * Redirect error - 301 Moved Permanently
+ * Used when a resource (e.g., school) has changed its slug
+ */
+export class RedirectError extends Error {
+  readonly newSlug: string;
+  readonly redirectUrl: string;
+
+  constructor(newSlug: string, redirectUrl: string) {
+    super(`Resource has moved to: ${newSlug}`);
+    this.name = "RedirectError";
+    this.newSlug = newSlug;
+    this.redirectUrl = redirectUrl;
+  }
+}
+
+/**
  * Type guard to check if an error is retryable
  */
 export function isRetryableError(error: unknown): boolean {
+  // Never retry redirect errors - they require navigation, not retry
+  if (error instanceof RedirectError) {
+    return false;
+  }
   if (error instanceof NetworkError) {
     return true;
   }

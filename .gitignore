@@ -28,3 +28,8 @@ Thumbs.db
 
 # Database
 *.sql.bak
+
+logs
+
+.lighthouseci
+*.log

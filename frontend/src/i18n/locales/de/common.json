@@ -13,5 +13,8 @@
   "cancel": "Abbrechen",
   "confirm": "Bestätigen",
   "delete": "Löschen",
+  "save": "Speichern",
+  "saving": "Speichern...",
+  "reset": "Zurücksetzen",
   "errorOccurred": "Ein Fehler ist aufgetreten"
 }

@@ -122,6 +122,7 @@ public class TeacherQualificationService {
   }
 
   private QualificationSummary toSummary(TeacherSubjectQualification q) {
-    return new QualificationSummary(q.getId(), q.getSubject().getName(), q.getQualificationLevel());
+    return new QualificationSummary(
+        q.getId(), q.getSubject().getId(), q.getSubject().getName(), q.getQualificationLevel());
   }
 }

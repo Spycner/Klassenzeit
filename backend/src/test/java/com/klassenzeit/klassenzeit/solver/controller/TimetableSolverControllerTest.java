@@ -12,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.klassenzeit.klassenzeit.common.EntityNotFoundException;
 import com.klassenzeit.klassenzeit.common.WeekPattern;
+import com.klassenzeit.klassenzeit.security.AuthorizationService;
+import com.klassenzeit.klassenzeit.security.TestSecurityConfig;
 import com.klassenzeit.klassenzeit.solver.dto.LessonAssignment;
 import com.klassenzeit.klassenzeit.solver.dto.SolveStatus;
 import com.klassenzeit.klassenzeit.solver.dto.SolverJobResponse;
@@ -19,22 +21,37 @@ import com.klassenzeit.klassenzeit.solver.dto.TimetableSolutionResponse;
 import com.klassenzeit.klassenzeit.solver.service.TimetableSolverService;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(TimetableSolverController.class)
+@Import(TestSecurityConfig.class)
+@ActiveProfiles("test")
 class TimetableSolverControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private TimetableSolverService solverService;
 
+  @MockitoBean(name = "authz")
+  private AuthorizationService authorizationService;
+
   private final UUID schoolId = UUID.randomUUID();
   private final UUID termId = UUID.randomUUID();
+
+  @BeforeEach
+  void setUp() {
+    // Allow all authorization checks in tests
+    when(authorizationService.canAccessSchool(any())).thenReturn(true);
+    when(authorizationService.canManageSchool(any())).thenReturn(true);
+  }
 
   private String baseUrl() {
     return "/api/schools/" + schoolId + "/terms/" + termId + "/solver";

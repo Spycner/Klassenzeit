@@ -1,5 +1,7 @@
 package com.klassenzeit.klassenzeit.common;
 
+import com.klassenzeit.klassenzeit.membership.ForbiddenOperationException;
+import com.klassenzeit.klassenzeit.school.SlugRedirectException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -11,6 +13,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -30,9 +34,10 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(EntityNotFoundException.class)
   public ResponseEntity<Map<String, Object>> handleEntityNotFound(
       EntityNotFoundException ex, Locale locale) {
+    Object identifier = ex.getEntityId() != null ? ex.getEntityId() : ex.getIdentifier();
     String message =
         messageSource.getMessage(
-            "error.notFound", new Object[] {ex.getEntityType(), ex.getEntityId()}, locale);
+            "error.notFound", new Object[] {ex.getEntityType(), identifier}, locale);
 
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("timestamp", Instant.now());
@@ -40,8 +45,27 @@ public class GlobalExceptionHandler {
     body.put("error", "Not Found");
     body.put("message", message);
     body.put("entityType", ex.getEntityType());
-    body.put("entityId", ex.getEntityId());
+    if (ex.getEntityId() != null) {
+      body.put("entityId", ex.getEntityId());
+    }
+    if (ex.getIdentifier() != null) {
+      body.put("identifier", ex.getIdentifier());
+    }
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+  }
+
+  @ExceptionHandler(SlugRedirectException.class)
+  public ResponseEntity<Map<String, Object>> handleSlugRedirect(SlugRedirectException ex) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("timestamp", Instant.now());
+    body.put("status", HttpStatus.MOVED_PERMANENTLY.value());
+    body.put("newSlug", ex.getNewSlug());
+    body.put("redirectUrl", "/api/schools/" + ex.getNewSlug());
+
+    return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+        .header("Location", "/api/schools/" + ex.getNewSlug())
+        .header("X-Redirect-Slug", ex.getNewSlug())
+        .body(body);
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)
@@ -104,6 +128,27 @@ public class GlobalExceptionHandler {
     body.put("error", messageSource.getMessage(errorKey, null, locale));
     body.put("message", message);
     return ResponseEntity.status(status).body(body);
+  }
+
+  @ExceptionHandler(ForbiddenOperationException.class)
+  public ResponseEntity<Map<String, Object>> handleForbiddenOperation(
+      ForbiddenOperationException ex, Locale locale) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("timestamp", Instant.now());
+    body.put("status", HttpStatus.FORBIDDEN.value());
+    body.put("error", messageSource.getMessage("error.forbidden", null, locale));
+    body.put("message", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+  }
+
+  @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
+  public ResponseEntity<Map<String, Object>> handleAccessDenied(Exception ex, Locale locale) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("timestamp", Instant.now());
+    body.put("status", HttpStatus.FORBIDDEN.value());
+    body.put("error", messageSource.getMessage("error.forbidden", null, locale));
+    body.put("message", messageSource.getMessage("error.accessDenied", null, locale));
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

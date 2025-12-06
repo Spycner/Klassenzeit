@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,11 +31,13 @@ public class TermController {
   }
 
   @GetMapping
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
   public List<TermSummary> findAll(@PathVariable UUID schoolId, @PathVariable UUID schoolYearId) {
     return termService.findAllBySchoolYear(schoolId, schoolYearId);
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
   public TermResponse findById(
       @PathVariable UUID schoolId, @PathVariable UUID schoolYearId, @PathVariable UUID id) {
     return termService.findById(schoolId, schoolYearId, id);
@@ -42,6 +45,7 @@ public class TermController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public TermResponse create(
       @PathVariable UUID schoolId,
       @PathVariable UUID schoolYearId,
@@ -50,6 +54,7 @@ public class TermController {
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public TermResponse update(
       @PathVariable UUID schoolId,
       @PathVariable UUID schoolYearId,
@@ -60,6 +65,7 @@ public class TermController {
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public void delete(
       @PathVariable UUID schoolId, @PathVariable UUID schoolYearId, @PathVariable UUID id) {
     termService.delete(schoolId, schoolYearId, id);

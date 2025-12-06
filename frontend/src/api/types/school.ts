@@ -16,6 +16,8 @@ export interface CreateSchoolRequest {
   maxGrade: number;
   timezone?: string;
   settings?: string;
+  /** The user ID of the initial school administrator (required) */
+  initialAdminUserId: string;
 }
 
 export interface UpdateSchoolRequest {

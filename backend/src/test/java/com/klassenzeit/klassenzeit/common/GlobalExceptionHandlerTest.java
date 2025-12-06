@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.klassenzeit.klassenzeit.security.TestSecurityConfig;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,7 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @WebMvcTest(
     controllers = {GlobalExceptionHandlerTestController.class, GlobalExceptionHandler.class})
-@Import(I18nConfig.class)
+@Import({I18nConfig.class, TestSecurityConfig.class})
+@ActiveProfiles("test")
 class GlobalExceptionHandlerTest {
 
   @Autowired private MockMvc mockMvc;

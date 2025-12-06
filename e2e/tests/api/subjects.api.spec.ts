@@ -1,14 +1,18 @@
 import { expect, test } from "@playwright/test";
+import { getAuthHeaders } from "./auth";
 import { API_BASE } from "./config";
 
 test.describe("Subjects API", () => {
   let schoolId: string;
+  let headers: Record<string, string>;
   // Use unique suffix per worker to avoid conflicts in parallel execution
   const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   test.beforeAll(async ({ request }) => {
+    headers = await getAuthHeaders();
     // Create a school to use for subject tests
     const response = await request.post(`${API_BASE}/schools`, {
+      headers,
       data: {
         name: `Subjects Test School ${uniqueSuffix}`,
         slug: `subjects-test-${uniqueSuffix}`,
@@ -24,7 +28,7 @@ test.describe("Subjects API", () => {
   test.afterAll(async ({ request }) => {
     // Cleanup the test school
     if (schoolId) {
-      await request.delete(`${API_BASE}/schools/${schoolId}`);
+      await request.delete(`${API_BASE}/schools/${schoolId}`, { headers });
     }
   });
 
@@ -32,7 +36,8 @@ test.describe("Subjects API", () => {
     request,
   }) => {
     const response = await request.get(
-      `${API_BASE}/schools/${schoolId}/subjects`
+      `${API_BASE}/schools/${schoolId}/subjects`,
+      { headers }
     );
 
     expect(response.status()).toBe(200);
@@ -53,6 +58,7 @@ test.describe("Subjects API", () => {
     const response = await request.post(
       `${API_BASE}/schools/${schoolId}/subjects`,
       {
+        headers,
         data: newSubject,
       }
     );
@@ -68,7 +74,8 @@ test.describe("Subjects API", () => {
 
     // Cleanup
     await request.delete(
-      `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`
+      `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`,
+      { headers }
     );
   });
 
@@ -79,6 +86,7 @@ test.describe("Subjects API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/subjects`,
       {
+        headers,
         data: {
           name: "English",
           abbreviation: "EN",
@@ -89,7 +97,8 @@ test.describe("Subjects API", () => {
 
     // Get subject details
     const response = await request.get(
-      `${API_BASE}/schools/${schoolId}/subjects/${created.id}`
+      `${API_BASE}/schools/${schoolId}/subjects/${created.id}`,
+      { headers }
     );
 
     expect(response.status()).toBe(200);
@@ -101,7 +110,8 @@ test.describe("Subjects API", () => {
 
     // Cleanup
     await request.delete(
-      `${API_BASE}/schools/${schoolId}/subjects/${created.id}`
+      `${API_BASE}/schools/${schoolId}/subjects/${created.id}`,
+      { headers }
     );
   });
 
@@ -112,6 +122,7 @@ test.describe("Subjects API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/subjects`,
       {
+        headers,
         data: {
           name: "Physics",
           abbreviation: "PH",
@@ -124,6 +135,7 @@ test.describe("Subjects API", () => {
     const response = await request.put(
       `${API_BASE}/schools/${schoolId}/subjects/${created.id}`,
       {
+        headers,
         data: {
           name: "Physics Advanced",
           abbreviation: "PHA",
@@ -141,7 +153,8 @@ test.describe("Subjects API", () => {
 
     // Cleanup
     await request.delete(
-      `${API_BASE}/schools/${schoolId}/subjects/${created.id}`
+      `${API_BASE}/schools/${schoolId}/subjects/${created.id}`,
+      { headers }
     );
   });
 
@@ -152,6 +165,7 @@ test.describe("Subjects API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/subjects`,
       {
+        headers,
         data: {
           name: "Chemistry",
           abbreviation: "CH",
@@ -162,14 +176,16 @@ test.describe("Subjects API", () => {
 
     // Delete the subject
     const response = await request.delete(
-      `${API_BASE}/schools/${schoolId}/subjects/${created.id}`
+      `${API_BASE}/schools/${schoolId}/subjects/${created.id}`,
+      { headers }
     );
 
     expect(response.status()).toBe(204);
 
     // Verify it's gone
     const getResponse = await request.get(
-      `${API_BASE}/schools/${schoolId}/subjects/${created.id}`
+      `${API_BASE}/schools/${schoolId}/subjects/${created.id}`,
+      { headers }
     );
     expect(getResponse.status()).toBe(404);
   });
@@ -179,6 +195,7 @@ test.describe("Subjects API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/subjects`,
         {
+          headers,
           data: {
             name: "",
             abbreviation: "EMP",
@@ -194,6 +211,7 @@ test.describe("Subjects API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/subjects`,
         {
+          headers,
           data: {
             name: "Test Subject",
             abbreviation: "",
@@ -209,6 +227,7 @@ test.describe("Subjects API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/subjects`,
         {
+          headers,
           data: {
             name: "Franzosisch",
             abbreviation: "FR",
@@ -222,7 +241,8 @@ test.describe("Subjects API", () => {
 
       // Cleanup
       await request.delete(
-        `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`
+        `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`,
+        { headers }
       );
     });
 
@@ -232,6 +252,7 @@ test.describe("Subjects API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/subjects`,
         {
+          headers,
           data: {
             name: "Art & Design",
             abbreviation: "AD",
@@ -245,7 +266,8 @@ test.describe("Subjects API", () => {
 
       // Cleanup
       await request.delete(
-        `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`
+        `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`,
+        { headers }
       );
     });
 
@@ -255,6 +277,7 @@ test.describe("Subjects API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/subjects`,
         {
+          headers,
           data: {
             name: "'; DROP TABLE subjects; --",
             abbreviation: "SQL",
@@ -267,7 +290,8 @@ test.describe("Subjects API", () => {
         const subject = await response.json();
         expect(subject.name).toContain("DROP TABLE");
         await request.delete(
-          `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`
+          `${API_BASE}/schools/${schoolId}/subjects/${subject.id}`,
+          { headers }
         );
       } else {
         expect(response.status()).toBe(400);

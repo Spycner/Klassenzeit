@@ -4,6 +4,14 @@
 
 // Query Client
 export { queryClient, queryKeys } from "./query-client";
+// Access Request hooks
+export {
+  useAccessRequest,
+  useAccessRequests,
+  useCancelAccessRequest,
+  useCreateAccessRequest,
+  useReviewAccessRequest,
+} from "./use-access-requests";
 // Class hooks
 export {
   useClass,
@@ -12,6 +20,8 @@ export {
   useDeleteClass,
   useUpdateClass,
 } from "./use-classes";
+// Current user hook
+export { useCurrentUser } from "./use-current-user";
 // Lesson hooks
 export {
   useCreateLesson,
@@ -20,6 +30,14 @@ export {
   useLessons,
   useUpdateLesson,
 } from "./use-lessons";
+// Membership hooks
+export {
+  useCreateMembership,
+  useDeleteMembership,
+  useMembership,
+  useMemberships,
+  useUpdateMembership,
+} from "./use-memberships";
 // Room hooks
 export {
   useCreateRoom,
@@ -70,6 +88,7 @@ export {
   useDeleteAvailability,
   useDeleteQualification,
   useDeleteTeacher,
+  usePermanentDeleteTeacher,
   useQualification,
   useQualifications,
   useTeacher,
@@ -94,3 +113,5 @@ export {
   useTimeSlots,
   useUpdateTimeSlot,
 } from "./use-time-slots";
+// User hooks
+export { userQueryKeys, useUserSearch } from "./use-users";

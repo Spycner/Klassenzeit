@@ -1,18 +1,20 @@
-.PHONY: help dev dev-all db-up db-down db-logs db-reset db-docs backend frontend test test-backend test-frontend test-frontend-coverage test-e2e test-e2e-ui test-a11y lint lint-backend lint-frontend format format-backend format-frontend clean
+.PHONY: help dev dev-all services-up services-down services-logs services-reset db-docs backend frontend test test-backend test-frontend test-frontend-coverage test-e2e test-e2e-ui test-a11y lint lint-backend lint-frontend format format-backend format-frontend clean
 
 # Default target
 help:
 	@echo "Klassenzeit Development Commands"
 	@echo ""
+	@echo "Services (PostgreSQL + Keycloak):"
+	@echo "  make services-up     Start PostgreSQL and Keycloak"
+	@echo "  make services-down   Stop PostgreSQL and Keycloak"
+	@echo "  make services-logs   Show service logs"
+	@echo "  make services-reset  Reset all services (destroy and recreate)"
+	@echo ""
 	@echo "Database:"
-	@echo "  make db-up        Start PostgreSQL database"
-	@echo "  make db-down      Stop PostgreSQL database"
-	@echo "  make db-logs      Show database logs"
-	@echo "  make db-reset     Reset database (destroy and recreate)"
-	@echo "  make db-docs      Generate database documentation with ER diagrams"
+	@echo "  make db-docs         Generate database documentation with ER diagrams"
 	@echo ""
 	@echo "Development:"
-	@echo "  make dev          Start database and backend"
+	@echo "  make dev             Start services and backend"
 	@echo "  make backend      Run backend only"
 	@echo "  make frontend     Run frontend only"
 	@echo ""
@@ -36,20 +38,21 @@ help:
 	@echo "Cleanup:"
 	@echo "  make clean        Clean build artifacts"
 
-# Database
-db-up:
+# Services (PostgreSQL + Keycloak)
+services-up:
 	docker compose up -d
 
-db-down:
+services-down:
 	docker compose down
 
-db-logs:
+services-logs:
 	docker compose logs -f
 
-db-reset:
+services-reset:
 	docker compose down -v
 	docker compose up -d
 
+# Database
 db-docs:
 	@mkdir -p backend/build/schemaspy
 	docker run --rm --network=host \
@@ -61,10 +64,10 @@ db-docs:
 	@open backend/build/schemaspy/index.html 2>/dev/null || xdg-open backend/build/schemaspy/index.html 2>/dev/null || echo "Open backend/build/schemaspy/index.html in your browser"
 
 # Development
-dev: db-up backend
+dev: services-up backend
 
 backend:
-	cd backend && ./gradlew bootRun
+	@set -a && [ -f .env ] && . ./.env; set +a && cd backend && ./gradlew bootRun
 
 frontend:
 	cd frontend && npm run dev

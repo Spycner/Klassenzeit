@@ -12,7 +12,95 @@
     "editTitle": "Edit Teacher",
     "newTitle": "New Teacher",
     "editingTeacher": "Editing teacher with ID: {{id}}",
-    "createNew": "Create a new teacher record."
+    "createNew": "Create a new teacher record.",
+    "addTeacher": "Add Teacher",
+    "delete": "Delete",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "permanentDelete": "Permanently Delete",
+    "showInactive": "Show inactive",
+    "columns": {
+      "name": "Name",
+      "abbreviation": "Abbr.",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "empty": {
+      "title": "No teachers yet",
+      "description": "Add your first teacher to get started with scheduling."
+    },
+    "form": {
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Enter first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Enter last name",
+      "abbreviation": "Abbreviation",
+      "abbreviationPlaceholder": "SMI",
+      "email": "Email",
+      "emailPlaceholder": "teacher@school.edu",
+      "maxHoursPerWeek": "Max Hours/Week",
+      "maxHoursPerWeekPlaceholder": "e.g. 25",
+      "isPartTime": "Part-time teacher",
+      "create": "Create Teacher"
+    },
+    "confirmDelete": {
+      "title": "Delete Teacher?",
+      "description": "This will permanently delete this teacher and all their qualifications and availability data. This action cannot be undone."
+    },
+    "confirmReactivate": {
+      "title": "Reactivate Teacher?",
+      "description": "This teacher will be reactivated and appear in the active teachers list again."
+    },
+    "confirmPermanentDelete": {
+      "title": "Permanently Delete Teacher?",
+      "description": "This will permanently delete this teacher and all their qualifications and availability data. This action cannot be undone."
+    },
+    "qualifications": {
+      "title": "Subject Qualifications",
+      "add": "Add",
+      "remove": "Remove qualification",
+      "empty": "No subject qualifications yet. Add subjects this teacher can teach.",
+      "subject": "Subject",
+      "selectSubject": "Select a subject...",
+      "searchSubject": "Search subjects...",
+      "noSubjectsFound": "No subjects found.",
+      "createNew": "Create \"{{name}}\"",
+      "newSubjectName": "Subject Name",
+      "newSubjectNamePlaceholder": "e.g. Mathematics",
+      "abbreviation": "Abbreviation",
+      "level": "Level",
+      "levels": {
+        "PRIMARY": "Primary",
+        "SECONDARY": "Secondary",
+        "SUBSTITUTE": "Substitute"
+      }
+    },
+    "noSchoolAvailable": "No school available. Please create a school first.",
+    "availability": {
+      "title": "Weekly Availability",
+      "description": "Click cells to cycle through availability states. Changes are saved when you click Save.",
+      "reset": "Reset",
+      "period": "Period",
+      "days": {
+        "monday": "Mon",
+        "tuesday": "Tue",
+        "wednesday": "Wed",
+        "thursday": "Thu",
+        "friday": "Fri"
+      },
+      "types": {
+        "AVAILABLE": "Available",
+        "PREFERRED": "Preferred",
+        "BLOCKED": "Blocked"
+      },
+      "setAllAvailable": "Set All Available",
+      "setAllBlocked": "Set All Blocked",
+      "unsavedChanges": "{{count}} unsaved change(s)",
+      "noTimeSlots": "No time slots configured for this school. Please set up time slots first to manage teacher availability."
+    }
   },
   "subjects": {
     "title": "Subjects",
@@ -33,6 +121,105 @@
   "timetable": {
     "title": "Timetable",
     "description": "View and generate timetables here."
+  },
+  "schools": {
+    "title": "Schools",
+    "description": "Manage the schools in your system here.",
+    "editTitle": "Edit School",
+    "newTitle": "New School",
+    "addSchool": "Add School",
+    "delete": "Delete",
+    "permissionDenied": "You do not have permission to perform this action.",
+    "columns": {
+      "name": "Name",
+      "slug": "URL Identifier",
+      "schoolType": "School Type"
+    },
+    "empty": {
+      "title": "No schools yet",
+      "description": "Create your first school to get started with scheduling."
+    },
+    "form": {
+      "name": "School Name",
+      "namePlaceholder": "e.g. Springfield High School",
+      "slug": "URL Identifier",
+      "slugPlaceholder": "springfield-high-school",
+      "slugHelp": "Only lowercase letters, numbers, and hyphens. Used in URLs.",
+      "schoolType": "School Type",
+      "schoolTypePlaceholder": "Select school type...",
+      "minGrade": "Minimum Grade",
+      "maxGrade": "Maximum Grade",
+      "timezone": "Timezone",
+      "timezonePlaceholder": "Select timezone...",
+      "create": "Create School",
+      "admin": {
+        "label": "Initial School Administrator",
+        "searchPlaceholder": "Enter email address to search...",
+        "searching": "Searching...",
+        "notFound": "No user found with this email address.",
+        "help": "Search for a user by their email address. This user will become the school administrator.",
+        "select": "Select",
+        "change": "Change"
+      }
+    },
+    "confirmDelete": {
+      "title": "Delete School?",
+      "description": "This will permanently delete this school and all associated data (teachers, classes, rooms, timetables). This action cannot be undone."
+    },
+    "members": {
+      "title": "Members",
+      "add": "Add Member",
+      "remove": "Remove",
+      "empty": "No members in this school yet.",
+      "columns": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "status": "Status"
+      },
+      "roles": {
+        "SCHOOL_ADMIN": "School Admin",
+        "PLANNER": "Planner",
+        "TEACHER": "Teacher",
+        "VIEWER": "Viewer"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "confirmDelete": {
+        "title": "Remove Member?",
+        "description": "{{name}} will be removed from this school and lose access."
+      },
+      "addDialog": {
+        "description": "Add a new member to this school by searching for their email address.",
+        "submit": "Add Member"
+      }
+    },
+    "settings": {
+      "title": "School Settings",
+      "usingDefaults": "Showing default values. Save to customize settings for this school.",
+      "json": "JSON Configuration",
+      "showJson": "Show JSON",
+      "showForm": "Show Form",
+      "invalidJson": "Invalid JSON format",
+      "saved": "Settings saved",
+      "timing": {
+        "title": "Lesson Timing",
+        "lessonDuration": "Lesson Duration",
+        "shortBreak": "Short Break",
+        "longBreak": "Long Break",
+        "maxPeriods": "Max Periods per Day",
+        "minutes": "min"
+      },
+      "features": {
+        "title": "Features",
+        "substitution": "Substitution Management",
+        "substitutionDesc": "Enable management of teacher substitutions and absences.",
+        "parentPortal": "Parent Portal",
+        "parentPortalDesc": "Allow parents to view their children's timetables."
+      }
+    }
   },
   "settings": {
     "title": "Settings",

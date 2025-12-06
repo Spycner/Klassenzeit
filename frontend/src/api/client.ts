@@ -16,8 +16,21 @@ import {
   NetworkError,
   parseRetryAfter,
   RateLimitError,
+  RedirectError,
   ServerError,
 } from "./errors";
+
+// Token getter for auth header injection
+let getAccessToken: (() => string | null) | null = null;
+
+/**
+ * Set the token getter function (called by AuthProvider).
+ * This allows the auth module to provide the current access token
+ * without creating a circular dependency.
+ */
+export function setTokenGetter(getter: () => string | null): void {
+  getAccessToken = getter;
+}
 
 // Re-export for backwards compatibility
 export { ApiClientError, type ApiError } from "./base-error";
@@ -94,6 +107,25 @@ function createErrorFromResponse(
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
+  // Handle 301 redirect (slug has changed)
+  if (response.status === 301) {
+    let newSlug = response.headers.get("X-Redirect-Slug");
+    let redirectUrl = response.headers.get("Location") || "";
+
+    // Also try to get from JSON body
+    try {
+      const body = await response.json();
+      newSlug = newSlug || body.newSlug;
+      redirectUrl = redirectUrl || body.redirectUrl;
+    } catch {
+      // Body is not JSON, use headers
+    }
+
+    if (newSlug) {
+      throw new RedirectError(newSlug, redirectUrl);
+    }
+  }
+
   if (!response.ok) {
     let errorMessage = `Request failed with status ${response.status}`;
     let details: unknown;
@@ -173,14 +205,26 @@ async function request<T>(
   const defaultRetries = method === "GET" ? MAX_RETRIES : 1;
   const maxRetries = areRetriesDisabled() ? 0 : (retries ?? defaultRetries);
 
+  // Build headers with optional auth token
+  const token = getAccessToken?.();
+  const baseHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    "Accept-Language": i18n.language,
+  };
+
+  if (token) {
+    baseHeaders.Authorization = `Bearer ${token}`;
+  }
+
   const config: RequestInit = {
     ...restOptions,
     headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "Accept-Language": i18n.language,
+      ...baseHeaders,
       ...headers,
     },
+    // Don't follow redirects automatically so we can handle 301 for slug changes
+    redirect: "manual",
   };
 
   if (body !== undefined) {
