@@ -98,6 +98,92 @@
     "title": "Timetable",
     "description": "View and generate timetables here."
   },
+  "schools": {
+    "title": "Schools",
+    "description": "Manage the schools in your system here.",
+    "editTitle": "Edit School",
+    "newTitle": "New School",
+    "addSchool": "Add School",
+    "delete": "Delete",
+    "permissionDenied": "You do not have permission to perform this action.",
+    "columns": {
+      "name": "Name",
+      "slug": "URL Identifier",
+      "schoolType": "School Type"
+    },
+    "empty": {
+      "title": "No schools yet",
+      "description": "Create your first school to get started with scheduling."
+    },
+    "form": {
+      "name": "School Name",
+      "namePlaceholder": "e.g. Springfield High School",
+      "slug": "URL Identifier",
+      "slugPlaceholder": "springfield-high-school",
+      "slugHelp": "Only lowercase letters, numbers, and hyphens. Used in URLs.",
+      "schoolType": "School Type",
+      "schoolTypePlaceholder": "Select school type...",
+      "minGrade": "Minimum Grade",
+      "maxGrade": "Maximum Grade",
+      "timezone": "Timezone",
+      "timezonePlaceholder": "Select timezone...",
+      "create": "Create School"
+    },
+    "confirmDelete": {
+      "title": "Delete School?",
+      "description": "This will permanently delete this school and all associated data (teachers, classes, rooms, timetables). This action cannot be undone."
+    },
+    "members": {
+      "title": "Members",
+      "add": "Add Member",
+      "remove": "Remove",
+      "empty": "No members in this school yet.",
+      "columns": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "status": "Status"
+      },
+      "roles": {
+        "SCHOOL_ADMIN": "School Admin",
+        "PLANNER": "Planner",
+        "TEACHER": "Teacher",
+        "VIEWER": "Viewer"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "confirmDelete": {
+        "title": "Remove Member?",
+        "description": "{{name}} will be removed from this school and lose access."
+      }
+    },
+    "settings": {
+      "title": "School Settings",
+      "usingDefaults": "Showing default values. Save to customize settings for this school.",
+      "json": "JSON Configuration",
+      "showJson": "Show JSON",
+      "showForm": "Show Form",
+      "invalidJson": "Invalid JSON format",
+      "saved": "Settings saved",
+      "timing": {
+        "title": "Lesson Timing",
+        "lessonDuration": "Lesson Duration",
+        "shortBreak": "Short Break",
+        "longBreak": "Long Break",
+        "maxPeriods": "Max Periods per Day",
+        "minutes": "min"
+      },
+      "features": {
+        "title": "Features",
+        "substitution": "Substitution Management",
+        "substitutionDesc": "Enable management of teacher substitutions and absences.",
+        "parentPortal": "Parent Portal",
+        "parentPortalDesc": "Allow parents to view their children's timetables."
+      }
+    }
+  },
   "settings": {
     "title": "Settings",
     "description": "Configure your application settings here."

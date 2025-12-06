@@ -98,6 +98,92 @@
     "title": "Stundenplan",
     "description": "Stundenpläne hier anzeigen und erstellen."
   },
+  "schools": {
+    "title": "Schulen",
+    "description": "Verwalten Sie hier die Schulen in Ihrem System.",
+    "editTitle": "Schule bearbeiten",
+    "newTitle": "Neue Schule",
+    "addSchool": "Schule hinzufügen",
+    "delete": "Löschen",
+    "permissionDenied": "Sie haben keine Berechtigung, diese Aktion durchzuführen.",
+    "columns": {
+      "name": "Name",
+      "slug": "URL-Kennung",
+      "schoolType": "Schulart"
+    },
+    "empty": {
+      "title": "Noch keine Schulen",
+      "description": "Erstellen Sie Ihre erste Schule, um mit der Stundenplanung zu beginnen."
+    },
+    "form": {
+      "name": "Schulname",
+      "namePlaceholder": "z.B. Max-Mustermann-Gymnasium",
+      "slug": "URL-Kennung",
+      "slugPlaceholder": "max-mustermann-gymnasium",
+      "slugHelp": "Nur Kleinbuchstaben, Zahlen und Bindestriche. Wird für URLs verwendet.",
+      "schoolType": "Schulart",
+      "schoolTypePlaceholder": "Schulart auswählen...",
+      "minGrade": "Kleinste Klassenstufe",
+      "maxGrade": "Höchste Klassenstufe",
+      "timezone": "Zeitzone",
+      "timezonePlaceholder": "Zeitzone auswählen...",
+      "create": "Schule erstellen"
+    },
+    "confirmDelete": {
+      "title": "Schule löschen?",
+      "description": "Diese Schule und alle zugehörigen Daten (Lehrkräfte, Klassen, Räume, Stundenpläne) werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "members": {
+      "title": "Mitglieder",
+      "add": "Mitglied hinzufügen",
+      "remove": "Entfernen",
+      "empty": "Noch keine Mitglieder in dieser Schule.",
+      "columns": {
+        "name": "Name",
+        "email": "E-Mail",
+        "role": "Rolle",
+        "status": "Status"
+      },
+      "roles": {
+        "SCHOOL_ADMIN": "Schuladmin",
+        "PLANNER": "Planer",
+        "TEACHER": "Lehrkraft",
+        "VIEWER": "Betrachter"
+      },
+      "status": {
+        "active": "Aktiv",
+        "inactive": "Inaktiv"
+      },
+      "confirmDelete": {
+        "title": "Mitglied entfernen?",
+        "description": "{{name}} wird aus dieser Schule entfernt und verliert den Zugang."
+      }
+    },
+    "settings": {
+      "title": "Schuleinstellungen",
+      "usingDefaults": "Standardwerte werden angezeigt. Speichern Sie, um die Einstellungen für diese Schule anzupassen.",
+      "json": "JSON-Konfiguration",
+      "showJson": "JSON anzeigen",
+      "showForm": "Formular anzeigen",
+      "invalidJson": "Ungültiges JSON-Format",
+      "saved": "Einstellungen gespeichert",
+      "timing": {
+        "title": "Unterrichtszeiten",
+        "lessonDuration": "Unterrichtsdauer",
+        "shortBreak": "Kleine Pause",
+        "longBreak": "Große Pause",
+        "maxPeriods": "Max. Stunden pro Tag",
+        "minutes": "Min."
+      },
+      "features": {
+        "title": "Funktionen",
+        "substitution": "Vertretungsmanagement",
+        "substitutionDesc": "Ermöglicht die Verwaltung von Lehrervertretungen und Ausfällen.",
+        "parentPortal": "Elternportal",
+        "parentPortalDesc": "Ermöglicht Eltern den Zugriff auf Stundenpläne ihrer Kinder."
+      }
+    }
+  },
   "settings": {
     "title": "Einstellungen",
     "description": "Konfigurieren Sie hier Ihre Anwendungseinstellungen."

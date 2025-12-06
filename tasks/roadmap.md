@@ -10,11 +10,11 @@ Multi-user support with Keycloak authentication and school-scoped permissions.
 
 - [B-020: Authentication & Authorization](doing/backend/B-020-authentication-authorization.md) **Phase 1 Complete**
   - Phase 1: Foundation ✅ (Keycloak, JWT, AppUser, SecurityConfig)
-  - Phase 2: School Membership (pending)
-  - Phase 3: Secure All Endpoints (pending)
-  - Phase 4: Platform Admin (pending)
-  - Phase 5: Access Requests (pending)
-  - Phase 6: Frontend Integration (pending)
+  - Phase 2: School Membership ✅
+  - Phase 3: Secure All Endpoints ✅
+  - Phase 4: Platform Admin ✅
+  - Phase 5: Access Requests ✅
+  - Phase 6: Frontend Integration ✅
   - Phase 7: Invitations (future)
 
 See [docs/authentication.md](../docs/authentication.md) for architecture details.
@@ -23,19 +23,22 @@ See [docs/authentication.md](../docs/authentication.md) for architecture details
 
 Build out the full frontend application with data management pages:
 
-3. [F-012: Teachers CRUD Pages](done/frontend/F-012-teachers-crud.md) ✅
-4. [F-013: Subjects CRUD Pages](todo/frontend/F-013-subjects-crud.md)
-   - Depends on: F-010, F-011
-5. [F-014: Rooms CRUD Pages](todo/frontend/F-014-rooms-crud.md)
-   - Depends on: F-010, F-011
-6. [F-015: Classes CRUD Pages](todo/frontend/F-015-classes-crud.md)
-   - Depends on: F-010, F-011
-7. [F-016: Time Slots Configuration](todo/frontend/F-016-timeslots-config.md)
-   - Depends on: F-010, F-011
-8. [F-017: Timetable Grid Views](todo/frontend/F-017-timetable-views.md)
-   - Depends on: F-010, F-011, F-016
-9. [F-018: Settings & Academic Calendar](todo/frontend/F-018-settings-pages.md)
-   - Depends on: F-010, F-011
+1. [F-012: Teachers CRUD Pages](done/frontend/F-012-teachers-crud.md) ✅
+2. [F-019: Schools CRUD Pages](done/frontend/F-019-schools-crud.md) ✅
+3. [F-013: Subjects CRUD Pages](todo/frontend/F-013-subjects-crud.md)
+4. [F-014: Rooms CRUD Pages](todo/frontend/F-014-rooms-crud.md)
+5. [F-015: Classes CRUD Pages](todo/frontend/F-015-classes-crud.md)
+6. [F-016: Time Slots Configuration](todo/frontend/F-016-timeslots-config.md)
+7. [F-017: Timetable Grid Views](todo/frontend/F-017-timetable-views.md)
+   - Depends on: F-016
+8. [F-018: Settings & Academic Calendar](todo/frontend/F-018-settings-pages.md)
+
+### Schools Management (Pending)
+
+- [F-022: Add School Members](todo/frontend/F-022-add-school-members.md)
+  - Requires backend user search endpoint
+- [F-023: School Settings Redesign](todo/frontend/F-023-school-settings-redesign.md)
+  - Current settings are placeholders, need real requirements from teachers
 
 ### Backend Timetabling Solver (Timefold)
 
@@ -66,7 +69,7 @@ These can be mixed in as needed while building core features:
 ### Phase: Solver UI (after core frontend + backend solver)
 
 - [F-020: Solver UI Components](todo/frontend/F-020-solver-ui.md)
-  - Depends on: F-019 (done), F-017
+  - Depends on: F-017
 
 ---
 

@@ -6,6 +6,8 @@
 export * from "./common";
 // Lesson types
 export * from "./lesson";
+// Membership types
+export * from "./membership";
 // Resource types
 export * from "./resources";
 // School-related types

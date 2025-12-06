@@ -155,4 +155,11 @@ export const queryKeys = {
     solution: (schoolId: string, termId: string) =>
       ["schools", schoolId, "terms", termId, "solver", "solution"] as const,
   },
+
+  // Memberships
+  memberships: {
+    all: (schoolId: string) => ["schools", schoolId, "members"] as const,
+    detail: (schoolId: string, id: string) =>
+      ["schools", schoolId, "members", id] as const,
+  },
 };

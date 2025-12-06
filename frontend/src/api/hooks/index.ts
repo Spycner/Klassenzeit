@@ -30,6 +30,14 @@ export {
   useLessons,
   useUpdateLesson,
 } from "./use-lessons";
+// Membership hooks
+export {
+  useCreateMembership,
+  useDeleteMembership,
+  useMembership,
+  useMemberships,
+  useUpdateMembership,
+} from "./use-memberships";
 // Room hooks
 export {
   useCreateRoom,

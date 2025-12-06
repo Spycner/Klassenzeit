@@ -6,7 +6,7 @@ Implement Keycloak-based authentication with application-level school-scoped aut
 
 ## Status: In Progress
 
-**Phase 1, 2, 3, 4 & 5 Complete** - Foundation, School Membership, Endpoint Security, Platform Admin, and Access Requests implemented. Remaining phases pending.
+**Phase 1-6 Complete** - Foundation, School Membership, Endpoint Security, Platform Admin, Access Requests, and Frontend Integration implemented. Only Phase 7 (Invitations) remains as a future enhancement.
 
 ## Architecture Decision
 
@@ -59,13 +59,13 @@ Note: `POST /api/admin/schools` is not needed since `POST /api/schools` already 
 - [x] Request/approve/reject workflow endpoints
 - [x] Cancel endpoint in AppUserController
 
-### Phase 6: Frontend Integration
-- [ ] Configure React for Keycloak OIDC
-- [ ] Add AuthContext/AuthProvider
-- [ ] Add ProtectedRoute component
-- [ ] Add Login/Logout UI
-- [ ] Add SchoolSelector for multi-school users
-- [ ] Add AccessRequest UI
+### Phase 6: Frontend Integration ✅
+- [x] Configure React for Keycloak OIDC
+- [x] Add AuthContext/AuthProvider
+- [x] Add ProtectedRoute component
+- [x] Add Login/Logout UI
+- [x] Add SchoolSelector for multi-school users
+- [x] Add AccessRequest UI
 
 ### Phase 7: Invitations (Future)
 - [ ] SchoolInvitation entity (already in schema)
@@ -181,3 +181,6 @@ None
 - URL: http://localhost:8180
 - Admin: admin/admin (configurable via env vars)
 - Realm: `klassenzeit` (needs to be created manually or via script)
+
+### Bug Fixes
+- Fixed race condition in `AppUserService.resolveOrCreateUser()` where concurrent first-login requests could cause duplicate key errors. Now uses optimistic insert-or-fetch pattern instead of pessimistic locking.

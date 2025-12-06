@@ -15,6 +15,8 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { Home } from "@/pages/Home";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { RoomsPage } from "@/pages/RoomsPage";
+import { SchoolDetailPage } from "@/pages/SchoolDetailPage";
+import { SchoolsListPage } from "@/pages/SchoolsListPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { SubjectsPage } from "@/pages/SubjectsPage";
 import { TeacherDetailPage } from "@/pages/TeacherDetailPage";
@@ -64,6 +66,9 @@ function App() {
                     <Route path="classes" element={<ClassesPage />} />
                     <Route path="timeslots" element={<TimeSlotsPage />} />
                     <Route path="timetable" element={<TimetablePage />} />
+                    <Route path="schools" element={<SchoolsListPage />} />
+                    <Route path="schools/new" element={<SchoolDetailPage />} />
+                    <Route path="schools/:id" element={<SchoolDetailPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                   </Route>
                 </Route>
