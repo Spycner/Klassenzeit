@@ -33,7 +33,7 @@ const gradeRefinement = (data: { minGrade: number; maxGrade: number }) =>
 
 const gradeRefinementMessage = {
   message: "Minimum grade must be less than or equal to maximum grade",
-  path: ["minGrade"] as const,
+  path: ["minGrade"],
 };
 
 /** Schema for creating a school (requires initial admin) */

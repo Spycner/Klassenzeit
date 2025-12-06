@@ -155,6 +155,7 @@ describe("useCreateSchool", () => {
       schoolType: "Gymnasium",
       minGrade: 5,
       maxGrade: 13,
+      initialAdminUserId: "00000000-0000-0000-0000-000000000001",
     };
 
     const { result } = renderHook(() => useCreateSchool(), {

@@ -12,6 +12,7 @@ import type {
   TeacherSummary,
   UserSearchResult,
 } from "@/api";
+import type { UserProfile } from "@/auth/types";
 
 // Base URL for API
 const API_BASE = "http://localhost:8080";
@@ -51,12 +52,14 @@ export const mockTeachers: TeacherSummary[] = [
     firstName: "John",
     lastName: "Doe",
     abbreviation: "DOE",
+    isActive: true,
   },
   {
     id: "teacher-2",
     firstName: "Jane",
     lastName: "Smith",
     abbreviation: "SMI",
+    isActive: true,
   },
 ];
 
@@ -100,6 +103,20 @@ export const mockUserSearchResult: UserSearchResult = {
   id: "user-1",
   email: "admin@example.com",
   displayName: "Admin User",
+};
+
+export const mockCurrentUser: UserProfile = {
+  id: "user-1",
+  email: "test@example.com",
+  displayName: "Test User",
+  isPlatformAdmin: false,
+  schools: [
+    {
+      schoolId: "school-1",
+      schoolName: "Test School 1",
+      role: "SCHOOL_ADMIN",
+    },
+  ],
 };
 
 // Request handlers
@@ -197,6 +214,11 @@ export const handlers = [
     }
     // Return empty array for not found
     return HttpResponse.json([]);
+  }),
+
+  // Current User
+  http.get(`${API_BASE}/api/users/me`, () => {
+    return HttpResponse.json(mockCurrentUser);
   }),
 ];
 
