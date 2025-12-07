@@ -8,9 +8,9 @@ Address edge cases in schoolId handling identified during code review to prevent
 
 ## Acceptance Criteria
 
-- [ ] Fix empty string passed to hooks when schoolId is undefined
-- [ ] Validate localStorage schoolId before use
-- [ ] Add guards for mutation calls without valid schoolId
+- [x] Fix empty string passed to hooks when schoolId is undefined
+- [x] Validate localStorage schoolId before use
+- [x] Add guards for mutation calls without valid schoolId
 
 ## Tasks
 
@@ -65,3 +65,35 @@ Check these files for similar issues:
 ## Related Tasks
 
 - None
+
+## Completion Notes
+
+**Completed: 2025-12-07**
+
+### Changes Made
+
+1. **SchoolContext.tsx** - Added localStorage validation:
+   - Validates saved schoolId against user's actual schools
+   - Clears invalid localStorage entries when user loses school access
+   - Clears localStorage when user has no schools
+
+2. **TeachersListPage.tsx** - Fixed mutation hook parameters:
+   - Changed `schoolId ?? ""` to `schoolId!` with comment explaining safety
+   - Existing guards in handlers (`if (teacherToReactivate && schoolId)`) ensure mutations never execute with undefined schoolId
+
+3. **TeacherDetailPage.tsx** - Fixed mutation hook parameters:
+   - Changed `schoolId ?? ""` to `schoolId!` with comment explaining safety
+   - Existing guard in handleSubmit (`if (!schoolId) { return; }`) ensures mutations never execute with undefined schoolId
+
+4. **SchoolContext.test.tsx** - Added comprehensive tests:
+   - Tests initialization with first school when localStorage is empty
+   - Tests restoration from valid localStorage
+   - Tests cleanup of invalid localStorage values
+   - Tests clearing localStorage when user has no schools
+   - Tests error handling when used outside provider
+
+### Verification
+
+- All 499 frontend tests pass
+- TypeScript compilation succeeds
+- Linter passes with no issues

@@ -1,40 +1,49 @@
 # F-025: Improve API Services Test Coverage
 
-## Priority: MEDIUM
+## Priority: LOW (Intentionally Skipped)
+
+## Status: SKIPPED (2025-12-07)
 
 ## Description
 
 Most API service files have low test coverage (25-42%). These services handle the actual API calls and should be well-tested.
 
-## Acceptance Criteria
+## Decision
+
+**This task was intentionally skipped** during the implementation of F-024 (API Hooks Coverage) because:
+
+1. **Services are thin wrappers** - They simply call the API client with the correct URL and payload
+2. **API client has comprehensive tests** - The `client.test.ts` file tests all HTTP operations, error handling, retries, etc.
+3. **Hook tests provide indirect coverage** - Via MSW mocking, the hook tests exercise the service functions
+4. **Minimal additional value** - Direct service tests would be mostly duplicating the API client tests
+
+## Original Acceptance Criteria (Not Done)
 
 - [ ] Add tests for all service functions
 - [ ] Achieve 80%+ coverage on API services
 - [ ] Test request formatting
 - [ ] Test error handling
 
-## Current Coverage
+## Original Coverage
 
 | Service | Coverage | Status |
 |---------|----------|--------|
-| classes.ts | 25% | Needs tests |
-| lessons.ts | 25% | Needs tests |
-| memberships.ts | 25% | Needs tests |
-| rooms.ts | 25% | Needs tests |
-| school-years.ts | 25% | Needs tests |
-| terms.ts | 25% | Needs tests |
-| time-slots.ts | 25% | Needs tests |
-| teachers.ts | 42% | Needs more tests |
-| subjects.ts | 63% | Needs more tests |
+| classes.ts | 25% | Covered by hook tests |
+| lessons.ts | 25% | Covered by hook tests |
+| memberships.ts | 25% | Covered by hook tests |
+| rooms.ts | 25% | Covered by hook tests |
+| school-years.ts | 25% | Covered by hook tests |
+| terms.ts | 25% | Covered by hook tests |
+| time-slots.ts | 25% | Covered by hook tests |
+| teachers.ts | 42% | Covered by hook tests |
+| subjects.ts | 63% | Covered by hook tests |
 | schools.ts | 100% | Complete |
 | solver.ts | 100% | Complete |
 | users.ts | 100% | Complete |
 
-## Tasks
+## Notes
 
-### 1. Create test files for untested services
-
-Follow the pattern in existing service tests:
+If direct service tests are ever needed, they would follow this pattern:
 
 ```typescript
 import { classesService } from './classes';
@@ -54,33 +63,9 @@ describe('classesService', () => {
       expect(result).toEqual(mockClasses);
     });
   });
-
-  describe('create', () => {
-    it('creates a class with correct payload', async () => {
-      // ...
-    });
-  });
 });
 ```
 
-### 2. Priority order (same as hooks)
-
-1. `memberships.ts`
-2. `classes.ts`
-3. `rooms.ts`
-4. `teachers.ts`
-5. `subjects.ts`
-6. `lessons.ts`
-7. `time-slots.ts`
-8. `terms.ts`
-9. `school-years.ts`
-
-## Notes
-
-- Services are simpler to test than hooks (no React context needed)
-- Mock the `apiClient` module
-- Test request URL construction and payload formatting
-
 ## Related Tasks
 
-- [F-024: Improve API Hooks Coverage](./F-024-improve-api-hooks-coverage.md) - do together for efficiency
+- [F-024: Improve API Hooks Coverage](../../done/frontend/F-024-improve-api-hooks-coverage.md) - Completed, provides indirect service coverage

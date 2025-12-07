@@ -8,10 +8,10 @@ The project has significant documentation gaps. Create comprehensive documentati
 
 ## Acceptance Criteria
 
-- [ ] Create API endpoint documentation
-- [ ] Create data model documentation
-- [ ] Create authentication/authorization guide
-- [ ] Update CLAUDE.md with new agent/skill architecture
+- [x] Create API endpoint documentation
+- [x] Create data model documentation
+- [x] Create authentication/authorization guide
+- [x] Update CLAUDE.md with new agent/skill architecture
 
 ## Tasks
 
@@ -135,3 +135,34 @@ The project includes Claude Code agents and skills for automated code review:
 ## Related Tasks
 
 - None (standalone documentation work)
+
+## Completion Notes
+
+Documentation created:
+
+1. **`docs/api.md`** - Comprehensive API reference documenting all REST endpoints:
+   - All 16 controllers with their endpoints
+   - Request/response examples with JSON
+   - Authorization requirements per endpoint
+   - Common response codes and error format
+
+2. **`docs/data-model.md`** - Complete data model documentation:
+   - Mermaid ER diagram with all entities
+   - Entity descriptions organized by category
+   - Key constraints and enums
+
+3. **`docs/authentication.md`** - Full authentication/authorization guide:
+   - Architecture overview with ASCII diagrams
+   - Role definitions (Platform and School roles)
+   - Database schema for user/membership tables
+   - Backend implementation patterns
+   - Testing with `@WithMockCurrentUser`
+
+4. **`docs/architecture.md`** - System architecture overview:
+   - Technology stack table
+   - Monorepo structure
+   - Backend package-by-feature layout
+   - Frontend component hierarchy
+   - Data flow examples
+
+5. **CLAUDE.md** - Already had Code Review System section with agents and skills documented

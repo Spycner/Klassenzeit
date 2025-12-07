@@ -3,6 +3,9 @@
  *
  * Uses Keycloak's Resource Owner Password Credentials (Direct Access Grants)
  * to obtain access tokens for API testing.
+ *
+ * Supports worker-specific test users to avoid Keycloak brute force protection
+ * being triggered during parallel test execution.
  */
 
 interface TokenResponse {
@@ -11,15 +14,42 @@ interface TokenResponse {
   token_type: string;
 }
 
-// Cache token to avoid repeated auth requests
+// Cache token to avoid repeated auth requests (per-worker due to process isolation)
 let cachedToken: string | null = null;
 let tokenExpiry: number = 0;
 
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || "http://localhost:8180";
 const KEYCLOAK_REALM = "klassenzeit";
 const KEYCLOAK_CLIENT_ID = "klassenzeit-e2e-api";
-const TEST_USER = "e2e-test@klassenzeit.com";
 const TEST_PASSWORD = "e2e-test-password";
+
+// Pool of test users for parallel execution (one per worker)
+const TEST_USERS = [
+  "e2e-test-1@klassenzeit.com",
+  "e2e-test-2@klassenzeit.com",
+  "e2e-test-3@klassenzeit.com",
+  "e2e-test-4@klassenzeit.com",
+  "e2e-test-5@klassenzeit.com",
+  "e2e-test-6@klassenzeit.com",
+];
+
+// Current worker index (set by fixture)
+let currentWorkerIndex = 0;
+
+/**
+ * Set the worker index for selecting the test user.
+ * Should be called from the test fixture with test.info().parallelIndex.
+ */
+export function setWorkerIndex(index: number): void {
+  currentWorkerIndex = index;
+}
+
+/**
+ * Get the test user email for the current worker.
+ */
+function getTestUser(): string {
+  return TEST_USERS[currentWorkerIndex % TEST_USERS.length];
+}
 
 /**
  * Get an access token for API testing.
@@ -41,7 +71,7 @@ export async function getAccessToken(): Promise<string> {
     body: new URLSearchParams({
       grant_type: "password",
       client_id: KEYCLOAK_CLIENT_ID,
-      username: TEST_USER,
+      username: getTestUser(),
       password: TEST_PASSWORD,
     }),
   });

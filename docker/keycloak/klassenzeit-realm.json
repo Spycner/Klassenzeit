@@ -122,6 +122,96 @@
           "temporary": false
         }
       ]
+    },
+    {
+      "username": "e2e-test-1@klassenzeit.com",
+      "email": "e2e-test-1@klassenzeit.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "E2E",
+      "lastName": "Test 1",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "e2e-test-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "e2e-test-2@klassenzeit.com",
+      "email": "e2e-test-2@klassenzeit.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "E2E",
+      "lastName": "Test 2",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "e2e-test-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "e2e-test-3@klassenzeit.com",
+      "email": "e2e-test-3@klassenzeit.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "E2E",
+      "lastName": "Test 3",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "e2e-test-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "e2e-test-4@klassenzeit.com",
+      "email": "e2e-test-4@klassenzeit.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "E2E",
+      "lastName": "Test 4",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "e2e-test-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "e2e-test-5@klassenzeit.com",
+      "email": "e2e-test-5@klassenzeit.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "E2E",
+      "lastName": "Test 5",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "e2e-test-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "e2e-test-6@klassenzeit.com",
+      "email": "e2e-test-6@klassenzeit.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "E2E",
+      "lastName": "Test 6",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "e2e-test-password",
+          "temporary": false
+        }
+      ]
     }
   ]
 }

@@ -4,18 +4,18 @@ Generated from comprehensive review of `feat/review-setup` branch on 2025-12-07.
 
 ## Task Overview
 
-| ID | Task | Priority | Effort | Can Work Alone |
-|----|------|----------|--------|----------------|
-| B-023 | Fix N+1 Query Patterns | MEDIUM | Medium | Yes |
-| B-024 | Improve Security Test Coverage | MEDIUM | Medium | Yes |
-| B-025 | Improve User Package Coverage | MEDIUM | Medium | Yes |
-| B-026 | Harden CORS Configuration | LOW | Small | Yes |
-| F-024 | Improve API Hooks Coverage | MEDIUM | Large | Yes |
-| F-025 | Improve API Services Coverage | MEDIUM | Medium | Yes |
-| F-026 | Add Auth Module Tests | MEDIUM | Medium | Yes |
-| F-027 | Fix schoolId Handling | LOW | Small | Yes |
-| G-012 | Create Missing Documentation | MEDIUM | Large | Yes |
-| G-013 | Fix E2E Test Flakiness | LOW | Medium | Yes |
+| ID | Task | Priority | Effort | Status |
+|----|------|----------|--------|--------|
+| B-023 | Fix N+1 Query Patterns | MEDIUM | Medium | Todo |
+| B-024 | Improve Security Test Coverage | MEDIUM | Medium | Todo |
+| B-025 | Improve User Package Coverage | MEDIUM | Medium | Todo |
+| B-026 | Harden CORS Configuration | LOW | Small | Todo |
+| F-024 | Improve API Hooks Coverage | MEDIUM | Large | ✅ **DONE** |
+| F-025 | Improve API Services Coverage | MEDIUM | Medium | ⏭️ Skipped |
+| F-026 | Add Auth Module Tests | MEDIUM | Medium | Todo |
+| F-027 | Fix schoolId Handling | LOW | Small | ✅ **DONE** |
+| G-012 | Create Missing Documentation | MEDIUM | Large | Todo |
+| G-013 | Fix E2E Test Flakiness | LOW | Medium | Todo |
 
 ---
 
@@ -60,25 +60,23 @@ Generated from comprehensive review of `feat/review-setup` branch on 2025-12-07.
 └─────────────────────────────────────┘
 ```
 
-### Group 3: Frontend Test Coverage (Can Work Together)
+### Group 3: Frontend Test Coverage ✅ COMPLETED
 
-**These should be done together as they share patterns and MSW handlers:**
+**Completed on 2025-12-07:**
 
 ```
 ┌─────────────────────────────────────┐
-│  F-024: API Hooks Coverage          │──────┐
-│  - 9 hook files need tests          │      │
-│  - Add MSW handlers                 │      │ (do together
-│  Effort: ~6-8 hours                 │      │  for efficiency)
-└─────────────────────────────────────┘      │
-          │                                  │
-          │ (shared setup)                   │
-          ▼                                  │
-┌─────────────────────────────────────┐      │
-│  F-025: API Services Coverage       │◄─────┘
-│  - 9 service files need tests       │
-│  - Simpler than hooks               │
-│  Effort: ~4-5 hours                 │
+│  F-024: API Hooks Coverage          │ ✅ DONE
+│  - Added 88 new tests               │
+│  - Added MSW handlers for 8 entities│
+│  - 14/14 hooks now have tests       │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│  F-025: API Services Coverage       │ ⏭️ SKIPPED
+│  - Services tested indirectly       │
+│  - Via hook tests + API client tests│
+│  - Minimal additional value         │
 └─────────────────────────────────────┘
 ```
 
@@ -94,15 +92,16 @@ Generated from comprehensive review of `feat/review-setup` branch on 2025-12-07.
 └─────────────────────────────────────┘
 ```
 
-### Group 5: Minor Fixes (Low Priority)
+### Group 5: Minor Fixes ✅ COMPLETED
 
-**Can be picked up anytime:**
+**Completed on 2025-12-07:**
 
 ```
 ┌─────────────────────────────────────┐
-│  F-027: Fix schoolId Handling       │
-│  - Edge case fixes                  │
-│  Effort: ~1 hour                    │
+│  F-027: Fix schoolId Handling       │ ✅ DONE
+│  - Added localStorage validation    │
+│  - Fixed mutation hook parameters   │
+│  - Added comprehensive tests        │
 └─────────────────────────────────────┘
 ```
 
@@ -141,7 +140,7 @@ Generated from comprehensive review of `feat/review-setup` branch on 2025-12-07.
 3. **B-024** + **B-025** - Backend test coverage (~8-10 hours, can parallelize)
 
 ### Sprint 2 - Frontend Focus
-4. **F-024** + **F-025** - API layer test coverage (~10-13 hours, do together)
+4. ~~**F-024** + **F-025** - API layer test coverage~~ ✅ **COMPLETED** (F-025 skipped - covered by hook tests)
 5. **F-026** - Auth module tests (~3-4 hours)
 
 ### Ongoing / As Time Permits

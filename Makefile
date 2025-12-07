@@ -1,4 +1,4 @@
-.PHONY: help dev dev-all services-up services-down services-logs services-reset db-docs backend frontend test test-backend test-frontend test-frontend-coverage test-e2e test-e2e-ui test-a11y lint lint-backend lint-frontend format format-backend format-frontend clean
+.PHONY: help dev dev-all services-up services-down services-logs services-reset db-docs backend frontend test test-backend test-frontend test-frontend-coverage test-e2e test-e2e-ui test-a11y lint lint-backend lint-frontend format format-backend format-frontend pre-commit clean
 
 # Default target
 help:
@@ -34,6 +34,7 @@ help:
 	@echo "  make format       Format all code"
 	@echo "  make format-backend Format backend code"
 	@echo "  make format-frontend Format frontend code"
+	@echo "  make pre-commit   Run pre-commit hooks on all files"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean        Clean build artifacts"
@@ -109,6 +110,9 @@ format-backend:
 
 format-frontend:
 	cd frontend && npm run format
+
+pre-commit:
+	uv run pre-commit run --all-files
 
 # Cleanup
 clean:

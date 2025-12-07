@@ -40,9 +40,10 @@ export function TeacherDetailPage() {
     refetch,
   } = useTeacher(schoolId, id);
 
-  const createMutation = useCreateTeacher(schoolId ?? "");
-  const updateMutation = useUpdateTeacher(schoolId ?? "");
-  const deleteMutation = useDeleteTeacher(schoolId ?? "");
+  // Safe: mutations are only called when schoolId is defined (see handleSubmit guard)
+  const createMutation = useCreateTeacher(schoolId!);
+  const updateMutation = useUpdateTeacher(schoolId!);
+  const deleteMutation = useDeleteTeacher(schoolId!);
 
   const isLoading = schoolLoading || (!isNew && teacherLoading);
   const isSubmitting = createMutation.isPending || updateMutation.isPending;

@@ -8,9 +8,9 @@ E2E API tests have 5 flaky failures (94.6% pass rate) due to Keycloak brute forc
 
 ## Acceptance Criteria
 
-- [ ] E2E tests pass consistently at 100%
-- [ ] Tests remain parallelized for speed
-- [ ] No authentication-related flaky failures
+- [x] E2E tests pass consistently at 100%
+- [x] Tests remain parallelized for speed
+- [x] No authentication-related flaky failures
 
 ## Root Cause
 
@@ -101,3 +101,28 @@ Implement Option 1 (Test User Pool) as it:
 ## Related Tasks
 
 - None
+
+## Completion Notes
+
+Implemented **Option 1: Test User Pool** as recommended. Changes made:
+
+### 1. Keycloak Realm Config (`docker/keycloak/klassenzeit-realm.json`)
+- Added 6 test users: `e2e-test-1@klassenzeit.com` through `e2e-test-6@klassenzeit.com`
+- All users share the same password: `e2e-test-password`
+
+### 2. E2E Test Infrastructure
+- **`e2e/tests/api/auth.ts`**: Added `TEST_USERS` array and `setWorkerIndex()` function
+- **`e2e/tests/api/fixtures.ts`**: Created custom Playwright fixture that sets worker index automatically (scope: worker)
+- All API spec files updated to import `test` from fixtures instead of `@playwright/test`
+
+### 3. Backend Platform Admin Config
+- **`backend/src/main/resources/application.yaml`**: Added all 6 test users to `platform-admin-emails`
+- **`backend/src/main/java/.../AppUserService.java`**: Changed `@Value` annotation to use SpEL split expression for comma-separated list support
+- **`backend/build.gradle.kts`**: Updated env var from `PLATFORM_ADMIN_EMAIL` to `PLATFORM_ADMIN_EMAILS`
+- **`.env`**: Updated to `PLATFORM_ADMIN_EMAILS` with all 7 users (comma-separated)
+- **`.github/workflows/ci.yml`**: Updated CI env var to include all test users
+
+### Test Results
+- **168/168 tests passed** (100% pass rate)
+- Tests remain fully parallelized with 6 workers
+- No more "Invalid user credentials" flaky failures

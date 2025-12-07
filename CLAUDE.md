@@ -155,3 +155,49 @@ Progress updates, blockers, decisions made during implementation.
 ## Completion Notes (add when done)
 What was implemented, key decisions, any issues encountered.
 ```
+
+## Code Review System
+
+The project includes Claude Code agents and skills for automated code review.
+
+### Running Reviews
+
+```bash
+/review-all           # Full comprehensive review (tests, quality, docs)
+/review-all --quick   # Quick pre-commit + affected tests only
+```
+
+### Available Agents
+
+| Agent | Description |
+|-------|-------------|
+| `backend-tests` | Run backend unit tests, analyze failures |
+| `frontend-tests` | Run frontend unit tests |
+| `e2e-tests` | Run E2E/API integration tests |
+| `lighthouse-audit` | Performance, accessibility, SEO audits |
+| `code-quality` | Security, performance, quality analysis |
+| `docs-check` | Documentation verification |
+
+### Available Skills
+
+| Skill | Description |
+|-------|-------------|
+| `project-context` | Project structure, conventions, tooling |
+| `code-review-checklist` | Review criteria for security, performance |
+| `testing-standards` | Test conventions and configurations |
+
+### Output Structure
+
+- **Raw findings**: `review/` directory (gitignored)
+- **Actionable tasks**: `tasks/todo/{backend,frontend,global}/`
+- **Summary**: `tasks/todo/REVIEW-FINDINGS-SUMMARY.md`
+
+### Configuration
+
+Agent and skill definitions are in `.claude/`:
+```
+.claude/
+├── agents/           # Subagent definitions
+├── skills/           # Skill prompts
+└── commands/         # Slash commands
+```

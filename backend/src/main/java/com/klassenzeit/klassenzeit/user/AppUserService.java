@@ -33,7 +33,8 @@ public class AppUserService {
   public AppUserService(
       AppUserRepository appUserRepository,
       SchoolMembershipRepository schoolMembershipRepository,
-      @Value("${klassenzeit.security.platform-admin-emails:}") List<String> platformAdminEmails) {
+      @Value("#{'${klassenzeit.security.platform-admin-emails:}'.split(',')}")
+          List<String> platformAdminEmails) {
     this.appUserRepository = appUserRepository;
     this.schoolMembershipRepository = schoolMembershipRepository;
     this.platformAdminEmails = platformAdminEmails;

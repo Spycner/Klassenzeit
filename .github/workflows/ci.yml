@@ -226,7 +226,7 @@ jobs:
           # Wait for backend to be ready
           timeout 120 bash -c 'until curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; do sleep 2; done' || echo "Backend may not have health endpoint, continuing..."
         env:
-          PLATFORM_ADMIN_EMAIL: e2e-test@klassenzeit.com
+          PLATFORM_ADMIN_EMAILS: e2e-test@klassenzeit.com,e2e-test-1@klassenzeit.com,e2e-test-2@klassenzeit.com,e2e-test-3@klassenzeit.com,e2e-test-4@klassenzeit.com,e2e-test-5@klassenzeit.com,e2e-test-6@klassenzeit.com
 
       - name: Start frontend (preview mode)
         run: |
