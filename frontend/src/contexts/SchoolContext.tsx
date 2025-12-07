@@ -47,11 +47,19 @@ export function SchoolProvider({ children }: SchoolProviderProps) {
 
     if (user.schools.length > 0) {
       const savedSchoolId = localStorage.getItem(STORAGE_KEY);
-      const savedSchool = user.schools.find(
-        (s) => s.schoolId === savedSchoolId,
-      );
+      const savedSchool = savedSchoolId
+        ? user.schools.find((s) => s.schoolId === savedSchoolId)
+        : null;
+
+      // Clear invalid localStorage value (e.g., user lost access to school)
+      if (savedSchoolId && !savedSchool) {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+
       setCurrentSchoolState(savedSchool ?? user.schools[0]);
     } else {
+      // User has no schools - clear any stale localStorage
+      localStorage.removeItem(STORAGE_KEY);
       setCurrentSchoolState(null);
     }
   }, [user]);

@@ -185,8 +185,6 @@ public class GlobalExceptionHandler {
     body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
     body.put("error", messageSource.getMessage("error.internalServer", null, locale));
     body.put("message", message);
-    // Include exception type for debugging in non-production environments
-    body.put("exceptionType", ex.getClass().getSimpleName());
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
   }
 }

@@ -33,8 +33,7 @@ spring:
 # Application-specific security config
 klassenzeit:
   security:
-    platform-admin-emails:
-      - ${PLATFORM_ADMIN_EMAIL:e2e-test@klassenzeit.com}
+    platform-admin-emails: e2e-test@klassenzeit.com,e2e-test-1@klassenzeit.com,e2e-test-2@klassenzeit.com,e2e-test-3@klassenzeit.com,e2e-test-4@klassenzeit.com,e2e-test-5@klassenzeit.com,e2e-test-6@klassenzeit.com
 
 management:
   endpoints:
@@ -109,8 +108,7 @@ spring:
 # Test security config
 klassenzeit:
   security:
-    platform-admin-emails:
-      - test-admin@klassenzeit.com
+    platform-admin-emails: test-admin@klassenzeit.com
 
 ---
 # Production profile

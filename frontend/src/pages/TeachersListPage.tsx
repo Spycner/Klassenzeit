@@ -46,8 +46,9 @@ export function TeachersListPage() {
     refetch,
   } = useTeachers(schoolId, { includeInactive: showInactive });
 
-  const updateMutation = useUpdateTeacher(schoolId ?? "");
-  const permanentDeleteMutation = usePermanentDeleteTeacher(schoolId ?? "");
+  // Safe: mutations are only called when schoolId is defined (see guards in handlers)
+  const updateMutation = useUpdateTeacher(schoolId!);
+  const permanentDeleteMutation = usePermanentDeleteTeacher(schoolId!);
 
   const isLoading = schoolLoading || teachersLoading;
 

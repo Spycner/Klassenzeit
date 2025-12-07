@@ -17,4 +17,4 @@ public record UpdateSchoolRequest(
     @Min(1) @Max(13) Short minGrade,
     @Min(1) @Max(13) Short maxGrade,
     @Size(max = 50) String timezone,
-    String settings) {}
+    @Size(max = 4000) String settings) {}

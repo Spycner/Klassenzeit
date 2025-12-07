@@ -118,13 +118,25 @@ tasks/
 ```
 
 **Task Format:**
-- Each task is a separate markdown file with a unique ID prefix (e.g., `001-implement-teacher-crud.md`)
+- Each task is a separate markdown file with a unique ID prefix (e.g., `B-001-implement-teacher-crud.md`)
+- Prefix by area: `B-` (backend), `F-` (frontend), `G-` (global)
 - Use action verbs: `implement-`, `fix-`, `update-`, `research-`
-- Tasks can link to related tasks using markdown links: `[related task](../../todo/frontend/002-other-task.md)`
+- Tasks can link to related tasks using markdown links: `[related task](../../todo/frontend/F-002-other-task.md)`
 
-**Workflow:**
-1. **todo → doing**: Move file when starting work
-2. **doing → done**: Move file when complete, document what was done, decisions made, and any issues encountered
+**IMPORTANT - Claude MUST follow this workflow:**
+
+1. **Before starting work**: Move the task file from `todo/` to `doing/` using git
+2. **During work**: Update the task file with progress notes, decisions, and any blockers encountered
+3. **Check off acceptance criteria**: Mark criteria as complete `[x]` as you finish each one
+4. **When complete**:
+   - Add completion notes documenting what was done
+   - Move the file from `doing/` to `done/` using git
+   - Ensure all acceptance criteria are checked off
+
+**This is mandatory.** When Claude says a task is done, the task file MUST be:
+- Located in `tasks/done/<area>/`
+- Have all acceptance criteria checked `[x]`
+- Include completion notes with what was implemented
 
 **Task File Template:**
 ```markdown
@@ -138,8 +150,54 @@ What needs to be done and why.
 - [ ] Criterion 2
 
 ## Notes
-Progress updates, blockers, related commits.
+Progress updates, blockers, decisions made during implementation.
 
 ## Completion Notes (add when done)
-What was implemented, key decisions, issues encountered.
+What was implemented, key decisions, any issues encountered.
+```
+
+## Code Review System
+
+The project includes Claude Code agents and skills for automated code review.
+
+### Running Reviews
+
+```bash
+/review-all           # Full comprehensive review (tests, quality, docs)
+/review-all --quick   # Quick pre-commit + affected tests only
+```
+
+### Available Agents
+
+| Agent | Description |
+|-------|-------------|
+| `backend-tests` | Run backend unit tests, analyze failures |
+| `frontend-tests` | Run frontend unit tests |
+| `e2e-tests` | Run E2E/API integration tests |
+| `lighthouse-audit` | Performance, accessibility, SEO audits |
+| `code-quality` | Security, performance, quality analysis |
+| `docs-check` | Documentation verification |
+
+### Available Skills
+
+| Skill | Description |
+|-------|-------------|
+| `project-context` | Project structure, conventions, tooling |
+| `code-review-checklist` | Review criteria for security, performance |
+| `testing-standards` | Test conventions and configurations |
+
+### Output Structure
+
+- **Raw findings**: `review/` directory (gitignored)
+- **Actionable tasks**: `tasks/todo/{backend,frontend,global}/`
+- **Summary**: `tasks/todo/REVIEW-FINDINGS-SUMMARY.md`
+
+### Configuration
+
+Agent and skill definitions are in `.claude/`:
+```
+.claude/
+├── agents/           # Subagent definitions
+├── skills/           # Skill prompts
+└── commands/         # Slash commands
 ```

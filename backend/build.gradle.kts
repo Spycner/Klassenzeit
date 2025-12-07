@@ -66,8 +66,8 @@ tasks.withType<Test> {
 
 // Pass environment variables to bootRun JVM
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
-	// Pass through specific environment variables to the JVM
-	System.getenv("PLATFORM_ADMIN_EMAIL")?.let {
+	// Pass through specific environment variables to the JVM (supports comma-separated list)
+	System.getenv("PLATFORM_ADMIN_EMAILS")?.let {
 		systemProperty("klassenzeit.security.platform-admin-emails", it)
 	}
 }

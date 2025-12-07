@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { getAuthHeaders, getCurrentUserId } from "./auth";
 import { API_BASE } from "./config";
 
