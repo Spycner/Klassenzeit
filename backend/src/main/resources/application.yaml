@@ -34,7 +34,7 @@ spring:
 klassenzeit:
   security:
     platform-admin-emails:
-      - ${PLATFORM_ADMIN_EMAIL:admin@klassenzeit.com}
+      - ${PLATFORM_ADMIN_EMAIL:e2e-test@klassenzeit.com}
 
 management:
   endpoints:

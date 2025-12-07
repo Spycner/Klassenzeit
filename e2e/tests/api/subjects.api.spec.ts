@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { getAuthHeaders } from "./auth";
+import { getAuthHeaders, getCurrentUserId } from "./auth";
 import { API_BASE } from "./config";
 
 test.describe("Subjects API", () => {
@@ -10,6 +10,7 @@ test.describe("Subjects API", () => {
 
   test.beforeAll(async ({ request }) => {
     headers = await getAuthHeaders();
+    const userId = await getCurrentUserId();
     // Create a school to use for subject tests
     const response = await request.post(`${API_BASE}/schools`, {
       headers,
@@ -19,6 +20,7 @@ test.describe("Subjects API", () => {
         schoolType: "Gymnasium",
         minGrade: 5,
         maxGrade: 13,
+        initialAdminUserId: userId,
       },
     });
     const school = await response.json();

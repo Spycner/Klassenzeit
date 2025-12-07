@@ -6,6 +6,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,10 +32,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Profile("!test")
 public class UserResolutionFilter extends OncePerRequestFilter {
 
+  private static final Logger LOG = LoggerFactory.getLogger(UserResolutionFilter.class);
+
   private final AppUserService appUserService;
 
   public UserResolutionFilter(AppUserService appUserService) {
     this.appUserService = appUserService;
+    LOG.info("UserResolutionFilter initialized");
   }
 
   @Override
@@ -42,6 +47,11 @@ public class UserResolutionFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    LOG.debug(
+        "Processing request {} {}, auth type: {}",
+        request.getMethod(),
+        request.getRequestURI(),
+        auth != null ? auth.getClass().getSimpleName() : "null");
 
     if (auth instanceof JwtAuthenticationToken jwtAuth) {
       Jwt jwt = jwtAuth.getToken();
@@ -50,7 +60,14 @@ public class UserResolutionFilter extends OncePerRequestFilter {
       String email = jwt.getClaimAsString("email");
       String displayName = extractDisplayName(jwt);
 
+      LOG.debug("Resolving user: keycloakId={}, email={}", keycloakId, email);
+
       CurrentUser currentUser = appUserService.resolveOrCreateUser(keycloakId, email, displayName);
+      LOG.debug(
+          "User resolved: id={}, isPlatformAdmin={}, schoolRoles={}",
+          currentUser.id(),
+          currentUser.isPlatformAdmin(),
+          currentUser.schoolRoles().size());
 
       // Replace authentication with enriched version
       CurrentUserAuthentication enrichedAuth = new CurrentUserAuthentication(currentUser, jwtAuth);

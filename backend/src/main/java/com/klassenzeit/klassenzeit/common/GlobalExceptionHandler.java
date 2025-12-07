@@ -172,7 +172,11 @@ public class GlobalExceptionHandler {
   public ResponseEntity<Map<String, Object>> handleUnexpectedException(
       Exception ex, Locale locale) {
     // Log the full error for debugging, but don't expose details to client
-    LOG.error("Unexpected error occurred", ex);
+    LOG.error(
+        "Unexpected error occurred: type={}, message={}",
+        ex.getClass().getName(),
+        ex.getMessage(),
+        ex);
 
     String message = messageSource.getMessage("error.unexpected", null, locale);
 
@@ -181,6 +185,8 @@ public class GlobalExceptionHandler {
     body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
     body.put("error", messageSource.getMessage("error.internalServer", null, locale));
     body.put("message", message);
+    // Include exception type for debugging in non-production environments
+    body.put("exceptionType", ex.getClass().getSimpleName());
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
   }
 }

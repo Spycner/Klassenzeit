@@ -76,4 +76,34 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
 export function clearTokenCache(): void {
   cachedToken = null;
   tokenExpiry = 0;
+  cachedUserId = null;
+}
+
+// Cache current user ID
+let cachedUserId: string | null = null;
+
+const API_BASE = process.env.API_BASE_URL || "http://localhost:8080/api";
+
+/**
+ * Get the current user's ID.
+ * Uses cached ID if available.
+ */
+export async function getCurrentUserId(): Promise<string> {
+  if (cachedUserId) {
+    return cachedUserId;
+  }
+
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/users/me`, { headers });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(
+      `Failed to get current user: ${response.status} ${response.statusText} - ${error}`,
+    );
+  }
+
+  const user = await response.json();
+  cachedUserId = user.id;
+  return cachedUserId;
 }

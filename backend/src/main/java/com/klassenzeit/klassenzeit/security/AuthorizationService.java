@@ -6,6 +6,8 @@ import com.klassenzeit.klassenzeit.school.SchoolRepository;
 import com.klassenzeit.klassenzeit.school.SchoolSlugHistoryRepository;
 import java.util.Optional;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,6 +25,8 @@ import org.springframework.stereotype.Service;
  */
 @Service("authz")
 public class AuthorizationService {
+
+  private static final Logger LOG = LoggerFactory.getLogger(AuthorizationService.class);
 
   private final SchoolRepository schoolRepository;
   private final SchoolSlugHistoryRepository slugHistoryRepository;
@@ -151,13 +155,32 @@ public class AuthorizationService {
    */
   public CurrentUser getCurrentUser() {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    LOG.debug(
+        "getCurrentUser: auth type={}, isAuthenticated={}",
+        auth != null ? auth.getClass().getSimpleName() : "null",
+        auth != null && auth.isAuthenticated());
+
     if (auth instanceof CurrentUserAuthentication cua) {
-      return cua.getCurrentUser();
+      CurrentUser user = cua.getCurrentUser();
+      LOG.debug(
+          "Returning CurrentUser: id={}, email={}, isPlatformAdmin={}",
+          user.id(),
+          user.email(),
+          user.isPlatformAdmin());
+      return user;
     }
     // Support test authentication where principal is CurrentUser
     if (auth != null && auth.getPrincipal() instanceof CurrentUser currentUser) {
+      LOG.debug(
+          "Returning CurrentUser from principal: id={}, email={}, isPlatformAdmin={}",
+          currentUser.id(),
+          currentUser.email(),
+          currentUser.isPlatformAdmin());
       return currentUser;
     }
+    LOG.warn(
+        "No CurrentUser found in security context. Auth: {}",
+        auth != null ? auth.getClass().getName() : "null");
     throw new AccessDeniedException("No authenticated user");
   }
 }

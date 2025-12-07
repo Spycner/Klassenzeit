@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { getAuthHeaders } from "./auth";
+import { getAuthHeaders, getCurrentUserId } from "./auth";
 import { API_BASE } from "./config";
 
 test.describe("Schools API", () => {
@@ -24,6 +24,7 @@ test.describe("Schools API", () => {
 
   test("POST /schools - should create a new school", async ({ request }) => {
     const headers = await getAuthHeaders();
+    const userId = await getCurrentUserId();
     const newSchool = {
       name: `Test School ${Date.now()}`,
       slug: `test-school-${Date.now()}`,
@@ -31,6 +32,7 @@ test.describe("Schools API", () => {
       minGrade: 5,
       maxGrade: 13,
       timezone: "Europe/Berlin",
+      initialAdminUserId: userId,
     };
 
     const response = await request.post(`${API_BASE}/schools`, {
@@ -58,6 +60,7 @@ test.describe("Schools API", () => {
     request,
   }) => {
     const headers = await getAuthHeaders();
+    const userId = await getCurrentUserId();
     // First create a school
     const newSchool = {
       name: `Detail Test School ${Date.now()}`,
@@ -65,6 +68,7 @@ test.describe("Schools API", () => {
       schoolType: "Realschule",
       minGrade: 5,
       maxGrade: 10,
+      initialAdminUserId: userId,
     };
 
     const createResponse = await request.post(`${API_BASE}/schools`, {
@@ -91,6 +95,7 @@ test.describe("Schools API", () => {
 
   test("PUT /schools/{id} - should update a school", async ({ request }) => {
     const headers = await getAuthHeaders();
+    const userId = await getCurrentUserId();
     // First create a school
     const newSchool = {
       name: `Update Test School ${Date.now()}`,
@@ -98,6 +103,7 @@ test.describe("Schools API", () => {
       schoolType: "Grundschule",
       minGrade: 1,
       maxGrade: 4,
+      initialAdminUserId: userId,
     };
 
     const createResponse = await request.post(`${API_BASE}/schools`, {
@@ -131,6 +137,7 @@ test.describe("Schools API", () => {
 
   test("DELETE /schools/{id} - should delete a school", async ({ request }) => {
     const headers = await getAuthHeaders();
+    const userId = await getCurrentUserId();
     // First create a school
     const newSchool = {
       name: `Delete Test School ${Date.now()}`,
@@ -138,6 +145,7 @@ test.describe("Schools API", () => {
       schoolType: "Gymnasium",
       minGrade: 5,
       maxGrade: 13,
+      initialAdminUserId: userId,
     };
 
     const createResponse = await request.post(`${API_BASE}/schools`, {
@@ -153,11 +161,11 @@ test.describe("Schools API", () => {
 
     expect(response.status()).toBe(204);
 
-    // Verify it's gone
+    // Verify it's gone - authorization check runs before existence check, so 403 is also valid
     const getResponse = await request.get(`${API_BASE}/schools/${created.id}`, {
       headers,
     });
-    expect(getResponse.status()).toBe(404);
+    expect([403, 404]).toContain(getResponse.status());
   });
 
   test("POST /schools - should validate required fields", async ({
@@ -177,7 +185,7 @@ test.describe("Schools API", () => {
     expect(response.status()).toBe(400);
   });
 
-  test("GET /schools/{id} - should return 404 for non-existent school", async ({
+  test("GET /schools/{id} - should return 403 or 404 for non-existent school", async ({
     request,
   }) => {
     const headers = await getAuthHeaders();
@@ -186,12 +194,14 @@ test.describe("Schools API", () => {
       headers,
     });
 
-    expect(response.status()).toBe(404);
+    // Authorization check runs before existence check, so 403 is also valid
+    expect([403, 404]).toContain(response.status());
   });
 
   test.describe("Boundary Conditions", () => {
     test("should reject empty school name", async ({ request }) => {
       const headers = await getAuthHeaders();
+      const userId = await getCurrentUserId();
       const response = await request.post(`${API_BASE}/schools`, {
         headers,
         data: {
@@ -200,6 +210,7 @@ test.describe("Schools API", () => {
           schoolType: "Gymnasium",
           minGrade: 5,
           maxGrade: 13,
+          initialAdminUserId: userId,
         },
       });
 
@@ -209,6 +220,7 @@ test.describe("Schools API", () => {
 
     test("should handle unicode in school name", async ({ request }) => {
       const headers = await getAuthHeaders();
+      const userId = await getCurrentUserId();
       const response = await request.post(`${API_BASE}/schools`, {
         headers,
         data: {
@@ -217,6 +229,7 @@ test.describe("Schools API", () => {
           schoolType: "Gymnasium",
           minGrade: 5,
           maxGrade: 13,
+          initialAdminUserId: userId,
         },
       });
 
@@ -232,6 +245,7 @@ test.describe("Schools API", () => {
       request,
     }) => {
       const headers = await getAuthHeaders();
+      const userId = await getCurrentUserId();
       const response = await request.post(`${API_BASE}/schools`, {
         headers,
         data: {
@@ -240,6 +254,7 @@ test.describe("Schools API", () => {
           schoolType: "Gymnasium",
           minGrade: 5,
           maxGrade: 13,
+          initialAdminUserId: userId,
         },
       });
 
@@ -253,6 +268,7 @@ test.describe("Schools API", () => {
 
     test("should safely handle SQL injection in name", async ({ request }) => {
       const headers = await getAuthHeaders();
+      const userId = await getCurrentUserId();
       const response = await request.post(`${API_BASE}/schools`, {
         headers,
         data: {
@@ -261,6 +277,7 @@ test.describe("Schools API", () => {
           schoolType: "Gymnasium",
           minGrade: 5,
           maxGrade: 13,
+          initialAdminUserId: userId,
         },
       });
 
