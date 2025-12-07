@@ -21,5 +21,5 @@ public record CreateSchoolRequest(
     @NotNull @Min(1) @Max(13) Short minGrade,
     @NotNull @Min(1) @Max(13) Short maxGrade,
     @Size(max = 50) String timezone,
-    String settings,
+    @Size(max = 4000) String settings,
     @NotNull UUID initialAdminUserId) {}

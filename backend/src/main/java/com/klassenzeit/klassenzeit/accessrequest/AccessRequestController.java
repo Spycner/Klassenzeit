@@ -43,7 +43,7 @@ public class AccessRequestController {
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize("isAuthenticated()")
   public AccessRequestResponse create(
-      @PathVariable UUID schoolId, @RequestBody CreateAccessRequestRequest request) {
+      @PathVariable UUID schoolId, @Valid @RequestBody CreateAccessRequestRequest request) {
     return accessRequestService.create(schoolId, request);
   }
 
