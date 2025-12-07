@@ -10,6 +10,7 @@ import {
   NetworkError,
   parseRetryAfter,
   RateLimitError,
+  RedirectError,
   ServerError,
 } from "./errors";
 
@@ -99,6 +100,22 @@ describe("RateLimitError", () => {
   });
 });
 
+describe("RedirectError", () => {
+  it("should create a redirect error with newSlug and redirectUrl", () => {
+    const error = new RedirectError("new-slug", "/api/schools/new-slug");
+    expect(error.name).toBe("RedirectError");
+    expect(error.newSlug).toBe("new-slug");
+    expect(error.redirectUrl).toBe("/api/schools/new-slug");
+    expect(error.message).toBe("Resource has moved to: new-slug");
+  });
+
+  it("should not be an instance of ApiClientError", () => {
+    const error = new RedirectError("new-slug", "/api/schools/new-slug");
+    expect(error).not.toBeInstanceOf(ApiClientError);
+    expect(error).toBeInstanceOf(Error);
+  });
+});
+
 describe("isRetryableError", () => {
   it("should return true for NetworkError", () => {
     expect(isRetryableError(new NetworkError("Connection failed"))).toBe(true);
@@ -120,6 +137,12 @@ describe("isRetryableError", () => {
 
   it("should return false for ClientError", () => {
     expect(isRetryableError(new ClientError("Bad request", 400))).toBe(false);
+  });
+
+  it("should return false for RedirectError", () => {
+    expect(
+      isRetryableError(new RedirectError("new-slug", "/api/schools/new-slug")),
+    ).toBe(false);
   });
 
   it("should return false for generic errors", () => {

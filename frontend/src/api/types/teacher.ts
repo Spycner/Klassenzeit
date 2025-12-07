@@ -18,19 +18,20 @@ import type {
 export interface CreateTeacherRequest {
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string;
   abbreviation: string;
   maxHoursPerWeek?: number;
   isPartTime?: boolean;
 }
 
 export interface UpdateTeacherRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  abbreviation: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  abbreviation?: string;
   maxHoursPerWeek?: number;
   isPartTime?: boolean;
+  isActive?: boolean;
 }
 
 export interface TeacherResponse extends Timestamps {
@@ -49,6 +50,7 @@ export interface TeacherSummary {
   firstName: string;
   lastName: string;
   abbreviation: string;
+  isActive: boolean;
 }
 
 // ============================================================================

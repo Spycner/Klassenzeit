@@ -14,8 +14,8 @@ export type WeekPattern = "EVERY" | "A" | "B";
 /** Day of week (0-4 representing Monday-Friday) */
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4;
 
-/** Period number (1-10) */
-export type Period = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+/** Period number (dynamic based on school's TimeSlot configuration) */
+export type Period = number;
 
 /** Grade level (1-13) */
 export type GradeLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;

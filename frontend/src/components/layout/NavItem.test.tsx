@@ -41,8 +41,10 @@ describe("NavItem", () => {
       { initialEntries: ["/dashboard"] },
     );
 
-    const button = screen.getByRole("button");
-    expect(button).toHaveClass("bg-secondary");
+    const link = screen.getByRole("link");
+    // The span inside the link should have the active class
+    const innerSpan = link.querySelector("span");
+    expect(innerSpan).toHaveClass("bg-secondary");
   });
 
   it("shows inactive state when route does not match", () => {
@@ -53,7 +55,9 @@ describe("NavItem", () => {
       { initialEntries: ["/teachers"] },
     );
 
-    const button = screen.getByRole("button");
-    expect(button).not.toHaveClass("bg-secondary");
+    const link = screen.getByRole("link");
+    // The span inside the link should not have the active class
+    const innerSpan = link.querySelector("span");
+    expect(innerSpan).not.toHaveClass("bg-secondary");
   });
 });

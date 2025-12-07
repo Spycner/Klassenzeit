@@ -1,11 +1,16 @@
 package com.klassenzeit.klassenzeit;
 
+import com.klassenzeit.klassenzeit.accessrequest.AccessRequestStatus;
+import com.klassenzeit.klassenzeit.accessrequest.SchoolAccessRequest;
 import com.klassenzeit.klassenzeit.common.AvailabilityType;
 import com.klassenzeit.klassenzeit.common.QualificationLevel;
 import com.klassenzeit.klassenzeit.common.WeekPattern;
 import com.klassenzeit.klassenzeit.lesson.Lesson;
+import com.klassenzeit.klassenzeit.membership.SchoolMembership;
+import com.klassenzeit.klassenzeit.membership.SchoolRole;
 import com.klassenzeit.klassenzeit.room.Room;
 import com.klassenzeit.klassenzeit.school.School;
+import com.klassenzeit.klassenzeit.school.SchoolSlugHistory;
 import com.klassenzeit.klassenzeit.school.SchoolYear;
 import com.klassenzeit.klassenzeit.school.Term;
 import com.klassenzeit.klassenzeit.schoolclass.SchoolClass;
@@ -14,6 +19,7 @@ import com.klassenzeit.klassenzeit.teacher.Teacher;
 import com.klassenzeit.klassenzeit.teacher.TeacherAvailability;
 import com.klassenzeit.klassenzeit.teacher.TeacherSubjectQualification;
 import com.klassenzeit.klassenzeit.timeslot.TimeSlot;
+import com.klassenzeit.klassenzeit.user.AppUser;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -82,6 +88,22 @@ public class TestDataBuilder {
   public LessonBuilder lesson(
       Term term, SchoolClass schoolClass, Teacher teacher, Subject subject, TimeSlot timeSlot) {
     return new LessonBuilder(term, schoolClass, teacher, subject, timeSlot);
+  }
+
+  public AppUserBuilder appUser() {
+    return new AppUserBuilder();
+  }
+
+  public SchoolMembershipBuilder membership(School school, AppUser user) {
+    return new SchoolMembershipBuilder(school, user);
+  }
+
+  public SchoolAccessRequestBuilder accessRequest(School school, AppUser user) {
+    return new SchoolAccessRequestBuilder(school, user);
+  }
+
+  public SchoolSlugHistoryBuilder slugHistory(School school) {
+    return new SchoolSlugHistoryBuilder(school);
   }
 
   // School Builder
@@ -658,6 +680,179 @@ public class TestDataBuilder {
       Lesson lesson = build();
       entityManager.persist(lesson);
       return lesson;
+    }
+  }
+
+  // AppUser Builder
+  public class AppUserBuilder {
+    private String keycloakId = UUID.randomUUID().toString();
+    private String email = "user-" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
+    private String displayName = "Test User";
+    private boolean isPlatformAdmin = false;
+
+    public AppUserBuilder withKeycloakId(String keycloakId) {
+      this.keycloakId = keycloakId;
+      return this;
+    }
+
+    public AppUserBuilder withEmail(String email) {
+      this.email = email;
+      return this;
+    }
+
+    public AppUserBuilder withDisplayName(String displayName) {
+      this.displayName = displayName;
+      return this;
+    }
+
+    public AppUserBuilder isPlatformAdmin(boolean isPlatformAdmin) {
+      this.isPlatformAdmin = isPlatformAdmin;
+      return this;
+    }
+
+    public AppUser build() {
+      AppUser user = new AppUser(keycloakId, email, displayName);
+      user.setPlatformAdmin(isPlatformAdmin);
+      return user;
+    }
+
+    public AppUser persist() {
+      AppUser user = build();
+      entityManager.persist(user);
+      return user;
+    }
+  }
+
+  // SchoolMembership Builder
+  public class SchoolMembershipBuilder {
+    private final School school;
+    private final AppUser user;
+    private SchoolRole role = SchoolRole.VIEWER;
+    private AppUser grantedBy;
+    private Teacher linkedTeacher;
+    private boolean isActive = true;
+
+    public SchoolMembershipBuilder(School school, AppUser user) {
+      this.school = school;
+      this.user = user;
+    }
+
+    public SchoolMembershipBuilder withRole(SchoolRole role) {
+      this.role = role;
+      return this;
+    }
+
+    public SchoolMembershipBuilder grantedBy(AppUser grantedBy) {
+      this.grantedBy = grantedBy;
+      return this;
+    }
+
+    public SchoolMembershipBuilder linkedTo(Teacher teacher) {
+      this.linkedTeacher = teacher;
+      return this;
+    }
+
+    public SchoolMembershipBuilder isActive(boolean isActive) {
+      this.isActive = isActive;
+      return this;
+    }
+
+    public SchoolMembership build() {
+      SchoolMembership membership = new SchoolMembership(user, school, role, grantedBy);
+      membership.setLinkedTeacher(linkedTeacher);
+      membership.setActive(isActive);
+      return membership;
+    }
+
+    public SchoolMembership persist() {
+      SchoolMembership membership = build();
+      entityManager.persist(membership);
+      return membership;
+    }
+  }
+
+  // SchoolAccessRequest Builder
+  public class SchoolAccessRequestBuilder {
+    private final School school;
+    private final AppUser user;
+    private SchoolRole requestedRole = SchoolRole.VIEWER;
+    private String message;
+    private AccessRequestStatus status = AccessRequestStatus.PENDING;
+    private AppUser reviewedBy;
+    private String responseMessage;
+
+    public SchoolAccessRequestBuilder(School school, AppUser user) {
+      this.school = school;
+      this.user = user;
+    }
+
+    public SchoolAccessRequestBuilder withRequestedRole(SchoolRole role) {
+      this.requestedRole = role;
+      return this;
+    }
+
+    public SchoolAccessRequestBuilder withMessage(String message) {
+      this.message = message;
+      return this;
+    }
+
+    public SchoolAccessRequestBuilder withStatus(AccessRequestStatus status) {
+      this.status = status;
+      return this;
+    }
+
+    public SchoolAccessRequestBuilder reviewedBy(AppUser reviewer) {
+      this.reviewedBy = reviewer;
+      return this;
+    }
+
+    public SchoolAccessRequestBuilder withResponseMessage(String responseMessage) {
+      this.responseMessage = responseMessage;
+      return this;
+    }
+
+    public SchoolAccessRequest build() {
+      SchoolAccessRequest request = new SchoolAccessRequest(user, school, requestedRole, message);
+      if (status == AccessRequestStatus.APPROVED && reviewedBy != null) {
+        request.approve(reviewedBy, responseMessage);
+      } else if (status == AccessRequestStatus.REJECTED && reviewedBy != null) {
+        request.reject(reviewedBy, responseMessage);
+      } else if (status == AccessRequestStatus.CANCELLED) {
+        request.cancel();
+      }
+      return request;
+    }
+
+    public SchoolAccessRequest persist() {
+      SchoolAccessRequest request = build();
+      entityManager.persist(request);
+      return request;
+    }
+  }
+
+  // SchoolSlugHistory Builder
+  public class SchoolSlugHistoryBuilder {
+    private final School school;
+    private String slug;
+
+    public SchoolSlugHistoryBuilder(School school) {
+      this.school = school;
+      this.slug = "old-slug-" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    public SchoolSlugHistoryBuilder withSlug(String slug) {
+      this.slug = slug;
+      return this;
+    }
+
+    public SchoolSlugHistory build() {
+      return new SchoolSlugHistory(school, slug);
+    }
+
+    public SchoolSlugHistory persist() {
+      SchoolSlugHistory history = build();
+      entityManager.persist(history);
+      return history;
     }
   }
 }

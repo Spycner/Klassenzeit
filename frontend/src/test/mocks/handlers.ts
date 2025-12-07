@@ -10,7 +10,9 @@ import type {
   SubjectSummary,
   TeacherResponse,
   TeacherSummary,
+  UserSearchResult,
 } from "@/api";
+import type { UserProfile } from "@/auth/types";
 
 // Base URL for API
 const API_BASE = "http://localhost:8080";
@@ -50,12 +52,14 @@ export const mockTeachers: TeacherSummary[] = [
     firstName: "John",
     lastName: "Doe",
     abbreviation: "DOE",
+    isActive: true,
   },
   {
     id: "teacher-2",
     firstName: "Jane",
     lastName: "Smith",
     abbreviation: "SMI",
+    isActive: true,
   },
 ];
 
@@ -93,6 +97,26 @@ export const mockSubjectDetail: SubjectResponse = {
   isActive: true,
   createdAt: "2024-01-01T00:00:00Z",
   updatedAt: "2024-01-01T00:00:00Z",
+};
+
+export const mockUserSearchResult: UserSearchResult = {
+  id: "user-1",
+  email: "admin@example.com",
+  displayName: "Admin User",
+};
+
+export const mockCurrentUser: UserProfile = {
+  id: "user-1",
+  email: "test@example.com",
+  displayName: "Test User",
+  isPlatformAdmin: false,
+  schools: [
+    {
+      schoolId: "school-1",
+      schoolName: "Test School 1",
+      role: "SCHOOL_ADMIN",
+    },
+  ],
 };
 
 // Request handlers
@@ -179,6 +203,22 @@ export const handlers = [
       return HttpResponse.json(mockSubjectDetail);
     }
     return new HttpResponse(null, { status: 404 });
+  }),
+
+  // User Search
+  http.get(`${API_BASE}/api/users/search`, ({ request }) => {
+    const url = new URL(request.url);
+    const query = url.searchParams.get("query");
+    if (query && "admin".includes(query.toLowerCase())) {
+      return HttpResponse.json([mockUserSearchResult]);
+    }
+    // Return empty array for not found
+    return HttpResponse.json([]);
+  }),
+
+  // Current User
+  http.get(`${API_BASE}/api/users/me`, () => {
+    return HttpResponse.json(mockCurrentUser);
   }),
 ];
 

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +29,7 @@ public class TimetableSolverController {
 
   @PostMapping("/solve")
   @ResponseStatus(HttpStatus.ACCEPTED)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   @Operation(
       summary = "Start solving",
       description = "Starts the timetable solver asynchronously for the given term")
@@ -36,6 +38,7 @@ public class TimetableSolverController {
   }
 
   @GetMapping("/status")
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
   @Operation(
       summary = "Get solver status",
       description = "Returns the current status and score of the solving job")
@@ -45,6 +48,7 @@ public class TimetableSolverController {
 
   @PostMapping("/stop")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   @Operation(
       summary = "Stop solving",
       description = "Terminates the solver early, keeping the best solution found so far")
@@ -53,6 +57,7 @@ public class TimetableSolverController {
   }
 
   @GetMapping("/solution")
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
   @Operation(
       summary = "Get solution",
       description = "Returns the current best timetable solution with all lesson assignments")
@@ -63,6 +68,7 @@ public class TimetableSolverController {
 
   @PostMapping("/apply")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   @Operation(
       summary = "Apply solution",
       description = "Persists the current best solution to the database")

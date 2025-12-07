@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,23 +31,27 @@ public class RoomController {
   }
 
   @GetMapping
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
   public List<RoomSummary> findAll(@PathVariable UUID schoolId) {
     return roomService.findAllBySchool(schoolId);
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
   public RoomResponse findById(@PathVariable UUID schoolId, @PathVariable UUID id) {
     return roomService.findById(schoolId, id);
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public RoomResponse create(
       @PathVariable UUID schoolId, @Valid @RequestBody CreateRoomRequest request) {
     return roomService.create(schoolId, request);
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public RoomResponse update(
       @PathVariable UUID schoolId,
       @PathVariable UUID id,
@@ -56,6 +61,7 @@ public class RoomController {
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public void delete(@PathVariable UUID schoolId, @PathVariable UUID id) {
     roomService.delete(schoolId, id);
   }

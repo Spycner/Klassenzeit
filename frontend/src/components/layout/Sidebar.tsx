@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Building2,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -30,6 +31,7 @@ const mainNavItems = [
 ];
 
 const secondaryNavItems = [
+  { to: "schools", icon: Building2, labelKey: "schools" },
   { to: "settings", icon: Settings, labelKey: "settings" },
 ];
 

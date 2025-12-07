@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.klassenzeit.klassenzeit.AbstractIntegrationTest;
+import com.klassenzeit.klassenzeit.security.WithMockCurrentUser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -46,6 +47,7 @@ class CorsIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
+  @WithMockCurrentUser(isPlatformAdmin = true)
   void actualRequest_fromAllowedOrigin_includesCorsHeaders() throws Exception {
     mockMvc
         .perform(get("/api/schools").header("Origin", ALLOWED_ORIGIN))
@@ -55,6 +57,7 @@ class CorsIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
+  @WithMockCurrentUser(isPlatformAdmin = true)
   void request_fromViteDevServer_isAllowed() throws Exception {
     String viteOrigin = "http://localhost:5173";
     mockMvc
@@ -64,6 +67,7 @@ class CorsIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
+  @WithMockCurrentUser(isPlatformAdmin = true)
   void request_fromDisallowedOrigin_isRejected() throws Exception {
     mockMvc
         .perform(get("/api/schools").header("Origin", DISALLOWED_ORIGIN))

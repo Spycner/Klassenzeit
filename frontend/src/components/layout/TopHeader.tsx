@@ -1,7 +1,10 @@
-import { Globe, Menu, User } from "lucide-react";
+import { Globe, LogOut, Menu, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
 
+import { useCurrentUser } from "@/api/hooks/use-current-user";
+import { useAuth } from "@/auth";
+import { SchoolSelector } from "@/components/school/SchoolSelector";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -31,6 +34,8 @@ export function TopHeader() {
   const { t, i18n } = useTranslation("common");
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
+  const { data: user } = useCurrentUser();
 
   const switchLanguage = (newLang: SupportedLanguage) => {
     const currentPath = location.pathname;
@@ -61,6 +66,8 @@ export function TopHeader() {
       </div>
 
       <div className="flex items-center gap-2">
+        {isAuthenticated && <SchoolSelector />}
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -75,7 +82,11 @@ export function TopHeader() {
               <DropdownMenuItem
                 key={lang}
                 onClick={() => switchLanguage(lang)}
-                className={i18n.language === lang ? "bg-accent" : ""}
+                className={
+                  i18n.language === lang
+                    ? "bg-secondary text-secondary-foreground"
+                    : ""
+                }
               >
                 {languageNames[lang]}
               </DropdownMenuItem>
@@ -83,24 +94,26 @@ export function TopHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-              <span className="sr-only">{t("userMenu")}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{t("myAccount")}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>{t("profile")}</DropdownMenuItem>
-            <DropdownMenuItem>
-              {t("nav:settings", { ns: "nav" })}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>{t("logOut")}</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isAuthenticated && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <User className="h-5 w-5" />
+                <span className="sr-only">{t("userMenu")}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>
+                {user?.displayName ?? user?.email ?? t("myAccount")}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={logout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                {t("logOut")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </header>
   );

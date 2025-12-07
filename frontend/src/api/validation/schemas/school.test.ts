@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSchoolSchema } from "./school";
+import { createSchoolSchema, updateSchoolSchema } from "./school";
 
 describe("createSchoolSchema", () => {
   const validSchool = {
@@ -8,6 +8,7 @@ describe("createSchoolSchema", () => {
     schoolType: "gymnasium",
     minGrade: 5,
     maxGrade: 12,
+    initialAdminUserId: "550e8400-e29b-41d4-a716-446655440000",
   };
 
   describe("required fields", () => {
@@ -32,6 +33,28 @@ describe("createSchoolSchema", () => {
       const { schoolType: _, ...rest } = validSchool;
       const result = createSchoolSchema.safeParse(rest);
       expect(result.success).toBe(false);
+    });
+
+    it("fails when initialAdminUserId is missing", () => {
+      const { initialAdminUserId: _, ...rest } = validSchool;
+      const result = createSchoolSchema.safeParse(rest);
+      expect(result.success).toBe(false);
+    });
+
+    it("fails when initialAdminUserId is not a valid UUID", () => {
+      const result = createSchoolSchema.safeParse({
+        ...validSchool,
+        initialAdminUserId: "not-a-uuid",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts valid UUID for initialAdminUserId", () => {
+      const result = createSchoolSchema.safeParse({
+        ...validSchool,
+        initialAdminUserId: "123e4567-e89b-12d3-a456-426614174000",
+      });
+      expect(result.success).toBe(true);
     });
   });
 
@@ -143,5 +166,43 @@ describe("createSchoolSchema", () => {
       });
       expect(result.success).toBe(true);
     });
+  });
+});
+
+describe("updateSchoolSchema", () => {
+  const validUpdateSchool = {
+    name: "Test School",
+    slug: "test-school",
+    schoolType: "gymnasium",
+    minGrade: 5,
+    maxGrade: 12,
+  };
+
+  it("validates without initialAdminUserId", () => {
+    const result = updateSchoolSchema.safeParse(validUpdateSchool);
+    expect(result.success).toBe(true);
+  });
+
+  it("fails when name is missing", () => {
+    const { name: _, ...rest } = validUpdateSchool;
+    const result = updateSchoolSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  it("fails when minGrade is greater than maxGrade", () => {
+    const result = updateSchoolSchema.safeParse({
+      ...validUpdateSchool,
+      minGrade: 10,
+      maxGrade: 5,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts optional timezone", () => {
+    const result = updateSchoolSchema.safeParse({
+      ...validUpdateSchool,
+      timezone: "Europe/Berlin",
+    });
+    expect(result.success).toBe(true);
   });
 });

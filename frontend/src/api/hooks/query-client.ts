@@ -9,7 +9,7 @@
 
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { showErrorToast } from "../error-handler";
-import { isRetryableError } from "../errors";
+import { ClientError, isRetryableError } from "../errors";
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -17,6 +17,16 @@ export const queryClient = new QueryClient({
       // Log query errors for debugging but don't show toast
       // (queries will show loading/error states in UI)
       console.error("Query error:", error);
+
+      // Handle 401 - clear all queries to trigger re-fetch after re-auth
+      // The auth provider will handle the redirect to login
+      if (error instanceof ClientError && error.isUnauthorized) {
+        console.warn("Unauthorized - clearing query cache");
+        // Use setTimeout to avoid clearing during render
+        setTimeout(() => {
+          queryClient.clear();
+        }, 0);
+      }
     },
   }),
   mutationCache: new MutationCache({
@@ -144,5 +154,12 @@ export const queryKeys = {
       ["schools", schoolId, "terms", termId, "solver", "status"] as const,
     solution: (schoolId: string, termId: string) =>
       ["schools", schoolId, "terms", termId, "solver", "solution"] as const,
+  },
+
+  // Memberships
+  memberships: {
+    all: (schoolId: string) => ["schools", schoolId, "members"] as const,
+    detail: (schoolId: string, id: string) =>
+      ["schools", schoolId, "members", id] as const,
   },
 };

@@ -13,5 +13,8 @@
   "cancel": "Cancel",
   "confirm": "Confirm",
   "delete": "Delete",
+  "save": "Save",
+  "saving": "Saving...",
+  "reset": "Reset",
   "errorOccurred": "An error occurred"
 }

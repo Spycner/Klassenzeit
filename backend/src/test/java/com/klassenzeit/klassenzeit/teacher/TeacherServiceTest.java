@@ -45,7 +45,7 @@ class TeacherServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      List<TeacherSummary> result = teacherService.findAllBySchool(school.getId());
+      List<TeacherSummary> result = teacherService.findAllBySchool(school.getId(), false);
 
       assertThat(result).hasSize(2);
       assertThat(result)
@@ -62,7 +62,7 @@ class TeacherServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      List<TeacherSummary> result = teacherService.findAllBySchool(school.getId());
+      List<TeacherSummary> result = teacherService.findAllBySchool(school.getId(), false);
 
       assertThat(result).hasSize(1);
       assertThat(result.get(0).lastName()).isEqualTo("Mustermann");
@@ -73,9 +73,41 @@ class TeacherServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      List<TeacherSummary> result = teacherService.findAllBySchool(school.getId());
+      List<TeacherSummary> result = teacherService.findAllBySchool(school.getId(), false);
 
       assertThat(result).isEmpty();
+    }
+
+    @Test
+    void excludesInactiveTeachersWhenIncludeInactiveIsFalse() {
+      testData.teacher(school).withLastName("Active").persist();
+      Teacher inactive =
+          testData.teacher(school).withLastName("Inactive").withAbbreviation("INA").persist();
+      inactive.setActive(false);
+      entityManager.flush();
+      entityManager.clear();
+
+      List<TeacherSummary> result = teacherService.findAllBySchool(school.getId(), false);
+
+      assertThat(result).hasSize(1);
+      assertThat(result.get(0).lastName()).isEqualTo("Active");
+    }
+
+    @Test
+    void includesInactiveTeachersWhenIncludeInactiveIsTrue() {
+      testData.teacher(school).withLastName("Active").persist();
+      Teacher inactive =
+          testData.teacher(school).withLastName("Inactive").withAbbreviation("INA").persist();
+      inactive.setActive(false);
+      entityManager.flush();
+      entityManager.clear();
+
+      List<TeacherSummary> result = teacherService.findAllBySchool(school.getId(), true);
+
+      assertThat(result).hasSize(2);
+      assertThat(result)
+          .extracting(TeacherSummary::lastName)
+          .containsExactlyInAnyOrder("Active", "Inactive");
     }
   }
 
@@ -276,8 +308,30 @@ class TeacherServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
+      // After soft-delete, findById should still return the teacher (for admin reactivation)
       TeacherResponse result = teacherService.findById(school.getId(), teacher.getId());
       assertThat(result.isActive()).isFalse();
+
+      // Verify the teacher is still in the database but marked inactive
+      Teacher deletedTeacher = entityManager.find(Teacher.class, teacher.getId());
+      assertThat(deletedTeacher).isNotNull();
+      assertThat(deletedTeacher.isActive()).isFalse();
+    }
+
+    @Test
+    void permanentlyDeletesTeacher() {
+      Teacher teacher = testData.teacher(school).persist();
+      entityManager.flush();
+      entityManager.clear();
+
+      teacherService.deletePermanent(school.getId(), teacher.getId());
+
+      entityManager.flush();
+      entityManager.clear();
+
+      // After permanent delete, the teacher should not exist
+      Teacher deletedTeacher = entityManager.find(Teacher.class, teacher.getId());
+      assertThat(deletedTeacher).isNull();
     }
 
     @Test

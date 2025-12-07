@@ -5,7 +5,7 @@ A timetabler application for schools.
 ## Quick Start
 
 ```bash
-make dev    # Start database and backend
+make dev    # Start services (PostgreSQL + Keycloak) and backend
 ```
 
 Run `make help` to see all available commands.
@@ -24,8 +24,8 @@ Run `make help` to see all available commands.
 uv sync --extra dev
 uv run pre-commit install
 
-# Start database
-make db-up
+# Start services (PostgreSQL + Keycloak)
+make services-up
 
 # Start backend (in one terminal)
 make dev

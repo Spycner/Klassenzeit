@@ -6,7 +6,12 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/test/mocks/server";
 import { ApiClientError, apiClient } from "./client";
-import { ClientError, RateLimitError, ServerError } from "./errors";
+import {
+  ClientError,
+  RateLimitError,
+  RedirectError,
+  ServerError,
+} from "./errors";
 
 const API_BASE = "http://localhost:8080";
 
@@ -171,6 +176,97 @@ describe("apiClient", () => {
       ).rejects.toMatchObject({
         status: 500,
       });
+    });
+  });
+
+  describe("redirect handling", () => {
+    it("should throw RedirectError for 301 responses with X-Redirect-Slug header", async () => {
+      const newSlug = "new-school-slug";
+      server.use(
+        http.get(`${API_BASE}/api/schools/old-slug`, () => {
+          return HttpResponse.json(
+            {
+              status: 301,
+              newSlug: newSlug,
+              redirectUrl: `/api/schools/${newSlug}`,
+            },
+            {
+              status: 301,
+              headers: {
+                Location: `/api/schools/${newSlug}`,
+                "X-Redirect-Slug": newSlug,
+              },
+            },
+          );
+        }),
+      );
+
+      try {
+        await apiClient.get("/api/schools/old-slug", { retries: 0 });
+        expect.fail("Should have thrown");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RedirectError);
+        const redirectError = error as RedirectError;
+        expect(redirectError.newSlug).toBe(newSlug);
+        expect(redirectError.redirectUrl).toBe(`/api/schools/${newSlug}`);
+      }
+    });
+
+    it("should throw RedirectError with newSlug from JSON body when header is missing", async () => {
+      const newSlug = "body-slug";
+      server.use(
+        http.get(`${API_BASE}/api/schools/old-slug`, () => {
+          return HttpResponse.json(
+            {
+              status: 301,
+              newSlug: newSlug,
+              redirectUrl: `/api/schools/${newSlug}`,
+            },
+            {
+              status: 301,
+              headers: {
+                Location: `/api/schools/${newSlug}`,
+              },
+            },
+          );
+        }),
+      );
+
+      try {
+        await apiClient.get("/api/schools/old-slug", { retries: 0 });
+        expect.fail("Should have thrown");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RedirectError);
+        const redirectError = error as RedirectError;
+        expect(redirectError.newSlug).toBe(newSlug);
+      }
+    });
+
+    it("should not retry on RedirectError", async () => {
+      let requestCount = 0;
+      const newSlug = "no-retry-slug";
+
+      server.use(
+        http.get(`${API_BASE}/api/test`, () => {
+          requestCount++;
+          return HttpResponse.json(
+            { newSlug: newSlug, redirectUrl: `/api/test/${newSlug}` },
+            {
+              status: 301,
+              headers: {
+                "X-Redirect-Slug": newSlug,
+                Location: `/api/test/${newSlug}`,
+              },
+            },
+          );
+        }),
+      );
+
+      await expect(apiClient.get("/api/test")).rejects.toBeInstanceOf(
+        RedirectError,
+      );
+      // Should only make one request (no retries for redirects)
+      expect(requestCount).toBe(1);
     });
   });
 

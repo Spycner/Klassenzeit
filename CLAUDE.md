@@ -11,7 +11,7 @@ Klassenzeit is a timetabler application for schools with a monorepo structure:
 ## Quick Start
 
 ```bash
-make dev    # Start database and backend
+make dev    # Start services (PostgreSQL + Keycloak) and backend
 ```
 
 Run `make help` to see all available commands.
@@ -28,24 +28,24 @@ Run `make help` to see all available commands.
 ```bash
 uv sync --extra dev           # Install dependencies (including pre-commit)
 uv run pre-commit install     # Install git hooks
-make db-up                    # Start PostgreSQL database
+make services-up              # Start services
 ```
 
 Pre-commit hooks run automatically before each commit:
 - **Backend**: Spotless and Checkstyle on Java files
 - **Frontend**: Biome (lint + format) and TypeScript type checking
 
-## Database
+## Services
 
-PostgreSQL 17 runs via Docker. Manage with:
+PostgreSQL 17 and Keycloak run via Docker. Manage with:
 ```bash
-make db-up      # Start database
-make db-down    # Stop database
-make db-reset   # Destroy and recreate (loses data)
-make db-logs    # View logs
+make services-up      # Start PostgreSQL and Keycloak
+make services-down    # Stop services
+make services-reset   # Destroy and recreate (loses data)
+make services-logs    # View logs
 ```
 
-Connection details (local dev):
+### Database Connection (local dev):
 - Host: `localhost:5432`
 - Database: `klassenzeit`
 - User: `klassenzeit`
@@ -74,7 +74,7 @@ make test-frontend  # Run frontend tests only
 E2E tests require both frontend and backend to be running:
 ```bash
 # Option 1: Start services manually first
-make dev            # In one terminal (starts DB + backend)
+make dev            # In one terminal (starts services + backend)
 make frontend       # In another terminal
 make test-e2e       # In a third terminal
 

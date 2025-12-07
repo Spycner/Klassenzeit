@@ -25,8 +25,12 @@ public class TeacherService {
     this.schoolRepository = schoolRepository;
   }
 
-  public List<TeacherSummary> findAllBySchool(UUID schoolId) {
-    return teacherRepository.findBySchoolId(schoolId).stream().map(this::toSummary).toList();
+  public List<TeacherSummary> findAllBySchool(UUID schoolId, boolean includeInactive) {
+    List<Teacher> teachers =
+        includeInactive
+            ? teacherRepository.findBySchoolId(schoolId)
+            : teacherRepository.findBySchoolIdAndIsActiveTrue(schoolId);
+    return teachers.stream().map(this::toSummary).toList();
   }
 
   public TeacherResponse findById(UUID schoolId, UUID id) {
@@ -103,6 +107,16 @@ public class TeacherService {
             .orElseThrow(() -> new EntityNotFoundException("Teacher", id));
     teacher.setActive(false);
     teacherRepository.save(teacher);
+  }
+
+  @Transactional
+  public void deletePermanent(UUID schoolId, UUID id) {
+    Teacher teacher =
+        teacherRepository
+            .findById(id)
+            .filter(t -> t.getSchool().getId().equals(schoolId))
+            .orElseThrow(() -> new EntityNotFoundException("Teacher", id));
+    teacherRepository.delete(teacher);
   }
 
   private TeacherResponse toResponse(Teacher t) {

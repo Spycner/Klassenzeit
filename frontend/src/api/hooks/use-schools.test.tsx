@@ -73,6 +73,78 @@ describe("useSchool", () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.isFetching).toBe(false);
   });
+
+  it("should handle 301 redirect for old slug", async () => {
+    const oldSlug = "old-school-slug";
+    const newSlug = "new-school-slug";
+
+    server.use(
+      http.get(`${API_BASE}/api/schools/${oldSlug}`, () => {
+        return HttpResponse.json(
+          {
+            status: 301,
+            newSlug: newSlug,
+            redirectUrl: `/api/schools/${newSlug}`,
+          },
+          {
+            status: 301,
+            headers: {
+              Location: `/api/schools/${newSlug}`,
+              "X-Redirect-Slug": newSlug,
+            },
+          },
+        );
+      }),
+    );
+
+    const { result } = renderHook(() => useSchool(oldSlug), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    // The error should be a RedirectError (which triggers navigation in the hook)
+    expect(result.current.error).toBeDefined();
+  });
+
+  it("should not retry on redirect errors", async () => {
+    const oldSlug = "redirect-no-retry";
+    const newSlug = "new-slug";
+    let requestCount = 0;
+
+    server.use(
+      http.get(`${API_BASE}/api/schools/${oldSlug}`, () => {
+        requestCount++;
+        return HttpResponse.json(
+          {
+            status: 301,
+            newSlug: newSlug,
+            redirectUrl: `/api/schools/${newSlug}`,
+          },
+          {
+            status: 301,
+            headers: {
+              Location: `/api/schools/${newSlug}`,
+              "X-Redirect-Slug": newSlug,
+            },
+          },
+        );
+      }),
+    );
+
+    const { result } = renderHook(() => useSchool(oldSlug), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    // Should only make one request (no retries for redirects)
+    expect(requestCount).toBe(1);
+  });
 });
 
 describe("useCreateSchool", () => {
@@ -83,6 +155,7 @@ describe("useCreateSchool", () => {
       schoolType: "Gymnasium",
       minGrade: 5,
       maxGrade: 13,
+      initialAdminUserId: "00000000-0000-0000-0000-000000000001",
     };
 
     const { result } = renderHook(() => useCreateSchool(), {

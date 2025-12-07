@@ -22,6 +22,20 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: false
 
+  # Security / OAuth2 (Keycloak)
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/klassenzeit}
+          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8180/realms/klassenzeit/protocol/openid-connect/certs}
+
+# Application-specific security config
+klassenzeit:
+  security:
+    platform-admin-emails:
+      - ${PLATFORM_ADMIN_EMAIL:e2e-test@klassenzeit.com}
+
 management:
   endpoints:
     web:
@@ -39,6 +53,12 @@ timefold:
       best-score-limit: 0hard/*soft
   solver-manager:
     parallel-solver-count: 1
+
+# Logging configuration (DEBUG for CI debugging)
+logging:
+  level:
+    com.klassenzeit: DEBUG
+    org.springframework.security: DEBUG
 
 # OpenAPI / Swagger UI configuration
 springdoc:
@@ -78,6 +98,19 @@ spring:
 
   flyway:
     clean-disabled: false
+
+  # Disable OAuth2 JWT validation in tests
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: # Disabled for tests
+
+# Test security config
+klassenzeit:
+  security:
+    platform-admin-emails:
+      - test-admin@klassenzeit.com
 
 ---
 # Production profile

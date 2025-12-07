@@ -1,21 +1,27 @@
 import { expect, test } from "@playwright/test";
+import { getAuthHeaders, getCurrentUserId } from "./auth";
 import { API_BASE } from "./config";
 
 test.describe("School Classes API", () => {
   let schoolId: string;
   let teacherId: string;
+  let headers: Record<string, string>;
   // Use unique suffix per worker to avoid conflicts in parallel execution
   const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   test.beforeAll(async ({ request }) => {
+    headers = await getAuthHeaders();
+    const userId = await getCurrentUserId();
     // Create a school to use for class tests
     const schoolResponse = await request.post(`${API_BASE}/schools`, {
+      headers,
       data: {
         name: `Classes Test School ${uniqueSuffix}`,
         slug: `classes-test-${uniqueSuffix}`,
         schoolType: "Gymnasium",
         minGrade: 5,
         maxGrade: 13,
+        initialAdminUserId: userId,
       },
     });
     const school = await schoolResponse.json();
@@ -25,6 +31,7 @@ test.describe("School Classes API", () => {
     const teacherResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/teachers`,
       {
+        headers,
         data: {
           firstName: "Class",
           lastName: "Teacher",
@@ -40,7 +47,7 @@ test.describe("School Classes API", () => {
   test.afterAll(async ({ request }) => {
     // Cleanup the test school (cascades to teachers and classes)
     if (schoolId) {
-      await request.delete(`${API_BASE}/schools/${schoolId}`);
+      await request.delete(`${API_BASE}/schools/${schoolId}`, { headers });
     }
   });
 
@@ -48,7 +55,8 @@ test.describe("School Classes API", () => {
     request,
   }) => {
     const response = await request.get(
-      `${API_BASE}/schools/${schoolId}/classes`
+      `${API_BASE}/schools/${schoolId}/classes`,
+      { headers }
     );
 
     expect(response.status()).toBe(200);
@@ -70,6 +78,7 @@ test.describe("School Classes API", () => {
     const response = await request.post(
       `${API_BASE}/schools/${schoolId}/classes`,
       {
+        headers,
         data: newClass,
       }
     );
@@ -87,7 +96,8 @@ test.describe("School Classes API", () => {
 
     // Cleanup
     await request.delete(
-      `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`
+      `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`,
+      { headers }
     );
   });
 
@@ -98,6 +108,7 @@ test.describe("School Classes API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/classes`,
       {
+        headers,
         data: {
           name: "6b",
           gradeLevel: 6,
@@ -109,7 +120,8 @@ test.describe("School Classes API", () => {
 
     // Get class details
     const response = await request.get(
-      `${API_BASE}/schools/${schoolId}/classes/${created.id}`
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`,
+      { headers }
     );
 
     expect(response.status()).toBe(200);
@@ -121,7 +133,8 @@ test.describe("School Classes API", () => {
 
     // Cleanup
     await request.delete(
-      `${API_BASE}/schools/${schoolId}/classes/${created.id}`
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`,
+      { headers }
     );
   });
 
@@ -132,6 +145,7 @@ test.describe("School Classes API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/classes`,
       {
+        headers,
         data: {
           name: "7a",
           gradeLevel: 7,
@@ -144,6 +158,7 @@ test.describe("School Classes API", () => {
     const response = await request.put(
       `${API_BASE}/schools/${schoolId}/classes/${created.id}`,
       {
+        headers,
         data: {
           name: "7a",
           gradeLevel: 7,
@@ -161,7 +176,8 @@ test.describe("School Classes API", () => {
 
     // Cleanup
     await request.delete(
-      `${API_BASE}/schools/${schoolId}/classes/${created.id}`
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`,
+      { headers }
     );
   });
 
@@ -172,6 +188,7 @@ test.describe("School Classes API", () => {
     const createResponse = await request.post(
       `${API_BASE}/schools/${schoolId}/classes`,
       {
+        headers,
         data: {
           name: "8c",
           gradeLevel: 8,
@@ -182,14 +199,16 @@ test.describe("School Classes API", () => {
 
     // Delete the class
     const response = await request.delete(
-      `${API_BASE}/schools/${schoolId}/classes/${created.id}`
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`,
+      { headers }
     );
 
     expect(response.status()).toBe(204);
 
     // Verify soft delete - class still exists but is inactive
     const getResponse = await request.get(
-      `${API_BASE}/schools/${schoolId}/classes/${created.id}`
+      `${API_BASE}/schools/${schoolId}/classes/${created.id}`,
+      { headers }
     );
     expect(getResponse.status()).toBe(200);
     const deletedClass = await getResponse.json();
@@ -207,6 +226,7 @@ test.describe("School Classes API", () => {
     const response = await request.post(
       `${API_BASE}/schools/${schoolId}/classes`,
       {
+        headers,
         data: invalidClass,
       }
     );
@@ -219,6 +239,7 @@ test.describe("School Classes API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/classes`,
         {
+          headers,
           data: {
             name: "",
             gradeLevel: 5,
@@ -234,6 +255,7 @@ test.describe("School Classes API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/classes`,
         {
+          headers,
           data: {
             name: "Klasse 5a",
             gradeLevel: 5,
@@ -247,7 +269,8 @@ test.describe("School Classes API", () => {
 
       // Cleanup
       await request.delete(
-        `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`
+        `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`,
+        { headers }
       );
     });
 
@@ -255,6 +278,7 @@ test.describe("School Classes API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/classes`,
         {
+          headers,
           data: {
             name: "Below Min",
             gradeLevel: 0,
@@ -270,6 +294,7 @@ test.describe("School Classes API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/classes`,
         {
+          headers,
           data: {
             name: "At Min Grade",
             gradeLevel: 5,
@@ -282,7 +307,8 @@ test.describe("School Classes API", () => {
 
       // Cleanup
       await request.delete(
-        `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`
+        `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`,
+        { headers }
       );
     });
 
@@ -291,6 +317,7 @@ test.describe("School Classes API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/classes`,
         {
+          headers,
           data: {
             name: "At Max Grade",
             gradeLevel: 13,
@@ -303,7 +330,8 @@ test.describe("School Classes API", () => {
 
       // Cleanup
       await request.delete(
-        `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`
+        `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`,
+        { headers }
       );
     });
 
@@ -313,6 +341,7 @@ test.describe("School Classes API", () => {
       const response = await request.post(
         `${API_BASE}/schools/${schoolId}/classes`,
         {
+          headers,
           data: {
             name: "'; DROP TABLE classes; --",
             gradeLevel: 5,
@@ -325,7 +354,8 @@ test.describe("School Classes API", () => {
         const schoolClass = await response.json();
         expect(schoolClass.name).toContain("DROP TABLE");
         await request.delete(
-          `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`
+          `${API_BASE}/schools/${schoolId}/classes/${schoolClass.id}`,
+          { headers }
         );
       } else {
         expect(response.status()).toBe(400);

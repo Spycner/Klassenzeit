@@ -6,6 +6,9 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
+import { isRetryableError, RedirectError } from "../errors";
 import { schoolsApi } from "../services";
 import type {
   CreateSchoolRequest,
@@ -37,24 +40,49 @@ export function useSchools() {
 }
 
 /**
- * Fetches a single school by ID.
+ * Fetches a single school by identifier (UUID or slug).
  *
- * @param id - The unique identifier of the school (query is disabled if undefined)
+ * If the slug has changed (301 redirect), automatically navigates to the new URL.
+ *
+ * @param identifier - The unique identifier (UUID) or slug of the school (query is disabled if undefined)
  * @returns Query result containing full school details
  * @example
  * ```tsx
- * function SchoolDetail({ schoolId }: { schoolId: string }) {
- *   const { data: school, isLoading } = useSchool(schoolId);
+ * function SchoolDetail({ slug }: { slug: string }) {
+ *   const { data: school, isLoading } = useSchool(slug);
  *   if (isLoading) return <Spinner />;
  *   return <h1>{school?.name}</h1>;
  * }
  * ```
  */
-export function useSchool(id: string | undefined) {
+export function useSchool(identifier: string | undefined) {
+  const navigate = useNavigate();
+  const { i18n } = useTranslation();
+
   return useQuery<SchoolResponse>({
-    queryKey: queryKeys.schools.detail(id!),
-    queryFn: () => schoolsApi.get(id!),
-    enabled: !!id,
+    queryKey: queryKeys.schools.detail(identifier!),
+    queryFn: async () => {
+      try {
+        return await schoolsApi.get(identifier!);
+      } catch (error) {
+        if (error instanceof RedirectError) {
+          // Navigate to new slug, replacing history
+          navigate(`/${i18n.language}/schools/${error.newSlug}`, {
+            replace: true,
+          });
+          // Re-throw to prevent caching the redirect
+          throw error;
+        }
+        throw error;
+      }
+    },
+    enabled: !!identifier,
+    retry: (failureCount, error) => {
+      // Never retry redirect errors
+      if (error instanceof RedirectError) return false;
+      if (failureCount >= 3) return false;
+      return isRetryableError(error);
+    },
   });
 }
 

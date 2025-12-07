@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.util.UUID;
 
 /** Request DTO for creating a school. */
 public record CreateSchoolRequest(
@@ -20,4 +21,5 @@ public record CreateSchoolRequest(
     @NotNull @Min(1) @Max(13) Short minGrade,
     @NotNull @Min(1) @Max(13) Short maxGrade,
     @Size(max = 50) String timezone,
-    String settings) {}
+    String settings,
+    @NotNull UUID initialAdminUserId) {}
