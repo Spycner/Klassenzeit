@@ -33,3 +33,6 @@ logs
 
 .lighthouseci
 *.log
+
+# Code review outputs
+review/
