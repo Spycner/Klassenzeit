@@ -4,14 +4,32 @@
 
 import { HttpResponse, http } from "msw";
 import type {
+  LessonResponse,
+  LessonSummary,
+  MembershipResponse,
+  MembershipSummary,
+  RoomResponse,
+  RoomSummary,
+  SchoolClassResponse,
+  SchoolClassSummary,
   SchoolResponse,
   SchoolSummary,
+  SchoolYearResponse,
+  SchoolYearSummary,
   SubjectResponse,
   SubjectSummary,
   TeacherResponse,
   TeacherSummary,
+  TermResponse,
+  TermSummary,
+  TimeSlotResponse,
+  TimeSlotSummary,
   UserSearchResult,
 } from "@/api";
+import type {
+  AccessRequestResponse,
+  AccessRequestSummary,
+} from "@/api/services/access-requests";
 import type { UserProfile } from "@/auth/types";
 
 // Base URL for API
@@ -119,6 +137,232 @@ export const mockCurrentUser: UserProfile = {
   ],
 };
 
+// Classes mock data
+export const mockClasses: SchoolClassSummary[] = [
+  { id: "class-1", name: "5a", gradeLevel: 5 },
+  { id: "class-2", name: "6b", gradeLevel: 6 },
+];
+
+export const mockClassDetail: SchoolClassResponse = {
+  id: "class-1",
+  name: "5a",
+  gradeLevel: 5,
+  studentCount: 25,
+  classTeacherId: "teacher-1",
+  classTeacherName: "John Doe",
+  isActive: true,
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
+};
+
+// Rooms mock data
+export const mockRooms: RoomSummary[] = [
+  { id: "room-1", name: "Room 101", building: "Main", capacity: 30 },
+  { id: "room-2", name: "Room 102", building: "Main", capacity: 25 },
+];
+
+export const mockRoomDetail: RoomResponse = {
+  id: "room-1",
+  name: "Room 101",
+  building: "Main",
+  capacity: 30,
+  features: "Projector, Whiteboard",
+  isActive: true,
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
+};
+
+// School Years mock data
+export const mockSchoolYears: SchoolYearSummary[] = [
+  {
+    id: "year-1",
+    name: "2024/2025",
+    startDate: "2024-08-01",
+    endDate: "2025-07-31",
+    isCurrent: true,
+  },
+  {
+    id: "year-2",
+    name: "2023/2024",
+    startDate: "2023-08-01",
+    endDate: "2024-07-31",
+    isCurrent: false,
+  },
+];
+
+export const mockSchoolYearDetail: SchoolYearResponse = {
+  id: "year-1",
+  name: "2024/2025",
+  startDate: "2024-08-01",
+  endDate: "2025-07-31",
+  isCurrent: true,
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
+};
+
+// Terms mock data
+export const mockTerms: TermSummary[] = [
+  {
+    id: "term-1",
+    name: "1. Semester",
+    startDate: "2024-08-01",
+    endDate: "2025-01-31",
+    isCurrent: true,
+  },
+  {
+    id: "term-2",
+    name: "2. Semester",
+    startDate: "2025-02-01",
+    endDate: "2025-07-31",
+    isCurrent: false,
+  },
+];
+
+export const mockTermDetail: TermResponse = {
+  id: "term-1",
+  name: "1. Semester",
+  startDate: "2024-08-01",
+  endDate: "2025-01-31",
+  isCurrent: true,
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
+};
+
+// Time Slots mock data
+export const mockTimeSlots: TimeSlotSummary[] = [
+  {
+    id: "slot-1",
+    dayOfWeek: 0,
+    period: 1,
+    startTime: "08:00",
+    endTime: "08:45",
+  },
+  {
+    id: "slot-2",
+    dayOfWeek: 0,
+    period: 2,
+    startTime: "08:50",
+    endTime: "09:35",
+  },
+];
+
+export const mockTimeSlotDetail: TimeSlotResponse = {
+  id: "slot-1",
+  dayOfWeek: 0,
+  period: 1,
+  startTime: "08:00",
+  endTime: "08:45",
+  isBreak: false,
+  label: null,
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
+};
+
+// Lessons mock data
+export const mockLessons: LessonSummary[] = [
+  {
+    id: "lesson-1",
+    schoolClassName: "5a",
+    teacherName: "John Doe",
+    subjectName: "Mathematics",
+    roomName: "Room 101",
+  },
+  {
+    id: "lesson-2",
+    schoolClassName: "5a",
+    teacherName: "Jane Smith",
+    subjectName: "English",
+    roomName: "Room 102",
+  },
+];
+
+export const mockLessonDetail: LessonResponse = {
+  id: "lesson-1",
+  schoolClassId: "class-1",
+  schoolClassName: "5a",
+  teacherId: "teacher-1",
+  teacherName: "John Doe",
+  subjectId: "subject-1",
+  subjectName: "Mathematics",
+  timeslotId: "slot-1",
+  dayOfWeek: 0,
+  period: 1,
+  startTime: "08:00",
+  endTime: "08:45",
+  roomId: "room-1",
+  roomName: "Room 101",
+  weekPattern: "EVERY",
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
+};
+
+// Memberships mock data
+export const mockMemberships: MembershipSummary[] = [
+  {
+    id: "membership-1",
+    userId: "user-1",
+    userDisplayName: "Test User",
+    userEmail: "test@example.com",
+    role: "SCHOOL_ADMIN",
+    isActive: true,
+  },
+  {
+    id: "membership-2",
+    userId: "user-2",
+    userDisplayName: "Teacher User",
+    userEmail: "teacher@example.com",
+    role: "TEACHER",
+    isActive: true,
+  },
+];
+
+export const mockMembershipDetail: MembershipResponse = {
+  id: "membership-1",
+  userId: "user-1",
+  userDisplayName: "Test User",
+  userEmail: "test@example.com",
+  schoolId: "school-1",
+  role: "SCHOOL_ADMIN",
+  linkedTeacherId: null,
+  linkedTeacherName: null,
+  isActive: true,
+  grantedById: "user-1",
+  grantedByName: "Test User",
+  grantedAt: "2024-01-01T00:00:00Z",
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
+};
+
+// Access Requests mock data
+export const mockAccessRequests: AccessRequestSummary[] = [
+  {
+    id: "request-1",
+    userDisplayName: "New User",
+    userEmail: "newuser@example.com",
+    requestedRole: "TEACHER",
+    status: "PENDING",
+    createdAt: "2024-01-15T00:00:00Z",
+  },
+];
+
+export const mockAccessRequestDetail: AccessRequestResponse = {
+  id: "request-1",
+  userId: "user-3",
+  userDisplayName: "New User",
+  userEmail: "newuser@example.com",
+  schoolId: "school-1",
+  schoolName: "Test School 1",
+  requestedRole: "TEACHER",
+  status: "PENDING",
+  message: "I would like to join as a teacher.",
+  responseMessage: null,
+  reviewedById: null,
+  reviewedByName: null,
+  reviewedAt: null,
+  createdAt: "2024-01-15T00:00:00Z",
+  updatedAt: "2024-01-15T00:00:00Z",
+};
+
 // Request handlers
 export const handlers = [
   // Schools
@@ -219,6 +463,404 @@ export const handlers = [
   // Current User
   http.get(`${API_BASE}/api/users/me`, () => {
     return HttpResponse.json(mockCurrentUser);
+  }),
+
+  // Classes
+  http.get(`${API_BASE}/api/schools/:schoolId/classes`, () => {
+    return HttpResponse.json(mockClasses);
+  }),
+
+  http.get(`${API_BASE}/api/schools/:schoolId/classes/:id`, ({ params }) => {
+    const { id } = params;
+    if (id === "class-1") {
+      return HttpResponse.json(mockClassDetail);
+    }
+    return new HttpResponse(null, { status: 404 });
+  }),
+
+  http.post(
+    `${API_BASE}/api/schools/:schoolId/classes`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json(
+        {
+          ...mockClassDetail,
+          ...(body as object),
+          id: "new-class-id",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { status: 201 },
+      );
+    },
+  ),
+
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/classes/:id`,
+    async ({ params, request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        ...mockClassDetail,
+        ...(body as object),
+        id: params.id,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(`${API_BASE}/api/schools/:schoolId/classes/:id`, () => {
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // Rooms
+  http.get(`${API_BASE}/api/schools/:schoolId/rooms`, () => {
+    return HttpResponse.json(mockRooms);
+  }),
+
+  http.get(`${API_BASE}/api/schools/:schoolId/rooms/:id`, ({ params }) => {
+    const { id } = params;
+    if (id === "room-1") {
+      return HttpResponse.json(mockRoomDetail);
+    }
+    return new HttpResponse(null, { status: 404 });
+  }),
+
+  http.post(`${API_BASE}/api/schools/:schoolId/rooms`, async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json(
+      {
+        ...mockRoomDetail,
+        ...(body as object),
+        id: "new-room-id",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      { status: 201 },
+    );
+  }),
+
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/rooms/:id`,
+    async ({ params, request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        ...mockRoomDetail,
+        ...(body as object),
+        id: params.id,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(`${API_BASE}/api/schools/:schoolId/rooms/:id`, () => {
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // School Years
+  http.get(`${API_BASE}/api/schools/:schoolId/school-years`, () => {
+    return HttpResponse.json(mockSchoolYears);
+  }),
+
+  http.get(
+    `${API_BASE}/api/schools/:schoolId/school-years/:id`,
+    ({ params }) => {
+      const { id } = params;
+      if (id === "year-1") {
+        return HttpResponse.json(mockSchoolYearDetail);
+      }
+      return new HttpResponse(null, { status: 404 });
+    },
+  ),
+
+  http.post(
+    `${API_BASE}/api/schools/:schoolId/school-years`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json(
+        {
+          ...mockSchoolYearDetail,
+          ...(body as object),
+          id: "new-year-id",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { status: 201 },
+      );
+    },
+  ),
+
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/school-years/:id`,
+    async ({ params, request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        ...mockSchoolYearDetail,
+        ...(body as object),
+        id: params.id,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(`${API_BASE}/api/schools/:schoolId/school-years/:id`, () => {
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // Terms
+  http.get(
+    `${API_BASE}/api/schools/:schoolId/school-years/:yearId/terms`,
+    () => {
+      return HttpResponse.json(mockTerms);
+    },
+  ),
+
+  http.get(
+    `${API_BASE}/api/schools/:schoolId/school-years/:yearId/terms/:id`,
+    ({ params }) => {
+      const { id } = params;
+      if (id === "term-1") {
+        return HttpResponse.json(mockTermDetail);
+      }
+      return new HttpResponse(null, { status: 404 });
+    },
+  ),
+
+  http.post(
+    `${API_BASE}/api/schools/:schoolId/school-years/:yearId/terms`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json(
+        {
+          ...mockTermDetail,
+          ...(body as object),
+          id: "new-term-id",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { status: 201 },
+      );
+    },
+  ),
+
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/school-years/:yearId/terms/:id`,
+    async ({ params, request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        ...mockTermDetail,
+        ...(body as object),
+        id: params.id,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(
+    `${API_BASE}/api/schools/:schoolId/school-years/:yearId/terms/:id`,
+    () => {
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // Time Slots
+  http.get(`${API_BASE}/api/schools/:schoolId/time-slots`, () => {
+    return HttpResponse.json(mockTimeSlots);
+  }),
+
+  http.get(`${API_BASE}/api/schools/:schoolId/time-slots/:id`, ({ params }) => {
+    const { id } = params;
+    if (id === "slot-1") {
+      return HttpResponse.json(mockTimeSlotDetail);
+    }
+    return new HttpResponse(null, { status: 404 });
+  }),
+
+  http.post(
+    `${API_BASE}/api/schools/:schoolId/time-slots`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json(
+        {
+          ...mockTimeSlotDetail,
+          ...(body as object),
+          id: "new-slot-id",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { status: 201 },
+      );
+    },
+  ),
+
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/time-slots/:id`,
+    async ({ params, request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        ...mockTimeSlotDetail,
+        ...(body as object),
+        id: params.id,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(`${API_BASE}/api/schools/:schoolId/time-slots/:id`, () => {
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // Lessons
+  http.get(`${API_BASE}/api/schools/:schoolId/terms/:termId/lessons`, () => {
+    return HttpResponse.json(mockLessons);
+  }),
+
+  http.get(
+    `${API_BASE}/api/schools/:schoolId/terms/:termId/lessons/:id`,
+    ({ params }) => {
+      const { id } = params;
+      if (id === "lesson-1") {
+        return HttpResponse.json(mockLessonDetail);
+      }
+      return new HttpResponse(null, { status: 404 });
+    },
+  ),
+
+  http.post(
+    `${API_BASE}/api/schools/:schoolId/terms/:termId/lessons`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json(
+        {
+          ...mockLessonDetail,
+          ...(body as object),
+          id: "new-lesson-id",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { status: 201 },
+      );
+    },
+  ),
+
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/terms/:termId/lessons/:id`,
+    async ({ params, request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        ...mockLessonDetail,
+        ...(body as object),
+        id: params.id,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(
+    `${API_BASE}/api/schools/:schoolId/terms/:termId/lessons/:id`,
+    () => {
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // Memberships
+  http.get(`${API_BASE}/api/schools/:schoolId/members`, () => {
+    return HttpResponse.json(mockMemberships);
+  }),
+
+  http.get(`${API_BASE}/api/schools/:schoolId/members/:id`, ({ params }) => {
+    const { id } = params;
+    if (id === "membership-1") {
+      return HttpResponse.json(mockMembershipDetail);
+    }
+    return new HttpResponse(null, { status: 404 });
+  }),
+
+  http.post(
+    `${API_BASE}/api/schools/:schoolId/members`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json(
+        {
+          ...mockMembershipDetail,
+          ...(body as object),
+          id: "new-membership-id",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { status: 201 },
+      );
+    },
+  ),
+
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/members/:id`,
+    async ({ params, request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        ...mockMembershipDetail,
+        ...(body as object),
+        id: params.id,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(`${API_BASE}/api/schools/:schoolId/members/:id`, () => {
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // Access Requests
+  http.get(`${API_BASE}/api/schools/:schoolId/access-requests`, () => {
+    return HttpResponse.json(mockAccessRequests);
+  }),
+
+  http.get(
+    `${API_BASE}/api/schools/:schoolId/access-requests/:id`,
+    ({ params }) => {
+      const { id } = params;
+      if (id === "request-1") {
+        return HttpResponse.json(mockAccessRequestDetail);
+      }
+      return new HttpResponse(null, { status: 404 });
+    },
+  ),
+
+  http.post(
+    `${API_BASE}/api/schools/:schoolId/access-requests`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json(
+        {
+          ...mockAccessRequestDetail,
+          ...(body as object),
+          id: "new-request-id",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { status: 201 },
+      );
+    },
+  ),
+
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/access-requests/:id`,
+    async ({ params, request }) => {
+      const body = (await request.json()) as { decision: string };
+      const status = body.decision === "APPROVE" ? "APPROVED" : "REJECTED";
+      return HttpResponse.json({
+        ...mockAccessRequestDetail,
+        id: params.id,
+        status,
+        reviewedById: "user-1",
+        reviewedByName: "Test User",
+        reviewedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(`${API_BASE}/api/users/me/access-requests/:id`, () => {
+    return new HttpResponse(null, { status: 204 });
   }),
 ];
 
