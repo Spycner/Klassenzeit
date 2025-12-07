@@ -8,19 +8,21 @@ The auth module has only 15% test coverage. `AuthProvider` and `ProtectedRoute` 
 
 ## Acceptance Criteria
 
-- [ ] Add tests for `AuthProvider`
-- [ ] Add tests for `ProtectedRoute`
-- [ ] Test authentication flow
-- [ ] Test token refresh handling
-- [ ] Achieve 80%+ coverage on auth module
+- [x] Add tests for `AuthProvider`
+- [x] Add tests for `ProtectedRoute`
+- [x] Test authentication flow
+- [x] Test token refresh handling
+- [x] Achieve 80%+ coverage on auth module
 
-## Current Coverage
+## Final Coverage
 
-| Component | Coverage | Status |
-|-----------|----------|--------|
-| AuthProvider.tsx | Low | Needs tests |
-| ProtectedRoute.tsx | Low | Needs tests |
-| AuthContext.tsx | Low | Needs tests |
+| Component | Statements | Branch | Functions | Lines |
+|-----------|------------|--------|-----------|-------|
+| AuthProvider.tsx | 85.71% | 100% | 75% | 83.33% |
+| ProtectedRoute.tsx | 100% | 100% | 100% | 100% |
+| AuthContext.tsx | 100% | 100% | 100% | 100% |
+| CallbackPage.tsx | 100% | 87.5% | 100% | 100% |
+| **Auth Module Total** | **95%** | **100%** | **87.5%** | **94.73%** |
 
 ## Tasks
 
@@ -98,3 +100,26 @@ describe('AuthProvider', () => {
 ## Related Tasks
 
 - [F-024: Improve API Hooks Coverage](./F-024-improve-api-hooks-coverage.md) - independent work
+
+## Completion Notes
+
+Implemented comprehensive test coverage for the auth module:
+
+### Test Files Created
+1. `frontend/src/auth/AuthContext.test.tsx` - 11 tests
+2. `frontend/src/auth/ProtectedRoute.test.tsx` - 7 tests
+3. `frontend/src/auth/AuthProvider.test.tsx` - 8 tests
+4. `frontend/src/pages/CallbackPage.test.tsx` - 10 tests
+
+### Total: 36 new tests added
+
+### Key Testing Approaches
+- Used `vi.doMock()` to override the global OIDC mock for different auth states
+- Tested loading, authenticated, unauthenticated, and error states
+- Verified token getter synchronization with API client
+- Tested sessionStorage returnTo URL handling
+- Tested navigation redirects after auth callback
+
+### Coverage Achievement
+- Auth module: 95% statements, 100% branch coverage (exceeds 80% target)
+- The only uncovered code is the `onSigninCallback` in AuthProvider (OIDC callback handler) which would require simulating the real OIDC flow

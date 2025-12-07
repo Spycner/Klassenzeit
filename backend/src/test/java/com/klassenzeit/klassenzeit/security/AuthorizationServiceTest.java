@@ -1,6 +1,7 @@
 package com.klassenzeit.klassenzeit.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.klassenzeit.klassenzeit.AbstractIntegrationTest;
 import com.klassenzeit.klassenzeit.TestDataBuilder;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -147,6 +149,319 @@ class AuthorizationServiceTest extends AbstractIntegrationTest {
       boolean result = authorizationService.canAccessSchoolByIdentifier("not-a-uuid");
 
       assertThat(result).isTrue();
+    }
+  }
+
+  @Nested
+  class IsPlatformAdmin {
+
+    @Test
+    @WithMockCurrentUser(isPlatformAdmin = true)
+    void platformAdmin_returnsTrue() {
+      assertThat(authorizationService.isPlatformAdmin()).isTrue();
+    }
+
+    @Test
+    @WithMockCurrentUser(isPlatformAdmin = false)
+    void nonAdmin_returnsFalse() {
+      assertThat(authorizationService.isPlatformAdmin()).isFalse();
+    }
+  }
+
+  @Nested
+  class CanAccessSchool {
+
+    @Test
+    @WithMockCurrentUser(isPlatformAdmin = true)
+    void platformAdmin_canAccessAnySchool() {
+      School school = testData.school().withSlug("any-school").persist();
+      entityManager.flush();
+
+      assertThat(authorizationService.canAccessSchool(school.getId())).isTrue();
+    }
+
+    @Test
+    void member_canAccessOwnSchool() {
+      AppUser user = testData.appUser().withEmail("member@test.com").persist();
+      School school = testData.school().withSlug("member-school").persist();
+      testData.membership(school, user).withRole(SchoolRole.TEACHER).persist();
+      entityManager.flush();
+
+      setCurrentUser(user.getId(), Map.of(school.getId(), SchoolRole.TEACHER));
+
+      assertThat(authorizationService.canAccessSchool(school.getId())).isTrue();
+    }
+
+    @Test
+    void member_cannotAccessOtherSchool() {
+      School school = testData.school().withSlug("other-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of());
+
+      assertThat(authorizationService.canAccessSchool(school.getId())).isFalse();
+    }
+  }
+
+  @Nested
+  class CanManageSchool {
+
+    @Test
+    @WithMockCurrentUser(isPlatformAdmin = true)
+    void platformAdmin_canManageAnySchool() {
+      School school = testData.school().withSlug("any-school").persist();
+      entityManager.flush();
+
+      assertThat(authorizationService.canManageSchool(school.getId())).isTrue();
+    }
+
+    @Test
+    void schoolAdmin_canManageSchool() {
+      School school = testData.school().withSlug("managed-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.SCHOOL_ADMIN));
+
+      assertThat(authorizationService.canManageSchool(school.getId())).isTrue();
+    }
+
+    @Test
+    void planner_canManageSchool() {
+      School school = testData.school().withSlug("planned-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.PLANNER));
+
+      assertThat(authorizationService.canManageSchool(school.getId())).isTrue();
+    }
+
+    @Test
+    void teacher_cannotManageSchool() {
+      School school = testData.school().withSlug("teacher-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.TEACHER));
+
+      assertThat(authorizationService.canManageSchool(school.getId())).isFalse();
+    }
+
+    @Test
+    void viewer_cannotManageSchool() {
+      School school = testData.school().withSlug("viewer-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.VIEWER));
+
+      assertThat(authorizationService.canManageSchool(school.getId())).isFalse();
+    }
+  }
+
+  @Nested
+  class IsSchoolAdmin {
+
+    @Test
+    @WithMockCurrentUser(isPlatformAdmin = true)
+    void platformAdmin_isTreatedAsSchoolAdmin() {
+      School school = testData.school().withSlug("any-school").persist();
+      entityManager.flush();
+
+      assertThat(authorizationService.isSchoolAdmin(school.getId())).isTrue();
+    }
+
+    @Test
+    void schoolAdmin_isSchoolAdmin() {
+      School school = testData.school().withSlug("admin-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.SCHOOL_ADMIN));
+
+      assertThat(authorizationService.isSchoolAdmin(school.getId())).isTrue();
+    }
+
+    @Test
+    void planner_isNotSchoolAdmin() {
+      School school = testData.school().withSlug("planner-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.PLANNER));
+
+      assertThat(authorizationService.isSchoolAdmin(school.getId())).isFalse();
+    }
+
+    @Test
+    void teacher_isNotSchoolAdmin() {
+      School school = testData.school().withSlug("teacher-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.TEACHER));
+
+      assertThat(authorizationService.isSchoolAdmin(school.getId())).isFalse();
+    }
+  }
+
+  @Nested
+  class HasRole {
+
+    @Test
+    void matchingRole_returnsTrue() {
+      School school = testData.school().withSlug("role-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.TEACHER));
+
+      assertThat(authorizationService.hasRole(school.getId(), SchoolRole.TEACHER)).isTrue();
+    }
+
+    @Test
+    void nonMatchingRole_returnsFalse() {
+      School school = testData.school().withSlug("role-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.TEACHER));
+
+      assertThat(authorizationService.hasRole(school.getId(), SchoolRole.SCHOOL_ADMIN)).isFalse();
+    }
+
+    @Test
+    void multipleRoles_matchesAny() {
+      School school = testData.school().withSlug("multi-role-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.PLANNER));
+
+      assertThat(
+              authorizationService.hasRole(
+                  school.getId(), SchoolRole.SCHOOL_ADMIN, SchoolRole.PLANNER))
+          .isTrue();
+    }
+
+    @Test
+    void noMembership_returnsFalse() {
+      School school = testData.school().withSlug("no-member-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of());
+
+      assertThat(authorizationService.hasRole(school.getId(), SchoolRole.TEACHER)).isFalse();
+    }
+  }
+
+  @Nested
+  class CanListSchools {
+
+    @Test
+    @WithMockCurrentUser(isPlatformAdmin = true)
+    void platformAdmin_canList() {
+      assertThat(authorizationService.canListSchools()).isTrue();
+    }
+
+    @Test
+    void userWithMembership_canList() {
+      School school = testData.school().withSlug("member-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.VIEWER));
+
+      assertThat(authorizationService.canListSchools()).isTrue();
+    }
+
+    @Test
+    void userWithNoMembership_cannotList() {
+      setCurrentUser(UUID.randomUUID(), Map.of());
+
+      assertThat(authorizationService.canListSchools()).isFalse();
+    }
+  }
+
+  @Nested
+  class CanSearchUsers {
+
+    @Test
+    @WithMockCurrentUser(isPlatformAdmin = true)
+    void platformAdmin_canSearch() {
+      assertThat(authorizationService.canSearchUsers()).isTrue();
+    }
+
+    @Test
+    void userWithMembership_canSearch() {
+      School school = testData.school().withSlug("search-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.VIEWER));
+
+      assertThat(authorizationService.canSearchUsers()).isTrue();
+    }
+
+    @Test
+    void userWithNoMembership_cannotSearch() {
+      setCurrentUser(UUID.randomUUID(), Map.of());
+
+      assertThat(authorizationService.canSearchUsers()).isFalse();
+    }
+  }
+
+  @Nested
+  class CanManageMembers {
+
+    @Test
+    @WithMockCurrentUser(isPlatformAdmin = true)
+    void platformAdmin_canManageMembers() {
+      School school = testData.school().withSlug("any-school").persist();
+      entityManager.flush();
+
+      assertThat(authorizationService.canManageMembers(school.getId())).isTrue();
+    }
+
+    @Test
+    void schoolAdmin_canManageMembers() {
+      School school = testData.school().withSlug("admin-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.SCHOOL_ADMIN));
+
+      assertThat(authorizationService.canManageMembers(school.getId())).isTrue();
+    }
+
+    @Test
+    void planner_cannotManageMembers() {
+      School school = testData.school().withSlug("planner-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.PLANNER));
+
+      assertThat(authorizationService.canManageMembers(school.getId())).isFalse();
+    }
+
+    @Test
+    void teacher_cannotManageMembers() {
+      School school = testData.school().withSlug("teacher-school").persist();
+      entityManager.flush();
+
+      setCurrentUser(UUID.randomUUID(), Map.of(school.getId(), SchoolRole.TEACHER));
+
+      assertThat(authorizationService.canManageMembers(school.getId())).isFalse();
+    }
+  }
+
+  @Nested
+  class GetCurrentUser {
+
+    @Test
+    void noAuthentication_throwsAccessDenied() {
+      SecurityContextHolder.clearContext();
+
+      assertThatThrownBy(authorizationService::getCurrentUser)
+          .isInstanceOf(AccessDeniedException.class)
+          .hasMessage("No authenticated user");
+    }
+
+    @Test
+    @WithMockCurrentUser(email = "test@example.com", displayName = "Test User")
+    void validAuthentication_returnsCurrentUser() {
+      CurrentUser user = authorizationService.getCurrentUser();
+
+      assertThat(user.email()).isEqualTo("test@example.com");
+      assertThat(user.displayName()).isEqualTo("Test User");
     }
   }
 
