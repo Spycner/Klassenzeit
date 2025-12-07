@@ -46,7 +46,7 @@ public class SchoolMembershipService {
 
   /** List all active members of a school. */
   public List<MembershipSummary> findAllBySchool(UUID schoolId) {
-    return membershipRepository.findBySchoolIdAndActiveTrue(schoolId).stream()
+    return membershipRepository.findBySchoolIdAndActiveTrueWithUser(schoolId).stream()
         .map(this::toSummary)
         .toList();
   }

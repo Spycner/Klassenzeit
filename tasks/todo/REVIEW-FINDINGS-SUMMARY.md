@@ -6,7 +6,6 @@ Generated from comprehensive review of `feat/review-setup` branch on 2025-12-07.
 
 | ID | Task | Priority | Effort | Can Work Alone |
 |----|------|----------|--------|----------------|
-| B-022 | Fix Critical Security Issues | HIGH | Small | Yes |
 | B-023 | Fix N+1 Query Patterns | MEDIUM | Medium | Yes |
 | B-024 | Improve Security Test Coverage | MEDIUM | Medium | Yes |
 | B-025 | Improve User Package Coverage | MEDIUM | Medium | Yes |
@@ -22,19 +21,6 @@ Generated from comprehensive review of `feat/review-setup` branch on 2025-12-07.
 
 ## Logical Groupings
 
-### Group 1: Blocking Issues (Do First)
-
-**Must complete before merging `feat/review-setup`:**
-
-```
-┌─────────────────────────────────────┐
-│  B-022: Fix Critical Security       │
-│  - @Valid annotation                │
-│  - @Size constraint                 │
-│  - Exception type leakage           │
-│  Effort: ~30 minutes                │
-└─────────────────────────────────────┘
-```
 
 ### Group 2: Backend Quality (Can Work Together)
 

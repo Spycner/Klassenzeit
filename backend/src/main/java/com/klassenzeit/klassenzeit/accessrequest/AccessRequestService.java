@@ -68,7 +68,7 @@ public class AccessRequestService {
   public AccessRequestResponse findById(UUID schoolId, UUID requestId) {
     SchoolAccessRequest request =
         accessRequestRepository
-            .findByIdAndSchoolId(requestId, schoolId)
+            .findByIdAndSchoolIdWithDetails(requestId, schoolId)
             .orElseThrow(() -> new EntityNotFoundException("AccessRequest", requestId));
     return toResponse(request);
   }
