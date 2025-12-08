@@ -1,5 +1,6 @@
 package com.klassenzeit.klassenzeit.teacher;
 
+import com.klassenzeit.klassenzeit.schoolclass.dto.SchoolClassSummary;
 import com.klassenzeit.klassenzeit.teacher.dto.CreateTeacherRequest;
 import com.klassenzeit.klassenzeit.teacher.dto.TeacherResponse;
 import com.klassenzeit.klassenzeit.teacher.dto.TeacherSummary;
@@ -73,5 +74,12 @@ public class TeacherController {
   @PreAuthorize("@authz.canManageSchool(#schoolId)")
   public void deletePermanent(@PathVariable UUID schoolId, @PathVariable UUID id) {
     teacherService.deletePermanent(schoolId, id);
+  }
+
+  @GetMapping("/{id}/class-teacher-assignments")
+  @PreAuthorize("@authz.canAccessSchool(#schoolId)")
+  public List<SchoolClassSummary> getClassTeacherAssignments(
+      @PathVariable UUID schoolId, @PathVariable UUID id) {
+    return teacherService.getClassTeacherAssignments(schoolId, id);
   }
 }

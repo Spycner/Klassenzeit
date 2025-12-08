@@ -22,6 +22,7 @@ export interface UpdateSchoolClassRequest {
    */
   studentCount?: number;
   classTeacherId?: string;
+  clearClassTeacher?: boolean;
   isActive?: boolean;
   version?: number;
 }

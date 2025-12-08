@@ -10,7 +10,8 @@ import { AppLayout } from "@/components/layout";
 import { SchoolProvider } from "@/contexts/SchoolContext";
 import { defaultLanguage } from "@/i18n";
 import { CallbackPage } from "@/pages/CallbackPage";
-import { ClassesPage } from "@/pages/ClassesPage";
+import { ClassDetailPage } from "@/pages/ClassDetailPage";
+import { ClassesListPage } from "@/pages/ClassesListPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { Home } from "@/pages/Home";
 import { NotFoundPage } from "@/pages/NotFoundPage";
@@ -75,7 +76,9 @@ function App() {
                     <Route path="rooms" element={<RoomsListPage />} />
                     <Route path="rooms/new" element={<RoomDetailPage />} />
                     <Route path="rooms/:id" element={<RoomDetailPage />} />
-                    <Route path="classes" element={<ClassesPage />} />
+                    <Route path="classes" element={<ClassesListPage />} />
+                    <Route path="classes/new" element={<ClassDetailPage />} />
+                    <Route path="classes/:id" element={<ClassDetailPage />} />
                     <Route path="timeslots" element={<TimeSlotsPage />} />
                     <Route path="timetable" element={<TimetablePage />} />
                     <Route path="schools" element={<SchoolsListPage />} />

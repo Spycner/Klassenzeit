@@ -10,5 +10,6 @@ export interface SchoolClassSummary {
   name?: string;
   gradeLevel?: number;
   studentCount?: number;
+  classTeacherName?: string;
   isActive?: boolean;
 }

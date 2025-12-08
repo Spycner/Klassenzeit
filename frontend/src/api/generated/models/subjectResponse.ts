@@ -10,6 +10,7 @@ export interface SubjectResponse {
   name?: string;
   abbreviation?: string;
   color?: string;
+  needsSpecialRoom?: boolean;
   createdAt?: string;
   updatedAt?: string;
   version?: number;

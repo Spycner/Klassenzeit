@@ -79,6 +79,17 @@
       }
     },
     "noSchoolAvailable": "No school available. Please create a school first.",
+    "classTeacherAssignments": {
+      "title": "Class Teacher For",
+      "empty": "Not assigned as class teacher for any class.",
+      "grade": "Grade {{level}}",
+      "add": "Assign Class",
+      "class": "Class",
+      "selectClass": "Select a class...",
+      "searchClass": "Search classes...",
+      "noClassesFound": "No classes found.",
+      "unassign": "Remove as class teacher"
+    },
     "availability": {
       "title": "Weekly Availability",
       "description": "Click cells to cycle through availability states. Changes are saved when you click Save.",
@@ -203,7 +214,46 @@
   },
   "classes": {
     "title": "Classes",
-    "description": "Manage your school's classes here."
+    "description": "Manage your school's classes here.",
+    "editTitle": "Edit Class",
+    "newTitle": "New Class",
+    "addClass": "Add Class",
+    "delete": "Delete",
+    "columns": {
+      "name": "Name",
+      "gradeLevel": "Grade",
+      "studentCount": "Students",
+      "classTeacher": "Class Teacher",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "empty": {
+      "title": "No classes yet",
+      "description": "Add your first class to get started with scheduling."
+    },
+    "form": {
+      "name": "Class Name",
+      "namePlaceholder": "e.g. 3a, 5b",
+      "gradeLevel": "Grade Level",
+      "gradeLevelPlaceholder": "e.g. 5",
+      "studentCount": "Student Count",
+      "studentCountPlaceholder": "e.g. 25",
+      "classTeacher": "Class Teacher",
+      "classTeacherPlaceholder": "Select a teacher...",
+      "classTeacherNone": "None",
+      "create": "Create Class"
+    },
+    "confirmDelete": {
+      "title": "Delete Class?",
+      "description": "This will deactivate this class. It can be reactivated later."
+    },
+    "noSchoolAvailable": "No school available. Please create a school first.",
+    "created": "Class created successfully",
+    "updated": "Class updated successfully",
+    "deleted": "Class deleted successfully"
   },
   "timeSlots": {
     "title": "Time Slots",

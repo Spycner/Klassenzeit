@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useSchoolContext } from "@/contexts/SchoolContext";
 import {
   AvailabilitySection,
+  ClassTeacherAssignmentsSection,
   QualificationsSection,
   TeacherForm,
   type TeacherFormData,
@@ -157,6 +158,7 @@ export function TeacherDetailPage() {
 
       {!isNew && id && schoolId && (
         <>
+          <ClassTeacherAssignmentsSection schoolId={schoolId} teacherId={id} />
           <QualificationsSection schoolId={schoolId} teacherId={id} />
           <AvailabilitySection schoolId={schoolId} teacherId={id} />
         </>

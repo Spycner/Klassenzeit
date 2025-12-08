@@ -95,6 +95,65 @@ export const mockTeacherDetail: TeacherResponse = {
   updatedAt: "2024-01-01T00:00:00Z",
 };
 
+// Qualifications mock data
+export const mockQualifications = [
+  {
+    id: "qual-1",
+    subjectId: "subject-1",
+    subjectName: "Mathematics",
+    subjectAbbreviation: "MA",
+    isPrimary: true,
+  },
+  {
+    id: "qual-2",
+    subjectId: "subject-2",
+    subjectName: "English",
+    subjectAbbreviation: "EN",
+    isPrimary: false,
+  },
+];
+
+export const mockQualificationDetail = {
+  id: "qual-1",
+  subjectId: "subject-1",
+  subjectName: "Mathematics",
+  subjectAbbreviation: "MA",
+  isPrimary: true,
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
+};
+
+// Availability mock data
+export const mockAvailability = [
+  {
+    id: "avail-1",
+    timeSlotId: "timeslot-1",
+    dayOfWeek: "MONDAY",
+    startTime: "08:00",
+    endTime: "09:00",
+    type: "AVAILABLE",
+  },
+  {
+    id: "avail-2",
+    timeSlotId: "timeslot-2",
+    dayOfWeek: "MONDAY",
+    startTime: "09:00",
+    endTime: "10:00",
+    type: "PREFERRED",
+  },
+];
+
+export const mockAvailabilityDetail = {
+  id: "avail-1",
+  timeSlotId: "timeslot-1",
+  dayOfWeek: "MONDAY",
+  startTime: "08:00",
+  endTime: "09:00",
+  type: "AVAILABLE",
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
+};
+
 export const mockSubjects: SubjectSummary[] = [
   {
     id: "subject-1",
@@ -143,8 +202,14 @@ export const mockCurrentUser: UserProfile = {
 
 // Classes mock data
 export const mockClasses: SchoolClassSummary[] = [
-  { id: "class-1", name: "5a", gradeLevel: 5 },
-  { id: "class-2", name: "6b", gradeLevel: 6 },
+  { id: "class-1", name: "5a", gradeLevel: 5, isActive: true },
+  { id: "class-2", name: "6b", gradeLevel: 6, isActive: true },
+  { id: "class-3", name: "7c", gradeLevel: 7, isActive: true },
+];
+
+// Class teacher assignments mock data (classes assigned to teacher-1)
+export const mockClassTeacherAssignments: SchoolClassSummary[] = [
+  { id: "class-1", name: "5a", gradeLevel: 5, isActive: true },
 ];
 
 export const mockClassDetail: SchoolClassResponse = {
@@ -155,6 +220,7 @@ export const mockClassDetail: SchoolClassResponse = {
   classTeacherId: "teacher-1",
   classTeacherName: "John Doe",
   isActive: true,
+  version: 1,
   createdAt: "2024-01-01T00:00:00Z",
   updatedAt: "2024-01-01T00:00:00Z",
 };
@@ -472,6 +538,153 @@ export const handlers = [
         },
         { status: 201 },
       );
+    },
+  ),
+
+  // Update teacher
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/teachers/:id`,
+    async ({ params, request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        ...mockTeacherDetail,
+        ...(body as object),
+        id: params.id,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  // Soft delete teacher
+  http.delete(`${API_BASE}/api/schools/:schoolId/teachers/:id`, () => {
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // Permanent delete teacher
+  http.delete(
+    `${API_BASE}/api/schools/:schoolId/teachers/:id/permanent`,
+    () => {
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // Class teacher assignments
+  http.get(
+    `${API_BASE}/api/schools/:schoolId/teachers/:id/class-teacher-assignments`,
+    () => {
+      return HttpResponse.json(mockClassTeacherAssignments);
+    },
+  ),
+
+  // Qualifications
+  http.get(
+    `${API_BASE}/api/schools/:schoolId/teachers/:teacherId/qualifications`,
+    () => {
+      return HttpResponse.json(mockQualifications);
+    },
+  ),
+
+  http.get(
+    `${API_BASE}/api/schools/:schoolId/teachers/:teacherId/qualifications/:id`,
+    ({ params }) => {
+      const { id } = params;
+      if (id === "qual-1") {
+        return HttpResponse.json(mockQualificationDetail);
+      }
+      return new HttpResponse(null, { status: 404 });
+    },
+  ),
+
+  http.post(
+    `${API_BASE}/api/schools/:schoolId/teachers/:teacherId/qualifications`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json(
+        {
+          ...mockQualificationDetail,
+          ...(body as object),
+          id: "new-qual-id",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { status: 201 },
+      );
+    },
+  ),
+
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/teachers/:teacherId/qualifications/:id`,
+    async ({ params, request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        ...mockQualificationDetail,
+        ...(body as object),
+        id: params.id,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(
+    `${API_BASE}/api/schools/:schoolId/teachers/:teacherId/qualifications/:id`,
+    () => {
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+
+  // Availability
+  http.get(
+    `${API_BASE}/api/schools/:schoolId/teachers/:teacherId/availability`,
+    () => {
+      return HttpResponse.json(mockAvailability);
+    },
+  ),
+
+  http.get(
+    `${API_BASE}/api/schools/:schoolId/teachers/:teacherId/availability/:id`,
+    ({ params }) => {
+      const { id } = params;
+      if (id === "avail-1") {
+        return HttpResponse.json(mockAvailabilityDetail);
+      }
+      return new HttpResponse(null, { status: 404 });
+    },
+  ),
+
+  http.post(
+    `${API_BASE}/api/schools/:schoolId/teachers/:teacherId/availability`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json(
+        {
+          ...mockAvailabilityDetail,
+          ...(body as object),
+          id: "new-avail-id",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        { status: 201 },
+      );
+    },
+  ),
+
+  http.put(
+    `${API_BASE}/api/schools/:schoolId/teachers/:teacherId/availability/:id`,
+    async ({ params, request }) => {
+      const body = await request.json();
+      return HttpResponse.json({
+        ...mockAvailabilityDetail,
+        ...(body as object),
+        id: params.id,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(
+    `${API_BASE}/api/schools/:schoolId/teachers/:teacherId/availability/:id`,
+    () => {
+      return new HttpResponse(null, { status: 204 });
     },
   ),
 

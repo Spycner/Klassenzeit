@@ -9,5 +9,5 @@ export interface RoomSubjectSuitabilitySummary {
   id?: string;
   subjectId?: string;
   subjectName?: string;
-  isRequired?: boolean;
+  subjectColor?: string;
 }

@@ -11,5 +11,6 @@ public record UpdateSchoolClassRequest(
     @Min(1) @Max(13) Short gradeLevel,
     @Min(1) @Max(100) Integer studentCount,
     UUID classTeacherId,
+    Boolean clearClassTeacher,
     Boolean isActive,
     Long version) {}
