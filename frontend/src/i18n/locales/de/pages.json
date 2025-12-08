@@ -143,7 +143,51 @@
   },
   "rooms": {
     "title": "Räume",
-    "description": "Verwalten Sie hier die Räume Ihrer Schule."
+    "description": "Verwalten Sie hier die Räume Ihrer Schule.",
+    "newTitle": "Neuer Raum",
+    "editTitle": "Raum bearbeiten",
+    "addRoom": "Raum hinzufügen",
+    "delete": "Löschen",
+    "created": "Raum erfolgreich erstellt",
+    "updated": "Raum erfolgreich aktualisiert",
+    "deleted": "Raum erfolgreich gelöscht",
+    "columns": {
+      "name": "Name",
+      "building": "Gebäude",
+      "capacity": "Kapazität",
+      "status": "Status"
+    },
+    "empty": {
+      "title": "Noch keine Räume",
+      "description": "Fügen Sie Ihren ersten Raum hinzu."
+    },
+    "form": {
+      "name": "Raumname",
+      "namePlaceholder": "z.B. Raum 101",
+      "building": "Gebäude",
+      "buildingPlaceholder": "z.B. Hauptgebäude",
+      "capacity": "Kapazität",
+      "capacityPlaceholder": "z.B. 30",
+      "create": "Raum erstellen"
+    },
+    "confirmDelete": {
+      "title": "Raum löschen?",
+      "description": "Dieser Raum wird deaktiviert und kann später wieder aktiviert werden."
+    },
+    "noSchoolAvailable": "Bitte wählen Sie zuerst eine Schule aus.",
+    "subjects": {
+      "title": "Fach-Eignung",
+      "description": "Legen Sie fest, welche Fächer in diesem Raum unterrichtet werden können.",
+      "add": "Fach hinzufügen",
+      "remove": "Entfernen",
+      "empty": "Keine Fächer zugewiesen. Jedes Fach kann diesen Raum nutzen.",
+      "subject": "Fach",
+      "selectSubject": "Fach auswählen...",
+      "searchSubject": "Fächer suchen...",
+      "noSubjectsFound": "Keine Fächer gefunden.",
+      "isRequired": "Erforderlich",
+      "isRequiredHelp": "Wenn aktiviert, MUSS dieses Fach in einem geeigneten Raum unterrichtet werden."
+    }
   },
   "classes": {
     "title": "Klassen",

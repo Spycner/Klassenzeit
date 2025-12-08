@@ -14,7 +14,8 @@ import { ClassesPage } from "@/pages/ClassesPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { Home } from "@/pages/Home";
 import { NotFoundPage } from "@/pages/NotFoundPage";
-import { RoomsPage } from "@/pages/RoomsPage";
+import { RoomDetailPage } from "@/pages/RoomDetailPage";
+import { RoomsListPage } from "@/pages/RoomsListPage";
 import { SchoolDetailPage } from "@/pages/SchoolDetailPage";
 import { SchoolsListPage } from "@/pages/SchoolsListPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -71,7 +72,9 @@ function App() {
                       path="subjects/:id"
                       element={<SubjectDetailPage />}
                     />
-                    <Route path="rooms" element={<RoomsPage />} />
+                    <Route path="rooms" element={<RoomsListPage />} />
+                    <Route path="rooms/new" element={<RoomDetailPage />} />
+                    <Route path="rooms/:id" element={<RoomDetailPage />} />
                     <Route path="classes" element={<ClassesPage />} />
                     <Route path="timeslots" element={<TimeSlotsPage />} />
                     <Route path="timetable" element={<TimetablePage />} />

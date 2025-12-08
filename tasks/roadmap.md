@@ -25,8 +25,8 @@ Build out the full frontend application with data management pages:
 
 1. [F-012: Teachers CRUD Pages](done/frontend/F-012-teachers-crud.md) ✅
 2. [F-019: Schools CRUD Pages](done/frontend/F-019-schools-crud.md) ✅
-3. [F-013: Subjects CRUD Pages](todo/frontend/F-013-subjects-crud.md)
-4. [F-014: Rooms CRUD Pages](todo/frontend/F-014-rooms-crud.md)
+3. [F-013: Subjects CRUD Pages](done/frontend/F-013-subjects-crud.md) ✅
+4. [F-014: Rooms CRUD Pages](done/frontend/F-014-rooms-crud.md) ✅
 5. [F-015: Classes CRUD Pages](todo/frontend/F-015-classes-crud.md)
 6. [F-016: Time Slots Configuration](todo/frontend/F-016-timeslots-config.md)
 7. [F-017: Timetable Grid Views](todo/frontend/F-017-timetable-views.md)
@@ -87,7 +87,7 @@ Not tracked as tasks yet. Create task files when ready to work on these:
 - Analytics: Teaching load distribution, room utilization reports
 - Partial Rooms: Support rooms/facilities that are partially available
 - Dedicated Rooms: Support rooms dedicated to a specific subject or class
-- Subject Room Relationships: Signify which subjects can be taught in which rooms
+- ~~Subject Room Relationships: Signify which subjects can be taught in which rooms~~ (Implemented in F-014)
 - Advanced Monitoring: Grafana + Prometheus, centralized logging, Sentry
 - Interactive solving: i.e. user can make manual changes to the schedule and the solver will automatically verify and update the schedule, based on constraints and preferences.
 - Copy ui from claude / anthropic for tasteful frontend.

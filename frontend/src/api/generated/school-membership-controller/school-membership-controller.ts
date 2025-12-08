@@ -22,81 +22,78 @@ import type {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { customFetch } from "../../fetcher";
 import type {
-  CreateSchoolClassRequest,
-  SchoolClassResponse,
-  SchoolClassSummary,
-  UpdateSchoolClassRequest,
+  CreateMembershipRequest,
+  MembershipResponse,
+  MembershipSummary,
+  UpdateMembershipRequest,
 } from ".././models";
 
-export const findById10 = (
+export const findById9 = (
   schoolId: string,
   id: string,
   signal?: AbortSignal,
 ) => {
-  return customFetch<SchoolClassResponse>({
-    url: `/api/schools/${schoolId}/classes/${id}`,
+  return customFetch<MembershipResponse>({
+    url: `/api/schools/${schoolId}/members/${id}`,
     method: "GET",
     signal,
   });
 };
 
-export const getFindById10QueryKey = (schoolId?: string, id?: string) => {
-  return [`/api/schools/${schoolId}/classes/${id}`] as const;
+export const getFindById9QueryKey = (schoolId?: string, id?: string) => {
+  return [`/api/schools/${schoolId}/members/${id}`] as const;
 };
 
-export const getFindById10QueryOptions = <
-  TData = Awaited<ReturnType<typeof findById10>>,
+export const getFindById9QueryOptions = <
+  TData = Awaited<ReturnType<typeof findById9>>,
   TError = unknown,
 >(
   schoolId: string,
   id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findById10>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof findById9>>, TError, TData>
     >;
   },
 ) => {
   const { query: queryOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getFindById10QueryKey(schoolId, id);
+  const queryKey = queryOptions?.queryKey ?? getFindById9QueryKey(schoolId, id);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof findById10>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof findById9>>> = ({
     signal,
-  }) => findById10(schoolId, id, signal);
+  }) => findById9(schoolId, id, signal);
 
   return {
     queryKey,
     queryFn,
     enabled: !!(schoolId && id),
     ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof findById10>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  } as UseQueryOptions<Awaited<ReturnType<typeof findById9>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
 };
 
-export type FindById10QueryResult = NonNullable<
-  Awaited<ReturnType<typeof findById10>>
+export type FindById9QueryResult = NonNullable<
+  Awaited<ReturnType<typeof findById9>>
 >;
-export type FindById10QueryError = unknown;
+export type FindById9QueryError = unknown;
 
-export function useFindById10<
-  TData = Awaited<ReturnType<typeof findById10>>,
+export function useFindById9<
+  TData = Awaited<ReturnType<typeof findById9>>,
   TError = unknown,
 >(
   schoolId: string,
   id: string,
   options: {
     query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findById10>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof findById9>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof findById10>>,
+          Awaited<ReturnType<typeof findById9>>,
           TError,
-          Awaited<ReturnType<typeof findById10>>
+          Awaited<ReturnType<typeof findById9>>
         >,
         "initialData"
       >;
@@ -105,21 +102,21 @@ export function useFindById10<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useFindById10<
-  TData = Awaited<ReturnType<typeof findById10>>,
+export function useFindById9<
+  TData = Awaited<ReturnType<typeof findById9>>,
   TError = unknown,
 >(
   schoolId: string,
   id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findById10>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof findById9>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof findById10>>,
+          Awaited<ReturnType<typeof findById9>>,
           TError,
-          Awaited<ReturnType<typeof findById10>>
+          Awaited<ReturnType<typeof findById9>>
         >,
         "initialData"
       >;
@@ -128,15 +125,15 @@ export function useFindById10<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useFindById10<
-  TData = Awaited<ReturnType<typeof findById10>>,
+export function useFindById9<
+  TData = Awaited<ReturnType<typeof findById9>>,
   TError = unknown,
 >(
   schoolId: string,
   id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findById10>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof findById9>>, TError, TData>
     >;
   },
   queryClient?: QueryClient,
@@ -144,22 +141,22 @@ export function useFindById10<
   queryKey: DataTag<QueryKey, TData, TError>;
 };
 
-export function useFindById10<
-  TData = Awaited<ReturnType<typeof findById10>>,
+export function useFindById9<
+  TData = Awaited<ReturnType<typeof findById9>>,
   TError = unknown,
 >(
   schoolId: string,
   id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findById10>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof findById9>>, TError, TData>
     >;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getFindById10QueryOptions(schoolId, id, options);
+  const queryOptions = getFindById9QueryOptions(schoolId, id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -171,36 +168,36 @@ export function useFindById10<
   return query;
 }
 
-export const update10 = (
+export const update9 = (
   schoolId: string,
   id: string,
-  updateSchoolClassRequest: UpdateSchoolClassRequest,
+  updateMembershipRequest: UpdateMembershipRequest,
 ) => {
-  return customFetch<SchoolClassResponse>({
-    url: `/api/schools/${schoolId}/classes/${id}`,
+  return customFetch<MembershipResponse>({
+    url: `/api/schools/${schoolId}/members/${id}`,
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    data: updateSchoolClassRequest,
+    data: updateMembershipRequest,
   });
 };
 
-export const getUpdate10MutationOptions = <
+export const getUpdate9MutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof update10>>,
+    Awaited<ReturnType<typeof update9>>,
     TError,
-    { schoolId: string; id: string; data: UpdateSchoolClassRequest },
+    { schoolId: string; id: string; data: UpdateMembershipRequest },
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof update10>>,
+  Awaited<ReturnType<typeof update9>>,
   TError,
-  { schoolId: string; id: string; data: UpdateSchoolClassRequest },
+  { schoolId: string; id: string; data: UpdateMembershipRequest },
   TContext
 > => {
-  const mutationKey = ["update10"];
+  const mutationKey = ["update9"];
   const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -210,67 +207,67 @@ export const getUpdate10MutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof update10>>,
-    { schoolId: string; id: string; data: UpdateSchoolClassRequest }
+    Awaited<ReturnType<typeof update9>>,
+    { schoolId: string; id: string; data: UpdateMembershipRequest }
   > = (props) => {
     const { schoolId, id, data } = props ?? {};
 
-    return update10(schoolId, id, data);
+    return update9(schoolId, id, data);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type Update10MutationResult = NonNullable<
-  Awaited<ReturnType<typeof update10>>
+export type Update9MutationResult = NonNullable<
+  Awaited<ReturnType<typeof update9>>
 >;
-export type Update10MutationBody = UpdateSchoolClassRequest;
-export type Update10MutationError = unknown;
+export type Update9MutationBody = UpdateMembershipRequest;
+export type Update9MutationError = unknown;
 
-export const useUpdate10 = <TError = unknown, TContext = unknown>(
+export const useUpdate9 = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof update10>>,
+      Awaited<ReturnType<typeof update9>>,
       TError,
-      { schoolId: string; id: string; data: UpdateSchoolClassRequest },
+      { schoolId: string; id: string; data: UpdateMembershipRequest },
       TContext
     >;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof update10>>,
+  Awaited<ReturnType<typeof update9>>,
   TError,
-  { schoolId: string; id: string; data: UpdateSchoolClassRequest },
+  { schoolId: string; id: string; data: UpdateMembershipRequest },
   TContext
 > => {
-  const mutationOptions = getUpdate10MutationOptions(options);
+  const mutationOptions = getUpdate9MutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
-export const delete10 = (schoolId: string, id: string) => {
+export const delete9 = (schoolId: string, id: string) => {
   return customFetch<void>({
-    url: `/api/schools/${schoolId}/classes/${id}`,
+    url: `/api/schools/${schoolId}/members/${id}`,
     method: "DELETE",
   });
 };
 
-export const getDelete10MutationOptions = <
+export const getDelete9MutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof delete10>>,
+    Awaited<ReturnType<typeof delete9>>,
     TError,
     { schoolId: string; id: string },
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof delete10>>,
+  Awaited<ReturnType<typeof delete9>>,
   TError,
   { schoolId: string; id: string },
   TContext
 > => {
-  const mutationKey = ["delete10"];
+  const mutationKey = ["delete9"];
   const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -280,27 +277,27 @@ export const getDelete10MutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof delete10>>,
+    Awaited<ReturnType<typeof delete9>>,
     { schoolId: string; id: string }
   > = (props) => {
     const { schoolId, id } = props ?? {};
 
-    return delete10(schoolId, id);
+    return delete9(schoolId, id);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type Delete10MutationResult = NonNullable<
-  Awaited<ReturnType<typeof delete10>>
+export type Delete9MutationResult = NonNullable<
+  Awaited<ReturnType<typeof delete9>>
 >;
 
-export type Delete10MutationError = unknown;
+export type Delete9MutationError = unknown;
 
-export const useDelete10 = <TError = unknown, TContext = unknown>(
+export const useDelete9 = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof delete10>>,
+      Awaited<ReturnType<typeof delete9>>,
       TError,
       { schoolId: string; id: string },
       TContext
@@ -308,75 +305,75 @@ export const useDelete10 = <TError = unknown, TContext = unknown>(
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof delete10>>,
+  Awaited<ReturnType<typeof delete9>>,
   TError,
   { schoolId: string; id: string },
   TContext
 > => {
-  const mutationOptions = getDelete10MutationOptions(options);
+  const mutationOptions = getDelete9MutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
-export const findAll12 = (schoolId: string, signal?: AbortSignal) => {
-  return customFetch<SchoolClassSummary[]>({
-    url: `/api/schools/${schoolId}/classes`,
+export const findAll11 = (schoolId: string, signal?: AbortSignal) => {
+  return customFetch<MembershipSummary[]>({
+    url: `/api/schools/${schoolId}/members`,
     method: "GET",
     signal,
   });
 };
 
-export const getFindAll12QueryKey = (schoolId?: string) => {
-  return [`/api/schools/${schoolId}/classes`] as const;
+export const getFindAll11QueryKey = (schoolId?: string) => {
+  return [`/api/schools/${schoolId}/members`] as const;
 };
 
-export const getFindAll12QueryOptions = <
-  TData = Awaited<ReturnType<typeof findAll12>>,
+export const getFindAll11QueryOptions = <
+  TData = Awaited<ReturnType<typeof findAll11>>,
   TError = unknown,
 >(
   schoolId: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findAll12>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof findAll11>>, TError, TData>
     >;
   },
 ) => {
   const { query: queryOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getFindAll12QueryKey(schoolId);
+  const queryKey = queryOptions?.queryKey ?? getFindAll11QueryKey(schoolId);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof findAll12>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof findAll11>>> = ({
     signal,
-  }) => findAll12(schoolId, signal);
+  }) => findAll11(schoolId, signal);
 
   return {
     queryKey,
     queryFn,
     enabled: !!schoolId,
     ...queryOptions,
-  } as UseQueryOptions<Awaited<ReturnType<typeof findAll12>>, TError, TData> & {
+  } as UseQueryOptions<Awaited<ReturnType<typeof findAll11>>, TError, TData> & {
     queryKey: DataTag<QueryKey, TData, TError>;
   };
 };
 
-export type FindAll12QueryResult = NonNullable<
-  Awaited<ReturnType<typeof findAll12>>
+export type FindAll11QueryResult = NonNullable<
+  Awaited<ReturnType<typeof findAll11>>
 >;
-export type FindAll12QueryError = unknown;
+export type FindAll11QueryError = unknown;
 
-export function useFindAll12<
-  TData = Awaited<ReturnType<typeof findAll12>>,
+export function useFindAll11<
+  TData = Awaited<ReturnType<typeof findAll11>>,
   TError = unknown,
 >(
   schoolId: string,
   options: {
     query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findAll12>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof findAll11>>, TError, TData>
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof findAll12>>,
+          Awaited<ReturnType<typeof findAll11>>,
           TError,
-          Awaited<ReturnType<typeof findAll12>>
+          Awaited<ReturnType<typeof findAll11>>
         >,
         "initialData"
       >;
@@ -385,20 +382,20 @@ export function useFindAll12<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useFindAll12<
-  TData = Awaited<ReturnType<typeof findAll12>>,
+export function useFindAll11<
+  TData = Awaited<ReturnType<typeof findAll11>>,
   TError = unknown,
 >(
   schoolId: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findAll12>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof findAll11>>, TError, TData>
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof findAll12>>,
+          Awaited<ReturnType<typeof findAll11>>,
           TError,
-          Awaited<ReturnType<typeof findAll12>>
+          Awaited<ReturnType<typeof findAll11>>
         >,
         "initialData"
       >;
@@ -407,14 +404,14 @@ export function useFindAll12<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useFindAll12<
-  TData = Awaited<ReturnType<typeof findAll12>>,
+export function useFindAll11<
+  TData = Awaited<ReturnType<typeof findAll11>>,
   TError = unknown,
 >(
   schoolId: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findAll12>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof findAll11>>, TError, TData>
     >;
   },
   queryClient?: QueryClient,
@@ -422,21 +419,21 @@ export function useFindAll12<
   queryKey: DataTag<QueryKey, TData, TError>;
 };
 
-export function useFindAll12<
-  TData = Awaited<ReturnType<typeof findAll12>>,
+export function useFindAll11<
+  TData = Awaited<ReturnType<typeof findAll11>>,
   TError = unknown,
 >(
   schoolId: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof findAll12>>, TError, TData>
+      UseQueryOptions<Awaited<ReturnType<typeof findAll11>>, TError, TData>
     >;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getFindAll12QueryOptions(schoolId, options);
+  const queryOptions = getFindAll11QueryOptions(schoolId, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -448,37 +445,37 @@ export function useFindAll12<
   return query;
 }
 
-export const create12 = (
+export const create11 = (
   schoolId: string,
-  createSchoolClassRequest: CreateSchoolClassRequest,
+  createMembershipRequest: CreateMembershipRequest,
   signal?: AbortSignal,
 ) => {
-  return customFetch<SchoolClassResponse>({
-    url: `/api/schools/${schoolId}/classes`,
+  return customFetch<MembershipResponse>({
+    url: `/api/schools/${schoolId}/members`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    data: createSchoolClassRequest,
+    data: createMembershipRequest,
     signal,
   });
 };
 
-export const getCreate12MutationOptions = <
+export const getCreate11MutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof create12>>,
+    Awaited<ReturnType<typeof create11>>,
     TError,
-    { schoolId: string; data: CreateSchoolClassRequest },
+    { schoolId: string; data: CreateMembershipRequest },
     TContext
   >;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof create12>>,
+  Awaited<ReturnType<typeof create11>>,
   TError,
-  { schoolId: string; data: CreateSchoolClassRequest },
+  { schoolId: string; data: CreateMembershipRequest },
   TContext
 > => {
-  const mutationKey = ["create12"];
+  const mutationKey = ["create11"];
   const { mutation: mutationOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -488,40 +485,40 @@ export const getCreate12MutationOptions = <
     : { mutation: { mutationKey } };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof create12>>,
-    { schoolId: string; data: CreateSchoolClassRequest }
+    Awaited<ReturnType<typeof create11>>,
+    { schoolId: string; data: CreateMembershipRequest }
   > = (props) => {
     const { schoolId, data } = props ?? {};
 
-    return create12(schoolId, data);
+    return create11(schoolId, data);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type Create12MutationResult = NonNullable<
-  Awaited<ReturnType<typeof create12>>
+export type Create11MutationResult = NonNullable<
+  Awaited<ReturnType<typeof create11>>
 >;
-export type Create12MutationBody = CreateSchoolClassRequest;
-export type Create12MutationError = unknown;
+export type Create11MutationBody = CreateMembershipRequest;
+export type Create11MutationError = unknown;
 
-export const useCreate12 = <TError = unknown, TContext = unknown>(
+export const useCreate11 = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof create12>>,
+      Awaited<ReturnType<typeof create11>>,
       TError,
-      { schoolId: string; data: CreateSchoolClassRequest },
+      { schoolId: string; data: CreateMembershipRequest },
       TContext
     >;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof create12>>,
+  Awaited<ReturnType<typeof create11>>,
   TError,
-  { schoolId: string; data: CreateSchoolClassRequest },
+  { schoolId: string; data: CreateMembershipRequest },
   TContext
 > => {
-  const mutationOptions = getCreate12MutationOptions(options);
+  const mutationOptions = getCreate11MutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

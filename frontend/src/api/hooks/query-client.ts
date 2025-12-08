@@ -124,6 +124,10 @@ export const queryKeys = {
     all: (schoolId: string) => ["schools", schoolId, "rooms"] as const,
     detail: (schoolId: string, id: string) =>
       ["schools", schoolId, "rooms", id] as const,
+    subjects: {
+      all: (schoolId: string, roomId: string) =>
+        ["schools", schoolId, "rooms", roomId, "subjects"] as const,
+    },
   },
 
   // Classes

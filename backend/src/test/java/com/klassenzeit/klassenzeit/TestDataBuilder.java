@@ -9,6 +9,7 @@ import com.klassenzeit.klassenzeit.lesson.Lesson;
 import com.klassenzeit.klassenzeit.membership.SchoolMembership;
 import com.klassenzeit.klassenzeit.membership.SchoolRole;
 import com.klassenzeit.klassenzeit.room.Room;
+import com.klassenzeit.klassenzeit.room.RoomSubjectSuitability;
 import com.klassenzeit.klassenzeit.school.School;
 import com.klassenzeit.klassenzeit.school.SchoolSlugHistory;
 import com.klassenzeit.klassenzeit.school.SchoolYear;
@@ -79,6 +80,10 @@ public class TestDataBuilder {
 
   public TeacherSubjectQualificationBuilder qualification(Teacher teacher, Subject subject) {
     return new TeacherSubjectQualificationBuilder(teacher, subject);
+  }
+
+  public RoomSubjectSuitabilityBuilder roomSuitability(Room room, Subject subject) {
+    return new RoomSubjectSuitabilityBuilder(room, subject);
   }
 
   public TeacherAvailabilityBuilder availability(Teacher teacher) {
@@ -853,6 +858,44 @@ public class TestDataBuilder {
       SchoolSlugHistory history = build();
       entityManager.persist(history);
       return history;
+    }
+  }
+
+  // RoomSubjectSuitability Builder
+  public class RoomSubjectSuitabilityBuilder {
+    private final Room room;
+    private final Subject subject;
+    private boolean isRequired = false;
+    private String notes;
+
+    public RoomSubjectSuitabilityBuilder(Room room, Subject subject) {
+      this.room = room;
+      this.subject = subject;
+    }
+
+    public RoomSubjectSuitabilityBuilder isRequired(boolean isRequired) {
+      this.isRequired = isRequired;
+      return this;
+    }
+
+    public RoomSubjectSuitabilityBuilder withNotes(String notes) {
+      this.notes = notes;
+      return this;
+    }
+
+    public RoomSubjectSuitability build() {
+      RoomSubjectSuitability suitability = new RoomSubjectSuitability();
+      suitability.setRoom(room);
+      suitability.setSubject(subject);
+      suitability.setIsRequired(isRequired);
+      suitability.setNotes(notes);
+      return suitability;
+    }
+
+    public RoomSubjectSuitability persist() {
+      RoomSubjectSuitability suitability = build();
+      entityManager.persist(suitability);
+      return suitability;
     }
   }
 }

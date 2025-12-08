@@ -143,7 +143,51 @@
   },
   "rooms": {
     "title": "Rooms",
-    "description": "Manage your school's rooms here."
+    "description": "Manage your school's rooms here.",
+    "newTitle": "New Room",
+    "editTitle": "Edit Room",
+    "addRoom": "Add Room",
+    "delete": "Delete",
+    "created": "Room created successfully",
+    "updated": "Room updated successfully",
+    "deleted": "Room deleted successfully",
+    "columns": {
+      "name": "Name",
+      "building": "Building",
+      "capacity": "Capacity",
+      "status": "Status"
+    },
+    "empty": {
+      "title": "No rooms yet",
+      "description": "Add your first room to get started."
+    },
+    "form": {
+      "name": "Room Name",
+      "namePlaceholder": "e.g., Room 101",
+      "building": "Building",
+      "buildingPlaceholder": "e.g., Main Building",
+      "capacity": "Capacity",
+      "capacityPlaceholder": "e.g., 30",
+      "create": "Create Room"
+    },
+    "confirmDelete": {
+      "title": "Delete Room?",
+      "description": "This room will be deactivated and can be reactivated later."
+    },
+    "noSchoolAvailable": "Please select a school first.",
+    "subjects": {
+      "title": "Subject Suitability",
+      "description": "Define which subjects can be taught in this room.",
+      "add": "Add Subject",
+      "remove": "Remove",
+      "empty": "No subjects assigned. Any subject can use this room.",
+      "subject": "Subject",
+      "selectSubject": "Select a subject...",
+      "searchSubject": "Search subjects...",
+      "noSubjectsFound": "No subjects found.",
+      "isRequired": "Required",
+      "isRequiredHelp": "If checked, this subject MUST be taught in a suitable room."
+    }
   },
   "classes": {
     "title": "Classes",

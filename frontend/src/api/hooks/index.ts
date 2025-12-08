@@ -38,6 +38,12 @@ export {
   useMemberships,
   useUpdateMembership,
 } from "./use-memberships";
+// Room Subject hooks
+export {
+  useCreateRoomSubject,
+  useDeleteRoomSubject,
+  useRoomSubjects,
+} from "./use-room-subjects";
 // Room hooks
 export {
   useCreateRoom,
