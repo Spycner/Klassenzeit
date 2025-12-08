@@ -272,7 +272,10 @@ describe("useCreateQualification", () => {
       { wrapper: createWrapper() },
     );
 
-    result.current.mutate({ subjectId: "subject-1", isPrimary: true });
+    result.current.mutate({
+      subjectId: "subject-1",
+      qualificationLevel: "PRIMARY",
+    });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
@@ -294,7 +297,7 @@ describe("useUpdateQualification", () => {
 
     result.current.mutate({
       id: "qual-1",
-      data: { isPrimary: false },
+      data: { qualificationLevel: "SECONDARY" },
     });
 
     await waitFor(() => {
@@ -302,7 +305,7 @@ describe("useUpdateQualification", () => {
     });
 
     expect(result.current.data).toMatchObject({
-      isPrimary: false,
+      qualificationLevel: "SECONDARY",
     });
   });
 });
@@ -389,8 +392,9 @@ describe("useCreateAvailability", () => {
     );
 
     result.current.mutate({
-      timeSlotId: "timeslot-3",
-      type: "AVAILABLE",
+      dayOfWeek: 0,
+      period: 3,
+      availabilityType: "AVAILABLE",
     });
 
     await waitFor(() => {
@@ -399,7 +403,8 @@ describe("useCreateAvailability", () => {
 
     expect(result.current.data).toMatchObject({
       id: "new-avail-id",
-      timeSlotId: "timeslot-3",
+      dayOfWeek: 0,
+      period: 3,
     });
   });
 });
@@ -413,7 +418,7 @@ describe("useUpdateAvailability", () => {
 
     result.current.mutate({
       id: "avail-1",
-      data: { type: "PREFERRED" },
+      data: { availabilityType: "PREFERRED" },
     });
 
     await waitFor(() => {
@@ -421,7 +426,7 @@ describe("useUpdateAvailability", () => {
     });
 
     expect(result.current.data).toMatchObject({
-      type: "PREFERRED",
+      availabilityType: "PREFERRED",
     });
   });
 });
