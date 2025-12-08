@@ -80,14 +80,14 @@ export interface RoomSubjectSuitabilitySummary {
 export interface CreateRoomRequest {
   name: string;
   building?: string;
-  capacity: number;
+  capacity?: number;
   features?: string;
 }
 
 export interface UpdateRoomRequest {
   name: string;
   building?: string;
-  capacity: number;
+  capacity?: number;
   features?: string;
 }
 

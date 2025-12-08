@@ -124,7 +124,7 @@ describe("useCreateRoomSubject", () => {
       },
     );
 
-    result.current.mutate({ subjectId: "subject-1", isRequired: false });
+    result.current.mutate({ subjectId: "subject-1" });
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true);

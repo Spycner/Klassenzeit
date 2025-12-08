@@ -11,7 +11,7 @@ const getBaseUrl = (): string => {
 export interface FetcherOptions<TBody = unknown> {
   url: string;
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  params?: Record<string, string>;
+  params?: Record<string, string | number | boolean | undefined>;
   data?: TBody;
   headers?: HeadersInit;
   signal?: AbortSignal;
@@ -32,7 +32,7 @@ export async function customFetch<TData, TBody = unknown>({
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        fullUrl.searchParams.append(key, value);
+        fullUrl.searchParams.append(key, String(value));
       }
     });
   }

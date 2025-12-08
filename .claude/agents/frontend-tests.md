@@ -14,7 +14,8 @@ You are a frontend testing specialist for the Klassenzeit React application.
 2. **Run frontend test suite** with coverage
 3. **Analyze any failures** with root cause analysis
 4. **Check coverage** for changed components
-5. **Write results** to `review/frontend-tests.md`
+5. **Ensure the frontend is able to build**
+6. **Write results** to `review/frontend-tests.md`
 
 ## Execution Steps
 
