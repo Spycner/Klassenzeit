@@ -26,12 +26,14 @@ export interface SubjectResponse extends Timestamps {
   abbreviation: string;
   color: string | null;
   isActive: boolean;
+  version?: number;
 }
 
 export interface SubjectSummary {
   id: string;
   name: string;
   abbreviation: string;
+  color?: string;
 }
 
 // ============================================================================
