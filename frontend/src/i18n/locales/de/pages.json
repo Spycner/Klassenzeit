@@ -130,7 +130,20 @@
       "abbreviationPlaceholder": "MAT",
       "color": "Farbe",
       "colorPlaceholder": "Farbe auswählen...",
+      "needsSpecialRoom": "Benötigt speziellen Raum",
+      "needsSpecialRoomHelp": "Aktivieren, wenn dieses Fach einen speziellen Raum benötigt (z.B. Sport braucht eine Turnhalle, Chemie braucht einen Fachraum).",
       "create": "Fach erstellen"
+    },
+    "rooms": {
+      "title": "Geeignete Räume",
+      "description": "Legen Sie fest, welche Räume für dieses Fach verwendet werden können.",
+      "add": "Raum hinzufügen",
+      "remove": "Raum entfernen",
+      "empty": "Keine Räume zugewiesen. Fügen Sie Räume hinzu, die für dieses Fach geeignet sind.",
+      "room": "Raum",
+      "selectRoom": "Raum auswählen...",
+      "searchRoom": "Räume suchen...",
+      "noRoomsFound": "Keine Räume gefunden."
     },
     "confirmDelete": {
       "title": "Fach löschen?",
@@ -143,7 +156,50 @@
   },
   "rooms": {
     "title": "Räume",
-    "description": "Verwalten Sie hier die Räume Ihrer Schule."
+    "description": "Verwalten Sie hier die Räume Ihrer Schule.",
+    "newTitle": "Neuer Raum",
+    "editTitle": "Raum bearbeiten",
+    "addRoom": "Raum hinzufügen",
+    "delete": "Löschen",
+    "created": "Raum erfolgreich erstellt",
+    "updated": "Raum erfolgreich aktualisiert",
+    "deleted": "Raum erfolgreich gelöscht",
+    "columns": {
+      "name": "Name",
+      "building": "Gebäude",
+      "capacity": "Kapazität",
+      "status": "Status"
+    },
+    "empty": {
+      "title": "Noch keine Räume",
+      "description": "Fügen Sie Ihren ersten Raum hinzu."
+    },
+    "form": {
+      "name": "Raumname",
+      "namePlaceholder": "z.B. Raum 101",
+      "building": "Gebäude",
+      "buildingPlaceholder": "z.B. Hauptgebäude",
+      "capacity": "Kapazität",
+      "capacityPlaceholder": "z.B. 30",
+      "create": "Raum erstellen"
+    },
+    "confirmDelete": {
+      "title": "Raum löschen?",
+      "description": "Dieser Raum wird deaktiviert und kann später wieder aktiviert werden."
+    },
+    "noSchoolAvailable": "Bitte wählen Sie zuerst eine Schule aus.",
+    "subjects": {
+      "title": "Fach-Eignung",
+      "description": "Legen Sie fest, welche Fächer mit Fachraum-Anforderung hier unterrichtet werden können.",
+      "add": "Fach hinzufügen",
+      "remove": "Entfernen",
+      "empty": "Keine Fächer zugewiesen. Fügen Sie Fächer hinzu, die einen speziellen Raum benötigen.",
+      "noSpecialSubjects": "Keine Fächer in dieser Schule benötigen einen speziellen Raum.",
+      "subject": "Fach",
+      "selectSubject": "Fach auswählen...",
+      "searchSubject": "Fächer suchen...",
+      "noSubjectsFound": "Keine Fächer gefunden."
+    }
   },
   "classes": {
     "title": "Klassen",

@@ -117,6 +117,10 @@ export const queryKeys = {
     all: (schoolId: string) => ["schools", schoolId, "subjects"] as const,
     detail: (schoolId: string, id: string) =>
       ["schools", schoolId, "subjects", id] as const,
+    rooms: {
+      all: (schoolId: string, subjectId: string) =>
+        ["schools", schoolId, "subjects", subjectId, "rooms"] as const,
+    },
   },
 
   // Rooms
@@ -124,6 +128,10 @@ export const queryKeys = {
     all: (schoolId: string) => ["schools", schoolId, "rooms"] as const,
     detail: (schoolId: string, id: string) =>
       ["schools", schoolId, "rooms", id] as const,
+    subjects: {
+      all: (schoolId: string, roomId: string) =>
+        ["schools", schoolId, "rooms", roomId, "subjects"] as const,
+    },
   },
 
   // Classes

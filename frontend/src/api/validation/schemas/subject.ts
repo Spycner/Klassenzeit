@@ -13,6 +13,7 @@ export const createSubjectSchema = z.object({
     "Abbreviation",
   ),
   color: optionalString(VALIDATION.COLOR_HEX.MAX, "Color"),
+  needsSpecialRoom: z.boolean().optional().default(false),
 });
 
 export const updateSubjectSchema = createSubjectSchema;

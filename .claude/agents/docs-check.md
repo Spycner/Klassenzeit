@@ -26,7 +26,7 @@ You are a documentation and project management specialist.
 
 ### Documentation
 - README updates for setup changes
-- CLAUDE.md updates for workflow changes
+- CLAUDE.md updates for workflow changes (project/CLAUDE.md, project/frontend/CLAUDE.md, project/backend/CLAUDE.md)
 - API documentation for endpoint changes
 - Environment variable documentation
 

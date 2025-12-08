@@ -130,7 +130,20 @@
       "abbreviationPlaceholder": "MATH",
       "color": "Color",
       "colorPlaceholder": "Select a color...",
+      "needsSpecialRoom": "Requires Special Room",
+      "needsSpecialRoomHelp": "Enable if this subject needs a specific type of room (e.g., PE needs a gym, Chemistry needs a lab).",
       "create": "Create Subject"
+    },
+    "rooms": {
+      "title": "Suitable Rooms",
+      "description": "Define which rooms can be used for this subject.",
+      "add": "Add Room",
+      "remove": "Remove room",
+      "empty": "No rooms assigned. Add rooms that can host this subject.",
+      "room": "Room",
+      "selectRoom": "Select a room...",
+      "searchRoom": "Search rooms...",
+      "noRoomsFound": "No rooms found."
     },
     "confirmDelete": {
       "title": "Delete Subject?",
@@ -143,7 +156,50 @@
   },
   "rooms": {
     "title": "Rooms",
-    "description": "Manage your school's rooms here."
+    "description": "Manage your school's rooms here.",
+    "newTitle": "New Room",
+    "editTitle": "Edit Room",
+    "addRoom": "Add Room",
+    "delete": "Delete",
+    "created": "Room created successfully",
+    "updated": "Room updated successfully",
+    "deleted": "Room deleted successfully",
+    "columns": {
+      "name": "Name",
+      "building": "Building",
+      "capacity": "Capacity",
+      "status": "Status"
+    },
+    "empty": {
+      "title": "No rooms yet",
+      "description": "Add your first room to get started."
+    },
+    "form": {
+      "name": "Room Name",
+      "namePlaceholder": "e.g., Room 101",
+      "building": "Building",
+      "buildingPlaceholder": "e.g., Main Building",
+      "capacity": "Capacity",
+      "capacityPlaceholder": "e.g., 30",
+      "create": "Create Room"
+    },
+    "confirmDelete": {
+      "title": "Delete Room?",
+      "description": "This room will be deactivated and can be reactivated later."
+    },
+    "noSchoolAvailable": "Please select a school first.",
+    "subjects": {
+      "title": "Subject Suitability",
+      "description": "Define which subjects requiring a special room can be taught here.",
+      "add": "Add Subject",
+      "remove": "Remove",
+      "empty": "No subjects assigned. Add subjects that require a special room.",
+      "noSpecialSubjects": "No subjects in this school require a special room.",
+      "subject": "Subject",
+      "selectSubject": "Select a subject...",
+      "searchSubject": "Search subjects...",
+      "noSubjectsFound": "No subjects found."
+    }
   },
   "classes": {
     "title": "Classes",

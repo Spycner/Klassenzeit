@@ -9,6 +9,7 @@ import com.klassenzeit.klassenzeit.lesson.Lesson;
 import com.klassenzeit.klassenzeit.membership.SchoolMembership;
 import com.klassenzeit.klassenzeit.membership.SchoolRole;
 import com.klassenzeit.klassenzeit.room.Room;
+import com.klassenzeit.klassenzeit.room.RoomSubjectSuitability;
 import com.klassenzeit.klassenzeit.school.School;
 import com.klassenzeit.klassenzeit.school.SchoolSlugHistory;
 import com.klassenzeit.klassenzeit.school.SchoolYear;
@@ -79,6 +80,10 @@ public class TestDataBuilder {
 
   public TeacherSubjectQualificationBuilder qualification(Teacher teacher, Subject subject) {
     return new TeacherSubjectQualificationBuilder(teacher, subject);
+  }
+
+  public RoomSubjectSuitabilityBuilder roomSuitability(Room room, Subject subject) {
+    return new RoomSubjectSuitabilityBuilder(room, subject);
   }
 
   public TeacherAvailabilityBuilder availability(Teacher teacher) {
@@ -322,6 +327,7 @@ public class TestDataBuilder {
     private String abbreviation =
         "TST" + UUID.randomUUID().toString().substring(0, 2).toUpperCase();
     private String color = "#3498db";
+    private boolean needsSpecialRoom = false;
 
     public SubjectBuilder(School school) {
       this.school = school;
@@ -342,12 +348,18 @@ public class TestDataBuilder {
       return this;
     }
 
+    public SubjectBuilder needsSpecialRoom(boolean needsSpecialRoom) {
+      this.needsSpecialRoom = needsSpecialRoom;
+      return this;
+    }
+
     public Subject build() {
       Subject subject = new Subject();
       subject.setSchool(school);
       subject.setName(name);
       subject.setAbbreviation(abbreviation);
       subject.setColor(color);
+      subject.setNeedsSpecialRoom(needsSpecialRoom);
       return subject;
     }
 
@@ -853,6 +865,37 @@ public class TestDataBuilder {
       SchoolSlugHistory history = build();
       entityManager.persist(history);
       return history;
+    }
+  }
+
+  // RoomSubjectSuitability Builder
+  public class RoomSubjectSuitabilityBuilder {
+    private final Room room;
+    private final Subject subject;
+    private String notes;
+
+    public RoomSubjectSuitabilityBuilder(Room room, Subject subject) {
+      this.room = room;
+      this.subject = subject;
+    }
+
+    public RoomSubjectSuitabilityBuilder withNotes(String notes) {
+      this.notes = notes;
+      return this;
+    }
+
+    public RoomSubjectSuitability build() {
+      RoomSubjectSuitability suitability = new RoomSubjectSuitability();
+      suitability.setRoom(room);
+      suitability.setSubject(subject);
+      suitability.setNotes(notes);
+      return suitability;
+    }
+
+    public RoomSubjectSuitability persist() {
+      RoomSubjectSuitability suitability = build();
+      entityManager.persist(suitability);
+      return suitability;
     }
   }
 }

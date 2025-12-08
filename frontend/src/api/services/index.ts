@@ -5,10 +5,12 @@
 export { classesApi } from "./classes";
 export { lessonsApi } from "./lessons";
 export { membershipsApi } from "./memberships";
+export { roomSubjectsApi } from "./room-subjects";
 export { roomsApi } from "./rooms";
 export { schoolYearsApi } from "./school-years";
 export { schoolsApi } from "./schools";
 export { solverApi } from "./solver";
+export { subjectRoomsApi } from "./subject-rooms";
 export { subjectsApi } from "./subjects";
 export { availabilityApi, qualificationsApi, teachersApi } from "./teachers";
 export { termsApi } from "./terms";

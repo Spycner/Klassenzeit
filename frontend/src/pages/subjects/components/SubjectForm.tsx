@@ -9,6 +9,7 @@ import {
 } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,9 @@ export function SubjectForm({
   const [name, setName] = useState(subject?.name ?? "");
   const [abbreviation, setAbbreviation] = useState(subject?.abbreviation ?? "");
   const [color, setColor] = useState(subject?.color ?? "");
+  const [needsSpecialRoom, setNeedsSpecialRoom] = useState(
+    subject?.needsSpecialRoom ?? false,
+  );
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -40,6 +44,7 @@ export function SubjectForm({
       name: name.trim(),
       abbreviation: abbreviation.trim(),
       color: color.trim() || undefined,
+      needsSpecialRoom,
     };
     const result = validate(createSubjectSchema, formData);
     if (!result.success) return;
@@ -91,6 +96,27 @@ export function SubjectForm({
                 onChange={setColor}
                 placeholder={t("subjects.form.colorPlaceholder")}
               />
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="needsSpecialRoom"
+              checked={needsSpecialRoom}
+              onCheckedChange={(checked) =>
+                setNeedsSpecialRoom(checked === true)
+              }
+            />
+            <div className="grid gap-1.5 leading-none">
+              <Label
+                htmlFor="needsSpecialRoom"
+                className="font-medium cursor-pointer"
+              >
+                {t("subjects.form.needsSpecialRoom")}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t("subjects.form.needsSpecialRoomHelp")}
+              </p>
             </div>
           </div>
 

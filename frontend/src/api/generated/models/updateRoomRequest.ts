@@ -18,6 +18,10 @@ export interface UpdateRoomRequest {
   building?: string;
   /** @minimum 1 */
   capacity?: number;
+  /**
+   * @minLength 0
+   * @maxLength 4000
+   */
   features?: string;
   isActive?: boolean;
   version?: number;

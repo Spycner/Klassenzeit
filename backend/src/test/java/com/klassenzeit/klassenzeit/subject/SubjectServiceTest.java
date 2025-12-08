@@ -126,7 +126,7 @@ class SubjectServiceTest extends AbstractIntegrationTest {
 
     @Test
     void createsSubjectSuccessfully() {
-      CreateSubjectRequest request = new CreateSubjectRequest("Mathematik", "MA", "#FF0000");
+      CreateSubjectRequest request = new CreateSubjectRequest("Mathematik", "MA", "#FF0000", false);
 
       SubjectResponse result = subjectService.create(school.getId(), request);
 
@@ -134,12 +134,13 @@ class SubjectServiceTest extends AbstractIntegrationTest {
       assertThat(result.name()).isEqualTo("Mathematik");
       assertThat(result.abbreviation()).isEqualTo("MA");
       assertThat(result.color()).isEqualTo("#FF0000");
+      assertThat(result.needsSpecialRoom()).isFalse();
       assertThat(result.createdAt()).isNotNull();
     }
 
     @Test
     void createsSubjectWithNullColor() {
-      CreateSubjectRequest request = new CreateSubjectRequest("Mathematik", "MA", null);
+      CreateSubjectRequest request = new CreateSubjectRequest("Mathematik", "MA", null, false);
 
       SubjectResponse result = subjectService.create(school.getId(), request);
 
@@ -148,9 +149,19 @@ class SubjectServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void createsSubjectWithNeedsSpecialRoom() {
+      CreateSubjectRequest request = new CreateSubjectRequest("Sport", "SPO", null, true);
+
+      SubjectResponse result = subjectService.create(school.getId(), request);
+
+      assertThat(result.name()).isEqualTo("Sport");
+      assertThat(result.needsSpecialRoom()).isTrue();
+    }
+
+    @Test
     void throwsWhenSchoolNotFound() {
       UUID nonExistentSchoolId = UUID.randomUUID();
-      CreateSubjectRequest request = new CreateSubjectRequest("Mathematik", "MA", null);
+      CreateSubjectRequest request = new CreateSubjectRequest("Mathematik", "MA", null, false);
 
       assertThatThrownBy(() -> subjectService.create(nonExistentSchoolId, request))
           .isInstanceOf(EntityNotFoundException.class)
@@ -173,13 +184,15 @@ class SubjectServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", "MTH", "#FF0000", null);
+      UpdateSubjectRequest request =
+          new UpdateSubjectRequest("Mathe", "MTH", "#FF0000", true, null);
 
       SubjectResponse result = subjectService.update(school.getId(), subject.getId(), request);
 
       assertThat(result.name()).isEqualTo("Mathe");
       assertThat(result.abbreviation()).isEqualTo("MTH");
       assertThat(result.color()).isEqualTo("#FF0000");
+      assertThat(result.needsSpecialRoom()).isTrue();
     }
 
     @Test
@@ -194,7 +207,7 @@ class SubjectServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", null, null, null);
+      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", null, null, null, null);
 
       SubjectResponse result = subjectService.update(school.getId(), subject.getId(), request);
 
@@ -206,7 +219,7 @@ class SubjectServiceTest extends AbstractIntegrationTest {
     @Test
     void throwsWhenSubjectNotFound() {
       UUID nonExistentId = UUID.randomUUID();
-      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", null, null, null);
+      UpdateSubjectRequest request = new UpdateSubjectRequest("Mathe", null, null, null, null);
 
       assertThatThrownBy(() -> subjectService.update(school.getId(), nonExistentId, request))
           .isInstanceOf(EntityNotFoundException.class);
@@ -219,7 +232,7 @@ class SubjectServiceTest extends AbstractIntegrationTest {
       entityManager.flush();
       entityManager.clear();
 
-      UpdateSubjectRequest request = new UpdateSubjectRequest("Updated", null, null, null);
+      UpdateSubjectRequest request = new UpdateSubjectRequest("Updated", null, null, null, null);
 
       assertThatThrownBy(() -> subjectService.update(school.getId(), subject.getId(), request))
           .isInstanceOf(EntityNotFoundException.class);

@@ -23,6 +23,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { customFetch } from "../../fetcher";
 import type {
   CreateTeacherRequest,
+  FindAll3Params,
   TeacherResponse,
   TeacherSummary,
   UpdateTeacherRequest,
@@ -314,16 +315,27 @@ export const useDelete4 = <TError = unknown, TContext = unknown>(
 
   return useMutation(mutationOptions, queryClient);
 };
-export const findAll3 = (schoolId: string, signal?: AbortSignal) => {
+export const findAll3 = (
+  schoolId: string,
+  params?: FindAll3Params,
+  signal?: AbortSignal,
+) => {
   return customFetch<TeacherSummary[]>({
     url: `/api/schools/${schoolId}/teachers`,
     method: "GET",
+    params,
     signal,
   });
 };
 
-export const getFindAll3QueryKey = (schoolId?: string) => {
-  return [`/api/schools/${schoolId}/teachers`] as const;
+export const getFindAll3QueryKey = (
+  schoolId?: string,
+  params?: FindAll3Params,
+) => {
+  return [
+    `/api/schools/${schoolId}/teachers`,
+    ...(params ? [params] : []),
+  ] as const;
 };
 
 export const getFindAll3QueryOptions = <
@@ -331,6 +343,7 @@ export const getFindAll3QueryOptions = <
   TError = unknown,
 >(
   schoolId: string,
+  params?: FindAll3Params,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof findAll3>>, TError, TData>
@@ -339,11 +352,12 @@ export const getFindAll3QueryOptions = <
 ) => {
   const { query: queryOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getFindAll3QueryKey(schoolId);
+  const queryKey =
+    queryOptions?.queryKey ?? getFindAll3QueryKey(schoolId, params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof findAll3>>> = ({
     signal,
-  }) => findAll3(schoolId, signal);
+  }) => findAll3(schoolId, params, signal);
 
   return {
     queryKey,
@@ -365,6 +379,7 @@ export function useFindAll3<
   TError = unknown,
 >(
   schoolId: string,
+  params: undefined | FindAll3Params,
   options: {
     query: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof findAll3>>, TError, TData>
@@ -387,6 +402,7 @@ export function useFindAll3<
   TError = unknown,
 >(
   schoolId: string,
+  params?: FindAll3Params,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof findAll3>>, TError, TData>
@@ -409,6 +425,7 @@ export function useFindAll3<
   TError = unknown,
 >(
   schoolId: string,
+  params?: FindAll3Params,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof findAll3>>, TError, TData>
@@ -424,6 +441,7 @@ export function useFindAll3<
   TError = unknown,
 >(
   schoolId: string,
+  params?: FindAll3Params,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof findAll3>>, TError, TData>
@@ -433,7 +451,7 @@ export function useFindAll3<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getFindAll3QueryOptions(schoolId, options);
+  const queryOptions = getFindAll3QueryOptions(schoolId, params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -519,6 +537,76 @@ export const useCreate3 = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   const mutationOptions = getCreate3MutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+export const deletePermanent = (schoolId: string, id: string) => {
+  return customFetch<void>({
+    url: `/api/schools/${schoolId}/teachers/${id}/permanent`,
+    method: "DELETE",
+  });
+};
+
+export const getDeletePermanentMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePermanent>>,
+    TError,
+    { schoolId: string; id: string },
+    TContext
+  >;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePermanent>>,
+  TError,
+  { schoolId: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["deletePermanent"];
+  const { mutation: mutationOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey } };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePermanent>>,
+    { schoolId: string; id: string }
+  > = (props) => {
+    const { schoolId, id } = props ?? {};
+
+    return deletePermanent(schoolId, id);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePermanentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePermanent>>
+>;
+
+export type DeletePermanentMutationError = unknown;
+
+export const useDeletePermanent = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deletePermanent>>,
+      TError,
+      { schoolId: string; id: string },
+      TContext
+    >;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deletePermanent>>,
+  TError,
+  { schoolId: string; id: string },
+  TContext
+> => {
+  const mutationOptions = getDeletePermanentMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

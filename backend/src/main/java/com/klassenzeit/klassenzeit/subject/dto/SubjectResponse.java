@@ -9,6 +9,7 @@ public record SubjectResponse(
     String name,
     String abbreviation,
     String color,
+    Boolean needsSpecialRoom,
     Instant createdAt,
     Instant updatedAt,
     Long version) {}

@@ -58,6 +58,7 @@ describe("SubjectForm", () => {
             name: "Mathematik",
             abbreviation: "MAT",
             color: "#3B82F6",
+            needsSpecialRoom: false,
             isActive: true,
             createdAt: "2024-01-01T00:00:00Z",
             updatedAt: "2024-01-01T00:00:00Z",
@@ -79,6 +80,7 @@ describe("SubjectForm", () => {
             name: "Mathematik",
             abbreviation: "MAT",
             color: "#3B82F6",
+            needsSpecialRoom: false,
             isActive: true,
             createdAt: "2024-01-01T00:00:00Z",
             updatedAt: "2024-01-01T00:00:00Z",
@@ -113,6 +115,7 @@ describe("SubjectForm", () => {
         name: "Mathematik",
         abbreviation: "MAT",
         color: undefined,
+        needsSpecialRoom: false,
       });
     });
 
@@ -147,6 +150,7 @@ describe("SubjectForm", () => {
         name: "Mathematik",
         abbreviation: "MAT", // Also auto-uppercased
         color: undefined,
+        needsSpecialRoom: false,
       });
     });
   });
@@ -179,6 +183,7 @@ describe("SubjectForm", () => {
             name: "Mathematik",
             abbreviation: "MAT",
             color: "#3B82F6",
+            needsSpecialRoom: false,
             isActive: true,
             createdAt: "2024-01-01T00:00:00Z",
             updatedAt: "2024-01-01T00:00:00Z",

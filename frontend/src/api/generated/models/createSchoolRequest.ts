@@ -37,5 +37,10 @@ export interface CreateSchoolRequest {
    * @maxLength 50
    */
   timezone?: string;
+  /**
+   * @minLength 0
+   * @maxLength 4000
+   */
   settings?: string;
+  initialAdminUserId: string;
 }

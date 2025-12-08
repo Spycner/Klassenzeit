@@ -7,4 +7,5 @@ public record UpdateSubjectRequest(
     @Size(max = 100) String name,
     @Size(max = 10) String abbreviation,
     @Size(max = 7) String color,
+    Boolean needsSpecialRoom,
     Long version) {}

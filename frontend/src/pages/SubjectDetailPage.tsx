@@ -16,7 +16,11 @@ import {
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { useSchoolContext } from "@/contexts/SchoolContext";
-import { SubjectForm, type SubjectFormData } from "./subjects/components";
+import {
+  RoomAssignmentSection,
+  SubjectForm,
+  type SubjectFormData,
+} from "./subjects/components";
 
 export function SubjectDetailPage() {
   const { id } = useParams();
@@ -53,6 +57,7 @@ export function SubjectDetailPage() {
         name: data.name,
         abbreviation: data.abbreviation,
         color: data.color ?? undefined,
+        needsSpecialRoom: data.needsSpecialRoom,
       });
       toast.success(t("subjects.created"));
       navigate(`/${i18n.language}/subjects`);
@@ -63,6 +68,8 @@ export function SubjectDetailPage() {
           name: data.name,
           abbreviation: data.abbreviation,
           color: data.color ?? undefined,
+          needsSpecialRoom: data.needsSpecialRoom,
+          version: subject?.version,
         },
       });
       toast.success(t("subjects.updated"));
@@ -140,6 +147,11 @@ export function SubjectDetailPage() {
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
       />
+
+      {/* Show room assignment section when editing a subject that needs a special room */}
+      {!isNew && subject?.needsSpecialRoom && schoolId && id && (
+        <RoomAssignmentSection schoolId={schoolId} subjectId={id} />
+      )}
 
       <ConfirmDialog
         open={showDeleteDialog}

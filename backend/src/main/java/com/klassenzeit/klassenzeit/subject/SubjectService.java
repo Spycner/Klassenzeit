@@ -50,6 +50,7 @@ public class SubjectService {
     subject.setName(request.name());
     subject.setAbbreviation(request.abbreviation());
     subject.setColor(request.color());
+    subject.setNeedsSpecialRoom(request.needsSpecialRoom() != null && request.needsSpecialRoom());
 
     return toResponse(subjectRepository.save(subject));
   }
@@ -71,6 +72,9 @@ public class SubjectService {
     if (request.color() != null) {
       subject.setColor(request.color());
     }
+    if (request.needsSpecialRoom() != null) {
+      subject.setNeedsSpecialRoom(request.needsSpecialRoom());
+    }
 
     return toResponse(subjectRepository.save(subject));
   }
@@ -91,12 +95,14 @@ public class SubjectService {
         s.getName(),
         s.getAbbreviation(),
         s.getColor(),
+        s.isNeedsSpecialRoom(),
         s.getCreatedAt(),
         s.getUpdatedAt(),
         s.getVersion());
   }
 
   private SubjectSummary toSummary(Subject s) {
-    return new SubjectSummary(s.getId(), s.getName(), s.getAbbreviation(), s.getColor());
+    return new SubjectSummary(
+        s.getId(), s.getName(), s.getAbbreviation(), s.getColor(), s.isNeedsSpecialRoom());
   }
 }

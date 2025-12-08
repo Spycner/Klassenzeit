@@ -7,4 +7,5 @@ import jakarta.validation.constraints.Size;
 public record CreateSubjectRequest(
     @NotBlank @Size(max = 100) String name,
     @NotBlank @Size(max = 10) String abbreviation,
-    @Size(max = 7) String color) {}
+    @Size(max = 7) String color,
+    Boolean needsSpecialRoom) {}

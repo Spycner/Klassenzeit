@@ -91,6 +91,8 @@ Based on changed files:
 - If frontend files changed (components, pages, styles):
   → Use **lighthouse-audit subagent** → writes to `review/lighthouse-audit.md`
 
+ensure that the necessary services are running!
+
 ### Step 4: Code Quality Analysis
 Use **code-quality subagent** → writes to `review/code-quality.md`
 

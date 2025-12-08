@@ -38,6 +38,12 @@ export {
   useMemberships,
   useUpdateMembership,
 } from "./use-memberships";
+// Room Subject hooks
+export {
+  useCreateRoomSubject,
+  useDeleteRoomSubject,
+  useRoomSubjects,
+} from "./use-room-subjects";
 // Room hooks
 export {
   useCreateRoom,
@@ -70,6 +76,12 @@ export {
   useStartSolving,
   useStopSolving,
 } from "./use-solver";
+// Subject Room hooks
+export {
+  useAddRoomToSubject,
+  useRemoveRoomFromSubject,
+  useSubjectRooms,
+} from "./use-subject-rooms";
 // Subject hooks
 export {
   useCreateSubject,

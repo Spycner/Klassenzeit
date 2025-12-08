@@ -8,6 +8,7 @@ import type { QualificationSummaryQualificationLevel } from "./qualificationSumm
 
 export interface QualificationSummary {
   id?: string;
+  subjectId?: string;
   subjectName?: string;
   qualificationLevel?: QualificationSummaryQualificationLevel;
 }
