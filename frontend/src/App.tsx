@@ -18,7 +18,8 @@ import { RoomsPage } from "@/pages/RoomsPage";
 import { SchoolDetailPage } from "@/pages/SchoolDetailPage";
 import { SchoolsListPage } from "@/pages/SchoolsListPage";
 import { SettingsPage } from "@/pages/SettingsPage";
-import { SubjectsPage } from "@/pages/SubjectsPage";
+import { SubjectDetailPage } from "@/pages/SubjectDetailPage";
+import { SubjectsListPage } from "@/pages/SubjectsListPage";
 import { TeacherDetailPage } from "@/pages/TeacherDetailPage";
 import { TeachersListPage } from "@/pages/TeachersListPage";
 import { TimeSlotsPage } from "@/pages/TimeSlotsPage";
@@ -61,7 +62,15 @@ function App() {
                       path="teachers/:id"
                       element={<TeacherDetailPage />}
                     />
-                    <Route path="subjects" element={<SubjectsPage />} />
+                    <Route path="subjects" element={<SubjectsListPage />} />
+                    <Route
+                      path="subjects/new"
+                      element={<SubjectDetailPage />}
+                    />
+                    <Route
+                      path="subjects/:id"
+                      element={<SubjectDetailPage />}
+                    />
                     <Route path="rooms" element={<RoomsPage />} />
                     <Route path="classes" element={<ClassesPage />} />
                     <Route path="timeslots" element={<TimeSlotsPage />} />

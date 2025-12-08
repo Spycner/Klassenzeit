@@ -100,11 +100,46 @@
       "setAllBlocked": "Set All Blocked",
       "unsavedChanges": "{{count}} unsaved change(s)",
       "noTimeSlots": "No time slots configured for this school. Please set up time slots first to manage teacher availability."
-    }
+    },
+    "created": "Teacher created successfully",
+    "updated": "Teacher updated successfully",
+    "deleted": "Teacher deactivated successfully",
+    "reactivated": "Teacher reactivated successfully",
+    "permanentlyDeleted": "Teacher permanently deleted"
   },
   "subjects": {
     "title": "Subjects",
-    "description": "Manage your school's subjects here."
+    "description": "Manage your school's subjects here.",
+    "editTitle": "Edit Subject",
+    "newTitle": "New Subject",
+    "addSubject": "Add Subject",
+    "delete": "Delete",
+    "columns": {
+      "name": "Name",
+      "abbreviation": "Abbr.",
+      "color": "Color"
+    },
+    "empty": {
+      "title": "No subjects yet",
+      "description": "Add your first subject to get started with scheduling."
+    },
+    "form": {
+      "name": "Subject Name",
+      "namePlaceholder": "e.g. Mathematics",
+      "abbreviation": "Abbreviation",
+      "abbreviationPlaceholder": "MATH",
+      "color": "Color",
+      "colorPlaceholder": "Select a color...",
+      "create": "Create Subject"
+    },
+    "confirmDelete": {
+      "title": "Delete Subject?",
+      "description": "This will permanently delete this subject. Teachers qualified in this subject will lose that qualification. This action cannot be undone."
+    },
+    "noSchoolAvailable": "No school available. Please create a school first.",
+    "created": "Subject created successfully",
+    "updated": "Subject updated successfully",
+    "deleted": "Subject deleted successfully"
   },
   "rooms": {
     "title": "Rooms",
@@ -219,7 +254,10 @@
         "parentPortal": "Parent Portal",
         "parentPortalDesc": "Allow parents to view their children's timetables."
       }
-    }
+    },
+    "created": "School created successfully",
+    "updated": "School updated successfully",
+    "deleted": "School deleted successfully"
   },
   "settings": {
     "title": "Settings",

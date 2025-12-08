@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
 import {
   useCreateTeacher,
   useDeleteTeacher,
@@ -62,6 +63,7 @@ export function TeacherDetailPage() {
         maxHoursPerWeek: data.maxHoursPerWeek ?? undefined,
         isPartTime: data.isPartTime,
       });
+      toast.success(t("teachers.created"));
       navigate(`/${i18n.language}/teachers/${created.id}`);
     } else if (id) {
       await updateMutation.mutateAsync({
@@ -75,12 +77,14 @@ export function TeacherDetailPage() {
           isPartTime: data.isPartTime,
         },
       });
+      toast.success(t("teachers.updated"));
     }
   };
 
   const handleDelete = async () => {
     if (id) {
       await deleteMutation.mutateAsync(id);
+      toast.success(t("teachers.deleted"));
       navigate(`/${i18n.language}/teachers`);
     }
   };

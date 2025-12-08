@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
 
 import {
   useCreateSchool,
+  useCurrentUser,
   useDeleteSchool,
   useSchool,
   useUpdateSchool,
@@ -15,6 +17,7 @@ import {
   PageHeader,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { useSchoolContext } from "@/contexts/SchoolContext";
 import { useSchoolAccess } from "@/hooks";
 
 import {
@@ -50,6 +53,9 @@ export function SchoolDetailPage() {
     isLoading: accessLoading,
   } = useSchoolAccess(schoolId);
 
+  const { setCurrentSchool } = useSchoolContext();
+  const { data: currentUser } = useCurrentUser();
+
   const createMutation = useCreateSchool();
   const updateMutation = useUpdateSchool();
   const deleteMutation = useDeleteSchool();
@@ -77,6 +83,15 @@ export function SchoolDetailPage() {
         settings: data.settings,
         initialAdminUserId: data.initialAdminUserId,
       });
+      // Auto-select the new school if current user is the initial admin
+      if (currentUser?.id === data.initialAdminUserId) {
+        setCurrentSchool({
+          schoolId: created.id,
+          schoolName: created.name,
+          role: "SCHOOL_ADMIN",
+        });
+      }
+      toast.success(t("schools.created"));
       // Navigate to the new school's slug
       navigate(`/${i18n.language}/schools/${created.slug}`);
     } else if (schoolId) {
@@ -93,6 +108,7 @@ export function SchoolDetailPage() {
           settings: data.settings,
         },
       });
+      toast.success(t("schools.updated"));
       // If slug changed, navigate to new URL
       if (data.slug !== slug) {
         navigate(`/${i18n.language}/schools/${data.slug}`, { replace: true });
@@ -102,7 +118,8 @@ export function SchoolDetailPage() {
 
   const handleDelete = async () => {
     if (schoolId && canDelete) {
-      await deleteMutation.mutateAsync(schoolId);
+      await deleteMutation.mutateAsync({ id: schoolId, slug });
+      toast.success(t("schools.deleted"));
       navigate(`/${i18n.language}/schools`);
     }
   };

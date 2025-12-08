@@ -2,6 +2,7 @@ import { RotateCcw, Trash2, Users } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import {
   type TeacherSummary,
   usePermanentDeleteTeacher,
@@ -51,6 +52,7 @@ export function TeachersListPage() {
   const permanentDeleteMutation = usePermanentDeleteTeacher(schoolId!);
 
   const isLoading = schoolLoading || teachersLoading;
+  const noSchoolAvailable = !schoolLoading && !currentSchool;
 
   const handleReactivate = async () => {
     if (teacherToReactivate && schoolId) {
@@ -58,6 +60,7 @@ export function TeachersListPage() {
         id: teacherToReactivate.id,
         data: { isActive: true },
       });
+      toast.success(t("teachers.reactivated"));
       setTeacherToReactivate(null);
     }
   };
@@ -65,6 +68,7 @@ export function TeachersListPage() {
   const handlePermanentDelete = async () => {
     if (teacherToDelete && schoolId) {
       await permanentDeleteMutation.mutateAsync(teacherToDelete.id);
+      toast.success(t("teachers.permanentlyDeleted"));
       setTeacherToDelete(null);
     }
   };
@@ -139,14 +143,17 @@ export function TeachersListPage() {
     navigate(`/${i18n.language}/teachers/${teacher.id}`);
   };
 
-  if (error) {
+  if (error || noSchoolAvailable) {
     return (
       <div>
         <PageHeader
           title={t("teachers.title")}
           description={t("teachers.description")}
         />
-        <ErrorState error={error} onRetry={refetch} />
+        <ErrorState
+          error={error ?? new Error(t("teachers.noSchoolAvailable"))}
+          onRetry={noSchoolAvailable ? undefined : refetch}
+        />
       </div>
     );
   }

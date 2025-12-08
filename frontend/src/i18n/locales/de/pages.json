@@ -100,11 +100,46 @@
       "setAllBlocked": "Alle gesperrt setzen",
       "unsavedChanges": "{{count}} ungespeicherte Änderung(en)",
       "noTimeSlots": "Keine Unterrichtszeiten für diese Schule konfiguriert. Bitte richten Sie zuerst die Unterrichtszeiten ein, um die Verfügbarkeit von Lehrkräften zu verwalten."
-    }
+    },
+    "created": "Lehrkraft erfolgreich erstellt",
+    "updated": "Lehrkraft erfolgreich aktualisiert",
+    "deleted": "Lehrkraft erfolgreich deaktiviert",
+    "reactivated": "Lehrkraft erfolgreich reaktiviert",
+    "permanentlyDeleted": "Lehrkraft endgültig gelöscht"
   },
   "subjects": {
     "title": "Fächer",
-    "description": "Verwalten Sie hier die Fächer Ihrer Schule."
+    "description": "Verwalten Sie hier die Fächer Ihrer Schule.",
+    "editTitle": "Fach bearbeiten",
+    "newTitle": "Neues Fach",
+    "addSubject": "Fach hinzufügen",
+    "delete": "Löschen",
+    "columns": {
+      "name": "Name",
+      "abbreviation": "Kürzel",
+      "color": "Farbe"
+    },
+    "empty": {
+      "title": "Noch keine Fächer",
+      "description": "Fügen Sie Ihr erstes Fach hinzu, um mit der Stundenplanung zu beginnen."
+    },
+    "form": {
+      "name": "Fachname",
+      "namePlaceholder": "z.B. Mathematik",
+      "abbreviation": "Kürzel",
+      "abbreviationPlaceholder": "MAT",
+      "color": "Farbe",
+      "colorPlaceholder": "Farbe auswählen...",
+      "create": "Fach erstellen"
+    },
+    "confirmDelete": {
+      "title": "Fach löschen?",
+      "description": "Dieses Fach wird dauerhaft gelöscht. Lehrkräfte, die für dieses Fach qualifiziert sind, verlieren diese Qualifikation. Diese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "noSchoolAvailable": "Keine Schule verfügbar. Bitte erstellen Sie zuerst eine Schule.",
+    "created": "Fach erfolgreich erstellt",
+    "updated": "Fach erfolgreich aktualisiert",
+    "deleted": "Fach erfolgreich gelöscht"
   },
   "rooms": {
     "title": "Räume",
@@ -219,7 +254,10 @@
         "parentPortal": "Elternportal",
         "parentPortalDesc": "Ermöglicht Eltern den Zugriff auf Stundenpläne ihrer Kinder."
       }
-    }
+    },
+    "created": "Schule erfolgreich erstellt",
+    "updated": "Schule erfolgreich aktualisiert",
+    "deleted": "Schule erfolgreich gelöscht"
   },
   "settings": {
     "title": "Einstellungen",

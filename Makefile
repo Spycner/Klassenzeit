@@ -68,9 +68,11 @@ db-docs:
 dev: services-up backend
 
 backend:
+	@lsof -ti :8080 | xargs kill -9 2>/dev/null || true
 	@set -a && [ -f .env ] && . ./.env; set +a && cd backend && ./gradlew bootRun
 
 frontend:
+	@lsof -ti :5173 | xargs kill -9 2>/dev/null || true
 	cd frontend && npm run dev
 
 # Testing
