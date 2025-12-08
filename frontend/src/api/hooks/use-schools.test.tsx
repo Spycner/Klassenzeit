@@ -209,7 +209,7 @@ describe("useDeleteSchool", () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate("school-1");
+    result.current.mutate({ id: "school-1", slug: "test-school" });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);

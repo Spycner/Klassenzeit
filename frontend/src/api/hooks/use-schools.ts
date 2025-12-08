@@ -112,6 +112,8 @@ export function useCreateSchool() {
     mutationFn: (data: CreateSchoolRequest) => schoolsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.schools.all });
+      // Also invalidate user profile to refresh school memberships
+      queryClient.invalidateQueries({ queryKey: ["users", "me"] });
     },
   });
 }
@@ -152,17 +154,18 @@ export function useUpdateSchool() {
 /**
  * Deletes a school.
  *
- * On success, automatically invalidates the schools list cache.
+ * On success, removes the school's detail queries from cache and invalidates
+ * the schools list and user profile (to refresh memberships).
  * Warning: This is a cascading delete that removes all associated data.
  *
  * @returns Mutation object with mutate/mutateAsync functions
  * @example
  * ```tsx
- * function DeleteSchoolButton({ schoolId }: { schoolId: string }) {
+ * function DeleteSchoolButton({ schoolId, slug }: { schoolId: string; slug: string }) {
  *   const deleteSchool = useDeleteSchool();
  *   const handleDelete = () => {
  *     if (confirm("Are you sure? This will delete all school data.")) {
- *       deleteSchool.mutate(schoolId, {
+ *       deleteSchool.mutate({ id: schoolId, slug }, {
  *         onSuccess: () => navigate("/schools")
  *       });
  *     }
@@ -174,9 +177,18 @@ export function useDeleteSchool() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => schoolsApi.delete(id),
-    onSuccess: () => {
+    mutationFn: ({ id }: { id: string; slug?: string }) =>
+      schoolsApi.delete(id),
+    onSuccess: (_, { id, slug }) => {
+      // Remove the deleted school's detail queries to avoid 403 refetch errors
+      // Remove by both ID and slug since queries can use either as identifier
+      queryClient.removeQueries({ queryKey: queryKeys.schools.detail(id) });
+      if (slug) {
+        queryClient.removeQueries({ queryKey: queryKeys.schools.detail(slug) });
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.schools.all });
+      // Also invalidate user profile to refresh school memberships
+      queryClient.invalidateQueries({ queryKey: ["users", "me"] });
     },
   });
 }

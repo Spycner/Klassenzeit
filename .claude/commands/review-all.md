@@ -6,8 +6,24 @@ allowed-tools: Task, Read, Bash, Grep, Glob, Write
 ## Context
 
 - Current branch: !`git branch --show-current`
-- Changed files: !`git diff --name-only HEAD~1 2>/dev/null || git diff --name-only --cached`
+- Associated PR: !`gh pr view --json number,title,url,baseRefName,state 2>/dev/null || echo "No PR found for this branch"`
+- PR changed files: !`gh pr diff --name-only 2>/dev/null || echo "N/A"`
 - Staged changes: !`git diff --cached --name-only`
+
+## PR Detection Logic
+
+When determining which files to review:
+
+1. **If PR exists** (check "Associated PR" output above):
+   - Use `gh pr diff --name-only` to get all files changed in the PR
+   - This captures ALL commits in the PR, not just the last one
+   - The base branch from PR info shows what we're comparing against
+
+2. **If no PR exists**:
+   - Fall back to `git diff --name-only HEAD~1` for recent changes
+   - Or use staged changes if nothing committed yet
+
+Use the "PR changed files" list above as the primary source for determining which files changed when a PR exists.
 
 ## Output Structure
 
@@ -127,6 +143,9 @@ After all subagents complete:
 
 Generated from comprehensive review of `{branch}` branch on {date}.
 
+**PR:** #{pr_number} - {pr_title} ({pr_url}) [if PR exists]
+**Base branch:** {baseRefName} [if PR exists]
+
 ## Task Overview
 
 | ID | Task | Priority | Effort | Area |
@@ -180,6 +199,7 @@ Generated from comprehensive review of `{branch}` branch on {date}.
 
 ## Guidelines
 
+- **Prefer PR-based diffs** when a PR exists - this ensures all PR changes are reviewed, not just the last commit
 - Run pre-commit first - if it fails catastrophically, note but continue
 - Parallelize independent subagents for efficiency
 - Skip conditional checks (E2E, Lighthouse) if their files aren't affected
@@ -188,3 +208,4 @@ Generated from comprehensive review of `{branch}` branch on {date}.
 - Create actionable tasks in `tasks/todo/` (tracked in git)
 - Group related issues into single tasks when logical
 - Provide clear, prioritized action items with effort estimates
+- Include PR link in summary when reviewing a PR
