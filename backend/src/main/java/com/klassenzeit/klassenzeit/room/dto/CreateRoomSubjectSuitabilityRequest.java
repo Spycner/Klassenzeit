@@ -6,4 +6,4 @@ import java.util.UUID;
 
 /** Request DTO for creating a room subject suitability. */
 public record CreateRoomSubjectSuitabilityRequest(
-    @NotNull UUID subjectId, Boolean isRequired, @Size(max = 255) String notes) {}
+    @NotNull UUID subjectId, @Size(max = 255) String notes) {}

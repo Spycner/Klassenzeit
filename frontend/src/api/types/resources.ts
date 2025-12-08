@@ -12,12 +12,15 @@ export interface CreateSubjectRequest {
   name: string;
   abbreviation: string;
   color?: string;
+  needsSpecialRoom?: boolean;
 }
 
 export interface UpdateSubjectRequest {
   name: string;
   abbreviation: string;
   color?: string;
+  needsSpecialRoom?: boolean;
+  version?: number;
 }
 
 export interface SubjectResponse extends Timestamps {
@@ -25,6 +28,7 @@ export interface SubjectResponse extends Timestamps {
   name: string;
   abbreviation: string;
   color: string | null;
+  needsSpecialRoom: boolean;
   isActive: boolean;
   version?: number;
 }
@@ -34,6 +38,39 @@ export interface SubjectSummary {
   name: string;
   abbreviation: string;
   color?: string;
+  needsSpecialRoom: boolean;
+}
+
+// ============================================================================
+// Room-Subject Suitability (from Subject perspective)
+// ============================================================================
+
+export interface SubjectRoomSummary {
+  suitabilityId: string;
+  roomId: string;
+  roomName: string;
+  building: string | null;
+}
+
+export interface AddRoomToSubjectRequest {
+  roomId: string;
+  notes?: string;
+}
+
+// ============================================================================
+// Room-Subject Suitability (from Room perspective)
+// ============================================================================
+
+export interface CreateRoomSubjectSuitabilityRequest {
+  subjectId: string;
+  notes?: string;
+}
+
+export interface RoomSubjectSuitabilitySummary {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  subjectColor: string | null;
 }
 
 // ============================================================================
@@ -68,6 +105,7 @@ export interface RoomSummary {
   name: string;
   building: string | null;
   capacity: number;
+  isActive: boolean;
 }
 
 // ============================================================================

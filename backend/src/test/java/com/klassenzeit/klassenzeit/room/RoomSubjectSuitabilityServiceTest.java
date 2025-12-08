@@ -110,7 +110,7 @@ class RoomSubjectSuitabilityServiceTest extends AbstractIntegrationTest {
       entityManager.clear();
 
       CreateRoomSubjectSuitabilityRequest request =
-          new CreateRoomSubjectSuitabilityRequest(subject.getId(), false, null);
+          new CreateRoomSubjectSuitabilityRequest(subject.getId(), null);
 
       RoomSubjectSuitabilitySummary result =
           suitabilityService.create(school.getId(), room.getId(), request);
@@ -118,28 +118,28 @@ class RoomSubjectSuitabilityServiceTest extends AbstractIntegrationTest {
       assertThat(result.id()).isNotNull();
       assertThat(result.subjectId()).isEqualTo(subject.getId());
       assertThat(result.subjectName()).isEqualTo("Chemistry");
-      assertThat(result.isRequired()).isFalse();
     }
 
     @Test
-    void createsSuitabilityWithIsRequiredTrue() {
+    void createsSuitabilityWithNotes() {
       entityManager.flush();
       entityManager.clear();
 
       CreateRoomSubjectSuitabilityRequest request =
-          new CreateRoomSubjectSuitabilityRequest(subject.getId(), true, "Lab equipment required");
+          new CreateRoomSubjectSuitabilityRequest(subject.getId(), "Lab equipment required");
 
       RoomSubjectSuitabilitySummary result =
           suitabilityService.create(school.getId(), room.getId(), request);
 
-      assertThat(result.isRequired()).isTrue();
+      assertThat(result.id()).isNotNull();
+      assertThat(result.subjectName()).isEqualTo("Chemistry");
     }
 
     @Test
     void throwsWhenRoomNotFound() {
       UUID nonExistentRoomId = UUID.randomUUID();
       CreateRoomSubjectSuitabilityRequest request =
-          new CreateRoomSubjectSuitabilityRequest(subject.getId(), false, null);
+          new CreateRoomSubjectSuitabilityRequest(subject.getId(), null);
 
       assertThatThrownBy(
               () -> suitabilityService.create(school.getId(), nonExistentRoomId, request))
@@ -151,7 +151,7 @@ class RoomSubjectSuitabilityServiceTest extends AbstractIntegrationTest {
     void throwsWhenSubjectNotFound() {
       UUID nonExistentSubjectId = UUID.randomUUID();
       CreateRoomSubjectSuitabilityRequest request =
-          new CreateRoomSubjectSuitabilityRequest(nonExistentSubjectId, false, null);
+          new CreateRoomSubjectSuitabilityRequest(nonExistentSubjectId, null);
 
       assertThatThrownBy(() -> suitabilityService.create(school.getId(), room.getId(), request))
           .isInstanceOf(EntityNotFoundException.class)
@@ -167,7 +167,7 @@ class RoomSubjectSuitabilityServiceTest extends AbstractIntegrationTest {
       entityManager.clear();
 
       CreateRoomSubjectSuitabilityRequest request =
-          new CreateRoomSubjectSuitabilityRequest(otherSubject.getId(), false, null);
+          new CreateRoomSubjectSuitabilityRequest(otherSubject.getId(), null);
 
       assertThatThrownBy(() -> suitabilityService.create(school.getId(), room.getId(), request))
           .isInstanceOf(EntityNotFoundException.class)
@@ -181,7 +181,7 @@ class RoomSubjectSuitabilityServiceTest extends AbstractIntegrationTest {
       entityManager.clear();
 
       CreateRoomSubjectSuitabilityRequest request =
-          new CreateRoomSubjectSuitabilityRequest(subject.getId(), false, null);
+          new CreateRoomSubjectSuitabilityRequest(subject.getId(), null);
 
       assertThatThrownBy(() -> suitabilityService.create(school.getId(), room.getId(), request))
           .isInstanceOf(IllegalStateException.class)

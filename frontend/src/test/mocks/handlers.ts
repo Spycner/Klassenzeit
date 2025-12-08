@@ -9,6 +9,7 @@ import type {
   MembershipResponse,
   MembershipSummary,
   RoomResponse,
+  RoomSubjectSuitabilitySummary,
   RoomSummary,
   SchoolClassResponse,
   SchoolClassSummary,
@@ -99,11 +100,13 @@ export const mockSubjects: SubjectSummary[] = [
     id: "subject-1",
     name: "Mathematics",
     abbreviation: "MA",
+    needsSpecialRoom: true, // Special room subject for testing
   },
   {
     id: "subject-2",
     name: "English",
     abbreviation: "EN",
+    needsSpecialRoom: true, // Special room subject for testing
   },
 ];
 
@@ -112,6 +115,7 @@ export const mockSubjectDetail: SubjectResponse = {
   name: "Mathematics",
   abbreviation: "MA",
   color: "#3B82F6",
+  needsSpecialRoom: false,
   isActive: true,
   createdAt: "2024-01-01T00:00:00Z",
   updatedAt: "2024-01-01T00:00:00Z",
@@ -157,8 +161,20 @@ export const mockClassDetail: SchoolClassResponse = {
 
 // Rooms mock data
 export const mockRooms: RoomSummary[] = [
-  { id: "room-1", name: "Room 101", building: "Main", capacity: 30 },
-  { id: "room-2", name: "Room 102", building: "Main", capacity: 25 },
+  {
+    id: "room-1",
+    name: "Room 101",
+    building: "Main",
+    capacity: 30,
+    isActive: true,
+  },
+  {
+    id: "room-2",
+    name: "Room 102",
+    building: "Main",
+    capacity: 25,
+    isActive: true,
+  },
 ];
 
 export const mockRoomDetail: RoomResponse = {
@@ -170,6 +186,29 @@ export const mockRoomDetail: RoomResponse = {
   isActive: true,
   createdAt: "2024-01-01T00:00:00Z",
   updatedAt: "2024-01-01T00:00:00Z",
+};
+
+// Room Subject Suitabilities mock data
+export const mockRoomSubjects: RoomSubjectSuitabilitySummary[] = [
+  {
+    id: "suit-1",
+    subjectId: "subject-1",
+    subjectName: "Mathematics",
+    subjectColor: "#3B82F6",
+  },
+  {
+    id: "suit-2",
+    subjectId: "subject-2",
+    subjectName: "English",
+    subjectColor: "#10B981",
+  },
+];
+
+export const mockRoomSubjectDetail: RoomSubjectSuitabilitySummary = {
+  id: "suit-1",
+  subjectId: "subject-1",
+  subjectName: "Mathematics",
+  subjectColor: "#3B82F6",
 };
 
 // School Years mock data
@@ -555,6 +594,33 @@ export const handlers = [
   http.delete(`${API_BASE}/api/schools/:schoolId/rooms/:id`, () => {
     return new HttpResponse(null, { status: 204 });
   }),
+
+  // Room Subject Suitabilities
+  http.get(`${API_BASE}/api/schools/:schoolId/rooms/:roomId/subjects`, () => {
+    return HttpResponse.json(mockRoomSubjects);
+  }),
+
+  http.post(
+    `${API_BASE}/api/schools/:schoolId/rooms/:roomId/subjects`,
+    async ({ request }) => {
+      const body = await request.json();
+      return HttpResponse.json(
+        {
+          ...mockRoomSubjectDetail,
+          ...(body as object),
+          id: "new-suit-id",
+        },
+        { status: 201 },
+      );
+    },
+  ),
+
+  http.delete(
+    `${API_BASE}/api/schools/:schoolId/rooms/:roomId/subjects/:id`,
+    () => {
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
 
   // School Years
   http.get(`${API_BASE}/api/schools/:schoolId/school-years`, () => {

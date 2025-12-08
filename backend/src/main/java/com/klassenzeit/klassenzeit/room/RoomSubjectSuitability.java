@@ -22,9 +22,6 @@ public class RoomSubjectSuitability extends BaseEntity {
   @JoinColumn(name = "subject_id", nullable = false)
   private Subject subject;
 
-  @Column(name = "is_required", nullable = false)
-  private Boolean isRequired = false;
-
   @Column(length = 255)
   private String notes;
 
@@ -44,14 +41,6 @@ public class RoomSubjectSuitability extends BaseEntity {
 
   public void setSubject(Subject subject) {
     this.subject = subject;
-  }
-
-  public Boolean isRequired() {
-    return isRequired;
-  }
-
-  public void setIsRequired(Boolean isRequired) {
-    this.isRequired = isRequired;
   }
 
   public String getNotes() {

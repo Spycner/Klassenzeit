@@ -113,6 +113,7 @@ describe("SubjectForm", () => {
         name: "Mathematik",
         abbreviation: "MAT",
         color: undefined,
+        needsSpecialRoom: false,
       });
     });
 
@@ -147,6 +148,7 @@ describe("SubjectForm", () => {
         name: "Mathematik",
         abbreviation: "MAT", // Also auto-uppercased
         color: undefined,
+        needsSpecialRoom: false,
       });
     });
   });

@@ -271,7 +271,7 @@ export function QualificationsSection({
                                       )}
                                     />
                                     {subject.name}
-                                    <span className="ml-2 text-xs text-muted-foreground">
+                                    <span className="ml-2 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
                                       ({subject.abbreviation})
                                     </span>
                                   </CommandItem>

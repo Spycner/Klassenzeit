@@ -2,11 +2,11 @@ import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  type RoomSubjectSuitabilitySummary,
-  useCreateRoomSubject,
-  useDeleteRoomSubject,
-  useRoomSubjects,
-  useSubjects,
+  type SubjectRoomSummary,
+  useAddRoomToSubject,
+  useRemoveRoomFromSubject,
+  useRooms,
+  useSubjectRooms,
 } from "@/api";
 import { LoadingState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -26,15 +26,15 @@ import {
 } from "@/components/ui/popover";
 import { cn, fuzzyMatch } from "@/lib/utils";
 
-interface SubjectSuitabilitySectionProps {
+interface RoomAssignmentSectionProps {
   schoolId: string;
-  roomId: string;
+  subjectId: string;
 }
 
-export function SubjectSuitabilitySection({
+export function RoomAssignmentSection({
   schoolId,
-  roomId,
-}: SubjectSuitabilitySectionProps) {
+  subjectId,
+}: RoomAssignmentSectionProps) {
   const { t } = useTranslation("pages");
   const { t: tc } = useTranslation("common");
 
@@ -42,87 +42,79 @@ export function SubjectSuitabilitySection({
   const [isAdding, setIsAdding] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
+  const [selectedRoomId, setSelectedRoomId] = useState<string>("");
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  const { data: suitabilities, isLoading: suitabilitiesLoading } =
-    useRoomSubjects(schoolId, roomId);
-  const { data: subjects, isLoading: subjectsLoading } = useSubjects(schoolId);
+  const { data: assignedRooms, isLoading: roomsAssignedLoading } =
+    useSubjectRooms(schoolId, subjectId);
+  const { data: allRooms, isLoading: allRoomsLoading } = useRooms(schoolId);
 
-  const createMutation = useCreateRoomSubject(schoolId, roomId);
-  const deleteMutation = useDeleteRoomSubject(schoolId, roomId);
+  const addMutation = useAddRoomToSubject(schoolId, subjectId);
+  const removeMutation = useRemoveRoomFromSubject(schoolId, subjectId);
 
-  const isLoading = suitabilitiesLoading || subjectsLoading;
-  const isSaving = createMutation.isPending;
+  const isLoading = roomsAssignedLoading || allRoomsLoading;
+  const isSaving = addMutation.isPending;
 
-  // Filter to only show subjects that need a special room and are not already assigned
-  const availableSubjects = useMemo(
+  // Filter out rooms that are already assigned
+  const availableRooms = useMemo(
     () =>
-      subjects?.filter(
-        (subject) =>
-          subject.needsSpecialRoom &&
-          !suitabilities?.some((s) => s.subjectId === subject.id),
+      allRooms?.filter(
+        (room) => !assignedRooms?.some((r) => r.roomId === room.id),
       ) ?? [],
-    [subjects, suitabilities],
+    [allRooms, assignedRooms],
   );
 
-  // Check if there are any special-room subjects at all
-  const hasSpecialRoomSubjects = useMemo(
-    () => subjects?.some((s) => s.needsSpecialRoom) ?? false,
-    [subjects],
-  );
-
-  // Get the selected subject's name for display
-  const selectedSubjectName = useMemo(
-    () => availableSubjects.find((s) => s.id === selectedSubjectId)?.name ?? "",
-    [availableSubjects, selectedSubjectId],
+  // Get the selected room's name for display
+  const selectedRoomName = useMemo(
+    () => availableRooms.find((r) => r.id === selectedRoomId)?.name ?? "",
+    [availableRooms, selectedRoomId],
   );
 
   const resetForm = () => {
-    setSelectedSubjectId("");
+    setSelectedRoomId("");
     setSearchValue("");
     setIsAdding(false);
   };
 
-  const handleSelectSubject = (subjectId: string) => {
-    setSelectedSubjectId(subjectId);
+  const handleSelectRoom = (roomId: string) => {
+    setSelectedRoomId(roomId);
     setComboboxOpen(false);
   };
 
   const handleAdd = async () => {
-    if (!selectedSubjectId) return;
+    if (!selectedRoomId) return;
 
-    await createMutation.mutateAsync({
-      subjectId: selectedSubjectId,
+    await addMutation.mutateAsync({
+      roomId: selectedRoomId,
     });
 
     resetForm();
   };
 
-  const handleRemove = async (suitabilityId: string) => {
-    setRemovingId(suitabilityId);
+  const handleRemove = async (roomId: string) => {
+    setRemovingId(roomId);
     try {
-      await deleteMutation.mutateAsync(suitabilityId);
+      await removeMutation.mutateAsync(roomId);
     } finally {
       setRemovingId(null);
     }
   };
 
-  const canSubmit = selectedSubjectId && !isSaving;
+  const canSubmit = selectedRoomId && !isSaving;
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-lg">{t("rooms.subjects.title")}</CardTitle>
+          <CardTitle className="text-lg">{t("subjects.rooms.title")}</CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            {t("rooms.subjects.description")}
+            {t("subjects.rooms.description")}
           </p>
         </div>
         {!isAdding && (
           <Button variant="outline" size="sm" onClick={() => setIsAdding(true)}>
             <Plus className="mr-1.5 h-4 w-4" />
-            {t("rooms.subjects.add")}
+            {t("subjects.rooms.add")}
           </Button>
         )}
       </CardHeader>
@@ -131,66 +123,66 @@ export function SubjectSuitabilitySection({
           <LoadingState />
         ) : (
           <div className="space-y-4">
-            {/* Add suitability form */}
+            {/* Add room form */}
             {isAdding && (
               <div className="space-y-4 rounded-lg border border-dashed p-4">
                 <div className="flex flex-wrap items-end gap-3">
-                  {/* Subject combobox */}
+                  {/* Room combobox */}
                   <div className="flex-1 min-w-[200px] space-y-1.5">
                     <span className="text-sm font-medium">
-                      {t("rooms.subjects.subject")}
+                      {t("subjects.rooms.room")}
                     </span>
                     <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
                           aria-expanded={comboboxOpen}
-                          aria-label={t("rooms.subjects.subject")}
+                          aria-label={t("subjects.rooms.room")}
                           className="w-full justify-between font-normal"
                         >
-                          {selectedSubjectName ||
-                            t("rooms.subjects.selectSubject")}
+                          {selectedRoomName || t("subjects.rooms.selectRoom")}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[300px] p-0" align="start">
                         <Command shouldFilter={false}>
                           <CommandInput
-                            placeholder={t("rooms.subjects.searchSubject")}
+                            placeholder={t("subjects.rooms.searchRoom")}
                             value={searchValue}
                             onValueChange={setSearchValue}
                           />
                           <CommandList>
                             <CommandEmpty>
-                              {t("rooms.subjects.noSubjectsFound")}
+                              {t("subjects.rooms.noRoomsFound")}
                             </CommandEmpty>
                             <CommandGroup>
-                              {availableSubjects
+                              {availableRooms
                                 .filter(
-                                  (s) =>
-                                    fuzzyMatch(s.name, searchValue) ||
-                                    fuzzyMatch(s.abbreviation, searchValue),
+                                  (r) =>
+                                    fuzzyMatch(r.name, searchValue) ||
+                                    (r.building &&
+                                      fuzzyMatch(r.building, searchValue)),
                                 )
-                                .map((subject) => (
+                                .map((room) => (
                                   <CommandItem
-                                    key={subject.id}
-                                    value={subject.id}
-                                    onSelect={() =>
-                                      handleSelectSubject(subject.id)
-                                    }
+                                    key={room.id}
+                                    value={room.id}
+                                    onSelect={() => handleSelectRoom(room.id)}
                                   >
                                     <Check
                                       className={cn(
                                         "mr-2 h-4 w-4",
-                                        selectedSubjectId === subject.id
+                                        selectedRoomId === room.id
                                           ? "opacity-100"
                                           : "opacity-0",
                                       )}
                                     />
-                                    {subject.name}
-                                    <span className="ml-2 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
-                                      ({subject.abbreviation})
-                                    </span>
+                                    {room.name}
+                                    {room.building && (
+                                      <span className="ml-2 text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
+                                        ({room.building})
+                                      </span>
+                                    )}
                                   </CommandItem>
                                 ))}
                             </CommandGroup>
@@ -204,7 +196,7 @@ export function SubjectSuitabilitySection({
                 {/* Action buttons */}
                 <div className="flex gap-2">
                   <Button size="sm" onClick={handleAdd} disabled={!canSubmit}>
-                    {isSaving ? tc("saving") : t("rooms.subjects.add")}
+                    {isSaving ? tc("saving") : t("subjects.rooms.add")}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={resetForm}>
                     {tc("cancel")}
@@ -213,24 +205,22 @@ export function SubjectSuitabilitySection({
               </div>
             )}
 
-            {/* Suitabilities list */}
-            {suitabilities && suitabilities.length > 0 ? (
+            {/* Assigned rooms list */}
+            {assignedRooms && assignedRooms.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {suitabilities.map((suitability) => (
-                  <SuitabilityPill
-                    key={suitability.id}
-                    suitability={suitability}
-                    onRemove={() => handleRemove(suitability.id!)}
-                    isRemoving={removingId === suitability.id}
+                {assignedRooms.map((room) => (
+                  <RoomPill
+                    key={room.suitabilityId}
+                    room={room}
+                    onRemove={() => handleRemove(room.roomId)}
+                    isRemoving={removingId === room.roomId}
                     t={t}
                   />
                 ))}
               </div>
             ) : !isAdding ? (
               <p className="text-sm text-muted-foreground">
-                {hasSpecialRoomSubjects
-                  ? t("rooms.subjects.empty")
-                  : t("rooms.subjects.noSpecialSubjects")}
+                {t("subjects.rooms.empty")}
               </p>
             ) : null}
           </div>
@@ -240,45 +230,26 @@ export function SubjectSuitabilitySection({
   );
 }
 
-interface SuitabilityPillProps {
-  suitability: RoomSubjectSuitabilitySummary;
+interface RoomPillProps {
+  room: SubjectRoomSummary;
   onRemove: () => void;
   isRemoving: boolean;
   t: (key: string) => string;
 }
 
-function SuitabilityPill({
-  suitability,
-  onRemove,
-  isRemoving,
-  t,
-}: SuitabilityPillProps) {
-  const color = suitability.subjectColor;
-
-  // Use the subject's custom color if available, otherwise fall back to blue
-  const style = color
-    ? {
-        backgroundColor: `${color}20`, // 20 is ~12% opacity in hex
-        color: color,
-      }
-    : undefined;
-
+function RoomPill({ room, onRemove, isRemoving, t }: RoomPillProps) {
   return (
-    <div
-      className={cn(
-        "group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-all",
-        !color &&
-          "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+    <div className="group inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1.5 text-sm font-medium text-green-800 transition-all dark:bg-green-900/30 dark:text-green-300">
+      <span>{room.roomName}</span>
+      {room.building && (
+        <span className="text-xs opacity-70">({room.building})</span>
       )}
-      style={style}
-    >
-      <span>{suitability.subjectName}</span>
       <button
         type="button"
         onClick={onRemove}
         disabled={isRemoving}
         className="ml-1 rounded-full p-0.5 opacity-0 transition-opacity hover:bg-black/10 group-hover:opacity-100 dark:hover:bg-white/10"
-        aria-label={t("rooms.subjects.remove")}
+        aria-label={t("subjects.rooms.remove")}
       >
         <X className="h-3.5 w-3.5" />
       </button>

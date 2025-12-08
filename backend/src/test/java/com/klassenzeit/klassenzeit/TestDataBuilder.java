@@ -327,6 +327,7 @@ public class TestDataBuilder {
     private String abbreviation =
         "TST" + UUID.randomUUID().toString().substring(0, 2).toUpperCase();
     private String color = "#3498db";
+    private boolean needsSpecialRoom = false;
 
     public SubjectBuilder(School school) {
       this.school = school;
@@ -347,12 +348,18 @@ public class TestDataBuilder {
       return this;
     }
 
+    public SubjectBuilder needsSpecialRoom(boolean needsSpecialRoom) {
+      this.needsSpecialRoom = needsSpecialRoom;
+      return this;
+    }
+
     public Subject build() {
       Subject subject = new Subject();
       subject.setSchool(school);
       subject.setName(name);
       subject.setAbbreviation(abbreviation);
       subject.setColor(color);
+      subject.setNeedsSpecialRoom(needsSpecialRoom);
       return subject;
     }
 
@@ -865,17 +872,11 @@ public class TestDataBuilder {
   public class RoomSubjectSuitabilityBuilder {
     private final Room room;
     private final Subject subject;
-    private boolean isRequired = false;
     private String notes;
 
     public RoomSubjectSuitabilityBuilder(Room room, Subject subject) {
       this.room = room;
       this.subject = subject;
-    }
-
-    public RoomSubjectSuitabilityBuilder isRequired(boolean isRequired) {
-      this.isRequired = isRequired;
-      return this;
     }
 
     public RoomSubjectSuitabilityBuilder withNotes(String notes) {
@@ -887,7 +888,6 @@ public class TestDataBuilder {
       RoomSubjectSuitability suitability = new RoomSubjectSuitability();
       suitability.setRoom(room);
       suitability.setSubject(subject);
-      suitability.setIsRequired(isRequired);
       suitability.setNotes(notes);
       return suitability;
     }

@@ -27,6 +27,9 @@ public class Subject extends BaseEntity {
   @Column(length = 7)
   private String color;
 
+  @Column(name = "needs_special_room", nullable = false)
+  private Boolean needsSpecialRoom = false;
+
   public Subject() {}
 
   public School getSchool() {
@@ -59,5 +62,13 @@ public class Subject extends BaseEntity {
 
   public void setColor(String color) {
     this.color = color;
+  }
+
+  public Boolean isNeedsSpecialRoom() {
+    return needsSpecialRoom;
+  }
+
+  public void setNeedsSpecialRoom(Boolean needsSpecialRoom) {
+    this.needsSpecialRoom = needsSpecialRoom;
   }
 }

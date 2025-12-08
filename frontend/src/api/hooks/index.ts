@@ -76,6 +76,12 @@ export {
   useStartSolving,
   useStopSolving,
 } from "./use-solver";
+// Subject Room hooks
+export {
+  useAddRoomToSubject,
+  useRemoveRoomFromSubject,
+  useSubjectRooms,
+} from "./use-subject-rooms";
 // Subject hooks
 export {
   useCreateSubject,

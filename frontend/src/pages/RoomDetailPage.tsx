@@ -48,13 +48,14 @@ export function RoomDetailPage() {
       return;
     }
     if (isNew) {
-      await createMutation.mutateAsync({
+      const newRoom = await createMutation.mutateAsync({
         name: data.name,
         building: data.building ?? undefined,
         capacity: data.capacity ?? undefined,
       });
       toast.success(t("rooms.created"));
-      navigate(`/${i18n.language}/rooms`);
+      // Navigate to edit page to allow adding subject suitabilities
+      navigate(`/${i18n.language}/rooms/${newRoom.id}`, { replace: true });
     } else if (id) {
       await updateMutation.mutateAsync({
         id,
