@@ -21,5 +21,6 @@ export interface UpdateSubjectRequest {
    * @maxLength 7
    */
   color?: string;
+  needsSpecialRoom?: boolean;
   version?: number;
 }

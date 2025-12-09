@@ -15,6 +15,7 @@ import type {
   CreateTeacherRequest,
   QualificationResponse,
   QualificationSummary,
+  SchoolClassSummary,
   TeacherResponse,
   TeacherSummary,
   UpdateAvailabilityRequest,
@@ -164,6 +165,29 @@ export const teachersApi = {
    */
   deletePermanent(schoolId: string, id: string): Promise<void> {
     return apiClient.delete<void>(`${getBasePath(schoolId)}/${id}/permanent`);
+  },
+
+  /**
+   * Retrieves the classes where this teacher is assigned as the class teacher.
+   *
+   * @param schoolId - The unique identifier (UUID) of the parent school
+   * @param id - The unique identifier (UUID) of the teacher
+   * @returns Promise resolving to an array of class summaries
+   * @throws {ClientError} When the school or teacher is not found (404)
+   * @throws {NetworkError} When the API is unreachable or request times out
+   * @throws {ServerError} When the server returns a 5xx error
+   * @example
+   * ```ts
+   * const classes = await teachersApi.getClassTeacherAssignments("school-uuid", "teacher-uuid");
+   * ```
+   */
+  getClassTeacherAssignments(
+    schoolId: string,
+    id: string,
+  ): Promise<SchoolClassSummary[]> {
+    return apiClient.get<SchoolClassSummary[]>(
+      `${getBasePath(schoolId)}/${id}/class-teacher-assignments`,
+    );
   },
 };
 

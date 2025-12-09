@@ -33,7 +33,9 @@ public class SchoolClassService {
   }
 
   public List<SchoolClassSummary> findAllBySchool(UUID schoolId) {
-    return schoolClassRepository.findBySchoolId(schoolId).stream().map(this::toSummary).toList();
+    return schoolClassRepository.findBySchoolId(schoolId).stream()
+        .map(SchoolClassSummary::fromEntity)
+        .toList();
   }
 
   public SchoolClassResponse findById(UUID schoolId, UUID id) {
@@ -91,8 +93,10 @@ public class SchoolClassService {
       schoolClass.setActive(request.isActive());
     }
 
-    // Handle classTeacherId - null explicitly clears the teacher
-    if (request.classTeacherId() != null) {
+    // Handle classTeacherId - clearClassTeacher=true explicitly removes the teacher
+    if (Boolean.TRUE.equals(request.clearClassTeacher())) {
+      schoolClass.setClassTeacher(null);
+    } else if (request.classTeacherId() != null) {
       Teacher teacher =
           teacherRepository
               .findById(request.classTeacherId())
@@ -128,10 +132,5 @@ public class SchoolClassService {
         c.getCreatedAt(),
         c.getUpdatedAt(),
         c.getVersion());
-  }
-
-  private SchoolClassSummary toSummary(SchoolClass c) {
-    return new SchoolClassSummary(
-        c.getId(), c.getName(), c.getGradeLevel(), c.getStudentCount(), c.isActive());
   }
 }

@@ -5,8 +5,8 @@
  * OpenAPI spec version: v0
  */
 
-export interface CreateRoomSubjectSuitabilityRequest {
-  subjectId: string;
+export interface AddRoomToSubjectRequest {
+  roomId: string;
   /**
    * @minLength 0
    * @maxLength 255

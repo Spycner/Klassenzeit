@@ -24,6 +24,7 @@ import { customFetch } from "../../fetcher";
 import type {
   CreateTeacherRequest,
   FindAll3Params,
+  SchoolClassSummary,
   TeacherResponse,
   TeacherSummary,
   UpdateTeacherRequest,
@@ -540,6 +541,179 @@ export const useCreate3 = <TError = unknown, TContext = unknown>(
 
   return useMutation(mutationOptions, queryClient);
 };
+export const getClassTeacherAssignments = (
+  schoolId: string,
+  id: string,
+  signal?: AbortSignal,
+) => {
+  return customFetch<SchoolClassSummary[]>({
+    url: `/api/schools/${schoolId}/teachers/${id}/class-teacher-assignments`,
+    method: "GET",
+    signal,
+  });
+};
+
+export const getGetClassTeacherAssignmentsQueryKey = (
+  schoolId?: string,
+  id?: string,
+) => {
+  return [
+    `/api/schools/${schoolId}/teachers/${id}/class-teacher-assignments`,
+  ] as const;
+};
+
+export const getGetClassTeacherAssignmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+  TError = unknown,
+>(
+  schoolId: string,
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+        TError,
+        TData
+      >
+    >;
+  },
+) => {
+  const { query: queryOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetClassTeacherAssignmentsQueryKey(schoolId, id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getClassTeacherAssignments>>
+  > = ({ signal }) => getClassTeacherAssignments(schoolId, id, signal);
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(schoolId && id),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetClassTeacherAssignmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getClassTeacherAssignments>>
+>;
+export type GetClassTeacherAssignmentsQueryError = unknown;
+
+export function useGetClassTeacherAssignments<
+  TData = Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+  TError = unknown,
+>(
+  schoolId: string,
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+          TError,
+          Awaited<ReturnType<typeof getClassTeacherAssignments>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetClassTeacherAssignments<
+  TData = Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+  TError = unknown,
+>(
+  schoolId: string,
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+          TError,
+          Awaited<ReturnType<typeof getClassTeacherAssignments>>
+        >,
+        "initialData"
+      >;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetClassTeacherAssignments<
+  TData = Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+  TError = unknown,
+>(
+  schoolId: string,
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetClassTeacherAssignments<
+  TData = Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+  TError = unknown,
+>(
+  schoolId: string,
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getClassTeacherAssignments>>,
+        TError,
+        TData
+      >
+    >;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetClassTeacherAssignmentsQueryOptions(
+    schoolId,
+    id,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
 export const deletePermanent = (schoolId: string, id: string) => {
   return customFetch<void>({
     url: `/api/schools/${schoolId}/teachers/${id}/permanent`,

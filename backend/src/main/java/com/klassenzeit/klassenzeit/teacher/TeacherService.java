@@ -3,6 +3,8 @@ package com.klassenzeit.klassenzeit.teacher;
 import com.klassenzeit.klassenzeit.common.EntityNotFoundException;
 import com.klassenzeit.klassenzeit.school.School;
 import com.klassenzeit.klassenzeit.school.SchoolRepository;
+import com.klassenzeit.klassenzeit.schoolclass.SchoolClassRepository;
+import com.klassenzeit.klassenzeit.schoolclass.dto.SchoolClassSummary;
 import com.klassenzeit.klassenzeit.teacher.dto.CreateTeacherRequest;
 import com.klassenzeit.klassenzeit.teacher.dto.TeacherResponse;
 import com.klassenzeit.klassenzeit.teacher.dto.TeacherSummary;
@@ -19,10 +21,15 @@ public class TeacherService {
 
   private final TeacherRepository teacherRepository;
   private final SchoolRepository schoolRepository;
+  private final SchoolClassRepository schoolClassRepository;
 
-  public TeacherService(TeacherRepository teacherRepository, SchoolRepository schoolRepository) {
+  public TeacherService(
+      TeacherRepository teacherRepository,
+      SchoolRepository schoolRepository,
+      SchoolClassRepository schoolClassRepository) {
     this.teacherRepository = teacherRepository;
     this.schoolRepository = schoolRepository;
+    this.schoolClassRepository = schoolClassRepository;
   }
 
   public List<TeacherSummary> findAllBySchool(UUID schoolId, boolean includeInactive) {
@@ -117,6 +124,25 @@ public class TeacherService {
             .filter(t -> t.getSchool().getId().equals(schoolId))
             .orElseThrow(() -> new EntityNotFoundException("Teacher", id));
     teacherRepository.delete(teacher);
+  }
+
+  /**
+   * Returns the classes where this teacher is assigned as the class teacher.
+   *
+   * @param schoolId the school ID
+   * @param teacherId the teacher ID
+   * @return list of classes where this teacher is class teacher
+   */
+  public List<SchoolClassSummary> getClassTeacherAssignments(UUID schoolId, UUID teacherId) {
+    // Verify teacher exists and belongs to school
+    teacherRepository
+        .findById(teacherId)
+        .filter(t -> t.getSchool().getId().equals(schoolId))
+        .orElseThrow(() -> new EntityNotFoundException("Teacher", teacherId));
+
+    return schoolClassRepository.findByClassTeacherId(teacherId).stream()
+        .map(SchoolClassSummary::fromEntity)
+        .toList();
   }
 
   private TeacherResponse toResponse(Teacher t) {

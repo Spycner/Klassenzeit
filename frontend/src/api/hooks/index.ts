@@ -94,6 +94,7 @@ export {
 export {
   useAvailability,
   useAvailabilityEntry,
+  useClassTeacherAssignments,
   useCreateAvailability,
   useCreateQualification,
   useCreateTeacher,

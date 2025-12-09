@@ -2,7 +2,7 @@
  * Resource types (Subject, Room, SchoolClass, TimeSlot)
  */
 
-import type { DayOfWeek, GradeLevel, Period, Timestamps } from "./common";
+import type { DayOfWeek, Period, Timestamps } from "./common";
 
 // ============================================================================
 // Subject
@@ -114,32 +114,39 @@ export interface RoomSummary {
 
 export interface CreateSchoolClassRequest {
   name: string;
-  gradeLevel: GradeLevel;
+  gradeLevel: number;
   studentCount?: number;
   classTeacherId?: string;
 }
 
 export interface UpdateSchoolClassRequest {
-  name: string;
-  gradeLevel: GradeLevel;
+  name?: string;
+  gradeLevel?: number;
   studentCount?: number;
   classTeacherId?: string;
+  clearClassTeacher?: boolean;
+  isActive?: boolean;
+  version?: number;
 }
 
 export interface SchoolClassResponse extends Timestamps {
   id: string;
   name: string;
-  gradeLevel: GradeLevel;
+  gradeLevel: number;
   studentCount: number | null;
   classTeacherId: string | null;
   classTeacherName: string | null;
   isActive: boolean;
+  version?: number;
 }
 
 export interface SchoolClassSummary {
   id: string;
   name: string;
-  gradeLevel: GradeLevel;
+  gradeLevel: number;
+  studentCount?: number;
+  classTeacherName?: string;
+  isActive?: boolean;
 }
 
 // ============================================================================

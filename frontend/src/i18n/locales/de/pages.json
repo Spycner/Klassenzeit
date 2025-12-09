@@ -79,6 +79,17 @@
       }
     },
     "noSchoolAvailable": "Keine Schule verfügbar. Bitte erstellen Sie zuerst eine Schule.",
+    "classTeacherAssignments": {
+      "title": "Klassenleitung",
+      "empty": "Keiner Klasse als Klassenlehrer zugeordnet.",
+      "grade": "Klasse {{level}}",
+      "add": "Klasse zuweisen",
+      "class": "Klasse",
+      "selectClass": "Klasse auswählen...",
+      "searchClass": "Klassen suchen...",
+      "noClassesFound": "Keine Klassen gefunden.",
+      "unassign": "Als Klassenlehrer entfernen"
+    },
     "availability": {
       "title": "Wöchentliche Verfügbarkeit",
       "description": "Klicken Sie auf Zellen, um durch die Verfügbarkeitszustände zu wechseln. Änderungen werden beim Klicken auf Speichern gespeichert.",
@@ -203,7 +214,46 @@
   },
   "classes": {
     "title": "Klassen",
-    "description": "Verwalten Sie hier die Klassen Ihrer Schule."
+    "description": "Verwalten Sie hier die Klassen Ihrer Schule.",
+    "editTitle": "Klasse bearbeiten",
+    "newTitle": "Neue Klasse",
+    "addClass": "Klasse hinzufügen",
+    "delete": "Löschen",
+    "columns": {
+      "name": "Name",
+      "gradeLevel": "Klassenstufe",
+      "studentCount": "Schüler",
+      "classTeacher": "Klassenlehrer",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "empty": {
+      "title": "Noch keine Klassen",
+      "description": "Fügen Sie Ihre erste Klasse hinzu, um mit der Stundenplanung zu beginnen."
+    },
+    "form": {
+      "name": "Klassenname",
+      "namePlaceholder": "z.B. 3a, 5b",
+      "gradeLevel": "Klassenstufe",
+      "gradeLevelPlaceholder": "z.B. 5",
+      "studentCount": "Schüleranzahl",
+      "studentCountPlaceholder": "z.B. 25",
+      "classTeacher": "Klassenlehrer",
+      "classTeacherPlaceholder": "Lehrer auswählen...",
+      "classTeacherNone": "Keiner",
+      "create": "Klasse erstellen"
+    },
+    "confirmDelete": {
+      "title": "Klasse löschen?",
+      "description": "Diese Klasse wird deaktiviert. Sie kann später wieder aktiviert werden."
+    },
+    "noSchoolAvailable": "Keine Schule verfügbar. Bitte erstellen Sie zuerst eine Schule.",
+    "created": "Klasse erfolgreich erstellt",
+    "updated": "Klasse erfolgreich aktualisiert",
+    "deleted": "Klasse erfolgreich gelöscht"
   },
   "timeSlots": {
     "title": "Zeitfenster",

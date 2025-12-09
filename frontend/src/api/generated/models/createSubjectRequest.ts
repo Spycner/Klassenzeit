@@ -21,4 +21,5 @@ export interface CreateSubjectRequest {
    * @maxLength 7
    */
   color?: string;
+  needsSpecialRoom?: boolean;
 }

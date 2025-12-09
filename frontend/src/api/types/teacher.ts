@@ -32,6 +32,7 @@ export interface UpdateTeacherRequest {
   maxHoursPerWeek?: number;
   isPartTime?: boolean;
   isActive?: boolean;
+  version?: number;
 }
 
 export interface TeacherResponse extends Timestamps {
@@ -65,9 +66,8 @@ export interface CreateQualificationRequest {
 }
 
 export interface UpdateQualificationRequest {
-  subjectId: string;
-  qualificationLevel: QualificationLevel;
-  canTeachGrades?: GradeLevel[];
+  qualificationLevel?: QualificationLevel;
+  canTeachGrades?: number[];
   maxHoursPerWeek?: number;
 }
 
@@ -100,10 +100,9 @@ export interface CreateAvailabilityRequest {
 }
 
 export interface UpdateAvailabilityRequest {
-  termId?: string;
-  dayOfWeek: DayOfWeek;
-  period: Period;
-  availabilityType: AvailabilityType;
+  dayOfWeek?: number;
+  period?: number;
+  availabilityType?: AvailabilityType;
   reason?: string;
 }
 

@@ -10,4 +10,5 @@ export interface SubjectSummary {
   name?: string;
   abbreviation?: string;
   color?: string;
+  needsSpecialRoom?: boolean;
 }

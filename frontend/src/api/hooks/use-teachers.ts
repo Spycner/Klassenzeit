@@ -20,6 +20,7 @@ import type {
   CreateTeacherRequest,
   QualificationResponse,
   QualificationSummary,
+  SchoolClassSummary,
   TeacherResponse,
   TeacherSummary,
   UpdateAvailabilityRequest,
@@ -224,6 +225,36 @@ export function usePermanentDeleteTeacher(schoolId: string) {
         queryKey: queryKeys.teachers.all(schoolId),
       });
     },
+  });
+}
+
+/**
+ * Fetches the classes where a teacher is assigned as class teacher.
+ *
+ * @param schoolId - The unique identifier of the parent school (query is disabled if undefined)
+ * @param teacherId - The unique identifier of the teacher (query is disabled if undefined)
+ * @returns Query result containing an array of class summaries
+ * @example
+ * ```tsx
+ * function TeacherClassAssignments({ schoolId, teacherId }: Props) {
+ *   const { data: classes } = useClassTeacherAssignments(schoolId, teacherId);
+ *   return (
+ *     <ul>
+ *       {classes?.map(c => <li key={c.id}>{c.name}</li>)}
+ *     </ul>
+ *   );
+ * }
+ * ```
+ */
+export function useClassTeacherAssignments(
+  schoolId: string | undefined,
+  teacherId: string | undefined,
+) {
+  return useQuery<SchoolClassSummary[]>({
+    queryKey: queryKeys.teachers.classTeacherAssignments(schoolId!, teacherId!),
+    queryFn: () =>
+      teachersApi.getClassTeacherAssignments(schoolId!, teacherId!),
+    enabled: !!schoolId && !!teacherId,
   });
 }
 
