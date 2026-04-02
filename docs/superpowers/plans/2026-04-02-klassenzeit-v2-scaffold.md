@@ -636,11 +636,12 @@ git commit -m "Set up mdBook documentation"
 
 - [ ] **Step 1: Create database init script**
 
-Create `docker/postgres/init-databases.sql`:
+Create `docker/postgres/init-databases.sql` (for the shared server-infra PostgreSQL — staging and prod only):
 
 ```sql
--- Create databases for each Klassenzeit environment
-CREATE DATABASE klassenzeit_dev;
+-- Create databases for Keycloak and Klassenzeit staging/prod
+-- Dev uses its own PostgreSQL container (see docker-compose.yml)
+CREATE DATABASE keycloak;
 CREATE DATABASE klassenzeit_staging;
 CREATE DATABASE klassenzeit_prod;
 ```
@@ -714,19 +715,9 @@ KEYCLOAK_ADMIN=admin
 KEYCLOAK_ADMIN_PASSWORD=<generate a secure password>
 ```
 
-- [ ] **Step 5: Create keycloak database**
+- [ ] **Step 5: Mount init script into postgres container**
 
-Update `docker/postgres/init-databases.sql` to also create the keycloak database:
-
-```sql
--- Create databases for Keycloak and each Klassenzeit environment
-CREATE DATABASE keycloak;
-CREATE DATABASE klassenzeit_dev;
-CREATE DATABASE klassenzeit_staging;
-CREATE DATABASE klassenzeit_prod;
-```
-
-This init script needs to be mounted into the postgres container. Update the postgres service volumes:
+Update the postgres service volumes in server-infra to run the init script on first boot:
 
 ```yaml
     volumes:
@@ -881,10 +872,42 @@ export default nextConfig;
 
 - [ ] **Step 4: Create docker-compose.yml (dev)**
 
+Dev runs its own isolated PostgreSQL and Keycloak — no dependency on server-infra services. Safe to reset, safe credentials.
+
 Create `docker-compose.yml`:
 
 ```yaml
 services:
+  postgres-dev:
+    image: postgres:17-alpine
+    container_name: klassenzeit-postgres-dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: klassenzeit_dev
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  keycloak-dev:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: klassenzeit-keycloak-dev
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-dev:5432/klassenzeit_dev
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: dev_password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-dev
+    restart: unless-stopped
+
   backend-dev:
     build:
       context: .
@@ -892,12 +915,15 @@ services:
     container_name: klassenzeit-backend-dev
     environment:
       LOCO_ENV: development
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/klassenzeit_dev
-      KEYCLOAK_URL: http://keycloak:8080
+      DATABASE_URL: postgres://postgres:dev_password@postgres-dev:5432/klassenzeit_dev
+      KEYCLOAK_URL: http://keycloak-dev:8080
       KEYCLOAK_REALM: klassenzeit
       KEYCLOAK_CLIENT_ID: klassenzeit-dev
-    networks:
-      - web
+    depends_on:
+      - postgres-dev
+      - keycloak-dev
+    ports:
+      - "3001:3001"
     restart: unless-stopped
 
   frontend-dev:
@@ -906,22 +932,25 @@ services:
       dockerfile: Dockerfile
     container_name: klassenzeit-frontend-dev
     environment:
-      NEXT_PUBLIC_API_URL: http://backend-dev:3001
-      NEXT_PUBLIC_KEYCLOAK_URL: https://auth.klassenzeit.pascalkraus.com
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_KEYCLOAK_URL: http://localhost:8080
       NEXT_PUBLIC_KEYCLOAK_REALM: klassenzeit
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: klassenzeit-dev
-    networks:
-      - web
+    depends_on:
+      - backend-dev
+    ports:
+      - "3000:3000"
     restart: unless-stopped
 
-networks:
-  web:
-    external: true
+volumes:
+  postgres_dev_data:
 ```
 
 - [ ] **Step 5: Create docker-compose.staging.yml**
 
 Create `docker-compose.staging.yml`:
+
+Staging and prod use the shared PostgreSQL and Keycloak from server-infra via the `web` Docker network. Credentials come from `.env.staging` (gitignored, lives on server only).
 
 ```yaml
 services:
@@ -930,12 +959,9 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     container_name: klassenzeit-backend-staging
+    env_file: .env.staging
     environment:
       LOCO_ENV: staging
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/klassenzeit_staging
-      KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_REALM: klassenzeit
-      KEYCLOAK_CLIENT_ID: klassenzeit-staging
     networks:
       - web
     restart: unless-stopped
@@ -970,12 +996,9 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     container_name: klassenzeit-backend-prod
+    env_file: .env.prod
     environment:
       LOCO_ENV: production
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/klassenzeit_prod
-      KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_REALM: klassenzeit
-      KEYCLOAK_CLIENT_ID: klassenzeit-prod
     networks:
       - web
     restart: unless-stopped
@@ -1021,40 +1044,40 @@ git commit -m "Add Dockerfiles and Docker Compose files for all environments"
 Create `.env.example`:
 
 ```bash
-# PostgreSQL (shared instance in server-infra)
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=
+# Database
+DATABASE_URL=postgres://user:password@host:5432/klassenzeit_<env>
 
 # Keycloak
 KEYCLOAK_URL=http://keycloak:8080
 KEYCLOAK_REALM=klassenzeit
-KEYCLOAK_CLIENT_ID=
+KEYCLOAK_CLIENT_ID=klassenzeit-<env>
 
 # Frontend
-NEXT_PUBLIC_API_URL=
-NEXT_PUBLIC_KEYCLOAK_URL=
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080
 NEXT_PUBLIC_KEYCLOAK_REALM=klassenzeit
-NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=
+NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=klassenzeit-<env>
+
+# Staging/prod use shared PostgreSQL and Keycloak from server-infra
+# Dev uses isolated containers — see docker-compose.yml
 ```
 
 - [ ] **Step 2: Create .env.dev**
 
 Create `.env.dev`:
 
-Note: `POSTGRES_USER` and `POSTGRES_PASSWORD` must match the credentials set in `server-infra/.env` since we use the shared PostgreSQL instance. Read the actual values from there.
+Dev uses its own isolated PostgreSQL and Keycloak containers with hardcoded safe credentials. No secrets — safe to commit.
 
 ```bash
-# Dev environment — safe to commit, uses shared PostgreSQL in server-infra
-# IMPORTANT: POSTGRES_USER and POSTGRES_PASSWORD must match server-infra/.env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=<copy from server-infra/.env>
+# Dev environment — safe to commit, uses isolated dev containers
+DATABASE_URL=postgres://postgres:dev_password@localhost:5432/klassenzeit_dev
 
-KEYCLOAK_URL=http://keycloak:8080
+KEYCLOAK_URL=http://localhost:8080
 KEYCLOAK_REALM=klassenzeit
 KEYCLOAK_CLIENT_ID=klassenzeit-dev
 
 NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_KEYCLOAK_URL=https://auth.klassenzeit.pascalkraus.com
+NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080
 NEXT_PUBLIC_KEYCLOAK_REALM=klassenzeit
 NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=klassenzeit-dev
 ```
@@ -1181,6 +1204,11 @@ db-migrate:
 
 db-reset:
     cd backend && cargo run -- db reset
+
+# Reset dev environment (wipe volumes and start fresh)
+dev-reset:
+    docker compose down -v
+    docker compose up -d
 ```
 
 - [ ] **Step 2: Verify justfile parses**
@@ -1582,21 +1610,21 @@ git commit -m "Configure .claude for autonomous workflow"
 
 **Files:** None (verification only)
 
-- [ ] **Step 1: Verify shared services are running**
+- [ ] **Step 1: Start dev environment**
 
 ```bash
-docker ps --format '{{.Names}}\t{{.Status}}' | grep -E 'postgres|keycloak'
+just dev
 ```
 
-Expected: both containers up and healthy.
+Expected: `klassenzeit-postgres-dev`, `klassenzeit-keycloak-dev`, `klassenzeit-backend-dev`, `klassenzeit-frontend-dev` containers start.
 
-- [ ] **Step 2: Verify databases exist**
+- [ ] **Step 2: Verify dev containers are running**
 
 ```bash
-docker exec postgres psql -U postgres -c "\l" | grep klassenzeit
+docker ps --format '{{.Names}}\t{{.Status}}' | grep klassenzeit
 ```
 
-Expected: `klassenzeit_dev`, `klassenzeit_staging`, `klassenzeit_prod` listed.
+Expected: all four dev containers up.
 
 - [ ] **Step 3: Verify workspace compiles**
 
