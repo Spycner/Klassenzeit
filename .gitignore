@@ -1,1 +1,27 @@
-/target
+# Rust
+target/
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# mdBook output
+docs/book/
+
+# Environment (staging/prod contain secrets)
+.env.staging
+.env.prod
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
