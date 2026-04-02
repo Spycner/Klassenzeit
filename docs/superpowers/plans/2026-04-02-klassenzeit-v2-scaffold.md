@@ -698,7 +698,7 @@ Add to `/home/pascal/Code/server-infra/docker-compose.yml`:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      KC_HOSTNAME: auth.klassenzeit.pascalkraus.com
+      KC_HOSTNAME: klassenzeit-auth.pascalkraus.com
       KC_PROXY_HEADERS: xforwarded
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
@@ -730,7 +730,7 @@ Update the postgres service volumes in server-infra to run the init script on fi
 Add to `/home/pascal/Code/server-infra/Caddyfile`:
 
 ```
-auth.klassenzeit.pascalkraus.com {
+klassenzeit-auth.pascalkraus.com {
     encode gzip
     reverse_proxy keycloak:8080
 }
@@ -973,7 +973,7 @@ services:
     container_name: klassenzeit-frontend-staging
     environment:
       NEXT_PUBLIC_API_URL: http://backend-staging:3001
-      NEXT_PUBLIC_KEYCLOAK_URL: https://auth.klassenzeit.pascalkraus.com
+      NEXT_PUBLIC_KEYCLOAK_URL: https://klassenzeit-auth.pascalkraus.com
       NEXT_PUBLIC_KEYCLOAK_REALM: klassenzeit
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: klassenzeit-staging
     networks:
@@ -1010,7 +1010,7 @@ services:
     container_name: klassenzeit-frontend-prod
     environment:
       NEXT_PUBLIC_API_URL: http://backend-prod:3001
-      NEXT_PUBLIC_KEYCLOAK_URL: https://auth.klassenzeit.pascalkraus.com
+      NEXT_PUBLIC_KEYCLOAK_URL: https://klassenzeit-auth.pascalkraus.com
       NEXT_PUBLIC_KEYCLOAK_REALM: klassenzeit
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: klassenzeit-prod
     networks:
@@ -1451,7 +1451,7 @@ Read `/home/pascal/Code/server-infra/Caddyfile` to understand the existing struc
 Add to Caddyfile:
 
 ```
-staging.klassenzeit.pascalkraus.com {
+klassenzeit-staging.pascalkraus.com {
     encode gzip
 
     handle /api/* {
@@ -1481,7 +1481,6 @@ klassenzeit.pascalkraus.com {
     }
 }
 
-www.klassenzeit.pascalkraus.com {
     redir https://klassenzeit.pascalkraus.com{uri} permanent
 }
 ```

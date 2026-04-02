@@ -18,7 +18,7 @@ services:
     container_name: klassenzeit-frontend-staging
     environment:
       NEXT_PUBLIC_API_URL: http://backend-staging:3001
-      NEXT_PUBLIC_KEYCLOAK_URL: https://auth.klassenzeit.pascalkraus.com
+      NEXT_PUBLIC_KEYCLOAK_URL: https://klassenzeit-auth.pascalkraus.com
       NEXT_PUBLIC_KEYCLOAK_REALM: klassenzeit
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: klassenzeit-staging
     networks:
