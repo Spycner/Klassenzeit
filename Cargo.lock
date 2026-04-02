@@ -2027,6 +2027,7 @@ dependencies = [
  "chrono",
  "include_dir",
  "insta",
+ "klassenzeit-scheduler",
  "loco-rs",
  "migration",
  "regex",
@@ -2040,6 +2041,13 @@ dependencies = [
  "tracing-subscriber",
  "uuid",
  "validator",
+]
+
+[[package]]
+name = "klassenzeit-scheduler"
+version = "0.1.0"
+dependencies = [
+ "uuid",
 ]
 
 [[package]]
