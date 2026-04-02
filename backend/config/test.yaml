@@ -31,7 +31,7 @@ workers:
   #   - BackgroundAsync - Workers operate asynchronously in the background, processing tasks with async capabilities.
   mode: ForegroundBlocking
 
-  
+
 
 # Mailer Configuration.
 mailer:

@@ -33,7 +33,7 @@ workers:
   #   - BackgroundAsync - Workers operate asynchronously in the background, processing tasks with async capabilities.
   mode: BackgroundAsync
 
-  
+
 
 # Mailer Configuration.
 mailer:
