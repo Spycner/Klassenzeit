@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo *)",
+      "Bash(bun *)",
+      "Bash(just *)",
+      "Bash(mdbook *)",
+      "Bash(prek *)",
+      "Bash(git *)",
+      "Bash(docker compose *)"
+    ]
+  }
+}
