@@ -1,0 +1,30 @@
+services:
+  backend-staging:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: klassenzeit-backend-staging
+    env_file: .env.staging
+    environment:
+      LOCO_ENV: staging
+    networks:
+      - web
+    restart: unless-stopped
+
+  frontend-staging:
+    build:
+      context: frontend/
+      dockerfile: Dockerfile
+    container_name: klassenzeit-frontend-staging
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend-staging:3001
+      NEXT_PUBLIC_KEYCLOAK_URL: https://auth.klassenzeit.pascalkraus.com
+      NEXT_PUBLIC_KEYCLOAK_REALM: klassenzeit
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: klassenzeit-staging
+    networks:
+      - web
+    restart: unless-stopped
+
+networks:
+  web:
+    external: true
