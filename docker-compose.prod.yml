@@ -1,0 +1,30 @@
+services:
+  backend-prod:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: klassenzeit-backend-prod
+    env_file: .env.prod
+    environment:
+      LOCO_ENV: production
+    networks:
+      - web
+    restart: unless-stopped
+
+  frontend-prod:
+    build:
+      context: frontend/
+      dockerfile: Dockerfile
+    container_name: klassenzeit-frontend-prod
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend-prod:3001
+      NEXT_PUBLIC_KEYCLOAK_URL: https://klassenzeit-auth.pascalkraus.com
+      NEXT_PUBLIC_KEYCLOAK_REALM: klassenzeit
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: klassenzeit-prod
+    networks:
+      - web
+    restart: unless-stopped
+
+networks:
+  web:
+    external: true

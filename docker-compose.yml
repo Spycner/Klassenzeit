@@ -1,0 +1,67 @@
+services:
+  postgres-dev:
+    image: postgres:17-alpine
+    container_name: klassenzeit-postgres-dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: klassenzeit_dev
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  keycloak-dev:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: klassenzeit-keycloak-dev
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-dev:5432/klassenzeit_dev
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: dev_password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-dev
+    restart: unless-stopped
+
+  backend-dev:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: klassenzeit-backend-dev
+    environment:
+      LOCO_ENV: development
+      DATABASE_URL: postgres://postgres:dev_password@postgres-dev:5432/klassenzeit_dev
+      KEYCLOAK_URL: http://keycloak-dev:8080
+      KEYCLOAK_REALM: klassenzeit
+      KEYCLOAK_CLIENT_ID: klassenzeit-dev
+    depends_on:
+      - postgres-dev
+      - keycloak-dev
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+  frontend-dev:
+    build:
+      context: frontend/
+      dockerfile: Dockerfile
+    container_name: klassenzeit-frontend-dev
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_KEYCLOAK_URL: http://localhost:8080
+      NEXT_PUBLIC_KEYCLOAK_REALM: klassenzeit
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: klassenzeit-dev
+    depends_on:
+      - backend-dev
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  postgres_dev_data:

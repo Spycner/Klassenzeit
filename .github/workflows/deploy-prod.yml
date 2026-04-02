@@ -1,0 +1,17 @@
+name: Deploy Production
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker compose -f docker-compose.prod.yml build
+      - name: Deploy
+        run: docker compose -f docker-compose.prod.yml up -d
+      - name: Cleanup
+        run: docker image prune -f

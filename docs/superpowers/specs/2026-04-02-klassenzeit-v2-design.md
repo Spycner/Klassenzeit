@@ -71,9 +71,11 @@ Klassenzeit/
 
 ### Shared Services (in server-infra)
 
-PostgreSQL and Keycloak run as shared containers in `server-infra/docker-compose.yml`, on the `web` Docker network. All Klassenzeit environments connect to them by container name.
+PostgreSQL and Keycloak run as shared containers in `server-infra/docker-compose.yml`, on the `web` Docker network. Staging and prod connect to them by container name.
 
-PostgreSQL hosts three databases: `klassenzeit_dev`, `klassenzeit_staging`, `klassenzeit_prod`. Created via `docker/postgres/init.sql` mounted to `/docker-entrypoint-initdb.d/`.
+The shared PostgreSQL hosts two databases: `klassenzeit_staging`, `klassenzeit_prod`. Created via `docker/postgres/init-databases.sql` mounted to `/docker-entrypoint-initdb.d/`.
+
+**Dev runs its own isolated PostgreSQL and Keycloak** in `docker-compose.yml` with hardcoded safe credentials (`dev_password`). This avoids leaking server-infra secrets in committed files and allows `just dev-reset` to wipe and recreate cleanly.
 
 Keycloak has one realm (`klassenzeit`) with separate clients per environment (`klassenzeit-dev`, `klassenzeit-staging`, `klassenzeit-prod`).
 
@@ -82,7 +84,7 @@ Keycloak has one realm (`klassenzeit`) with separate clients per environment (`k
 | Environment | Trigger | Compose file | Database | URL |
 |---|---|---|---|---|
 | Dev | `just dev` on server | `docker-compose.yml` | `klassenzeit_dev` | localhost ports |
-| Staging | Push to `main` (GHA) | `docker-compose.staging.yml` | `klassenzeit_staging` | `staging.klassenzeit.pascalkraus.com` |
+| Staging | Push to `main` (GHA) | `docker-compose.staging.yml` | `klassenzeit_staging` | `klassenzeit-staging.pascalkraus.com` |
 | Prod | GitHub release (GHA) | `docker-compose.prod.yml` | `klassenzeit_prod` | `klassenzeit.pascalkraus.com` |
 
 ### GHA Workflows
@@ -94,7 +96,7 @@ Keycloak has one realm (`klassenzeit`) with separate clients per environment (`k
 ### Caddy Routes (added to server-infra/Caddyfile)
 
 - `klassenzeit.pascalkraus.com` → `klassenzeit-prod-frontend:3000`
-- `staging.klassenzeit.pascalkraus.com` → `klassenzeit-staging-frontend:3000`
+- `klassenzeit-staging.pascalkraus.com` → `klassenzeit-staging-frontend:3000`
 - API proxied via path prefix (`/api` → Loco backend container)
 
 Each compose file runs a frontend and backend container on the `web` network.

@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = [
+    "backend",
+    "backend/migration",
+    "scheduler",
+]
+
+[workspace.dependencies]
+loco-rs = { version = "0.16" }
