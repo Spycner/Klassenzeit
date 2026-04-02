@@ -87,7 +87,7 @@ Keycloak has one realm (`klassenzeit`) with separate clients per environment (`k
 
 ### GHA Workflows
 
-- **CI** — runs on PRs: `cargo test`, `bun test`, `bun run lint`, `mdbook build`
+- **CI** — runs on PRs: `cargo fmt --check`, `cargo clippy`, `cargo test`, `biome check`, `tsc --noEmit`, `bun test`, `mdbook build`
 - **Deploy staging** — triggered on push to `main`, self-hosted runner, builds and deploys staging containers
 - **Deploy prod** — triggered on GitHub release, same pattern as the website project
 
