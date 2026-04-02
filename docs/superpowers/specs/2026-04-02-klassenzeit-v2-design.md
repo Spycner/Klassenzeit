@@ -63,7 +63,8 @@ Klassenzeit/
 ├── .env.dev                   # Dev defaults (committed, safe values)
 ├── .env.staging               # On server only (NOT committed)
 ├── .env.prod                  # On server only (NOT committed)
-└── .gitignore
+├── .gitignore
+└── .prek.toml                 # Pre-commit hook configuration
 ```
 
 ## Infrastructure & Deployment
