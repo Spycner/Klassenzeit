@@ -22,7 +22,7 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 - Roadmap & next steps: `docs/superpowers/next-steps.md`
 - Specs: `docs/superpowers/specs/`
 - Plans: `docs/superpowers/plans/`
-- Current status: Step 1 (Keycloak realm setup) is complete. Next up: Step 2 (DB schema migrations).
+- Current status: Steps 1-2 complete. Next up: Step 3 (Auth middleware).
 
 ## Architecture
 
@@ -49,9 +49,15 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 
 ## Testing
 
-- Backend: `cargo test --workspace`
+- Backend unit tests: `cargo test --workspace`
+- Backend integration tests: `cargo test -p klassenzeit-backend --test mod` (requires running Postgres)
 - Frontend: `bun test` in `frontend/`
 - E2E: TBD (in `e2e/`)
+- Integration tests require: `docker compose up -d postgres-dev`, then create test user/db:
+  ```
+  docker exec klassenzeit-postgres-dev psql -U postgres -c "CREATE USER loco WITH PASSWORD 'loco' SUPERUSER;"
+  docker exec klassenzeit-postgres-dev psql -U postgres -c "CREATE DATABASE \"klassenzeit-backend_test\" OWNER loco;"
+  ```
 
 ## Deployment
 
