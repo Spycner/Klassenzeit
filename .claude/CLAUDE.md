@@ -22,7 +22,7 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 - Roadmap & next steps: `docs/superpowers/next-steps.md`
 - Specs: `docs/superpowers/specs/`
 - Plans: `docs/superpowers/plans/`
-- Current status: Steps 1-2 complete. Next up: Step 3 (Auth middleware).
+- Current status: Steps 1-3 complete. Next up: Step 4 (Frontend Auth Integration).
 
 ## Architecture
 
