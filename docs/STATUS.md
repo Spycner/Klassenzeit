@@ -29,9 +29,14 @@
 - Plan: `superpowers/plans/2026-04-03-i18n.md`
 - PR: #21 (merged)
 
+### Domain Tables Migration
+- Spec: `superpowers/specs/2026-04-03-domain-tables-design.md`
+- Plan: `superpowers/plans/2026-04-03-domain-tables.md`
+- PR: #23 (merged)
+
 ## Next Up
 
-**Domain Tables Migration** — Port v1 domain tables to SeaORM migrations (school_years, terms, teachers, subjects, rooms, etc.). Blocked on domain research conversation.
+**Step 6: Scheduler Integration** — Wire the scheduler crate into the backend via background jobs. Depends on domain tables (done) and domain research conversation for constraint details.
 
 ## Notes from Reviews
 

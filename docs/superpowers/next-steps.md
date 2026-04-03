@@ -38,16 +38,10 @@ Prove the full stack works end-to-end with a real feature.
 ### ~~Step 5b: i18n (DE/EN)~~ ✓
 Completed — PR #21 merged.
 
-### Domain Tables Migration
-**Priority: medium** | Blocked by: domain research conversation (mother-in-law insights)
-Port v1 domain tables to SeaORM migrations.
-
-- `school_years`, `terms`
-- `teachers`, `subjects`, `rooms`, `school_classes`, `time_slots`
-- `teacher_subject_qualifications`, `teacher_availability`
-- `room_subject_suitability`
-- `lessons`, `constraints`
-- Reference: v1 schema on `archive/v1` in Flyway migrations
+### ~~Domain Tables Migration~~ ✓
+Completed — PR #23 merged. All 10 domain tables ported to SeaORM with ERD documentation.
+- Spec: `specs/2026-04-03-domain-tables-design.md`
+- Plan: `plans/2026-04-03-domain-tables.md`
 
 ### Step 6: Scheduler Integration
 **Priority: low** | Depends on: Domain tables, Steps 3-5
