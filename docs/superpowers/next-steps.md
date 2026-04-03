@@ -14,20 +14,14 @@ Replace Loco auth scaffolding with `schools`, `app_users`, `school_memberships`.
 - Spec: `specs/2026-04-03-core-db-schema-design.md`
 - Plan: `plans/2026-04-03-core-db-schema.md`
 
+### Step 3: Auth Middleware in Loco ✓
+Wire up JWT validation and multi-tenancy scoping in the backend.
+- Spec: `specs/2026-04-03-auth-middleware-design.md`
+- Plan: `plans/2026-04-03-auth-middleware.md`
+
 ---
 
 ## Ready (no blockers)
-
-### Step 3: Auth Middleware in Loco
-**Priority: high** | Depends on: Steps 1, 2
-Wire up JWT validation and multi-tenancy scoping in the backend.
-
-- Add Keycloak JWKS endpoint validation (fetch public keys, verify JWT signatures)
-- Create auth middleware that extracts `school_id` and `role` from JWT claims
-- Implement `SchoolScoped` extractor that automatically filters queries by `school_id`
-- Add PostgreSQL Row-Level Security (RLS) policies as a safety net
-- Write integration tests with mock JWTs
-- Remove or adapt Loco's built-in auth scaffolding (JWT/password auth config in yaml)
 
 ### Step 4: Frontend Auth Integration
 **Priority: high** | Depends on: Step 3

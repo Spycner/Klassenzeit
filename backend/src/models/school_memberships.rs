@@ -5,6 +5,21 @@ pub use super::_entities::school_memberships::{self, ActiveModel, Entity, Model}
 
 impl ActiveModelBehavior for ActiveModel {}
 
+impl Model {
+    pub async fn find_active_membership(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+        school_id: Uuid,
+    ) -> Result<Option<Self>, DbErr> {
+        Entity::find()
+            .filter(school_memberships::Column::UserId.eq(user_id))
+            .filter(school_memberships::Column::SchoolId.eq(school_id))
+            .filter(school_memberships::Column::IsActive.eq(true))
+            .one(db)
+            .await
+    }
+}
+
 impl ActiveModel {
     pub fn new(user_id: Uuid, school_id: Uuid, role: String) -> Self {
         let now = chrono::Utc::now().into();

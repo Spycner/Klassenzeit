@@ -78,11 +78,9 @@ database:
   # Recreating schema when application loaded.  This is a dangerous operation, make sure that you using this flag only on dev environments or test mode
   dangerously_recreate: true
 
-# Authentication Configuration
-auth:
-  # JWT authentication
-  jwt:
-    # Secret key for token generation and verification
-    secret: RVUgRzdZc2VUVwIFDk0D
-    # Token expiration time in seconds
-    expiration: 604800 # 7 days
+# Keycloak configuration (overridden by test fixtures)
+settings:
+  keycloak:
+    url: "http://localhost:0"
+    realm: "klassenzeit"
+    client_id: "klassenzeit-test"
