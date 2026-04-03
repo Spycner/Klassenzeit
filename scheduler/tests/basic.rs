@@ -1,5 +1,5 @@
 use klassenzeit_scheduler::solve;
-use klassenzeit_scheduler::types::{ScheduleInput, ScheduleOutput};
+use klassenzeit_scheduler::types::ScheduleInput;
 
 #[test]
 fn empty_input_returns_empty_timetable() {
