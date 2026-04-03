@@ -25,3 +25,6 @@ Thumbs.db
 
 # Docker
 *.log
+
+# Worktrees
+.worktrees/
