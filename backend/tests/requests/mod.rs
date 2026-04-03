@@ -1,4 +1,5 @@
 mod auth;
+mod classes;
 mod members;
 mod rooms;
 mod schools;
