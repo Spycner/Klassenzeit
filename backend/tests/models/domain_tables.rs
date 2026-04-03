@@ -260,3 +260,90 @@ async fn can_create_lesson() {
     assert_eq!(lesson.week_pattern, "every");
     assert_eq!(lesson.room_id, None);
 }
+
+// --- Constraint violation tests ---
+
+#[tokio::test]
+#[serial]
+async fn duplicate_teacher_abbreviation_rejected() {
+    let boot = boot_test::<App>().await.unwrap();
+    let db = &boot.app_context.db;
+    let school = setup_school(db).await;
+
+    teachers::ActiveModel::new(school.id, "A".into(), "B".into(), "AB".into())
+        .insert(db)
+        .await
+        .unwrap();
+
+    let dup = teachers::ActiveModel::new(school.id, "C".into(), "D".into(), "AB".into());
+    assert!(dup.insert(db).await.is_err());
+}
+
+#[tokio::test]
+#[serial]
+async fn lesson_class_double_booking_rejected() {
+    let boot = boot_test::<App>().await.unwrap();
+    let db = &boot.app_context.db;
+    let school = setup_school(db).await;
+
+    let sy = school_years::ActiveModel::new(
+        school.id,
+        "2025/2026".into(),
+        chrono::NaiveDate::from_ymd_opt(2025, 8, 1).unwrap(),
+        chrono::NaiveDate::from_ymd_opt(2026, 7, 31).unwrap(),
+    )
+    .insert(db)
+    .await
+    .unwrap();
+
+    let term = terms::ActiveModel::new(
+        sy.id,
+        "S1".into(),
+        chrono::NaiveDate::from_ymd_opt(2025, 8, 1).unwrap(),
+        chrono::NaiveDate::from_ymd_opt(2025, 12, 31).unwrap(),
+    )
+    .insert(db)
+    .await
+    .unwrap();
+
+    let t1 = teachers::ActiveModel::new(school.id, "X".into(), "Y".into(), "T1".into())
+        .insert(db)
+        .await
+        .unwrap();
+    let t2 = teachers::ActiveModel::new(school.id, "A".into(), "B".into(), "T2".into())
+        .insert(db)
+        .await
+        .unwrap();
+    let s1 = subjects::ActiveModel::new(school.id, "Math".into(), "M1".into())
+        .insert(db)
+        .await
+        .unwrap();
+    let s2 = subjects::ActiveModel::new(school.id, "Eng".into(), "E1".into())
+        .insert(db)
+        .await
+        .unwrap();
+    let class = school_classes::ActiveModel::new(school.id, "5a".into(), 5)
+        .insert(db)
+        .await
+        .unwrap();
+    let ts = time_slots::ActiveModel::new(
+        school.id,
+        0,
+        1,
+        chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
+        chrono::NaiveTime::from_hms_opt(8, 45, 0).unwrap(),
+    )
+    .insert(db)
+    .await
+    .unwrap();
+
+    // First lesson OK
+    lessons::ActiveModel::new(term.id, class.id, t1.id, s1.id, ts.id)
+        .insert(db)
+        .await
+        .unwrap();
+
+    // Same class, same timeslot, same week_pattern = double-booking → rejected
+    let dup = lessons::ActiveModel::new(term.id, class.id, t2.id, s2.id, ts.id);
+    assert!(dup.insert(db).await.is_err());
+}
