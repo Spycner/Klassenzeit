@@ -22,7 +22,7 @@ impl ActiveModel {
             subject_id: sea_orm::ActiveValue::Set(subject_id),
             room_id: sea_orm::ActiveValue::Set(None),
             timeslot_id: sea_orm::ActiveValue::Set(timeslot_id),
-            week_pattern: sea_orm::ActiveValue::Set("weekly".to_string()),
+            week_pattern: sea_orm::ActiveValue::Set("every".to_string()),
             created_at: sea_orm::ActiveValue::Set(now),
             updated_at: sea_orm::ActiveValue::Set(now),
         }
