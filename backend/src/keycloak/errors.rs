@@ -10,6 +10,7 @@ pub enum AuthError {
     MissingSchoolId,
     InvalidSchoolId,
     NotAMember,
+    Internal(String),
 }
 
 impl IntoResponse for AuthError {
@@ -27,6 +28,7 @@ impl IntoResponse for AuthError {
             Self::MissingSchoolId => (StatusCode::BAD_REQUEST, "missing X-School-Id header"),
             Self::InvalidSchoolId => (StatusCode::BAD_REQUEST, "invalid school ID format"),
             Self::NotAMember => (StatusCode::FORBIDDEN, "not a member of this school"),
+            Self::Internal(ref _e) => (StatusCode::INTERNAL_SERVER_ERROR, "internal server error"),
         };
 
         let body = axum::Json(json!({ "error": message }));

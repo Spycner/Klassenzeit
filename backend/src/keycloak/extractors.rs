@@ -2,13 +2,45 @@ use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use axum::http::HeaderMap;
 use loco_rs::app::AppContext;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
 use crate::models::{app_users, school_memberships, schools};
 
 use super::claims::AuthClaims;
 use super::errors::AuthError;
+
+/// Look up or auto-create an app_user from JWT claims.
+/// Handles the race condition where two concurrent requests try to create the same user.
+async fn resolve_user(
+    db: &DatabaseConnection,
+    claims: &AuthClaims,
+) -> Result<app_users::Model, AuthError> {
+    if let Some(user) = app_users::Model::find_by_keycloak_id(db, &claims.sub)
+        .await
+        .map_err(|e| AuthError::Internal(e.to_string()))?
+    {
+        return Ok(user);
+    }
+
+    // Auto-create on first login
+    let new_user = app_users::ActiveModel::new(
+        claims.sub.clone(),
+        claims.email.clone(),
+        claims.display_name().to_string(),
+    );
+
+    match new_user.insert(db).await {
+        Ok(user) => Ok(user),
+        Err(_) => {
+            // Likely a unique constraint violation from a concurrent insert — re-fetch
+            app_users::Model::find_by_keycloak_id(db, &claims.sub)
+                .await
+                .map_err(|e| AuthError::Internal(e.to_string()))?
+                .ok_or_else(|| AuthError::Internal("user creation failed".into()))
+        }
+    }
+}
 
 /// Extractor that provides the authenticated user.
 /// Reads AuthClaims from request extensions (set by JWT middleware).
@@ -31,27 +63,7 @@ impl FromRequestParts<AppContext> for AuthUser {
 
         async move {
             let claims = claims.ok_or(AuthError::MissingAuthHeader)?;
-
-            let user = app_users::Model::find_by_keycloak_id(&db, &claims.sub)
-                .await
-                .map_err(|_| AuthError::InvalidToken("database error".into()))?;
-
-            let user = match user {
-                Some(u) => u,
-                None => {
-                    // Auto-create on first login
-                    let new_user = app_users::ActiveModel::new(
-                        claims.sub.clone(),
-                        claims.email.clone(),
-                        claims.display_name().to_string(),
-                    );
-                    new_user
-                        .insert(&db)
-                        .await
-                        .map_err(|_| AuthError::InvalidToken("failed to create user".into()))?
-                }
-            };
-
+            let user = resolve_user(&db, &claims).await?;
             Ok(Self { user, claims })
         }
     }
@@ -75,48 +87,25 @@ impl FromRequestParts<AppContext> for SchoolContext {
         state: &AppContext,
     ) -> impl std::future::Future<Output = Result<Self, Self::Rejection>> + Send {
         let school_id_result = parse_school_id(&parts.headers);
+        let claims = parts.extensions.get::<AuthClaims>().cloned();
         let db = state.db.clone();
 
-        // We need to drive AuthUser extraction manually to avoid borrowing `parts` across await
-        let claims = parts.extensions.get::<AuthClaims>().cloned();
-        let db2 = db.clone();
-
         async move {
-            // Replicate AuthUser logic inline to avoid re-borrowing parts
             let claims = claims.ok_or(AuthError::MissingAuthHeader)?;
-
-            let user_opt = app_users::Model::find_by_keycloak_id(&db2, &claims.sub)
-                .await
-                .map_err(|_| AuthError::InvalidToken("database error".into()))?;
-
-            let user = match user_opt {
-                Some(u) => u,
-                None => {
-                    let new_user = app_users::ActiveModel::new(
-                        claims.sub.clone(),
-                        claims.email.clone(),
-                        claims.display_name().to_string(),
-                    );
-                    new_user
-                        .insert(&db2)
-                        .await
-                        .map_err(|_| AuthError::InvalidToken("failed to create user".into()))?
-                }
-            };
-
+            let user = resolve_user(&db, &claims).await?;
             let school_id = school_id_result?;
 
             let school = schools::Entity::find()
                 .filter(schools::schools::Column::Id.eq(school_id))
                 .one(&db)
                 .await
-                .map_err(|_| AuthError::InvalidSchoolId)?
+                .map_err(|e| AuthError::Internal(e.to_string()))?
                 .ok_or(AuthError::InvalidSchoolId)?;
 
             let membership =
                 school_memberships::Model::find_active_membership(&db, user.id, school_id)
                     .await
-                    .map_err(|_| AuthError::NotAMember)?
+                    .map_err(|e| AuthError::Internal(e.to_string()))?
                     .ok_or(AuthError::NotAMember)?;
 
             Ok(Self {
