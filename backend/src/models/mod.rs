@@ -1,4 +1,15 @@
 pub mod _entities;
 pub mod app_users;
+pub mod lessons;
+pub mod room_subject_suitabilities;
+pub mod rooms;
+pub mod school_classes;
 pub mod school_memberships;
+pub mod school_years;
 pub mod schools;
+pub mod subjects;
+pub mod teacher_availabilities;
+pub mod teacher_subject_qualifications;
+pub mod teachers;
+pub mod terms;
+pub mod time_slots;
