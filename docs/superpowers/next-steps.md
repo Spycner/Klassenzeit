@@ -35,6 +35,19 @@ Prove the full stack works end-to-end with a real feature.
 
 ## Ready (no blockers)
 
+### Step 5b: i18n (DE/EN)
+**Priority: medium** | Depends on: Step 5
+Add bilingual support using `next-intl`, matching the pascalkraus.com website pattern.
+
+- Install `next-intl`, set up `[locale]` route segments
+- Move all pages under `app/[locale]/`
+- Create `messages/en.json` and `messages/de.json` translation files
+- Add `i18n/config.ts` and `i18n/request.ts`
+- Add language switcher component (toggle DE/EN)
+- Wrap layout with `NextIntlClientProvider`
+- Translate all existing UI strings (schools, members, dashboard, auth states)
+- Reference: `/home/pascal/Code/website/` uses the same `next-intl` pattern
+
 ### Domain Tables Migration
 **Priority: medium** | Blocked by: domain research conversation (mother-in-law insights)
 Port v1 domain tables to SeaORM migrations.
