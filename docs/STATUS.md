@@ -24,6 +24,11 @@
 - Plan: `superpowers/plans/2026-04-03-first-crud-endpoints.md`
 - PR: #18 (merged)
 
+### Step 5b: i18n (DE/EN)
+- Spec: `superpowers/specs/2026-04-03-i18n-design.md`
+- Plan: `superpowers/plans/2026-04-03-i18n.md`
+- PR: #21 (merged)
+
 ## Next Up
 
 **Domain Tables Migration** — Port v1 domain tables to SeaORM migrations (school_years, terms, teachers, subjects, rooms, etc.). Blocked on domain research conversation.
