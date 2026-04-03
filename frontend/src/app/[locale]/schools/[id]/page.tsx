@@ -2,6 +2,7 @@
 
 import { Pencil } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,8 @@ export default function SchoolDashboardPage() {
   const params = useParams<{ id: string }>();
   const schoolId = params.id;
   const apiClient = useApiClient();
+  const t = useTranslations("school");
+  const tc = useTranslations("common");
 
   const [school, setSchool] = useState<SchoolResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +78,7 @@ export default function SchoolDashboardPage() {
   if (loading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-6">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">{tc("loading")}</p>
       </div>
     );
   }
@@ -105,19 +108,17 @@ export default function SchoolDashboardPage() {
                 onClick={() => setNewName(school.name)}
               >
                 <Pencil className="mr-2 h-4 w-4" />
-                Edit
+                {tc("edit")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Edit school name</DialogTitle>
-                <DialogDescription>
-                  Update the name of this school.
-                </DialogDescription>
+                <DialogTitle>{t("editTitle")}</DialogTitle>
+                <DialogDescription>{t("editDescription")}</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="school-name">School name</Label>
+                  <Label htmlFor="school-name">{t("name")}</Label>
                   <Input
                     id="school-name"
                     value={newName}
@@ -134,7 +135,7 @@ export default function SchoolDashboardPage() {
                   onClick={handleSaveName}
                   disabled={!newName.trim() || saving}
                 >
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? tc("saving") : tc("save")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -144,30 +145,30 @@ export default function SchoolDashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>School Details</CardTitle>
+          <CardTitle>{t("details")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
           <div className="grid grid-cols-2 gap-1">
             <span className="text-sm font-medium text-muted-foreground">
-              Name
+              {t("name")}
             </span>
             <span className="text-sm">{school.name}</span>
           </div>
           <div className="grid grid-cols-2 gap-1">
             <span className="text-sm font-medium text-muted-foreground">
-              Slug
+              {t("slug")}
             </span>
             <span className="font-mono text-sm">{school.slug}</span>
           </div>
           <div className="grid grid-cols-2 gap-1">
             <span className="text-sm font-medium text-muted-foreground">
-              Your role
+              {t("role")}
             </span>
             <span className="text-sm capitalize">{school.role}</span>
           </div>
           <div className="grid grid-cols-2 gap-1">
             <span className="text-sm font-medium text-muted-foreground">
-              Created
+              {t("created")}
             </span>
             <span className="text-sm">
               {new Date(school.created_at).toLocaleDateString()}
