@@ -1,3 +1,9 @@
 mod auth;
+mod classes;
 mod members;
+mod rooms;
 mod schools;
+mod subjects;
+mod teachers;
+mod terms;
+mod time_slots;
