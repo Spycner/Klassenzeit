@@ -5,6 +5,12 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "@/hooks/use-api-client";
 import type { SchoolResponse } from "@/lib/types";
+import { ClassesTab } from "./components/classes-tab";
+import { RoomsTab } from "./components/rooms-tab";
+import { SubjectsTab } from "./components/subjects-tab";
+import { TeachersTab } from "./components/teachers-tab";
+import { TermsTab } from "./components/terms-tab";
+import { TimeslotsTab } from "./components/timeslots-tab";
 
 const TABS = [
   "terms",
@@ -90,8 +96,12 @@ export default function SettingsPage() {
       </div>
 
       <div>
-        {/* Tab content rendered here — placeholder until tab components are built */}
-        <p className="text-muted-foreground">Tab: {activeTab}</p>
+        {activeTab === "terms" && <TermsTab />}
+        {activeTab === "classes" && <ClassesTab />}
+        {activeTab === "subjects" && <SubjectsTab />}
+        {activeTab === "teachers" && <TeachersTab />}
+        {activeTab === "rooms" && <RoomsTab />}
+        {activeTab === "timeslots" && <TimeslotsTab />}
       </div>
     </div>
   );
