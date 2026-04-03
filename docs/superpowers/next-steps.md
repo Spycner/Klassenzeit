@@ -1,53 +1,36 @@
-# Klassenzeit v2 — Next Steps
+# Klassenzeit v2 — Backlog
 
-Post-scaffold roadmap. Each step builds on the previous. Steps 1-4 are the foundation — once done, you have a fully authenticated, multi-tenant app to build features on.
+Status: `done` | `in-progress` | `ready` | `blocked` | `idea`
 
-## Step 1: Set Up Keycloak Realm
+## Done
 
-Create the `klassenzeit` realm and configure clients for all environments.
+### Step 1: Keycloak Realm Setup ✓
+Create `klassenzeit` realm, clients, roles, mappers, seed users.
+- Spec: `specs/2026-04-03-keycloak-realm-setup.md`
+- Plan: `plans/2026-04-03-keycloak-realm-setup.md`
 
-- Create realm `klassenzeit` in Keycloak admin (`https://klassenzeit-auth.pascalkraus.com`)
-- Create clients: `klassenzeit-dev`, `klassenzeit-staging`, `klassenzeit-prod`
-- Configure redirect URIs per client (localhost for dev, actual domains for staging/prod)
-- Add custom user attributes: `school_id`
-- Create client mappers to include `school_id` and `role` as JWT claims
-- Set up initial roles: `admin`, `teacher`, `viewer`
-- Export realm config to `docker/keycloak/realm-export.json` for reproducibility
+### Step 2: Core DB Schema ✓
+Replace Loco auth scaffolding with `schools`, `app_users`, `school_memberships`.
+- Spec: `specs/2026-04-03-core-db-schema-design.md`
+- Plan: `plans/2026-04-03-core-db-schema.md`
 
-## Step 2: Database Schema (SeaORM Migrations)
+---
 
-Port the v1 schema to SeaORM migrations. Start with core tables needed for auth and multi-tenancy.
+## Ready (no blockers)
 
-**Core tables (needed for auth):**
-- `schools` — tenant root
-- `app_users` — links to Keycloak identity
-- `school_memberships` — user-school-role mapping
-
-**Domain tables (can wait for mother-in-law insights):**
-- `school_years`, `terms`
-- `teachers`, `subjects`, `rooms`, `school_classes`, `time_slots`
-- `teacher_subject_qualifications`, `teacher_availability`
-- `room_subject_suitability`
-- `lessons` (generated timetable)
-- `constraints`
-
-Reference: full v1 schema is on `archive/v1` branch in Flyway migrations.
-
-**Approach:** Implement core tables first, domain tables after the domain research conversation. Use TDD — write migration tests that verify schema correctness.
-
-## Step 3: Auth Middleware in Loco
-
-Wire up JWT validation and multi-tenancy scoping in the Loco backend.
+### Step 3: Auth Middleware in Loco
+**Priority: high** | Depends on: Steps 1, 2
+Wire up JWT validation and multi-tenancy scoping in the backend.
 
 - Add Keycloak JWKS endpoint validation (fetch public keys, verify JWT signatures)
 - Create auth middleware that extracts `school_id` and `role` from JWT claims
 - Implement `SchoolScoped` extractor that automatically filters queries by `school_id`
 - Add PostgreSQL Row-Level Security (RLS) policies as a safety net
 - Write integration tests with mock JWTs
-- Remove or adapt Loco's built-in auth scaffolding (it generates its own JWT/password auth — we use Keycloak instead)
+- Remove or adapt Loco's built-in auth scaffolding (JWT/password auth config in yaml)
 
-## Step 4: Frontend Auth Integration
-
+### Step 4: Frontend Auth Integration
+**Priority: high** | Depends on: Step 3
 Connect Next.js to Keycloak for login/logout and token forwarding.
 
 - Install and configure `next-auth` with Keycloak provider
@@ -57,8 +40,12 @@ Connect Next.js to Keycloak for login/logout and token forwarding.
 - Build minimal login/logout flow
 - Test the full round-trip: login → get token → call backend → scoped response
 
-## Step 5: First CRUD Endpoints
+---
 
+## Blocked
+
+### Step 5: First CRUD Endpoints
+**Priority: medium** | Depends on: Steps 3, 4
 Prove the full stack works end-to-end with a real feature.
 
 - Schools CRUD (create, read, update) — admin only
@@ -67,22 +54,43 @@ Prove the full stack works end-to-end with a real feature.
 - Frontend pages: school dashboard, member list
 - E2E tests covering the full flow
 
-## Step 6: Scheduler Integration
+### Domain Tables Migration
+**Priority: medium** | Blocked by: domain research conversation (mother-in-law insights)
+Port v1 domain tables to SeaORM migrations.
 
+- `school_years`, `terms`
+- `teachers`, `subjects`, `rooms`, `school_classes`, `time_slots`
+- `teacher_subject_qualifications`, `teacher_availability`
+- `room_subject_suitability`
+- `lessons`, `constraints`
+- Reference: v1 schema on `archive/v1` in Flyway migrations
+
+### Step 6: Scheduler Integration
+**Priority: low** | Depends on: Domain tables, Steps 3-5
 Wire the scheduler crate into the backend via background jobs.
 
-- Create API endpoint to trigger schedule generation
-- Implement Loco background worker that calls `scheduler::solve()`
-- Build the DB-to-scheduler type mapping layer
-- Store results back in the `lessons` table
+- API endpoint to trigger schedule generation
+- Loco background worker that calls `scheduler::solve()`
+- DB-to-scheduler type mapping layer
+- Store results in `lessons` table
 - Frontend: trigger generation, poll for completion, display timetable
-- This is where the algorithm work begins — start with a naive solver and iterate
+
+---
+
+## Tech Debt
+
+- [ ] **Test DB setup is manual** — need a script or justfile recipe to create the `loco` user and `klassenzeit-backend_test` database automatically
+- [ ] **No dev seed data** for new core tables — need `schools`, `app_users`, `school_memberships` seed data for local development
+- [ ] **Loco auth config in yaml** — `auth.jwt.secret` still in config files, unused since we removed Loco auth. Clean up when adding Keycloak middleware (Step 3)
+- [ ] **Empty worker/task modules** — `backend/src/workers/downloader.rs` and `backend/src/tasks/mod.rs` are Loco scaffold leftovers. Remove when they cause confusion.
+- [ ] **Docker compose files for staging/prod** — referenced in justfile but don't exist yet. Create when deployment is set up.
+- [ ] **Docs site URL** — once GitHub Pages deploy works, add link to CLAUDE.md and repo description
 
 ---
 
 ## Notes
 
-- **Domain research:** Steps 2 (domain tables) and 6 depend on insights from the mother-in-law conversation. Core tables and auth can proceed independently.
-- **Each step should get its own brainstorm → spec → plan → implementation cycle** using the superpowers skills.
+- **Domain research:** Domain tables and Step 6 depend on insights from the mother-in-law conversation. Auth stack (Steps 3-5) can proceed independently.
+- **Each step gets its own brainstorm → spec → plan → implementation cycle.**
 - **TDD throughout** — write failing tests before implementation.
 - **Keep docs updated** — update mdBook when architecture changes.

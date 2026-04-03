@@ -14,6 +14,7 @@ dev-logs:
 # Backend
 backend-test:
     cargo test --workspace
+    cargo test -p klassenzeit-backend --test mod
 
 backend-check:
     cargo fmt --check --all && cargo clippy --workspace -- -D warnings

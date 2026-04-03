@@ -17,6 +17,13 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 - `docker/` — Keycloak config, DB init scripts, seeds
 - `e2e/` — End-to-end tests
 
+## Planning
+
+- Roadmap & next steps: `docs/superpowers/next-steps.md`
+- Specs: `docs/superpowers/specs/`
+- Plans: `docs/superpowers/plans/`
+- Current status: Steps 1-2 complete. Next up: Step 3 (Auth middleware).
+
 ## Architecture
 
 - Rust workspace: `backend` depends on `scheduler` via path
@@ -31,6 +38,14 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 - `just check` — run all linters and formatters
 - `just docs-build` — build documentation
 
+## Workflow
+
+- When brainstorming/designing, go with your recommended approach — don't wait for approval on each question
+- Automatically flow through the full pipeline: spec → plan → implementation → PR
+- Only pause for user input on genuinely ambiguous decisions with no clear best option
+- After creating a PR, fix all CI failures and review issues until the PR is mergeable, then merge it
+- When done, ping the user on GitHub (PR comment or mention) to notify completion
+
 ## Conventions
 
 - TDD: write failing test first, then implement
@@ -42,9 +57,15 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 
 ## Testing
 
-- Backend: `cargo test --workspace`
+- Backend unit tests: `cargo test --workspace`
+- Backend integration tests: `cargo test -p klassenzeit-backend --test mod` (requires running Postgres)
 - Frontend: `bun test` in `frontend/`
 - E2E: TBD (in `e2e/`)
+- Integration tests require: `docker compose up -d postgres-dev`, then create test user/db:
+  ```
+  docker exec klassenzeit-postgres-dev psql -U postgres -c "CREATE USER loco WITH PASSWORD 'loco' SUPERUSER;"
+  docker exec klassenzeit-postgres-dev psql -U postgres -c "CREATE DATABASE \"klassenzeit-backend_test\" OWNER loco;"
+  ```
 
 ## Deployment
 
