@@ -67,5 +67,43 @@
     "removeTitle": "Remove Member",
     "removeConfirm": "Are you sure you want to remove <strong>{name}</strong> from this school? This action cannot be undone.",
     "removeLabel": "Remove member"
+  },
+  "curriculum": {
+    "title": "Curriculum",
+    "description": "Define weekly hours per class and subject",
+    "addClass": "Add Entry",
+    "class": "Class",
+    "subject": "Subject",
+    "teacher": "Teacher",
+    "hoursPerWeek": "Hours/Week",
+    "noEntries": "No curriculum entries yet. Add entries to define what needs to be scheduled.",
+    "selectClass": "Select class",
+    "selectSubject": "Select subject",
+    "selectTeacher": "Select teacher (optional)",
+    "autoAssign": "Auto-assign",
+    "deleteConfirm": "Delete this curriculum entry?",
+    "saved": "Curriculum entry saved",
+    "deleted": "Curriculum entry deleted"
+  },
+  "scheduler": {
+    "title": "Generate Schedule",
+    "description": "Generate a timetable for the selected term",
+    "generate": "Generate Schedule",
+    "generating": "Generating schedule...",
+    "solved": "Schedule generated",
+    "failed": "Schedule generation failed",
+    "violations": "Violations",
+    "noViolations": "No violations — all lessons placed successfully",
+    "apply": "Apply Schedule",
+    "applyConfirm": "Apply this schedule? This will replace any existing timetable for this term.",
+    "applied": "Schedule applied successfully",
+    "discard": "Discard",
+    "discarded": "Schedule discarded",
+    "preview": "Preview",
+    "selectClass": "Select class to view",
+    "lessonsCreated": "lessons created",
+    "noSchedule": "No schedule generated yet. Click \"Generate Schedule\" to start.",
+    "hardViolations": "Unplaced lessons",
+    "alreadySolving": "A schedule is already being generated"
   }
 }

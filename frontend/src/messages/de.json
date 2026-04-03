@@ -67,5 +67,43 @@
     "removeTitle": "Mitglied entfernen",
     "removeConfirm": "Möchtest du <strong>{name}</strong> wirklich aus dieser Schule entfernen? Diese Aktion kann nicht rückgängig gemacht werden.",
     "removeLabel": "Mitglied entfernen"
+  },
+  "curriculum": {
+    "title": "Stundentafel",
+    "description": "Wochenstunden pro Klasse und Fach festlegen",
+    "addClass": "Eintrag hinzufügen",
+    "class": "Klasse",
+    "subject": "Fach",
+    "teacher": "Lehrkraft",
+    "hoursPerWeek": "Stunden/Woche",
+    "noEntries": "Noch keine Einträge. Fügen Sie Einträge hinzu, um festzulegen, was geplant werden soll.",
+    "selectClass": "Klasse auswählen",
+    "selectSubject": "Fach auswählen",
+    "selectTeacher": "Lehrkraft auswählen (optional)",
+    "autoAssign": "Automatisch zuweisen",
+    "deleteConfirm": "Diesen Eintrag löschen?",
+    "saved": "Eintrag gespeichert",
+    "deleted": "Eintrag gelöscht"
+  },
+  "scheduler": {
+    "title": "Stundenplan erstellen",
+    "description": "Erstellen Sie einen Stundenplan für das ausgewählte Halbjahr",
+    "generate": "Stundenplan erstellen",
+    "generating": "Stundenplan wird erstellt...",
+    "solved": "Stundenplan erstellt",
+    "failed": "Stundenplanerstellung fehlgeschlagen",
+    "violations": "Konflikte",
+    "noViolations": "Keine Konflikte — alle Stunden wurden erfolgreich platziert",
+    "apply": "Stundenplan übernehmen",
+    "applyConfirm": "Diesen Stundenplan übernehmen? Der bestehende Stundenplan für dieses Halbjahr wird ersetzt.",
+    "applied": "Stundenplan erfolgreich übernommen",
+    "discard": "Verwerfen",
+    "discarded": "Stundenplan verworfen",
+    "preview": "Vorschau",
+    "selectClass": "Klasse auswählen",
+    "lessonsCreated": "Stunden erstellt",
+    "noSchedule": "Noch kein Stundenplan erstellt. Klicken Sie auf \"Stundenplan erstellen\".",
+    "hardViolations": "Nicht platzierte Stunden",
+    "alreadySolving": "Ein Stundenplan wird bereits erstellt"
   }
 }
