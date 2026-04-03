@@ -57,7 +57,7 @@ echo "Authenticated."
 AUTH=(-H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json")
 
 # --- Create realm (if it doesn't exist) ---
-REALM_EXISTS=$(curl -sf -o /dev/null -w "%{http_code}" "$KEYCLOAK_URL/admin/realms/$REALM" "${AUTH[@]}")
+REALM_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" "$KEYCLOAK_URL/admin/realms/$REALM" "${AUTH[@]}")
 if [[ "$REALM_EXISTS" == "404" ]]; then
   echo "Creating realm '$REALM'..."
   curl -sf -X POST "$KEYCLOAK_URL/admin/realms" "${AUTH[@]}" -d '{
@@ -88,7 +88,7 @@ fi
 
 # --- Create roles (if they don't exist) ---
 for ROLE in admin teacher viewer; do
-  ROLE_EXISTS=$(curl -sf -o /dev/null -w "%{http_code}" "$KEYCLOAK_URL/admin/realms/$REALM/roles/$ROLE" "${AUTH[@]}")
+  ROLE_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" "$KEYCLOAK_URL/admin/realms/$REALM/roles/$ROLE" "${AUTH[@]}")
   if [[ "$ROLE_EXISTS" == "404" ]]; then
     echo "Creating role '$ROLE'..."
     curl -sf -X POST "$KEYCLOAK_URL/admin/realms/$REALM/roles" "${AUTH[@]}" -d '{
