@@ -1,5 +1,7 @@
 use crate::controllers;
 use crate::keycloak::initializer::KeycloakInitializer;
+use crate::services::scheduler as scheduler_service;
+use crate::workers::scheduler::SchedulerWorker;
 use async_trait::async_trait;
 use loco_rs::{
     app::{AppContext, Hooks, Initializer},
@@ -47,6 +49,12 @@ impl Hooks for App {
         create_app::<Self, Migrator>(mode, environment, config).await
     }
 
+    async fn after_context(ctx: AppContext) -> Result<AppContext> {
+        ctx.shared_store
+            .insert(scheduler_service::new_scheduler_state());
+        Ok(ctx)
+    }
+
     async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
         Ok(vec![Box::new(KeycloakInitializer)])
     }
@@ -61,6 +69,7 @@ impl Hooks for App {
 
     async fn connect_workers(ctx: &AppContext, queue: &Queue) -> Result<()> {
         queue.register(DownloadWorker::build(ctx)).await?;
+        queue.register(SchedulerWorker::build(ctx)).await?;
         Ok(())
     }
 
