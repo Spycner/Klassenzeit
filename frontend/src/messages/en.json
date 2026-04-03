@@ -1,0 +1,68 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "remove": "Remove",
+    "removing": "Removing...",
+    "create": "Create",
+    "creating": "Creating...",
+    "logout": "Logout"
+  },
+  "meta": {
+    "title": "Klassenzeit",
+    "description": "Klassenzeit — Timetable Management"
+  },
+  "auth": {
+    "loading": "Loading...",
+    "error": "Authentication Error",
+    "retry": "Retry",
+    "connectionError": "Failed to connect to authentication service"
+  },
+  "schools": {
+    "title": "My Schools",
+    "create": "Create School",
+    "createTitle": "Create a new school",
+    "createDescription": "Enter a name for your school. You can change this later.",
+    "nameLabel": "School name",
+    "namePlaceholder": "e.g. Greenwood High School",
+    "empty": "No schools yet",
+    "emptyDescription": "Create your first school to get started.",
+    "loadingSchools": "Loading schools...",
+    "logoutSrOnly": "Logout"
+  },
+  "school": {
+    "allSchools": "All Schools",
+    "navigation": "Navigation",
+    "dashboard": "Dashboard",
+    "members": "Members",
+    "details": "School Details",
+    "editTitle": "Edit school name",
+    "editDescription": "Update the name of this school.",
+    "name": "Name",
+    "slug": "Slug",
+    "role": "Your role",
+    "created": "Created"
+  },
+  "members": {
+    "title": "Members",
+    "subtitle": "{name} — {count, plural, one {# member} other {# members}}",
+    "add": "Add Member",
+    "addTitle": "Add Member",
+    "addDescription": "Invite a user to this school by their email address.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "user@example.com",
+    "roleLabel": "Role",
+    "adding": "Adding...",
+    "nameHeader": "Name",
+    "emailHeader": "Email",
+    "roleHeader": "Role",
+    "joinedHeader": "Joined",
+    "empty": "No members yet.",
+    "removeTitle": "Remove Member",
+    "removeConfirm": "Are you sure you want to remove <strong>{name}</strong> from this school? This action cannot be undone.",
+    "removeLabel": "Remove member"
+  }
+}

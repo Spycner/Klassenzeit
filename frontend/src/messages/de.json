@@ -1,0 +1,68 @@
+{
+  "common": {
+    "loading": "Laden...",
+    "save": "Speichern",
+    "saving": "Speichern...",
+    "cancel": "Abbrechen",
+    "edit": "Bearbeiten",
+    "remove": "Entfernen",
+    "removing": "Entfernen...",
+    "create": "Erstellen",
+    "creating": "Erstellen...",
+    "logout": "Abmelden"
+  },
+  "meta": {
+    "title": "Klassenzeit",
+    "description": "Klassenzeit — Stundenplanverwaltung"
+  },
+  "auth": {
+    "loading": "Laden...",
+    "error": "Authentifizierungsfehler",
+    "retry": "Erneut versuchen",
+    "connectionError": "Verbindung zum Authentifizierungsdienst fehlgeschlagen"
+  },
+  "schools": {
+    "title": "Meine Schulen",
+    "create": "Schule erstellen",
+    "createTitle": "Neue Schule erstellen",
+    "createDescription": "Gib einen Namen für deine Schule ein. Du kannst ihn später ändern.",
+    "nameLabel": "Schulname",
+    "namePlaceholder": "z.B. Goethe-Gymnasium",
+    "empty": "Noch keine Schulen",
+    "emptyDescription": "Erstelle deine erste Schule, um loszulegen.",
+    "loadingSchools": "Schulen werden geladen...",
+    "logoutSrOnly": "Abmelden"
+  },
+  "school": {
+    "allSchools": "Alle Schulen",
+    "navigation": "Navigation",
+    "dashboard": "Dashboard",
+    "members": "Mitglieder",
+    "details": "Schuldetails",
+    "editTitle": "Schulname bearbeiten",
+    "editDescription": "Aktualisiere den Namen dieser Schule.",
+    "name": "Name",
+    "slug": "Slug",
+    "role": "Deine Rolle",
+    "created": "Erstellt"
+  },
+  "members": {
+    "title": "Mitglieder",
+    "subtitle": "{name} — {count, plural, one {# Mitglied} other {# Mitglieder}}",
+    "add": "Mitglied hinzufügen",
+    "addTitle": "Mitglied hinzufügen",
+    "addDescription": "Lade einen Benutzer per E-Mail-Adresse in diese Schule ein.",
+    "emailLabel": "E-Mail",
+    "emailPlaceholder": "benutzer@example.com",
+    "roleLabel": "Rolle",
+    "adding": "Hinzufügen...",
+    "nameHeader": "Name",
+    "emailHeader": "E-Mail",
+    "roleHeader": "Rolle",
+    "joinedHeader": "Beigetreten",
+    "empty": "Noch keine Mitglieder.",
+    "removeTitle": "Mitglied entfernen",
+    "removeConfirm": "Möchtest du <strong>{name}</strong> wirklich aus dieser Schule entfernen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "removeLabel": "Mitglied entfernen"
+  }
+}
