@@ -43,6 +43,8 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 - When brainstorming/designing, go with your recommended approach — don't wait for approval on each question
 - Automatically flow through the full pipeline: spec → plan → implementation → PR
 - Only pause for user input on genuinely ambiguous decisions with no clear best option
+- After creating a PR, fix all CI failures and review issues until the PR is mergeable, then merge it
+- When done, ping the user on GitHub (PR comment or mention) to notify completion
 
 ## Conventions
 
