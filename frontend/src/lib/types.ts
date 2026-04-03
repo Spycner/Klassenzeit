@@ -59,7 +59,11 @@ export interface TeacherResponse {
   id: string;
   first_name: string;
   last_name: string;
+  email: string | null;
   abbreviation: string;
+  max_hours_per_week: number;
+  is_part_time: boolean;
+  is_active: boolean;
 }
 
 export interface SchoolClassResponse {
@@ -67,6 +71,8 @@ export interface SchoolClassResponse {
   name: string;
   grade_level: number;
   student_count: number | null;
+  class_teacher_id: string | null;
+  is_active: boolean;
 }
 
 export interface RoomResponse {
@@ -74,6 +80,7 @@ export interface RoomResponse {
   name: string;
   building: string | null;
   capacity: number | null;
+  is_active: boolean;
 }
 
 export interface TimeSlotResponse {
@@ -86,8 +93,17 @@ export interface TimeSlotResponse {
   label: string | null;
 }
 
+export interface SchoolYearResponse {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+}
+
 export interface TermResponse {
   id: string;
+  school_year_id: string;
   name: string;
   start_date: string;
   end_date: string;
