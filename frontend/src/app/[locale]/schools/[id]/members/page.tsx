@@ -2,6 +2,7 @@
 
 import { Plus, Trash2, UserPlus } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +41,8 @@ export default function MembersPage() {
   const params = useParams<{ id: string }>();
   const schoolId = params.id;
   const apiClient = useApiClient();
+  const t = useTranslations("members");
+  const tc = useTranslations("common");
 
   const [school, setSchool] = useState<SchoolResponse | null>(null);
   const [members, setMembers] = useState<MemberResponse[]>([]);
@@ -157,7 +160,7 @@ export default function MembersPage() {
   if (loading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-6">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">{tc("loading")}</p>
       </div>
     );
   }
@@ -174,10 +177,12 @@ export default function MembersPage() {
     <div className="flex flex-1 flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Members</h1>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">
-            {school?.name} — {members.length} member
-            {members.length !== 1 ? "s" : ""}
+            {t("subtitle", {
+              name: school?.name ?? "",
+              count: members.length,
+            })}
           </p>
         </div>
         {isAdmin && (
@@ -191,23 +196,21 @@ export default function MembersPage() {
                 }}
               >
                 <UserPlus className="mr-2 h-4 w-4" />
-                Add Member
+                {t("add")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add Member</DialogTitle>
-                <DialogDescription>
-                  Invite a user to this school by their email address.
-                </DialogDescription>
+                <DialogTitle>{t("addTitle")}</DialogTitle>
+                <DialogDescription>{t("addDescription")}</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="member-email">Email</Label>
+                  <Label htmlFor="member-email">{t("emailLabel")}</Label>
                   <Input
                     id="member-email"
                     type="email"
-                    placeholder="user@example.com"
+                    placeholder={t("emailPlaceholder")}
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
                     onKeyDown={(e) => {
@@ -217,7 +220,7 @@ export default function MembersPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="member-role">Role</Label>
+                  <Label htmlFor="member-role">{t("roleLabel")}</Label>
                   <Select
                     value={newRole}
                     onValueChange={(value) => setNewRole(value as Role)}
@@ -245,7 +248,7 @@ export default function MembersPage() {
                   disabled={!newEmail.trim() || adding}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  {adding ? "Adding..." : "Add Member"}
+                  {adding ? t("adding") : t("add")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -256,10 +259,10 @@ export default function MembersPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Joined</TableHead>
+            <TableHead>{t("nameHeader")}</TableHead>
+            <TableHead>{t("emailHeader")}</TableHead>
+            <TableHead>{t("roleHeader")}</TableHead>
+            <TableHead>{t("joinedHeader")}</TableHead>
             {isAdmin && <TableHead className="w-12" />}
           </TableRow>
         </TableHeader>
@@ -296,7 +299,7 @@ export default function MembersPage() {
                 )}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {new Date(member.joined_at).toLocaleDateString("de-DE")}
+                {new Date(member.joined_at).toLocaleDateString()}
               </TableCell>
               {isAdmin && (
                 <TableCell>
@@ -311,7 +314,7 @@ export default function MembersPage() {
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Remove member</span>
+                    <span className="sr-only">{t("removeLabel")}</span>
                   </Button>
                 </TableCell>
               )}
@@ -323,7 +326,7 @@ export default function MembersPage() {
                 colSpan={isAdmin ? 5 : 4}
                 className="py-8 text-center text-muted-foreground"
               >
-                No members yet.
+                {t("empty")}
               </TableCell>
             </TableRow>
           )}
@@ -334,11 +337,12 @@ export default function MembersPage() {
       <Dialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remove Member</DialogTitle>
+            <DialogTitle>{t("removeTitle")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove{" "}
-              <strong>{memberToRemove?.display_name}</strong> from this school?
-              This action cannot be undone.
+              {t.rich("removeConfirm", {
+                name: memberToRemove?.display_name ?? "",
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </DialogDescription>
           </DialogHeader>
           {removeError && (
@@ -350,7 +354,7 @@ export default function MembersPage() {
               onClick={() => setRemoveDialogOpen(false)}
               disabled={removing}
             >
-              Cancel
+              {tc("cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -358,7 +362,7 @@ export default function MembersPage() {
               disabled={removing}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              {removing ? "Removing..." : "Remove"}
+              {removing ? tc("removing") : tc("remove")}
             </Button>
           </DialogFooter>
         </DialogContent>
