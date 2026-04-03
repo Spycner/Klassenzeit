@@ -54,8 +54,8 @@ Completed — PR #25 merged. Greedy solver, curriculum CRUD, background worker, 
 
 ### Tier 1: Core functionality (app not usable without these)
 
-- [ ] **Reference data CRUD** — Full create/update/delete for terms, classes, subjects, teachers, rooms, timeslots. List endpoints exist (PR #28), but without write operations users can't set up a school through the UI. Each entity already has its own controller file ready for expansion.
-- [ ] **Reference data management UI** — Frontend admin pages for managing terms, classes, subjects, teachers, rooms, and timeslots. Depends on reference data CRUD endpoints.
+- [x] **Reference data CRUD** — PR #29. Create/update/delete for all 6 entities. Soft delete for teachers/rooms/classes; hard delete for subjects/timeslots/terms.
+- [ ] **Reference data management UI** — Frontend admin pages for managing terms, classes, subjects, teachers, rooms, and timeslots. CRUD endpoints ready (PR #29).
 - [ ] **Dev seed data** — Seed `schools`, `app_users`, `school_memberships`, and all reference data tables so local development and demos have realistic data to work with. Blocked on CRUD or direct DB seeds.
 
 ### Tier 2: Quality & confidence
