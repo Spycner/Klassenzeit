@@ -19,24 +19,14 @@ Wire up JWT validation and multi-tenancy scoping in the backend.
 - Spec: `specs/2026-04-03-auth-middleware-design.md`
 - Plan: `plans/2026-04-03-auth-middleware.md`
 
+### Step 4: Frontend Auth Integration ✓
+Connect Next.js to Keycloak for login/logout and token forwarding.
+- Spec: `specs/2026-04-03-frontend-auth-design.md`
+- Plan: `plans/2026-04-03-frontend-auth.md`
+
 ---
 
 ## Ready (no blockers)
-
-### Step 4: Frontend Auth Integration
-**Priority: high** | Depends on: Step 3
-Connect Next.js to Keycloak for login/logout and token forwarding.
-
-- Install and configure `next-auth` with Keycloak provider
-- Set up protected routes (redirect to login if unauthenticated)
-- Create auth context/hooks for accessing user info and school context
-- Forward JWT as `Authorization: Bearer` header on API calls
-- Build minimal login/logout flow
-- Test the full round-trip: login → get token → call backend → scoped response
-
----
-
-## Blocked
 
 ### Step 5: First CRUD Endpoints
 **Priority: medium** | Depends on: Steps 3, 4
