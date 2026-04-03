@@ -1,4 +1,5 @@
 pub use super::app_users::Entity as AppUsers;
+pub use super::curriculum_entries::Entity as CurriculumEntries;
 pub use super::lessons::Entity as Lessons;
 pub use super::room_subject_suitabilities::Entity as RoomSubjectSuitabilities;
 pub use super::rooms::Entity as Rooms;
