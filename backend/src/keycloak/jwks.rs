@@ -35,6 +35,11 @@ impl JwksClient {
         }
     }
 
+    /// Replace the cached key set (for testing).
+    pub async fn set_keys(&self, jwk_set: JwkSet) {
+        *self.keys.write().await = jwk_set;
+    }
+
     /// Find a JWK by key ID. If not found, refresh keys and try again.
     pub async fn find_key(&self, kid: &str) -> Option<Jwk> {
         // Try cached keys first
