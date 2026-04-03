@@ -3,7 +3,9 @@
 import { ArrowLeft, LayoutDashboard, LogOut, Users } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect } from "react";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -22,19 +24,6 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useSchool } from "@/hooks/use-school";
 
-const navItems = (schoolId: string) => [
-  {
-    title: "Dashboard",
-    href: `/schools/${schoolId}`,
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Members",
-    href: `/schools/${schoolId}/members`,
-    icon: Users,
-  },
-];
-
 export default function SchoolLayout({
   children,
 }: {
@@ -43,8 +32,24 @@ export default function SchoolLayout({
   const params = useParams<{ id: string }>();
   const schoolId = params.id;
   const pathname = usePathname();
+  const locale = useLocale();
+  const t = useTranslations("school");
+  const tc = useTranslations("common");
   const { logout } = useAuth();
   const { selectSchool } = useSchool();
+
+  const navItems = [
+    {
+      title: t("dashboard"),
+      href: `/${locale}/schools/${schoolId}`,
+      icon: LayoutDashboard,
+    },
+    {
+      title: t("members"),
+      href: `/${locale}/schools/${schoolId}/members`,
+      icon: Users,
+    },
+  ];
 
   useEffect(() => {
     selectSchool(schoolId);
@@ -55,19 +60,19 @@ export default function SchoolLayout({
       <Sidebar>
         <SidebarHeader>
           <Link
-            href="/schools"
+            href={`/${locale}/schools`}
             className="flex items-center gap-2 px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            All Schools
+            {t("allSchools")}
           </Link>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("navigation")}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {navItems(schoolId).map((item) => (
+                {navItems.map((item) => (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
@@ -85,14 +90,17 @@ export default function SchoolLayout({
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-2"
-            onClick={logout}
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher />
+            <Button
+              variant="ghost"
+              className="flex-1 justify-start gap-2"
+              onClick={logout}
+            >
+              <LogOut className="h-4 w-4" />
+              {tc("logout")}
+            </Button>
+          </div>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>{children}</SidebarInset>

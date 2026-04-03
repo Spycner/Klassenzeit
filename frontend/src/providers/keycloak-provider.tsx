@@ -1,6 +1,7 @@
 "use client";
 
 import type Keycloak from "keycloak-js";
+import { useTranslations } from "next-intl";
 import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import {
   type AuthContextValue,
@@ -27,6 +28,7 @@ export function KeycloakProvider({ children }: { children: React.ReactNode }) {
   const [initState, setInitState] = useState<InitState>({ status: "loading" });
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const t = useTranslations("auth");
 
   const updateAuthState = useCallback((kc: Keycloak) => {
     setToken(kc.token ?? null);
@@ -62,13 +64,10 @@ export function KeycloakProvider({ children }: { children: React.ReactNode }) {
       .catch((err) => {
         setInitState({
           status: "error",
-          message:
-            err instanceof Error
-              ? err.message
-              : "Failed to connect to authentication service",
+          message: err instanceof Error ? err.message : t("connectionError"),
         });
       });
-  }, [updateAuthState]);
+  }, [updateAuthState, t]);
 
   const logout = useCallback(() => {
     keycloakRef.current?.logout({ redirectUri: window.location.origin });
@@ -77,7 +76,7 @@ export function KeycloakProvider({ children }: { children: React.ReactNode }) {
   if (initState.status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-lg text-gray-500">Loading...</p>
+        <p className="text-lg text-gray-500">{t("loading")}</p>
       </div>
     );
   }
@@ -86,14 +85,14 @@ export function KeycloakProvider({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <p className="text-lg text-red-600">Authentication Error</p>
+          <p className="text-lg text-red-600">{t("error")}</p>
           <p className="mt-2 text-sm text-gray-500">{initState.message}</p>
           <button
             type="button"
             onClick={() => window.location.reload()}
             className="mt-4 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
           >
-            Retry
+            {t("retry")}
           </button>
         </div>
       </div>
