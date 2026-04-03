@@ -17,6 +17,13 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 - `docker/` — Keycloak config, DB init scripts, seeds
 - `e2e/` — End-to-end tests
 
+## Planning
+
+- Roadmap & next steps: `docs/superpowers/next-steps.md`
+- Specs: `docs/superpowers/specs/`
+- Plans: `docs/superpowers/plans/`
+- Current status: Step 1 (Keycloak realm setup) is complete. Next up: Step 2 (DB schema migrations).
+
 ## Architecture
 
 - Rust workspace: `backend` depends on `scheduler` via path

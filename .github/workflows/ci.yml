@@ -32,8 +32,12 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Clippy
         run: cargo clippy --workspace -- -D warnings
-      - name: Test
+      - name: Unit tests
         run: cargo test --workspace
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/klassenzeit_test
+      - name: Integration tests
+        run: cargo test -p klassenzeit-backend --test mod
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/klassenzeit_test
 
