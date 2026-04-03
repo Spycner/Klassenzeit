@@ -5,3 +5,4 @@ mod rooms;
 mod schools;
 mod subjects;
 mod teachers;
+mod time_slots;
