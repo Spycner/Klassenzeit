@@ -2,7 +2,7 @@
 
 import { Plus, Trash2, UserPlus } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +41,7 @@ export default function MembersPage() {
   const params = useParams<{ id: string }>();
   const schoolId = params.id;
   const apiClient = useApiClient();
+  const locale = useLocale();
   const t = useTranslations("members");
   const tc = useTranslations("common");
 
@@ -77,12 +78,12 @@ export default function MembersPage() {
         setMembers(membersData);
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : "Failed to load data");
+        setError(err instanceof Error ? err.message : tc("errorLoadData"));
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [apiClient, schoolId]);
+  }, [apiClient, schoolId, tc]);
 
   const fetchMembers = useCallback(() => {
     apiClient
@@ -91,9 +92,9 @@ export default function MembersPage() {
         setMembers(data);
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : "Failed to load members");
+        setError(err instanceof Error ? err.message : tc("errorLoadData"));
       });
-  }, [apiClient, schoolId]);
+  }, [apiClient, schoolId, tc]);
 
   useEffect(() => {
     fetchData();
@@ -115,7 +116,7 @@ export default function MembersPage() {
       setNewRole("teacher");
       fetchMembers();
     } catch (err) {
-      setAddError(err instanceof Error ? err.message : "Failed to add member");
+      setAddError(err instanceof Error ? err.message : tc("errorSaveData"));
     } finally {
       setAdding(false);
     }
@@ -131,9 +132,7 @@ export default function MembersPage() {
       );
       fetchMembers();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update member role",
-      );
+      setError(err instanceof Error ? err.message : tc("errorSaveData"));
     }
   }
 
@@ -149,9 +148,7 @@ export default function MembersPage() {
       setMemberToRemove(null);
       fetchMembers();
     } catch (err) {
-      setRemoveError(
-        err instanceof Error ? err.message : "Failed to remove member",
-      );
+      setRemoveError(err instanceof Error ? err.message : tc("errorSaveData"));
     } finally {
       setRemoving(false);
     }
@@ -299,7 +296,7 @@ export default function MembersPage() {
                 )}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {new Date(member.joined_at).toLocaleDateString()}
+                {new Date(member.joined_at).toLocaleDateString(locale)}
               </TableCell>
               {isAdmin && (
                 <TableCell>

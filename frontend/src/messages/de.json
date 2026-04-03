@@ -9,7 +9,10 @@
     "removing": "Entfernen...",
     "create": "Erstellen",
     "creating": "Erstellen...",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "errorGeneric": "Ein Fehler ist aufgetreten",
+    "errorLoadData": "Daten konnten nicht geladen werden",
+    "errorSaveData": "Daten konnten nicht gespeichert werden"
   },
   "meta": {
     "title": "Klassenzeit",

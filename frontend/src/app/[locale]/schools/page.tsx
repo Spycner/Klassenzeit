@@ -53,12 +53,12 @@ export default function SchoolsPage() {
         setSchools(data);
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : "Failed to load schools");
+        setError(err instanceof Error ? err.message : tc("errorLoadData"));
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [apiClient]);
+  }, [apiClient, tc]);
 
   async function handleCreateSchool() {
     if (!newSchoolName.trim() || creating) return;
@@ -72,7 +72,7 @@ export default function SchoolsPage() {
       selectSchool(created.id);
       router.push(`/${locale}/schools/${created.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create school");
+      setError(err instanceof Error ? err.message : tc("errorSaveData"));
     } finally {
       setCreating(false);
     }

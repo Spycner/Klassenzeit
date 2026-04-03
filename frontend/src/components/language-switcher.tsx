@@ -10,7 +10,9 @@ export function LanguageSwitcher() {
   const pathname = usePathname();
 
   const switchTo = locale === "de" ? "en" : "de";
-  const newPath = pathname.replace(`/${locale}`, `/${switchTo}`);
+  const segments = pathname.split("/");
+  segments[1] = switchTo;
+  const newPath = segments.join("/");
 
   return (
     <Button

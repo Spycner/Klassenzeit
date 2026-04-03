@@ -2,7 +2,7 @@
 
 import { Pencil } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,7 @@ export default function SchoolDashboardPage() {
   const params = useParams<{ id: string }>();
   const schoolId = params.id;
   const apiClient = useApiClient();
+  const locale = useLocale();
   const t = useTranslations("school");
   const tc = useTranslations("common");
 
@@ -44,12 +45,12 @@ export default function SchoolDashboardPage() {
         setSchool(data);
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : "Failed to load school");
+        setError(err instanceof Error ? err.message : tc("errorLoadData"));
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [apiClient, schoolId]);
+  }, [apiClient, schoolId, tc]);
 
   useEffect(() => {
     fetchSchool();
@@ -67,7 +68,7 @@ export default function SchoolDashboardPage() {
       setDialogOpen(false);
       setNewName("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update school");
+      setError(err instanceof Error ? err.message : tc("errorSaveData"));
     } finally {
       setSaving(false);
     }
@@ -171,7 +172,7 @@ export default function SchoolDashboardPage() {
               {t("created")}
             </span>
             <span className="text-sm">
-              {new Date(school.created_at).toLocaleDateString()}
+              {new Date(school.created_at).toLocaleDateString(locale)}
             </span>
           </div>
         </CardContent>

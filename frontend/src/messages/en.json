@@ -9,7 +9,10 @@
     "removing": "Removing...",
     "create": "Create",
     "creating": "Creating...",
-    "logout": "Logout"
+    "logout": "Logout",
+    "errorGeneric": "An error occurred",
+    "errorLoadData": "Failed to load data",
+    "errorSaveData": "Failed to save data"
   },
   "meta": {
     "title": "Klassenzeit",
