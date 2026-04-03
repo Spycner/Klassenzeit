@@ -34,11 +34,18 @@
 - Plan: `superpowers/plans/2026-04-03-domain-tables.md`
 - PR: #23 (merged)
 
+### Step 6: Scheduler Integration
+- Spec: `superpowers/specs/2026-04-03-scheduler-integration-design.md`
+- Plan: `superpowers/plans/2026-04-03-scheduler-integration.md`
+- PR: #25 (merged)
+
 ## Next Up
 
-**Step 6: Scheduler Integration** — Wire the scheduler crate into the backend via background jobs. Depends on domain tables (done) and domain research conversation for constraint details.
+All major milestones complete. Remaining work is tech debt and optimization.
 
 ## Notes from Reviews
 
 - Frontend tests not yet added for the new pages/hooks — add before next frontend PR
-- Toast notifications wired up (Sonner) but not yet used — integrate when adding more CRUD pages
+- Backend integration tests for scheduler API endpoints not yet written
+- Greedy solver is intentionally simple (no backtracking) — can be replaced with constraint solver later
+- Reference data list endpoints (terms, classes, subjects, teachers, rooms, timeslots) assumed by frontend — need to verify they exist or create them

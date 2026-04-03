@@ -43,15 +43,10 @@ Completed — PR #23 merged. All 10 domain tables ported to SeaORM with ERD docu
 - Spec: `specs/2026-04-03-domain-tables-design.md`
 - Plan: `plans/2026-04-03-domain-tables.md`
 
-### Step 6: Scheduler Integration
-**Priority: low** | Depends on: Domain tables, Steps 3-5
-Wire the scheduler crate into the backend via background jobs.
-
-- API endpoint to trigger schedule generation
-- Loco background worker that calls `scheduler::solve()`
-- DB-to-scheduler type mapping layer
-- Store results in `lessons` table
-- Frontend: trigger generation, poll for completion, display timetable
+### Step 6: Scheduler Integration ✓
+Completed — PR #25 merged. Greedy solver, curriculum CRUD, background worker, solve/preview/apply API, and frontend generation UI.
+- Spec: `specs/2026-04-03-scheduler-integration-design.md`
+- Plan: `plans/2026-04-03-scheduler-integration.md`
 
 ---
 
@@ -63,6 +58,10 @@ Wire the scheduler crate into the backend via background jobs.
 - [ ] **Empty worker/task modules** — `backend/src/workers/downloader.rs` and `backend/src/tasks/mod.rs` are Loco scaffold leftovers. Remove when they cause confusion.
 - [ ] **Docker compose files for staging/prod** — referenced in justfile but don't exist yet. Create when deployment is set up.
 - [ ] **Docs site URL** — once GitHub Pages deploy works, add link to CLAUDE.md and repo description
+- [ ] **Reference data list endpoints** — Frontend curriculum/schedule pages call GET `/api/schools/{id}/terms`, `/classes`, `/subjects`, `/teachers`, `/rooms`, `/timeslots` — these need to be created if they don't exist
+- [ ] **Backend integration tests for scheduler API** — Test the full solve/status/solution/apply flow against a real database
+- [ ] **Frontend component tests** — No tests for curriculum or schedule pages yet
+- [ ] **Solver improvement** — Replace greedy solver with constraint solver (simulated annealing or local search) for better optimization
 
 ---
 
