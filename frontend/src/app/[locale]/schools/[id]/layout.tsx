@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeft, LayoutDashboard, LogOut, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Calendar,
+  LayoutDashboard,
+  LogOut,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -35,6 +42,8 @@ export default function SchoolLayout({
   const locale = useLocale();
   const t = useTranslations("school");
   const tc = useTranslations("common");
+  const tCurriculum = useTranslations("curriculum");
+  const tScheduler = useTranslations("scheduler");
   const { logout } = useAuth();
   const { selectSchool } = useSchool();
 
@@ -48,6 +57,16 @@ export default function SchoolLayout({
       title: t("members"),
       href: `/${locale}/schools/${schoolId}/members`,
       icon: Users,
+    },
+    {
+      title: tCurriculum("title"),
+      href: `/${locale}/schools/${schoolId}/curriculum`,
+      icon: BookOpen,
+    },
+    {
+      title: tScheduler("title"),
+      href: `/${locale}/schools/${schoolId}/schedule`,
+      icon: Calendar,
     },
   ];
 
@@ -76,7 +95,10 @@ export default function SchoolLayout({
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
-                      isActive={pathname === item.href}
+                      isActive={
+                        pathname === item.href ||
+                        pathname.startsWith(item.href + "/")
+                      }
                     >
                       <Link href={item.href}>
                         <item.icon className="h-4 w-4" />
