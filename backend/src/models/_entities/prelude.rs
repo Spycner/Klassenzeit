@@ -1,3 +1,14 @@
 pub use super::app_users::Entity as AppUsers;
+pub use super::lessons::Entity as Lessons;
+pub use super::room_subject_suitabilities::Entity as RoomSubjectSuitabilities;
+pub use super::rooms::Entity as Rooms;
+pub use super::school_classes::Entity as SchoolClasses;
 pub use super::school_memberships::Entity as SchoolMemberships;
+pub use super::school_years::Entity as SchoolYears;
 pub use super::schools::Entity as Schools;
+pub use super::subjects::Entity as Subjects;
+pub use super::teacher_availabilities::Entity as TeacherAvailabilities;
+pub use super::teacher_subject_qualifications::Entity as TeacherSubjectQualifications;
+pub use super::teachers::Entity as Teachers;
+pub use super::terms::Entity as Terms;
+pub use super::time_slots::Entity as TimeSlots;
