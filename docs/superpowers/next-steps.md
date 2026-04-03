@@ -26,17 +26,14 @@ Connect Next.js to Keycloak for login/logout and token forwarding.
 
 ---
 
-## Ready (no blockers)
-
-### Step 5: First CRUD Endpoints
-**Priority: medium** | Depends on: Steps 3, 4
+### Step 5: First CRUD Endpoints ✓
 Prove the full stack works end-to-end with a real feature.
+- Spec: `specs/2026-04-03-first-crud-endpoints-design.md`
+- Plan: `plans/2026-04-03-first-crud-endpoints.md`
 
-- Schools CRUD (create, read, update) — admin only
-- School membership management (invite, remove, change role)
-- Basic health/status endpoint showing authenticated user info
-- Frontend pages: school dashboard, member list
-- E2E tests covering the full flow
+---
+
+## Ready (no blockers)
 
 ### Domain Tables Migration
 **Priority: medium** | Blocked by: domain research conversation (mother-in-law insights)

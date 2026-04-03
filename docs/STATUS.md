@@ -19,10 +19,16 @@
 - Plan: `superpowers/plans/2026-04-03-frontend-auth.md`
 - PR: #17 (merged)
 
+### Step 5: First CRUD Endpoints
+- Spec: `superpowers/specs/2026-04-03-first-crud-endpoints-design.md`
+- Plan: `superpowers/plans/2026-04-03-first-crud-endpoints.md`
+- PR: #18 (merged)
+
 ## Next Up
 
-**Step 5: First CRUD Endpoints** — Prove the full stack works end-to-end with real features (schools CRUD, membership management, frontend pages).
+**Domain Tables Migration** — Port v1 domain tables to SeaORM migrations (school_years, terms, teachers, subjects, rooms, etc.). Blocked on domain research conversation.
 
 ## Notes from Reviews
 
-- apiClient is created inline per component — consider a `useApiClient` hook before Step 5 adds more CRUD pages
+- Frontend tests not yet added for the new pages/hooks — add before next frontend PR
+- Toast notifications wired up (Sonner) but not yet used — integrate when adding more CRUD pages
