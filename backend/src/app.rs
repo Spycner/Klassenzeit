@@ -5,6 +5,7 @@ use loco_rs::{
     boot::{create_app, BootResult, StartMode},
     config::Config,
     controller::AppRoutes,
+    db::truncate_table,
     environment::Environment,
     task::Tasks,
     Result,
@@ -13,7 +14,11 @@ use migration::Migrator;
 use std::path::Path;
 
 #[allow(unused_imports)]
-use crate::{controllers, tasks, workers::downloader::DownloadWorker};
+use crate::{
+    models::_entities::{app_users, school_memberships, schools},
+    tasks,
+    workers::downloader::DownloadWorker,
+};
 
 pub struct App;
 #[async_trait]
@@ -58,7 +63,10 @@ impl Hooks for App {
         // tasks-inject (do not remove)
     }
 
-    async fn truncate(_ctx: &AppContext) -> Result<()> {
+    async fn truncate(ctx: &AppContext) -> Result<()> {
+        truncate_table(&ctx.db, school_memberships::Entity).await?;
+        truncate_table(&ctx.db, app_users::Entity).await?;
+        truncate_table(&ctx.db, schools::Entity).await?;
         Ok(())
     }
 
