@@ -1,5 +1,6 @@
 pub mod _entities;
 pub mod app_users;
+pub mod curriculum_entries;
 pub mod lessons;
 pub mod room_subject_suitabilities;
 pub mod rooms;
