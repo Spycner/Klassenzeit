@@ -2,7 +2,9 @@
 
 import { LogOut, Plus, School } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -29,6 +31,9 @@ import type { SchoolResponse } from "@/lib/types";
 
 export default function SchoolsPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("schools");
+  const tc = useTranslations("common");
   const { logout } = useAuth();
   const { selectSchool } = useSchool();
   const apiClient = useApiClient();
@@ -65,7 +70,7 @@ export default function SchoolsPage() {
       setDialogOpen(false);
       setNewSchoolName("");
       selectSchool(created.id);
-      router.push(`/schools/${created.id}`);
+      router.push(`/${locale}/schools/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create school");
     } finally {
@@ -75,35 +80,35 @@ export default function SchoolsPage() {
 
   function handleCardClick(school: SchoolResponse) {
     selectSchool(school.id);
-    router.push(`/schools/${school.id}`);
+    router.push(`/${locale}/schools/${school.id}`);
   }
 
   return (
     <div className="flex min-h-screen flex-col items-center px-4 py-12">
       <div className="w-full max-w-3xl">
         <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">My Schools</h1>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
           <div className="flex items-center gap-2">
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
-                  Create School
+                  {t("create")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Create a new school</DialogTitle>
+                  <DialogTitle>{t("createTitle")}</DialogTitle>
                   <DialogDescription>
-                    Enter a name for your school. You can change this later.
+                    {t("createDescription")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="school-name">School name</Label>
+                    <Label htmlFor="school-name">{t("nameLabel")}</Label>
                     <Input
                       id="school-name"
-                      placeholder="e.g. Greenwood High School"
+                      placeholder={t("namePlaceholder")}
                       value={newSchoolName}
                       onChange={(e) => setNewSchoolName(e.target.value)}
                       onKeyDown={(e) => {
@@ -118,14 +123,15 @@ export default function SchoolsPage() {
                     onClick={handleCreateSchool}
                     disabled={!newSchoolName.trim() || creating}
                   >
-                    {creating ? "Creating..." : "Create School"}
+                    {creating ? tc("creating") : t("create")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            <LanguageSwitcher />
             <Button variant="outline" size="icon" onClick={logout}>
               <LogOut className="h-4 w-4" />
-              <span className="sr-only">Logout</span>
+              <span className="sr-only">{t("logoutSrOnly")}</span>
             </Button>
           </div>
         </div>
@@ -134,16 +140,16 @@ export default function SchoolsPage() {
 
         {loading && (
           <p className="text-center text-muted-foreground">
-            Loading schools...
+            {t("loadingSchools")}
           </p>
         )}
 
         {!loading && schools.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <School className="h-12 w-12 text-muted-foreground" />
-            <p className="text-lg font-medium">No schools yet</p>
+            <p className="text-lg font-medium">{t("empty")}</p>
             <p className="text-sm text-muted-foreground">
-              Create your first school to get started
+              {t("emptyDescription")}
             </p>
           </div>
         )}
