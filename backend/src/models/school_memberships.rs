@@ -18,6 +18,29 @@ impl Model {
             .one(db)
             .await
     }
+
+    pub async fn find_members_for_school(
+        db: &DatabaseConnection,
+        school_id: Uuid,
+    ) -> Result<Vec<(Self, Option<crate::models::_entities::app_users::Model>)>, DbErr> {
+        use crate::models::_entities::app_users;
+
+        Entity::find()
+            .filter(school_memberships::Column::SchoolId.eq(school_id))
+            .filter(school_memberships::Column::IsActive.eq(true))
+            .find_also_related(app_users::Entity)
+            .all(db)
+            .await
+    }
+
+    pub async fn count_admins(db: &DatabaseConnection, school_id: Uuid) -> Result<u64, DbErr> {
+        Entity::find()
+            .filter(school_memberships::Column::SchoolId.eq(school_id))
+            .filter(school_memberships::Column::Role.eq("admin"))
+            .filter(school_memberships::Column::IsActive.eq(true))
+            .count(db)
+            .await
+    }
 }
 
 impl ActiveModel {
