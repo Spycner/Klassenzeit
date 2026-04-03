@@ -146,6 +146,7 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Teachers::MaxHoursPerWeek)
                             .integer()
+                            .not_null()
                             .default(28),
                     )
                     .col(
@@ -936,6 +937,11 @@ impl MigrationTrait for Migration {
             "ALTER TABLE terms ADD CONSTRAINT ck_terms_dates CHECK (start_date < end_date)",
         )
         .await?;
+
+        // teachers: partial unique index on email per school
+        db.execute_unprepared(
+            "CREATE UNIQUE INDEX uq_teachers_school_email ON teachers (school_id, email) WHERE email IS NOT NULL"
+        ).await?;
 
         // time_slots: day_of_week 0-4, period 1-10, start_time < end_time
         db.execute_unprepared(
