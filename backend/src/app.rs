@@ -56,6 +56,7 @@ impl Hooks for App {
             .add_route(controllers::auth::routes())
             .add_route(controllers::schools::routes())
             .add_route(controllers::members::routes())
+            .add_route(controllers::curriculum::routes())
     }
 
     async fn connect_workers(ctx: &AppContext, queue: &Queue) -> Result<()> {
