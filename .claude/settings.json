@@ -1,5 +1,6 @@
 {
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(cargo *)",
       "Bash(bun *)",
@@ -7,7 +8,8 @@
       "Bash(mdbook *)",
       "Bash(prek *)",
       "Bash(git *)",
-      "Bash(docker compose *)"
+      "Bash(docker compose *)",
+      "Bash(gh *)"
     ]
   }
 }

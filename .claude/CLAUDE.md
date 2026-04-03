@@ -22,7 +22,7 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 - Roadmap & next steps: `docs/superpowers/next-steps.md`
 - Specs: `docs/superpowers/specs/`
 - Plans: `docs/superpowers/plans/`
-- Current status: Steps 1-3 complete. Next up: Step 4 (Frontend Auth Integration).
+- Current status: see `docs/STATUS.md` (update this file after each PR merge)
 
 ## Architecture
 
@@ -44,6 +44,7 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 - Automatically flow through the full pipeline: spec → plan → implementation → PR
 - Only pause for user input on genuinely ambiguous decisions with no clear best option
 - After creating a PR, fix all CI failures and review issues until the PR is mergeable, then merge it
+- After merging a PR, review and update CLAUDE.md (e.g. current status), `docs/superpowers/next-steps.md`, and any other docs that may be stale after the changes
 - When done, ping the user on GitHub (PR comment or mention) to notify completion
 
 ## Conventions

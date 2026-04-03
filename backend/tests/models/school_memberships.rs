@@ -110,3 +110,35 @@ async fn role_check_constraint_rejects_invalid_role() {
     let result = membership.insert(&boot.app_context.db).await;
     assert!(result.is_err());
 }
+
+#[tokio::test]
+#[serial]
+async fn find_members_for_school_returns_all_active() {
+    let boot = boot_test::<App>().await.unwrap();
+
+    let school = schools::ActiveModel::new("Members School".into(), "members-school".into());
+    let school = school.insert(&boot.app_context.db).await.unwrap();
+
+    let user1 =
+        app_users::ActiveModel::new("kc-m1".into(), "m1@example.com".into(), "User One".into());
+    let user1 = user1.insert(&boot.app_context.db).await.unwrap();
+
+    let user2 =
+        app_users::ActiveModel::new("kc-m2".into(), "m2@example.com".into(), "User Two".into());
+    let user2 = user2.insert(&boot.app_context.db).await.unwrap();
+
+    school_memberships::ActiveModel::new(user1.id, school.id, "admin".into())
+        .insert(&boot.app_context.db)
+        .await
+        .unwrap();
+    school_memberships::ActiveModel::new(user2.id, school.id, "teacher".into())
+        .insert(&boot.app_context.db)
+        .await
+        .unwrap();
+
+    let members =
+        school_memberships::Model::find_members_for_school(&boot.app_context.db, school.id)
+            .await
+            .unwrap();
+    assert_eq!(members.len(), 2);
+}
