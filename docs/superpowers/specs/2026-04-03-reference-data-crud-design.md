@@ -148,9 +148,9 @@ Reuse existing `*Response` structs from the list endpoints. Create and update re
 
 ## Deletion Strategy
 
-- **Soft delete** for entities with `is_active` column: classes, subjects, teachers, rooms, timeslots. Sets `is_active = false` and `updated_at = now()`.
-- **Hard delete** for terms (no `is_active` column). FK constraints prevent deletion if curriculum entries reference the term.
-- List endpoints filter to `is_active = true` by default. Admins can pass `?include_inactive=true` to see all.
+- **Soft delete** for entities with `is_active` column: classes, teachers, rooms. Sets `is_active = false` and `updated_at = now()`.
+- **Hard delete** for entities without `is_active`: subjects, timeslots, terms. FK constraints prevent deletion if referenced by other records.
+- List endpoints for soft-delete entities filter to `is_active = true` by default.
 
 ## Validation & Error Handling
 
