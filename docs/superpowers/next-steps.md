@@ -57,6 +57,7 @@ Completed — PR #25 merged. Greedy solver, curriculum CRUD, background worker, 
 - [ ] **Loco auth config in yaml** — `auth.jwt.secret` still in config files, unused since we removed Loco auth. Clean up when adding Keycloak middleware (Step 3)
 - [ ] **Empty worker/task modules** — `backend/src/workers/downloader.rs` and `backend/src/tasks/mod.rs` are Loco scaffold leftovers. Remove when they cause confusion.
 - [ ] **Docker compose files for staging/prod** — referenced in justfile but don't exist yet. Create when deployment is set up.
+- [ ] **Deployment pipeline setup** — deploy-staging.yml and deploy-prod.yml exist but need: (1) docker-compose.staging.yml and docker-compose.prod.yml files, (2) `workflow_dispatch` triggers for on-demand deploys, (3) reuse the existing self-hosted runner at `/home/pascal/actions-runner` (currently registered for `Spycner/website` only — re-register at org level or add second registration for Klassenzeit)
 - [ ] **Docs site URL** — once GitHub Pages deploy works, add link to CLAUDE.md and repo description
 - [ ] **Reference data list endpoints** — Frontend curriculum/schedule pages call GET `/api/schools/{id}/terms`, `/classes`, `/subjects`, `/teachers`, `/rooms`, `/timeslots` — these need to be created if they don't exist
 - [ ] **Backend integration tests for scheduler API** — Test the full solve/status/solution/apply flow against a real database
