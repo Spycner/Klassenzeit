@@ -1,5 +1,11 @@
 pub mod auth;
+pub mod classes;
 pub mod curriculum;
 pub mod members;
+pub mod rooms;
 pub mod scheduler;
 pub mod schools;
+pub mod subjects;
+pub mod teachers;
+pub mod terms;
+pub mod time_slots;

@@ -48,4 +48,4 @@ All major milestones complete. Remaining work is tech debt and optimization.
 - Frontend tests not yet added for the new pages/hooks — add before next frontend PR
 - Backend integration tests for scheduler API endpoints not yet written
 - Greedy solver is intentionally simple (no backtracking) — can be replaced with constraint solver later
-- Reference data list endpoints (terms, classes, subjects, teachers, rooms, timeslots) assumed by frontend — need to verify they exist or create them
+- ~~Reference data list endpoints~~ — created (terms, classes, subjects, teachers, rooms, timeslots)
