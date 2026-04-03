@@ -6,12 +6,13 @@ import {
   Calendar,
   LayoutDashboard,
   LogOut,
+  Settings,
   Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,8 +29,10 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import { useApiClient } from "@/hooks/use-api-client";
 import { useAuth } from "@/hooks/use-auth";
 import { useSchool } from "@/hooks/use-school";
+import type { SchoolResponse } from "@/lib/types";
 
 export default function SchoolLayout({
   children,
@@ -44,8 +47,21 @@ export default function SchoolLayout({
   const tc = useTranslations("common");
   const tCurriculum = useTranslations("curriculum");
   const tScheduler = useTranslations("scheduler");
+  const tSettings = useTranslations("settings");
   const { logout } = useAuth();
   const { selectSchool } = useSchool();
+  const apiClient = useApiClient();
+
+  const [school, setSchool] = useState<SchoolResponse | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<SchoolResponse>(`/api/schools/${schoolId}`)
+      .then(setSchool)
+      .catch(() => {});
+  }, [apiClient, schoolId]);
+
+  const isAdmin = school?.role === "admin";
 
   const navItems = [
     {
@@ -68,6 +84,15 @@ export default function SchoolLayout({
       href: `/${locale}/schools/${schoolId}/schedule`,
       icon: Calendar,
     },
+    ...(isAdmin
+      ? [
+          {
+            title: tSettings("title"),
+            href: `/${locale}/schools/${schoolId}/settings`,
+            icon: Settings,
+          },
+        ]
+      : []),
   ];
 
   useEffect(() => {
@@ -97,7 +122,7 @@ export default function SchoolLayout({
                       asChild
                       isActive={
                         pathname === item.href ||
-                        pathname.startsWith(item.href + "/")
+                        pathname.startsWith(`${item.href}/`)
                       }
                     >
                       <Link href={item.href}>

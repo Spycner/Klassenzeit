@@ -66,6 +66,7 @@ impl Hooks for App {
             .add_route(controllers::members::routes())
             .add_route(controllers::curriculum::routes())
             .add_route(controllers::scheduler::routes())
+            .add_route(controllers::school_years::routes())
             .add_route(controllers::terms::routes())
             .add_route(controllers::classes::routes())
             .add_route(controllers::subjects::routes())
