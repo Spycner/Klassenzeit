@@ -39,13 +39,18 @@
 - Plan: `superpowers/plans/2026-04-03-scheduler-integration.md`
 - PR: #25 (merged)
 
+### Reference Data Management UI
+- Spec: `superpowers/specs/2026-04-04-reference-data-ui-design.md`
+- Plan: `superpowers/plans/2026-04-04-reference-data-ui.md`
+- PR: #31 (merged)
+
 ## Next Up
 
-All major milestones complete. Remaining work is tech debt and optimization.
+Dev seed data, then deployment pipeline. Remaining work is seed data, testing infrastructure, and optimization.
 
 ## Notes from Reviews
 
 - Frontend tests not yet added for the new pages/hooks — add before next frontend PR
 - Backend integration tests for scheduler API endpoints not yet written
 - Greedy solver is intentionally simple (no backtracking) — can be replaced with constraint solver later
-- ~~Reference data list endpoints~~ — created (terms, classes, subjects, teachers, rooms, timeslots)
+- Settings page has duplicate school fetch (layout + page) — acceptable for now, could use shared context later
