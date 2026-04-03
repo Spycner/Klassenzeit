@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { KeycloakProvider } from "@/providers/keycloak-provider";
+import { SchoolProvider } from "@/providers/school-provider";
 
 const quicksand = Quicksand({
   variable: "--font-sans",
@@ -35,7 +36,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <TooltipProvider>
-            <KeycloakProvider>{children}</KeycloakProvider>
+            <SchoolProvider>
+              <KeycloakProvider>{children}</KeycloakProvider>
+            </SchoolProvider>
             <Toaster />
           </TooltipProvider>
         </ThemeProvider>
