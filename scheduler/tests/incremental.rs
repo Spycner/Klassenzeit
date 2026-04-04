@@ -23,6 +23,7 @@ fn make_facts(
                 max_hours: 28,
                 available_slots: bitvec![1; num_timeslots],
                 qualified_subjects: bitvec![1; num_subjects],
+                preferred_slots: bitvec![1; num_timeslots],
             })
             .collect(),
         classes: (0..num_classes)

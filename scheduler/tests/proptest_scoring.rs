@@ -29,6 +29,7 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                                 max_hours: max_hours[t],
                                 available_slots,
                                 qualified_subjects,
+                                preferred_slots: bitvec![0; num_slots],
                             }
                         })
                         .collect();

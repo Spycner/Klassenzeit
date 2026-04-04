@@ -63,10 +63,18 @@ pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
             }
         }
 
+        let mut preferred_slots = bitvec![0; num_timeslots];
+        for slot in &t.preferred_slots {
+            if let Some(&idx) = timeslot_uuid_to_idx.get(&slot.id) {
+                preferred_slots.set(idx, true);
+            }
+        }
+
         teachers.push(TeacherFact {
             max_hours: t.max_hours_per_week,
             available_slots,
             qualified_subjects,
+            preferred_slots,
         });
     }
 
@@ -78,7 +86,9 @@ pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
         class_uuids.push(c.id);
         classes.push(ClassFact {
             student_count: c.student_count,
-            class_teacher_idx: None, // no class_teacher in current schema
+            class_teacher_idx: c
+                .class_teacher_id
+                .and_then(|tid| teacher_uuid_to_idx.get(&tid).copied()),
         });
     }
 
