@@ -30,6 +30,8 @@ fn class(name: &str, grade: u8) -> SchoolClass {
         grade_level: grade,
         student_count: None,
         class_teacher_id: None,
+        available_slots: vec![],
+        grade: None,
     }
 }
 
@@ -343,6 +345,8 @@ fn local_search_produces_stats() {
         grade_level: 1,
         student_count: Some(25),
         class_teacher_id: None,
+        available_slots: vec![],
+        grade: None,
     };
 
     let input = ScheduleInput {

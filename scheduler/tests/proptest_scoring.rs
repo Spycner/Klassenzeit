@@ -67,6 +67,7 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                                 .map(|(c, _)| ClassFact {
                                     student_count: Some(25),
                                     class_teacher_idx: ct_idxs[c],
+                                    available_slots: bitvec![1; num_slots],
                                 })
                                 .collect(),
                             rooms,

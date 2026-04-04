@@ -70,6 +70,7 @@ fn make_bench_facts(num_classes: usize) -> (ProblemFacts, Vec<PlanningLesson>) {
             .map(|i| ClassFact {
                 student_count: Some(25),
                 class_teacher_idx: Some(i % (num_classes * 2)),
+                available_slots: bitvec![1; num_timeslots],
             })
             .collect(),
         rooms,

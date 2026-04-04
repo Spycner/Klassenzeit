@@ -48,6 +48,8 @@ pub struct SchoolClass {
     pub grade_level: u8,
     pub student_count: Option<u32>,
     pub class_teacher_id: Option<Uuid>,
+    pub available_slots: Vec<TimeSlot>,
+    pub grade: Option<u8>,
 }
 
 #[derive(Debug, Clone)]

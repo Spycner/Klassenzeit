@@ -37,6 +37,7 @@ fn make_facts_with_availability(
             .map(|_| ClassFact {
                 student_count: Some(25),
                 class_teacher_idx: None,
+                available_slots: bitvec![1; num_timeslots],
             })
             .collect(),
         rooms: (0..num_rooms)

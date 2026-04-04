@@ -89,11 +89,25 @@ pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
     for (i, c) in input.classes.iter().enumerate() {
         class_uuid_to_idx.insert(c.id, i);
         class_uuids.push(c.id);
+
+        let available_slots = if c.available_slots.is_empty() {
+            bitvec![1; num_timeslots]
+        } else {
+            let mut bits = bitvec![0; num_timeslots];
+            for slot in &c.available_slots {
+                if let Some(&idx) = timeslot_uuid_to_idx.get(&slot.id) {
+                    bits.set(idx, true);
+                }
+            }
+            bits
+        };
+
         classes.push(ClassFact {
             student_count: c.student_count,
             class_teacher_idx: c
                 .class_teacher_id
                 .and_then(|tid| teacher_uuid_to_idx.get(&tid).copied()),
+            available_slots,
         });
     }
 
@@ -268,6 +282,8 @@ mod tests {
                 grade_level: 1,
                 student_count: Some(25),
                 class_teacher_id: None,
+                available_slots: vec![],
+                grade: None,
             }],
             rooms: vec![],
             subjects: vec![Subject {
@@ -330,6 +346,8 @@ mod tests {
                 grade_level: 1,
                 student_count: None,
                 class_teacher_id: None,
+                available_slots: vec![],
+                grade: None,
             }],
             rooms: vec![],
             subjects: vec![Subject {

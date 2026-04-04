@@ -187,6 +187,8 @@ pub async fn load_schedule_input(
             grade_level: c.grade_level as u8,
             student_count: c.student_count.map(|s| s as u32),
             class_teacher_id: c.class_teacher_id,
+            available_slots: vec![],
+            grade: None,
         })
         .collect();
 
