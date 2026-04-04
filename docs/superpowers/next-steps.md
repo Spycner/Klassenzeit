@@ -62,7 +62,7 @@ Completed — PR #25 merged. Greedy solver, curriculum CRUD, background worker, 
 
 - [ ] **Test DB setup script** — Justfile recipe to auto-create the `loco` user and `klassenzeit-backend_test` database. Currently manual (see CLAUDE.md testing section). Prerequisite for running integration tests easily.
 - [ ] **Backend integration tests for scheduler API** — Test the full solve/status/solution/apply flow against a real database.
-- [ ] **Frontend component tests** — No tests for curriculum or schedule pages yet. Add before the next frontend PR.
+- [x] **Frontend component tests** — Tests for SubjectsTab, CurriculumPage, SchedulePage, and useSchool hook. 21 total frontend tests.
 
 ### Tier 3: Deployment
 
