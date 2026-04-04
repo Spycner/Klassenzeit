@@ -8,6 +8,10 @@ pub mod constraints;
 
 pub mod construction;
 
+pub mod local_search;
+
+use std::time::Instant;
+
 use types::*;
 
 pub fn solve(input: ScheduleInput) -> ScheduleOutput {
@@ -27,16 +31,32 @@ pub fn solve(input: ScheduleInput) -> ScheduleOutput {
                 soft_score: 0.0,
             },
             violations: pre_violations,
+            stats: None,
         };
     }
 
     let (mut solution, maps) = mapper::to_planning(&filterable_input);
-    solution.score = construction::construct(&mut solution.lessons, &solution.facts);
+
+    // Construction phase
+    let construction_start = Instant::now();
+    let mut state = constraints::IncrementalState::new(&solution.facts);
+    construction::construct_with_state(&mut solution.lessons, &solution.facts, &mut state);
+    let construction_ms = construction_start.elapsed().as_millis() as u64;
+
+    // Local search phase
+    let config = local_search::LahcConfig::default();
+    let mut stats =
+        local_search::optimize(&mut solution.lessons, &solution.facts, &mut state, &config);
+    stats.construction_ms = construction_ms;
+
+    solution.score = state.score();
+
     let mut output = mapper::to_output(&solution, &maps, &filterable_input);
 
     // Merge pre-validation violations
     output.score.hard_violations += pre_violations.len() as u32;
     output.violations.extend(pre_violations);
+    output.stats = Some(stats);
     output
 }
 

@@ -18,6 +18,7 @@ fn teacher(name: &str, slots: Vec<TimeSlot>, subjects: Vec<Uuid>) -> Teacher {
         is_part_time: false,
         available_slots: slots,
         qualified_subjects: subjects,
+        preferred_slots: vec![],
     }
 }
 
@@ -27,6 +28,7 @@ fn class(name: &str, grade: u8) -> SchoolClass {
         name: name.to_string(),
         grade_level: grade,
         student_count: None,
+        class_teacher_id: None,
     }
 }
 
@@ -300,4 +302,77 @@ fn unplaceable_requirement_produces_violation() {
     let output = solve(input);
     assert!(output.timetable.is_empty());
     assert_eq!(output.score.hard_violations, 1);
+}
+
+#[test]
+fn local_search_produces_stats() {
+    let slots: Vec<TimeSlot> = (0..5)
+        .flat_map(|day| (0..6).map(move |period| ts(day, period)))
+        .collect();
+    let math = subject("Math", false);
+    let english = subject("English", false);
+
+    // Preferred slots are a subset — teachers prefer only day 0-2, creating soft penalties
+    let preferred: Vec<TimeSlot> = (0..3)
+        .flat_map(|day| (0..6).map(move |period| ts(day, period)))
+        .collect();
+
+    let t1 = Teacher {
+        id: Uuid::new_v4(),
+        name: "Alice".into(),
+        max_hours_per_week: 28,
+        is_part_time: false,
+        available_slots: slots.clone(),
+        qualified_subjects: vec![math.id, english.id],
+        preferred_slots: preferred.clone(),
+    };
+    let t2 = Teacher {
+        id: Uuid::new_v4(),
+        name: "Bob".into(),
+        max_hours_per_week: 28,
+        is_part_time: false,
+        available_slots: slots.clone(),
+        qualified_subjects: vec![math.id, english.id],
+        preferred_slots: preferred.clone(),
+    };
+
+    let c1 = SchoolClass {
+        id: Uuid::new_v4(),
+        name: "1A".into(),
+        grade_level: 1,
+        student_count: Some(25),
+        class_teacher_id: None,
+    };
+
+    let input = ScheduleInput {
+        teachers: vec![t1.clone(), t2.clone()],
+        classes: vec![c1.clone()],
+        rooms: vec![],
+        subjects: vec![math.clone(), english.clone()],
+        timeslots: slots,
+        requirements: vec![
+            LessonRequirement {
+                class_id: c1.id,
+                subject_id: math.id,
+                teacher_id: Some(t1.id),
+                hours_per_week: 4,
+            },
+            LessonRequirement {
+                class_id: c1.id,
+                subject_id: english.id,
+                teacher_id: Some(t2.id),
+                hours_per_week: 4,
+            },
+        ],
+    };
+
+    let output = solve(input);
+
+    assert_eq!(output.score.hard_violations, 0);
+    assert_eq!(output.timetable.len(), 8);
+    assert!(output.stats.is_some());
+    let stats = output.stats.unwrap();
+    assert!(stats.iterations > 0);
+    assert!(stats.local_search_ms > 0 || stats.iterations > 0);
+    assert!(stats.construction_ms < 1000);
 }

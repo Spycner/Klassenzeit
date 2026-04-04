@@ -29,6 +29,7 @@ fn make_facts_with_availability(
                     max_hours,
                     available_slots,
                     qualified_subjects: bitvec![1; num_subjects],
+                    preferred_slots: bitvec![1; num_timeslots],
                 }
             })
             .collect(),

@@ -39,6 +39,19 @@ pub struct SolveResult {
     pub timetable: Vec<SolveLesson>,
     pub score: SolveScore,
     pub violations: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stats: Option<SolveStatsDto>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SolveStatsDto {
+    pub construction_ms: u64,
+    pub local_search_ms: u64,
+    pub iterations: u64,
+    pub iterations_per_sec: f64,
+    pub moves_accepted: u64,
+    pub moves_rejected: u64,
+    pub best_found_at_iteration: u64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -135,6 +148,18 @@ pub async fn load_schedule_input(
                 .cloned()
                 .collect();
 
+            let preferred: std::collections::HashSet<(i16, i16)> = availabilities
+                .iter()
+                .filter(|a| a.teacher_id == t.id && a.availability_type == "preferred")
+                .map(|a| (a.day_of_week, a.period))
+                .collect();
+
+            let preferred_slots: Vec<sched::TimeSlot> = sched_timeslots
+                .iter()
+                .filter(|ts| preferred.contains(&(ts.day as i16, ts.period as i16)))
+                .cloned()
+                .collect();
+
             sched::Teacher {
                 id: t.id,
                 name: format!("{} {}", t.first_name, t.last_name),
@@ -142,6 +167,7 @@ pub async fn load_schedule_input(
                 is_part_time: t.is_part_time,
                 available_slots,
                 qualified_subjects,
+                preferred_slots,
             }
         })
         .collect();
@@ -160,6 +186,7 @@ pub async fn load_schedule_input(
             name: c.name.clone(),
             grade_level: c.grade_level as u8,
             student_count: c.student_count.map(|s| s as u32),
+            class_teacher_id: c.class_teacher_id,
         })
         .collect();
 
@@ -258,5 +285,14 @@ pub fn to_solve_result(output: sched::ScheduleOutput) -> SolveResult {
             .into_iter()
             .map(|v| v.description)
             .collect(),
+        stats: output.stats.map(|s| SolveStatsDto {
+            construction_ms: s.construction_ms,
+            local_search_ms: s.local_search_ms,
+            iterations: s.iterations,
+            iterations_per_sec: s.iterations_per_sec,
+            moves_accepted: s.moves_accepted,
+            moves_rejected: s.moves_rejected,
+            best_found_at_iteration: s.best_found_at_iteration,
+        }),
     }
 }

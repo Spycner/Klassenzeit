@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use smallvec::SmallVec;
+
 use crate::planning::{HardSoftScore, PlanningLesson, ProblemFacts};
 
 /// Evaluate all hard constraints from scratch. O(n²) for conflict constraints.
@@ -38,12 +40,43 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
         }
     }
 
+    // Compute day info from timeslots
+    let num_days = facts
+        .timeslots
+        .iter()
+        .map(|t| t.day as usize + 1)
+        .max()
+        .unwrap_or(0);
+    let mut first_period_per_day = vec![u8::MAX; num_days];
+    for ts in &facts.timeslots {
+        let d = ts.day as usize;
+        if ts.period < first_period_per_day[d] {
+            first_period_per_day[d] = ts.period;
+        }
+    }
+
     // Per-lesson constraints
     let mut teacher_hours: HashMap<usize, u32> = HashMap::new();
+
+    // Soft constraint accumulators
+    // teacher_day_periods[teacher][day] → list of period numbers
+    let num_teachers = facts.teachers.len();
+    let num_classes = facts.classes.len();
+    let num_subjects = facts.subjects.len();
+    let mut teacher_day_periods: Vec<Vec<Vec<u8>>> = vec![vec![Vec::new(); num_days]; num_teachers];
+    // class_subject_day[class][subject][day] → count
+    let mut class_subject_day: Vec<Vec<Vec<u32>>> =
+        vec![vec![vec![0u32; num_days]; num_subjects]; num_classes];
+    // class_day_first_period_teachers[class][day] → (has_class_teacher, has_any_lesson)
+    let mut class_day_first_period: Vec<Vec<(bool, bool)>> =
+        vec![vec![(false, false); num_days]; num_classes];
 
     for lesson in &assigned {
         let ts = lesson.timeslot.unwrap();
         let teacher = &facts.teachers[lesson.teacher_idx];
+        let timeslot = &facts.timeslots[ts];
+        let day = timeslot.day as usize;
+        let period = timeslot.period;
 
         // 4. Teacher availability
         if !teacher.available_slots[ts] {
@@ -76,6 +109,29 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
                 }
             }
         }
+
+        // --- Soft constraint tracking ---
+
+        // Teacher gap tracking
+        teacher_day_periods[lesson.teacher_idx][day].push(period);
+
+        // Subject distribution tracking
+        class_subject_day[lesson.class_idx][lesson.subject_idx][day] += 1;
+
+        // Preferred slot penalty (direct)
+        if !teacher.preferred_slots[ts] {
+            score += HardSoftScore::soft(-1);
+        }
+
+        // Class teacher first period tracking
+        if period == first_period_per_day[day] {
+            let class_teacher = facts.classes[lesson.class_idx].class_teacher_idx;
+            let entry = &mut class_day_first_period[lesson.class_idx][day];
+            entry.1 = true; // has lesson in first period
+            if class_teacher == Some(lesson.teacher_idx) {
+                entry.0 = true; // class teacher teaches in first period
+            }
+        }
     }
 
     // 5. Teacher over-capacity
@@ -83,6 +139,48 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
         let max = facts.teachers[teacher_idx].max_hours;
         if hours > max {
             score += HardSoftScore::hard(-((hours - max) as i64));
+        }
+    }
+
+    // --- Post-loop soft constraint evaluation ---
+
+    // Teacher gaps: for each teacher/day, gaps = (max_period - min_period) - (num_lessons - 1)
+    for teacher_periods in &teacher_day_periods {
+        for periods in teacher_periods {
+            if periods.len() >= 2 {
+                let min_p = *periods.iter().min().unwrap() as i64;
+                let max_p = *periods.iter().max().unwrap() as i64;
+                let span = max_p - min_p;
+                let lessons_count = periods.len() as i64;
+                let gaps = span - (lessons_count - 1);
+                if gaps > 0 {
+                    score += HardSoftScore::soft(-gaps);
+                }
+            }
+        }
+    }
+
+    // Subject distribution: for each (class, subject, day) with N > 1, penalize (N-1)*-2
+    for class_subjects in &class_subject_day {
+        for subject_days in class_subjects {
+            for &count in subject_days {
+                if count > 1 {
+                    score += HardSoftScore::soft(-((count - 1) as i64 * 2));
+                }
+            }
+        }
+    }
+
+    // Class teacher first period: penalize if first period has lessons but no class teacher
+    for (class_idx, class_days) in class_day_first_period.iter().enumerate() {
+        let has_class_teacher = facts.classes[class_idx].class_teacher_idx.is_some();
+        if !has_class_teacher {
+            continue;
+        }
+        for &(ct_teaches, has_lesson) in class_days {
+            if has_lesson && !ct_teaches {
+                score += HardSoftScore::soft(-1);
+            }
         }
     }
 
@@ -96,10 +194,22 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
 /// Maintains counter matrices so that assign/unassign update the score in O(1)
 /// per constraint instead of re-evaluating from scratch.
 pub struct IncrementalState {
+    // Hard constraint counters
     teacher_at_slot: Vec<Vec<u16>>,
     class_at_slot: Vec<Vec<u16>>,
     room_at_slot: Vec<Vec<u16>>,
     teacher_hours: Vec<u32>,
+
+    // Soft constraint state
+    num_days: usize,
+    first_period_per_day: Vec<u8>,
+    /// `[teacher][day]` → sorted list of periods taught that day
+    teacher_day_periods: Vec<Vec<SmallVec<[u8; 4]>>>,
+    /// `[class][subject][day]` → count of lessons
+    class_subject_day: Vec<Vec<Vec<u16>>>,
+    /// `[class][day][teacher]` → count of lessons at first period by that teacher
+    class_day_first_period: Vec<Vec<Vec<u16>>>,
+
     score: HardSoftScore,
 }
 
@@ -110,14 +220,55 @@ impl IncrementalState {
         let num_teachers = facts.teachers.len();
         let num_classes = facts.classes.len();
         let num_rooms = facts.rooms.len();
+        let num_subjects = facts.subjects.len();
+
+        let num_days = facts
+            .timeslots
+            .iter()
+            .map(|t| t.day as usize + 1)
+            .max()
+            .unwrap_or(0);
+
+        let mut first_period_per_day = vec![u8::MAX; num_days];
+        for ts in &facts.timeslots {
+            let d = ts.day as usize;
+            if ts.period < first_period_per_day[d] {
+                first_period_per_day[d] = ts.period;
+            }
+        }
 
         Self {
             teacher_at_slot: vec![vec![0u16; num_ts]; num_teachers],
             class_at_slot: vec![vec![0u16; num_ts]; num_classes],
             room_at_slot: vec![vec![0u16; num_ts]; num_rooms],
             teacher_hours: vec![0u32; num_teachers],
+            num_days,
+            first_period_per_day,
+            teacher_day_periods: vec![vec![SmallVec::new(); num_days]; num_teachers],
+            class_subject_day: vec![vec![vec![0u16; num_days]; num_subjects]; num_classes],
+            class_day_first_period: vec![vec![vec![0u16; num_teachers]; num_days]; num_classes],
             score: HardSoftScore::ZERO,
         }
+    }
+
+    /// Gap penalty for a sorted list of periods. Returns a non-positive value.
+    fn gap_penalty(periods: &[u8]) -> i64 {
+        if periods.len() < 2 {
+            return 0;
+        }
+        let span = (*periods.last().unwrap() - *periods.first().unwrap()) as i64;
+        let gaps = span - (periods.len() as i64 - 1);
+        if gaps > 0 {
+            -gaps
+        } else {
+            0
+        }
+    }
+
+    /// Is the class teacher first period constraint violated for this class/day?
+    fn is_first_period_violated(&self, class_idx: usize, day: usize, ct_idx: usize) -> bool {
+        let total: u16 = self.class_day_first_period[class_idx][day].iter().sum();
+        total > 0 && self.class_day_first_period[class_idx][day][ct_idx] == 0
     }
 
     pub fn score(&self) -> HardSoftScore {
@@ -179,6 +330,54 @@ impl IncrementalState {
             delta += HardSoftScore::hard(-1);
         }
 
+        // ── Soft constraint deltas ──
+        let ts_fact = &facts.timeslots[timeslot];
+        let day = ts_fact.day as usize;
+        let period = ts_fact.period;
+
+        // Teacher gap delta
+        let periods = &self.teacher_day_periods[lesson.teacher_idx][day];
+        let old_gap = Self::gap_penalty(periods);
+        let mut new_periods = periods.clone();
+        let pos = new_periods.binary_search(&period).unwrap_or_else(|p| p);
+        new_periods.insert(pos, period);
+        let new_gap = Self::gap_penalty(&new_periods);
+        delta += HardSoftScore::soft(new_gap - old_gap);
+
+        // Subject distribution delta
+        let count = self.class_subject_day[lesson.class_idx][lesson.subject_idx][day];
+        if count > 0 {
+            delta += HardSoftScore::soft(-2);
+        }
+
+        // Preferred slots
+        if !facts.teachers[lesson.teacher_idx].preferred_slots[timeslot] {
+            delta += HardSoftScore::soft(-1);
+        }
+
+        // Class teacher first period
+        if day < self.num_days && period == self.first_period_per_day[day] {
+            if let Some(ct_idx) = facts.classes[lesson.class_idx].class_teacher_idx {
+                let old_violated = self.is_first_period_violated(lesson.class_idx, day, ct_idx);
+                let total: u16 = self.class_day_first_period[lesson.class_idx][day]
+                    .iter()
+                    .sum();
+                let new_total = total + 1;
+                let ct_count = self.class_day_first_period[lesson.class_idx][day][ct_idx];
+                let new_ct_count = if lesson.teacher_idx == ct_idx {
+                    ct_count + 1
+                } else {
+                    ct_count
+                };
+                let new_violated = new_total > 0 && new_ct_count == 0;
+                if !old_violated && new_violated {
+                    delta += HardSoftScore::soft(-1);
+                } else if old_violated && !new_violated {
+                    delta += HardSoftScore::soft(1);
+                }
+            }
+        }
+
         delta
     }
 
@@ -199,13 +398,31 @@ impl IncrementalState {
 
         let delta = self.evaluate_assign(lesson, timeslot, room, facts);
 
-        // Update counters
+        // Update hard counters
         self.teacher_at_slot[lesson.teacher_idx][timeslot] += 1;
         self.class_at_slot[lesson.class_idx][timeslot] += 1;
         if let Some(r) = room {
             self.room_at_slot[r][timeslot] += 1;
         }
         self.teacher_hours[lesson.teacher_idx] += 1;
+
+        // Update soft counters
+        let ts_fact = &facts.timeslots[timeslot];
+        let day = ts_fact.day as usize;
+        let period = ts_fact.period;
+
+        // Teacher day periods (insert sorted)
+        let periods = &mut self.teacher_day_periods[lesson.teacher_idx][day];
+        let pos = periods.binary_search(&period).unwrap_or_else(|p| p);
+        periods.insert(pos, period);
+
+        // Class subject day
+        self.class_subject_day[lesson.class_idx][lesson.subject_idx][day] += 1;
+
+        // Class day first period
+        if day < self.num_days && period == self.first_period_per_day[day] {
+            self.class_day_first_period[lesson.class_idx][day][lesson.teacher_idx] += 1;
+        }
 
         // Update lesson
         lesson.timeslot = Some(timeslot);
@@ -274,6 +491,63 @@ impl IncrementalState {
         let new_hours = self.teacher_hours[lesson.teacher_idx];
         if new_hours >= teacher.max_hours {
             delta += HardSoftScore::hard(1);
+        }
+
+        // ── Soft delta ──
+        let ts_fact = &facts.timeslots[timeslot];
+        let day = ts_fact.day as usize;
+        let period = ts_fact.period;
+
+        // Teacher gap: compute old and new gap penalty
+        let periods = &self.teacher_day_periods[lesson.teacher_idx][day];
+        let old_gap = Self::gap_penalty(periods);
+        let mut new_periods = periods.clone();
+        if let Some(pos) = new_periods.iter().position(|&p| p == period) {
+            new_periods.remove(pos);
+        }
+        let new_gap = Self::gap_penalty(&new_periods);
+        delta += HardSoftScore::soft(new_gap - old_gap);
+
+        // Subject distribution
+        let old_count = self.class_subject_day[lesson.class_idx][lesson.subject_idx][day];
+        if old_count > 1 {
+            delta += HardSoftScore::soft(2); // removing one duplicate
+        }
+
+        // Preferred slots
+        if !facts.teachers[lesson.teacher_idx].preferred_slots[timeslot] {
+            delta += HardSoftScore::soft(1); // removing a miss
+        }
+
+        // Class teacher first period
+        if day < self.num_days && period == self.first_period_per_day[day] {
+            if let Some(ct_idx) = facts.classes[lesson.class_idx].class_teacher_idx {
+                let old_violated = self.is_first_period_violated(lesson.class_idx, day, ct_idx);
+                // Simulate removal
+                let total: u16 = self.class_day_first_period[lesson.class_idx][day]
+                    .iter()
+                    .sum();
+                let new_total = total - 1;
+                let ct_count = self.class_day_first_period[lesson.class_idx][day][ct_idx];
+                let new_ct_count = if lesson.teacher_idx == ct_idx {
+                    ct_count - 1
+                } else {
+                    ct_count
+                };
+                let new_violated = new_total > 0 && new_ct_count == 0;
+                if old_violated && !new_violated {
+                    delta += HardSoftScore::soft(1);
+                } else if !old_violated && new_violated {
+                    delta += HardSoftScore::soft(-1);
+                }
+            }
+        }
+
+        // Update soft counters
+        self.teacher_day_periods[lesson.teacher_idx][day] = new_periods;
+        self.class_subject_day[lesson.class_idx][lesson.subject_idx][day] -= 1;
+        if day < self.num_days && period == self.first_period_per_day[day] {
+            self.class_day_first_period[lesson.class_idx][day][lesson.teacher_idx] -= 1;
         }
 
         // Clear lesson

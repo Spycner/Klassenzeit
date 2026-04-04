@@ -63,10 +63,18 @@ pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
             }
         }
 
+        let mut preferred_slots = bitvec![0; num_timeslots];
+        for slot in &t.preferred_slots {
+            if let Some(&idx) = timeslot_uuid_to_idx.get(&slot.id) {
+                preferred_slots.set(idx, true);
+            }
+        }
+
         teachers.push(TeacherFact {
             max_hours: t.max_hours_per_week,
             available_slots,
             qualified_subjects,
+            preferred_slots,
         });
     }
 
@@ -78,7 +86,9 @@ pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
         class_uuids.push(c.id);
         classes.push(ClassFact {
             student_count: c.student_count,
-            class_teacher_idx: None, // no class_teacher in current schema
+            class_teacher_idx: c
+                .class_teacher_id
+                .and_then(|tid| teacher_uuid_to_idx.get(&tid).copied()),
         });
     }
 
@@ -217,6 +227,7 @@ pub fn to_output(
             soft_score: solution.score.soft as f64,
         },
         violations,
+        stats: None,
     }
 }
 
@@ -244,12 +255,14 @@ mod tests {
                 is_part_time: false,
                 available_slots: slots.clone(),
                 qualified_subjects: vec![math_id],
+                preferred_slots: vec![],
             }],
             classes: vec![SchoolClass {
                 id: Uuid::new_v4(),
                 name: "1A".into(),
                 grade_level: 1,
                 student_count: Some(25),
+                class_teacher_id: None,
             }],
             rooms: vec![],
             subjects: vec![Subject {
@@ -304,12 +317,14 @@ mod tests {
                 is_part_time: false,
                 available_slots: vec![slot.clone()],
                 qualified_subjects: vec![math_id],
+                preferred_slots: vec![],
             }],
             classes: vec![SchoolClass {
                 id: class_id,
                 name: "1A".into(),
                 grade_level: 1,
                 student_count: None,
+                class_teacher_id: None,
             }],
             rooms: vec![],
             subjects: vec![Subject {

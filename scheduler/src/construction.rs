@@ -1,14 +1,16 @@
 use crate::constraints::IncrementalState;
 use crate::planning::*;
 
-/// First Fit Decreasing construction heuristic.
+/// First Fit Decreasing construction heuristic with an externally-provided state.
 ///
 /// Sorts lessons by constraint tightness (most constrained first), then
 /// greedily assigns each lesson to the (timeslot, room) pair with the best
 /// (least negative) score delta.
-pub fn construct(lessons: &mut [PlanningLesson], facts: &ProblemFacts) -> HardSoftScore {
-    let mut state = IncrementalState::new(facts);
-
+pub fn construct_with_state(
+    lessons: &mut [PlanningLesson],
+    facts: &ProblemFacts,
+    state: &mut IncrementalState,
+) -> HardSoftScore {
     // Build sorted order: most constrained lessons first
     let mut order: Vec<usize> = (0..lessons.len()).collect();
     order.sort_by(|&a, &b| {
@@ -78,6 +80,12 @@ pub fn construct(lessons: &mut [PlanningLesson], facts: &ProblemFacts) -> HardSo
     }
 
     state.score()
+}
+
+/// Original function for backwards compatibility with tests.
+pub fn construct(lessons: &mut [PlanningLesson], facts: &ProblemFacts) -> HardSoftScore {
+    let mut state = IncrementalState::new(facts);
+    construct_with_state(lessons, facts, &mut state)
 }
 
 /// Lower = more constrained = should be placed first.

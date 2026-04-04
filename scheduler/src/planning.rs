@@ -105,6 +105,8 @@ pub struct TeacherFact {
     pub available_slots: BitVec,
     /// Bit i is set if teacher is qualified for subject i.
     pub qualified_subjects: BitVec,
+    /// Bit i is set if teacher prefers timeslot i.
+    pub preferred_slots: BitVec,
 }
 
 #[derive(Debug, Clone)]

@@ -21,6 +21,7 @@ fn make_facts(
                 max_hours: 28,
                 available_slots: bitvec![1; num_timeslots],
                 qualified_subjects: bitvec![1; num_subjects],
+                preferred_slots: bitvec![1; num_timeslots],
             })
             .collect(),
         classes: (0..num_classes)
@@ -192,4 +193,163 @@ fn multiple_violations_stack() {
     let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
     // -1 teacher conflict + -1 over-capacity = -2
     assert_eq!(score.hard, -2);
+}
+
+// =========================================================================
+// Soft constraint tests
+// =========================================================================
+
+// --- Teacher gap tests ---
+
+#[test]
+fn soft_teacher_gap_no_gap() {
+    // 16 slots = 2 days × 8 periods. Teacher with consecutive periods 0,1 on day 0.
+    // Use different subjects to avoid subject distribution penalty.
+    let facts = make_facts(16, 1, 1, 0, 2);
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None), lesson(1, 0, 0, 1, 1, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, 0);
+}
+
+#[test]
+fn soft_teacher_gap_one_gap() {
+    // Teacher with periods 0 and 2 on day 0 → 1 gap
+    let facts = make_facts(16, 1, 2, 0, 1);
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None), lesson(1, 0, 1, 0, 2, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, -1);
+}
+
+#[test]
+fn soft_teacher_gap_two_gaps() {
+    // Teacher with periods 0 and 3 on day 0 → 2 gaps
+    let facts = make_facts(16, 1, 2, 0, 1);
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None), lesson(1, 0, 1, 0, 3, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, -2);
+}
+
+#[test]
+fn soft_teacher_gap_different_days_no_penalty() {
+    // Teacher with period 0 on day 0 and period 2 on day 1 → no gap (different days)
+    let facts = make_facts(16, 1, 2, 0, 1);
+    // Slot 0 = day 0, period 0; Slot 10 = day 1, period 2
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None), lesson(1, 0, 1, 0, 10, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, 0);
+}
+
+// --- Subject distribution tests ---
+
+#[test]
+fn soft_subject_distribution_no_duplicate() {
+    // Same class, same subject, different days → no penalty
+    let facts = make_facts(16, 2, 1, 0, 1);
+    // Slot 0 = day 0; Slot 8 = day 1
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None), lesson(1, 1, 0, 0, 8, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, 0);
+}
+
+#[test]
+fn soft_subject_distribution_one_duplicate() {
+    // Same class, same subject, same day → -2
+    let facts = make_facts(16, 2, 1, 0, 1);
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None), lesson(1, 1, 0, 0, 1, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, -2);
+}
+
+#[test]
+fn soft_subject_distribution_two_duplicates() {
+    // Same class, same subject, same day, 3 lessons → -4
+    let facts = make_facts(16, 3, 1, 0, 1);
+    let lessons = vec![
+        lesson(0, 0, 0, 0, 0, None),
+        lesson(1, 1, 0, 0, 1, None),
+        lesson(2, 2, 0, 0, 2, None),
+    ];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, -4);
+}
+
+#[test]
+fn soft_subject_distribution_different_classes_ok() {
+    // Same subject, same day, different classes → no penalty
+    let facts = make_facts(16, 1, 2, 0, 1);
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None), lesson(1, 0, 1, 0, 1, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, 0);
+}
+
+// --- Preferred slots tests ---
+
+#[test]
+fn soft_preferred_slot_no_penalty() {
+    // All slots preferred by default → 0
+    let facts = make_facts(16, 1, 1, 0, 1);
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, 0);
+}
+
+#[test]
+fn soft_preferred_slot_one_miss() {
+    let mut facts = make_facts(16, 1, 1, 0, 1);
+    facts.teachers[0].preferred_slots.set(0, false);
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, -1);
+}
+
+#[test]
+fn soft_preferred_slot_two_misses() {
+    let mut facts = make_facts(16, 1, 2, 0, 1);
+    facts.teachers[0].preferred_slots.set(0, false);
+    facts.teachers[0].preferred_slots.set(1, false);
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None), lesson(1, 0, 1, 0, 1, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, -2);
+}
+
+// --- Class teacher first period tests ---
+
+#[test]
+fn soft_class_teacher_first_period_satisfied() {
+    let mut facts = make_facts(16, 2, 1, 0, 1);
+    facts.classes[0].class_teacher_idx = Some(0);
+    // Teacher 0 (class teacher) teaches class 0 at period 0 (first period)
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, 0);
+}
+
+#[test]
+fn soft_class_teacher_first_period_violated() {
+    let mut facts = make_facts(16, 2, 1, 0, 1);
+    facts.classes[0].class_teacher_idx = Some(0);
+    // Teacher 1 (NOT class teacher) teaches class 0 at period 0 (first period)
+    let lessons = vec![lesson(0, 1, 0, 0, 0, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, -1);
+}
+
+#[test]
+fn soft_class_teacher_first_period_no_class_teacher() {
+    // No class teacher assigned → no penalty
+    let facts = make_facts(16, 2, 1, 0, 1);
+    let lessons = vec![lesson(0, 1, 0, 0, 0, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, 0);
+}
+
+#[test]
+fn soft_class_teacher_first_period_two_days_one_violated() {
+    let mut facts = make_facts(16, 2, 1, 0, 1);
+    facts.classes[0].class_teacher_idx = Some(0);
+    // Day 0, period 0: class teacher teaches → ok
+    // Day 1, period 0 (slot 8): other teacher teaches → -1
+    let lessons = vec![lesson(0, 0, 0, 0, 0, None), lesson(1, 1, 0, 0, 8, None)];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(score.soft, -1);
 }
