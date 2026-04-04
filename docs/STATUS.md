@@ -44,9 +44,14 @@
 - Plan: `superpowers/plans/2026-04-04-reference-data-ui.md`
 - PR: #31 (merged)
 
+### Dev Seed Data
+- Spec: `superpowers/specs/2026-04-04-dev-seed-data-design.md`
+- Plan: `superpowers/plans/2026-04-04-dev-seed-data.md`
+- PR: #33 (merged)
+
 ## Next Up
 
-Dev seed data, then deployment pipeline. Remaining work is seed data, testing infrastructure, and optimization.
+Deployment pipeline setup. Remaining work is testing infrastructure, deployment, and optimization.
 
 ## Notes from Reviews
 
