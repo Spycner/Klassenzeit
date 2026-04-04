@@ -6,7 +6,33 @@ on:
     branches: [main]
 
 jobs:
-  backend:
+  backend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: backend-lint
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --workspace -- -D warnings
+
+  backend-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: backend-test
+      - name: Unit tests
+        run: cargo test --workspace
+
+  backend-integration-tests:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -25,17 +51,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-      - name: Clippy
-        run: cargo clippy --workspace -- -D warnings
-      - name: Unit tests
-        run: cargo test --workspace
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/klassenzeit_test
+        with:
+          shared-key: backend-test
       - name: Integration tests
         run: cargo test -p klassenzeit-backend --test mod
         env:
@@ -60,6 +78,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install mdbook
-        run: cargo install mdbook
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.5.2/mdbook-v0.5.2-x86_64-unknown-linux-gnu.tar.gz | tar -xz -C "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Build docs
         run: mdbook build docs/
