@@ -38,12 +38,43 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
         }
     }
 
+    // Compute day info from timeslots
+    let num_days = facts
+        .timeslots
+        .iter()
+        .map(|t| t.day as usize + 1)
+        .max()
+        .unwrap_or(0);
+    let mut first_period_per_day = vec![u8::MAX; num_days];
+    for ts in &facts.timeslots {
+        let d = ts.day as usize;
+        if ts.period < first_period_per_day[d] {
+            first_period_per_day[d] = ts.period;
+        }
+    }
+
     // Per-lesson constraints
     let mut teacher_hours: HashMap<usize, u32> = HashMap::new();
+
+    // Soft constraint accumulators
+    // teacher_day_periods[teacher][day] → list of period numbers
+    let num_teachers = facts.teachers.len();
+    let num_classes = facts.classes.len();
+    let num_subjects = facts.subjects.len();
+    let mut teacher_day_periods: Vec<Vec<Vec<u8>>> = vec![vec![Vec::new(); num_days]; num_teachers];
+    // class_subject_day[class][subject][day] → count
+    let mut class_subject_day: Vec<Vec<Vec<u32>>> =
+        vec![vec![vec![0u32; num_days]; num_subjects]; num_classes];
+    // class_day_first_period_teachers[class][day] → (has_class_teacher, has_any_lesson)
+    let mut class_day_first_period: Vec<Vec<(bool, bool)>> =
+        vec![vec![(false, false); num_days]; num_classes];
 
     for lesson in &assigned {
         let ts = lesson.timeslot.unwrap();
         let teacher = &facts.teachers[lesson.teacher_idx];
+        let timeslot = &facts.timeslots[ts];
+        let day = timeslot.day as usize;
+        let period = timeslot.period;
 
         // 4. Teacher availability
         if !teacher.available_slots[ts] {
@@ -76,6 +107,29 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
                 }
             }
         }
+
+        // --- Soft constraint tracking ---
+
+        // Teacher gap tracking
+        teacher_day_periods[lesson.teacher_idx][day].push(period);
+
+        // Subject distribution tracking
+        class_subject_day[lesson.class_idx][lesson.subject_idx][day] += 1;
+
+        // Preferred slot penalty (direct)
+        if !teacher.preferred_slots[ts] {
+            score += HardSoftScore::soft(-1);
+        }
+
+        // Class teacher first period tracking
+        if period == first_period_per_day[day] {
+            let class_teacher = facts.classes[lesson.class_idx].class_teacher_idx;
+            let entry = &mut class_day_first_period[lesson.class_idx][day];
+            entry.1 = true; // has lesson in first period
+            if class_teacher == Some(lesson.teacher_idx) {
+                entry.0 = true; // class teacher teaches in first period
+            }
+        }
     }
 
     // 5. Teacher over-capacity
@@ -83,6 +137,48 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
         let max = facts.teachers[teacher_idx].max_hours;
         if hours > max {
             score += HardSoftScore::hard(-((hours - max) as i64));
+        }
+    }
+
+    // --- Post-loop soft constraint evaluation ---
+
+    // Teacher gaps: for each teacher/day, gaps = (max_period - min_period) - (num_lessons - 1)
+    for teacher_periods in &teacher_day_periods {
+        for periods in teacher_periods {
+            if periods.len() >= 2 {
+                let min_p = *periods.iter().min().unwrap() as i64;
+                let max_p = *periods.iter().max().unwrap() as i64;
+                let span = max_p - min_p;
+                let lessons_count = periods.len() as i64;
+                let gaps = span - (lessons_count - 1);
+                if gaps > 0 {
+                    score += HardSoftScore::soft(-gaps);
+                }
+            }
+        }
+    }
+
+    // Subject distribution: for each (class, subject, day) with N > 1, penalize (N-1)*-2
+    for class_subjects in &class_subject_day {
+        for subject_days in class_subjects {
+            for &count in subject_days {
+                if count > 1 {
+                    score += HardSoftScore::soft(-((count - 1) as i64 * 2));
+                }
+            }
+        }
+    }
+
+    // Class teacher first period: penalize if first period has lessons but no class teacher
+    for (class_idx, class_days) in class_day_first_period.iter().enumerate() {
+        let has_class_teacher = facts.classes[class_idx].class_teacher_idx.is_some();
+        if !has_class_teacher {
+            continue;
+        }
+        for &(ct_teaches, has_lesson) in class_days {
+            if has_lesson && !ct_teaches {
+                score += HardSoftScore::soft(-1);
+            }
         }
     }
 
