@@ -2,6 +2,7 @@ mod auth;
 mod classes;
 mod members;
 mod rooms;
+mod scheduler;
 mod schools;
 mod subjects;
 mod teachers;
