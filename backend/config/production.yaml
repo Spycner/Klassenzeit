@@ -1,0 +1,30 @@
+logger:
+  enable: true
+  pretty_backtrace: false
+  level: info
+  format: json
+
+server:
+  port: 3001
+  binding: 0.0.0.0
+  host: https://klassenzeit.pascalkraus.com
+
+workers:
+  mode: BackgroundAsync
+
+database:
+  uri: {{ get_env(name="DATABASE_URL") }}
+  enable_logging: false
+  connect_timeout: {{ get_env(name="DB_CONNECT_TIMEOUT", default="5000") }}
+  idle_timeout: {{ get_env(name="DB_IDLE_TIMEOUT", default="30000") }}
+  min_connections: {{ get_env(name="DB_MIN_CONNECTIONS", default="1") }}
+  max_connections: {{ get_env(name="DB_MAX_CONNECTIONS", default="10") }}
+  auto_migrate: true
+  dangerously_truncate: false
+  dangerously_recreate: false
+
+settings:
+  keycloak:
+    url: {{ get_env(name="KEYCLOAK_URL", default="https://klassenzeit-auth.pascalkraus.com") }}
+    realm: {{ get_env(name="KEYCLOAK_REALM", default="klassenzeit") }}
+    client_id: {{ get_env(name="KEYCLOAK_CLIENT_ID", default="klassenzeit-prod") }}
