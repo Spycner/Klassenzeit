@@ -70,9 +70,11 @@ Completed — PR #25 merged. Greedy solver, curriculum CRUD, background worker, 
 - [x] **Backend config for staging/prod** — `staging.yaml` and `production.yaml` with DB, server, logging, and Keycloak settings.
 - [x] **GHA deploy workflows** — `deploy-staging.yml` (push to main) and `deploy-prod.yml` (GitHub release) exist.
 - [x] **Caddy reverse proxy** — Routes configured in server-infra Caddyfile for `klassenzeit-staging.pascalkraus.com` and `klassenzeit.pascalkraus.com`.
-- [ ] **Runner registration** — Self-hosted runner at `/home/pascal/actions-runner/` is registered to `Spycner/website`. Need to register for `Spycner/Klassenzeit` too (or use an org-level runner).
-- [ ] **Env files on VPS** — Create `.env.staging` and `.env.prod` with `DATABASE_URL=postgres://postgres:<password>@postgres:5432/klassenzeit_<env>`.
-- [ ] **Keycloak clients** — Create `klassenzeit-staging` and `klassenzeit-prod` clients in Keycloak realm.
+- [x] **Runner registration** — `iuno-klassenzeit` runner at `/home/pascal/actions-runner-klassenzeit/` registered for `Spycner/Klassenzeit`.
+- [x] **Env files on VPS** — `.env.staging` and `.env.prod` created with `DATABASE_URL` pointing to shared PostgreSQL.
+- [x] **Keycloak clients** — `klassenzeit-staging` and `klassenzeit-prod` clients exist in `klassenzeit` realm.
+- [x] **Staging live** — https://klassenzeit-staging.pascalkraus.com — auto-deploys on push to main.
+- [x] **Dockerfile fix** — PR #37: corrected binary name in Dockerfile, added `workflow_dispatch` to deploy workflows.
 - [ ] **Docs site URL** — Once GitHub Pages deploy works, add link to CLAUDE.md and repo description.
 
 ### Tier 4: Cleanup

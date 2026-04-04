@@ -56,16 +56,20 @@
 - PR: #35
 
 ### Deployment Config + Cleanup
-- Backend staging/production config files
-- Removed scaffold leftovers (downloader worker, empty tasks module)
+- Backend staging/production config files (PR #36)
+- Removed scaffold leftovers (PR #36)
+- Dockerfile binary name fix + workflow_dispatch triggers (PR #37)
+
+### Deployment Live
+- Runner: `iuno-klassenzeit` registered for `Spycner/Klassenzeit`
+- Staging: https://klassenzeit-staging.pascalkraus.com (auto-deploys on push to main)
+- Keycloak clients: `klassenzeit-staging` and `klassenzeit-prod` in realm
 
 ## Next Up
 
-Runner registration for Klassenzeit repo, VPS env files, and Keycloak client creation. Then solver improvements.
+Solver improvements (Tier 5) — replace greedy solver with constraint solver for better timetable quality.
 
 ## Notes from Reviews
 
-- Frontend tests not yet added for the new pages/hooks — add before next frontend PR
-- Backend integration tests for scheduler API endpoints not yet written
 - Greedy solver is intentionally simple (no backtracking) — can be replaced with constraint solver later
 - Settings page has duplicate school fetch (layout + page) — acceptable for now, could use shared context later
