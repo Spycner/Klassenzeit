@@ -1,5 +1,7 @@
 pub mod types;
 
+pub mod planning;
+
 use std::collections::{HashMap, HashSet};
 use types::*;
 use uuid::Uuid;
