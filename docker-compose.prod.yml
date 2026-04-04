@@ -15,12 +15,12 @@ services:
     build:
       context: frontend/
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://klassenzeit.pascalkraus.com
+        NEXT_PUBLIC_KEYCLOAK_URL: https://klassenzeit-auth.pascalkraus.com
+        NEXT_PUBLIC_KEYCLOAK_REALM: klassenzeit
+        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: klassenzeit-prod
     container_name: klassenzeit-frontend-prod
-    environment:
-      NEXT_PUBLIC_API_URL: http://backend-prod:3001
-      NEXT_PUBLIC_KEYCLOAK_URL: https://klassenzeit-auth.pascalkraus.com
-      NEXT_PUBLIC_KEYCLOAK_REALM: klassenzeit
-      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: klassenzeit-prod
     networks:
       - web
     restart: unless-stopped
