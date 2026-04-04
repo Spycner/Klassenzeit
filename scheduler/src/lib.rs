@@ -4,6 +4,8 @@ pub mod planning;
 
 pub mod mapper;
 
+pub mod constraints;
+
 use std::collections::{HashMap, HashSet};
 use types::*;
 use uuid::Uuid;
