@@ -66,14 +66,19 @@ Completed — PR #25 merged. Greedy solver, curriculum CRUD, background worker, 
 
 ### Tier 3: Deployment
 
-- [ ] **Docker compose files for staging/prod** — `docker-compose.staging.yml` and `docker-compose.prod.yml` don't exist yet. Referenced in justfile and needed by deploy workflows.
-- [ ] **Deployment pipeline setup** — `deploy-staging.yml` and `deploy-prod.yml` GHA workflows exist but need: (1) the compose files from above, (2) `workflow_dispatch` triggers, (3) runner registration (reuse `/home/pascal/actions-runner` or register a second one for Klassenzeit).
+- [x] **Docker compose files for staging/prod** — `docker-compose.staging.yml` and `docker-compose.prod.yml` exist with backend + frontend services on `web` network.
+- [x] **Backend config for staging/prod** — `staging.yaml` and `production.yaml` with DB, server, logging, and Keycloak settings.
+- [x] **GHA deploy workflows** — `deploy-staging.yml` (push to main) and `deploy-prod.yml` (GitHub release) exist.
+- [x] **Caddy reverse proxy** — Routes configured in server-infra Caddyfile for `klassenzeit-staging.pascalkraus.com` and `klassenzeit.pascalkraus.com`.
+- [ ] **Runner registration** — Self-hosted runner at `/home/pascal/actions-runner/` is registered to `Spycner/website`. Need to register for `Spycner/Klassenzeit` too (or use an org-level runner).
+- [ ] **Env files on VPS** — Create `.env.staging` and `.env.prod` with `DATABASE_URL=postgres://postgres:<password>@postgres:5432/klassenzeit_<env>`.
+- [ ] **Keycloak clients** — Create `klassenzeit-staging` and `klassenzeit-prod` clients in Keycloak realm.
 - [ ] **Docs site URL** — Once GitHub Pages deploy works, add link to CLAUDE.md and repo description.
 
 ### Tier 4: Cleanup
 
-- [ ] **Loco auth config in yaml** — `auth.jwt.secret` still in config files, unused since Keycloak replaced Loco auth. Remove dead config.
-- [ ] **Empty worker/task modules** — `backend/src/workers/downloader.rs` and `backend/src/tasks/mod.rs` are Loco scaffold leftovers. Delete.
+- [x] **Loco auth config in yaml** — Already removed (not present in config files).
+- [x] **Empty worker/task modules** — Removed `downloader.rs`, `tasks/mod.rs`, and their references from `app.rs` and `lib.rs`.
 
 ### Tier 5: Optimization
 

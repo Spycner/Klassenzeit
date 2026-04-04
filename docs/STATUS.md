@@ -49,9 +49,19 @@
 - Plan: `superpowers/plans/2026-04-04-dev-seed-data.md`
 - PR: #33 (merged)
 
+### Scheduler API Integration Tests
+- PR: #34 (merged)
+
+### Frontend Component Tests
+- PR: #35
+
+### Deployment Config + Cleanup
+- Backend staging/production config files
+- Removed scaffold leftovers (downloader worker, empty tasks module)
+
 ## Next Up
 
-Deployment pipeline setup. Remaining work is testing infrastructure, deployment, and optimization.
+Runner registration for Klassenzeit repo, VPS env files, and Keycloak client creation. Then solver improvements.
 
 ## Notes from Reviews
 
