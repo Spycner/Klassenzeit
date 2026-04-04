@@ -1,163 +1,100 @@
-use bitvec::prelude::*;
 use criterion::{criterion_group, criterion_main, Criterion};
 use klassenzeit_scheduler::constraints::IncrementalState;
-use klassenzeit_scheduler::construction::{construct, construct_with_state};
+use klassenzeit_scheduler::construction::construct_with_state;
+use klassenzeit_scheduler::instances;
 use klassenzeit_scheduler::local_search::{self, LahcConfig};
-use klassenzeit_scheduler::planning::*;
-
-fn make_bench_facts(num_classes: usize) -> (ProblemFacts, Vec<PlanningLesson>) {
-    let num_teachers = num_classes * 2;
-    let num_subjects = 8;
-    let num_rooms = 3;
-    let periods_per_day = 6;
-    let days = 5;
-    let num_timeslots = days * periods_per_day;
-
-    let teachers: Vec<TeacherFact> = (0..num_teachers)
-        .map(|t| {
-            let mut available_slots = bitvec![1; num_timeslots];
-            // Block ~20% of slots (deterministic pattern)
-            for s in 0..num_timeslots {
-                if (t * 7 + s * 13) % 5 == 0 {
-                    available_slots.set(s, false);
-                }
-            }
-            let mut qualified_subjects = bitvec![0; num_subjects];
-            for s in 0..num_subjects {
-                if (t + s) % 3 != 0 {
-                    qualified_subjects.set(s, true);
-                }
-            }
-            let mut preferred_slots = bitvec![0; num_timeslots];
-            for s in 0..num_timeslots {
-                if (t * 3 + s * 7) % 5 != 0 {
-                    preferred_slots.set(s, true);
-                }
-            }
-            TeacherFact {
-                max_hours: 24,
-                available_slots,
-                qualified_subjects,
-                preferred_slots,
-            }
-        })
-        .collect();
-
-    let rooms: Vec<RoomFact> = (0..num_rooms)
-        .map(|r| {
-            let mut suitable_subjects = bitvec![0; num_subjects];
-            for s in 0..num_subjects {
-                if (r + s) % 2 == 0 {
-                    suitable_subjects.set(s, true);
-                }
-            }
-            RoomFact {
-                capacity: Some(30),
-                suitable_subjects,
-            }
-        })
-        .collect();
-
-    let facts = ProblemFacts {
-        timeslots: (0..num_timeslots)
-            .map(|i| Timeslot {
-                day: (i / periods_per_day) as u8,
-                period: (i % periods_per_day) as u8,
-            })
-            .collect(),
-        teachers,
-        classes: (0..num_classes)
-            .map(|i| ClassFact {
-                student_count: Some(25),
-                class_teacher_idx: Some(i % (num_classes * 2)),
-                available_slots: bitvec![1; num_timeslots],
-            })
-            .collect(),
-        rooms,
-        subjects: (0..num_subjects)
-            .map(|s| SubjectFact {
-                needs_special_room: s < num_rooms,
-            })
-            .collect(),
-    };
-
-    // Generate lessons: each class gets 3-4 hours of each of 4 subjects
-    let mut lessons = Vec::new();
-    let mut id = 0;
-    for class_idx in 0..num_classes {
-        for subj_idx in 0..4.min(num_subjects) {
-            let hours = 3 + (class_idx + subj_idx) % 2;
-            let teacher_idx = (0..facts.teachers.len())
-                .find(|&t| facts.teachers[t].qualified_subjects[subj_idx])
-                .unwrap_or(0);
-            for _ in 0..hours {
-                lessons.push(PlanningLesson {
-                    id,
-                    subject_idx: subj_idx,
-                    teacher_idx,
-                    class_idx,
-                    timeslot: None,
-                    room: None,
-                });
-                id += 1;
-            }
-        }
-    }
-
-    (facts, lessons)
-}
+use klassenzeit_scheduler::mapper;
 
 fn bench_construct_small(c: &mut Criterion) {
-    let (facts, lessons) = make_bench_facts(6);
-    c.bench_function("construct_6_classes", |b| {
+    let input = instances::small_4_classes();
+    let (solution, _) = mapper::to_planning(&input);
+    c.bench_function("construct_small_4cls", |b| {
         b.iter(|| {
-            let mut l = lessons.clone();
-            construct(&mut l, &facts);
+            let mut lessons = solution.lessons.clone();
+            let mut state = IncrementalState::new(&solution.facts);
+            construct_with_state(&mut lessons, &solution.facts, &mut state);
         })
     });
 }
 
-fn bench_construct_medium(c: &mut Criterion) {
-    let (facts, lessons) = make_bench_facts(15);
-    c.bench_function("construct_15_classes", |b| {
+fn bench_construct_realistic(c: &mut Criterion) {
+    let input = instances::realistic_8_classes();
+    let (solution, _) = mapper::to_planning(&input);
+    c.bench_function("construct_realistic_8cls", |b| {
         b.iter(|| {
-            let mut l = lessons.clone();
-            construct(&mut l, &facts);
+            let mut lessons = solution.lessons.clone();
+            let mut state = IncrementalState::new(&solution.facts);
+            construct_with_state(&mut lessons, &solution.facts, &mut state);
         })
     });
 }
 
-fn bench_evaluate_assign(c: &mut Criterion) {
-    let (facts, mut lessons) = make_bench_facts(6);
-    let mut state = IncrementalState::new(&facts);
-    for i in 0..lessons.len().saturating_sub(1) {
-        let slot = i % facts.timeslots.len();
-        state.assign(&mut lessons[i], slot, None, &facts);
-    }
-    let last = &lessons[lessons.len() - 1];
-    c.bench_function("evaluate_assign_delta", |b| {
+fn bench_construct_stress(c: &mut Criterion) {
+    let input = instances::stress_16_classes();
+    let (solution, _) = mapper::to_planning(&input);
+    c.bench_function("construct_stress_16cls", |b| {
         b.iter(|| {
-            state.evaluate_assign(last, 5, None, &facts);
+            let mut lessons = solution.lessons.clone();
+            let mut state = IncrementalState::new(&solution.facts);
+            construct_with_state(&mut lessons, &solution.facts, &mut state);
         })
     });
 }
 
 fn bench_solve_small(c: &mut Criterion) {
-    let (facts, lessons) = make_bench_facts(6);
-
+    let input = instances::small_4_classes();
     let config = LahcConfig {
-        max_seconds: 5,
-        max_idle_ms: 3_000,
+        max_seconds: 10,
+        max_idle_ms: 5_000,
         seed: Some(42),
         ..Default::default()
     };
+    let (base_solution, _) = mapper::to_planning(&input);
 
-    c.bench_function("solve_6_classes_5s", |b| {
+    c.bench_function("solve_small_4cls_10s", |b| {
         b.iter(|| {
-            let mut l = lessons.clone();
-            let mut state = IncrementalState::new(&facts);
-            construct_with_state(&mut l, &facts, &mut state);
-            local_search::optimize(&mut l, &facts, &mut state, &config);
+            let mut lessons = base_solution.lessons.clone();
+            let mut state = IncrementalState::new(&base_solution.facts);
+            construct_with_state(&mut lessons, &base_solution.facts, &mut state);
+            local_search::optimize(&mut lessons, &base_solution.facts, &mut state, &config);
+        })
+    });
+}
+
+fn bench_solve_realistic(c: &mut Criterion) {
+    let input = instances::realistic_8_classes();
+    let config = LahcConfig {
+        max_seconds: 10,
+        max_idle_ms: 5_000,
+        seed: Some(42),
+        ..Default::default()
+    };
+    let (base_solution, _) = mapper::to_planning(&input);
+
+    c.bench_function("solve_realistic_8cls_10s", |b| {
+        b.iter(|| {
+            let mut lessons = base_solution.lessons.clone();
+            let mut state = IncrementalState::new(&base_solution.facts);
+            construct_with_state(&mut lessons, &base_solution.facts, &mut state);
+            local_search::optimize(&mut lessons, &base_solution.facts, &mut state, &config);
+        })
+    });
+}
+
+fn bench_evaluate_assign(c: &mut Criterion) {
+    let input = instances::realistic_8_classes();
+    let (mut solution, _) = mapper::to_planning(&input);
+    let mut state = IncrementalState::new(&solution.facts);
+
+    for i in 0..solution.lessons.len().saturating_sub(1) {
+        let slot = i % solution.facts.timeslots.len();
+        state.assign(&mut solution.lessons[i], slot, None, &solution.facts);
+    }
+    let last = &solution.lessons[solution.lessons.len() - 1];
+
+    c.bench_function("evaluate_assign_delta_realistic", |b| {
+        b.iter(|| {
+            state.evaluate_assign(last, 5, None, &solution.facts);
         })
     });
 }
@@ -165,8 +102,10 @@ fn bench_solve_small(c: &mut Criterion) {
 criterion_group!(
     benches,
     bench_construct_small,
-    bench_construct_medium,
-    bench_evaluate_assign,
+    bench_construct_realistic,
+    bench_construct_stress,
     bench_solve_small,
+    bench_solve_realistic,
+    bench_evaluate_assign,
 );
 criterion_main!(benches);
