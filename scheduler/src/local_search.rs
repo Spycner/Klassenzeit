@@ -19,7 +19,7 @@ impl Default for LahcConfig {
         Self {
             list_length: 500,
             max_seconds: 60,
-            max_idle_ms: 2_000,
+            max_idle_ms: 30_000,
             seed: None,
             history_sample_interval: 1000,
         }
@@ -54,7 +54,7 @@ pub fn optimize(
         .map(|(i, _)| i)
         .collect();
 
-    if assigned_indices.len() < 2 {
+    if assigned_indices.len() < 2 || facts.timeslots.len() < 2 {
         return SolveStats::default();
     }
 

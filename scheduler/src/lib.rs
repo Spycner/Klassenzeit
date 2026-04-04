@@ -15,6 +15,10 @@ use std::time::Instant;
 use types::*;
 
 pub fn solve(input: ScheduleInput) -> ScheduleOutput {
+    solve_with_config(input, local_search::LahcConfig::default())
+}
+
+pub fn solve_with_config(input: ScheduleInput, config: local_search::LahcConfig) -> ScheduleOutput {
     if input.requirements.is_empty() {
         return ScheduleOutput::default();
     }
@@ -44,7 +48,6 @@ pub fn solve(input: ScheduleInput) -> ScheduleOutput {
     let construction_ms = construction_start.elapsed().as_millis() as u64;
 
     // Local search phase
-    let config = local_search::LahcConfig::default();
     let mut stats =
         local_search::optimize(&mut solution.lessons, &solution.facts, &mut state, &config);
     stats.construction_ms = construction_ms;

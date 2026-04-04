@@ -63,7 +63,12 @@ pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
             }
         }
 
-        let mut preferred_slots = bitvec![0; num_timeslots];
+        // Empty preferred_slots means "no preference" → treat all slots as preferred
+        let mut preferred_slots = if t.preferred_slots.is_empty() {
+            bitvec![1; num_timeslots]
+        } else {
+            bitvec![0; num_timeslots]
+        };
         for slot in &t.preferred_slots {
             if let Some(&idx) = timeslot_uuid_to_idx.get(&slot.id) {
                 preferred_slots.set(idx, true);

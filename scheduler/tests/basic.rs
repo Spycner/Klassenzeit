@@ -1,5 +1,6 @@
-use klassenzeit_scheduler::solve;
+use klassenzeit_scheduler::local_search::LahcConfig;
 use klassenzeit_scheduler::types::*;
+use klassenzeit_scheduler::{solve, solve_with_config};
 use uuid::Uuid;
 
 fn ts(day: u8, period: u8) -> TimeSlot {
@@ -366,7 +367,11 @@ fn local_search_produces_stats() {
         ],
     };
 
-    let output = solve(input);
+    let config = LahcConfig {
+        max_idle_ms: 2_000, // short timeout for tests
+        ..Default::default()
+    };
+    let output = solve_with_config(input, config);
 
     assert_eq!(output.score.hard_violations, 0);
     assert_eq!(output.timetable.len(), 8);
