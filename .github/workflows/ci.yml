@@ -21,16 +21,16 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace -- -D warnings
 
-  backend-unit-tests:
+  scheduler-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: backend-test
-      - name: Unit tests
-        run: cargo test --workspace
+          shared-key: scheduler-test
+      - name: Scheduler tests
+        run: cargo test -p klassenzeit-scheduler
 
   backend-integration-tests:
     runs-on: ubuntu-latest
