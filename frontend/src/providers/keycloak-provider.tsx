@@ -52,7 +52,11 @@ export function KeycloakProvider({ children }: { children: React.ReactNode }) {
       updateAuthState(kc);
     };
 
-    kc.init({ onLoad: "login-required", pkceMethod: "S256" })
+    kc.init({
+      onLoad: "login-required",
+      pkceMethod: "S256",
+      checkLoginIframe: false,
+    })
       .then((authenticated) => {
         if (authenticated) {
           updateAuthState(kc);
