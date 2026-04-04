@@ -13,62 +13,71 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                 proptest::collection::vec(prop::bool::ANY, num_subjects * num_teachers), // teacher quals
                 proptest::collection::vec(1..=30u32, num_teachers), // max hours
                 proptest::collection::vec(prop::bool::ANY, num_subjects * num_rooms), // room suitability
+                proptest::collection::vec(prop::bool::ANY, num_slots * num_teachers), // teacher preferred slots
+                proptest::collection::vec(proptest::option::of(0..num_teachers), num_classes), // class teacher idx
             )
-                .prop_map(move |(avail_bits, qual_bits, max_hours, suit_bits)| {
-                    let teachers: Vec<TeacherFact> = (0..num_teachers)
-                        .map(|t| {
-                            let mut available_slots = bitvec![0; num_slots];
-                            for s in 0..num_slots {
-                                available_slots.set(s, avail_bits[t * num_slots + s]);
-                            }
-                            let mut qualified_subjects = bitvec![0; num_subjects];
-                            for s in 0..num_subjects {
-                                qualified_subjects.set(s, qual_bits[t * num_subjects + s]);
-                            }
-                            TeacherFact {
-                                max_hours: max_hours[t],
-                                available_slots,
-                                qualified_subjects,
-                                preferred_slots: bitvec![0; num_slots],
-                            }
-                        })
-                        .collect();
+                .prop_map(
+                    move |(avail_bits, qual_bits, max_hours, suit_bits, pref_bits, ct_idxs)| {
+                        let teachers: Vec<TeacherFact> = (0..num_teachers)
+                            .map(|t| {
+                                let mut available_slots = bitvec![0; num_slots];
+                                for s in 0..num_slots {
+                                    available_slots.set(s, avail_bits[t * num_slots + s]);
+                                }
+                                let mut qualified_subjects = bitvec![0; num_subjects];
+                                for s in 0..num_subjects {
+                                    qualified_subjects.set(s, qual_bits[t * num_subjects + s]);
+                                }
+                                let mut preferred_slots = bitvec![0; num_slots];
+                                for s in 0..num_slots {
+                                    preferred_slots.set(s, pref_bits[t * num_slots + s]);
+                                }
+                                TeacherFact {
+                                    max_hours: max_hours[t],
+                                    available_slots,
+                                    qualified_subjects,
+                                    preferred_slots,
+                                }
+                            })
+                            .collect();
 
-                    let rooms: Vec<RoomFact> = (0..num_rooms)
-                        .map(|r| {
-                            let mut suitable_subjects = bitvec![0; num_subjects];
-                            for s in 0..num_subjects {
-                                suitable_subjects.set(s, suit_bits[r * num_subjects + s]);
-                            }
-                            RoomFact {
-                                capacity: Some(30),
-                                suitable_subjects,
-                            }
-                        })
-                        .collect();
+                        let rooms: Vec<RoomFact> = (0..num_rooms)
+                            .map(|r| {
+                                let mut suitable_subjects = bitvec![0; num_subjects];
+                                for s in 0..num_subjects {
+                                    suitable_subjects.set(s, suit_bits[r * num_subjects + s]);
+                                }
+                                RoomFact {
+                                    capacity: Some(30),
+                                    suitable_subjects,
+                                }
+                            })
+                            .collect();
 
-                    ProblemFacts {
-                        timeslots: (0..num_slots)
-                            .map(|i| Timeslot {
-                                day: (i / 8) as u8,
-                                period: (i % 8) as u8,
-                            })
-                            .collect(),
-                        teachers,
-                        classes: (0..num_classes)
-                            .map(|_| ClassFact {
-                                student_count: Some(25),
-                                class_teacher_idx: None,
-                            })
-                            .collect(),
-                        rooms,
-                        subjects: (0..num_subjects)
-                            .map(|_| SubjectFact {
-                                needs_special_room: false,
-                            })
-                            .collect(),
-                    }
-                });
+                        ProblemFacts {
+                            timeslots: (0..num_slots)
+                                .map(|i| Timeslot {
+                                    day: (i / 8) as u8,
+                                    period: (i % 8) as u8,
+                                })
+                                .collect(),
+                            teachers,
+                            classes: (0..num_classes)
+                                .enumerate()
+                                .map(|(c, _)| ClassFact {
+                                    student_count: Some(25),
+                                    class_teacher_idx: ct_idxs[c],
+                                })
+                                .collect(),
+                            rooms,
+                            subjects: (0..num_subjects)
+                                .map(|_| SubjectFact {
+                                    needs_special_room: false,
+                                })
+                                .collect(),
+                        }
+                    },
+                );
 
             // Generate random lessons
             let num_lessons = 1..(num_slots * num_classes).min(8) + 1;

@@ -2,6 +2,10 @@ use bitvec::prelude::*;
 use klassenzeit_scheduler::constraints::{full_evaluate, IncrementalState};
 use klassenzeit_scheduler::planning::*;
 
+// Soft constraint tests need HardSoftScore for direct comparisons
+#[allow(unused_imports)]
+use klassenzeit_scheduler::planning::HardSoftScore;
+
 /// Helper: create minimal problem facts with given counts.
 /// All teachers available everywhere, qualified for everything, rooms suitable for all subjects.
 fn make_facts(
@@ -132,6 +136,86 @@ fn incremental_reassign_updates_correctly() {
 
     let lessons = [l0.clone(), l1.clone()];
     assert_eq!(state.score(), HardSoftScore::ZERO);
+    assert_eq!(state.score(), full_evaluate(&lessons, &facts));
+}
+
+// ── Soft constraint tests ──
+
+#[test]
+fn incremental_soft_teacher_gap() {
+    let facts = make_facts(16, 1, 2, 0, 1);
+    let mut state = IncrementalState::new(&facts);
+    let mut l0 = unassigned_lesson(0, 0, 0, 0);
+    state.assign(&mut l0, 0, None, &facts); // day 0, period 0
+    let mut l1 = unassigned_lesson(1, 0, 1, 0);
+    state.assign(&mut l1, 2, None, &facts); // day 0, period 2 → gap of 1
+    let lessons = [l0.clone(), l1.clone()];
+    assert_eq!(state.score().soft, -1);
+    assert_eq!(state.score(), full_evaluate(&lessons, &facts));
+}
+
+#[test]
+fn incremental_soft_subject_distribution() {
+    let facts = make_facts(16, 2, 1, 0, 1);
+    let mut state = IncrementalState::new(&facts);
+    let mut l0 = unassigned_lesson(0, 0, 0, 0);
+    let mut l1 = unassigned_lesson(1, 1, 0, 0);
+    state.assign(&mut l0, 0, None, &facts);
+    state.assign(&mut l1, 1, None, &facts);
+    let lessons = [l0.clone(), l1.clone()];
+    assert_eq!(state.score().soft, -2);
+    assert_eq!(state.score(), full_evaluate(&lessons, &facts));
+}
+
+#[test]
+fn incremental_soft_preferred_slots() {
+    let mut facts = make_facts(16, 1, 1, 0, 1);
+    facts.teachers[0].preferred_slots.set(0, false);
+    let mut state = IncrementalState::new(&facts);
+    let mut l0 = unassigned_lesson(0, 0, 0, 0);
+    state.assign(&mut l0, 0, None, &facts);
+    let lessons = [l0.clone()];
+    assert_eq!(state.score().soft, -1);
+    assert_eq!(state.score(), full_evaluate(&lessons, &facts));
+}
+
+#[test]
+fn incremental_soft_class_teacher_first_period() {
+    let mut facts = make_facts(16, 2, 1, 0, 1);
+    facts.classes[0].class_teacher_idx = Some(0);
+    let mut state = IncrementalState::new(&facts);
+    let mut l0 = unassigned_lesson(0, 1, 0, 0); // teacher 1 teaches period 0
+    state.assign(&mut l0, 0, None, &facts);
+    let lessons = [l0.clone()];
+    assert_eq!(state.score().soft, -1);
+    assert_eq!(state.score(), full_evaluate(&lessons, &facts));
+}
+
+#[test]
+fn incremental_soft_unassign_reverses() {
+    let mut facts = make_facts(16, 1, 2, 0, 1);
+    facts.teachers[0].preferred_slots.set(0, false);
+    let mut state = IncrementalState::new(&facts);
+    let mut l0 = unassigned_lesson(0, 0, 0, 0);
+    state.assign(&mut l0, 0, None, &facts);
+    assert_eq!(state.score().soft, -1);
+    state.unassign(&mut l0, &facts);
+    assert_eq!(state.score(), HardSoftScore::ZERO);
+}
+
+#[test]
+fn incremental_soft_reassign_different_slot() {
+    // Assign to non-preferred, then move to preferred
+    let mut facts = make_facts(16, 1, 1, 0, 1);
+    facts.teachers[0].preferred_slots.set(0, false);
+    let mut state = IncrementalState::new(&facts);
+    let mut l0 = unassigned_lesson(0, 0, 0, 0);
+    state.assign(&mut l0, 0, None, &facts);
+    assert_eq!(state.score().soft, -1);
+    state.unassign(&mut l0, &facts);
+    state.assign(&mut l0, 1, None, &facts); // slot 1 is preferred
+    let lessons = [l0.clone()];
+    assert_eq!(state.score().soft, 0);
     assert_eq!(state.score(), full_evaluate(&lessons, &facts));
 }
 
