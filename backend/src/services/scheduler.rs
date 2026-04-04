@@ -261,6 +261,7 @@ pub async fn load_schedule_input(
         subjects: sched_subjects,
         timeslots: sched_timeslots,
         requirements,
+        stundentafeln: vec![],
     })
 }
 

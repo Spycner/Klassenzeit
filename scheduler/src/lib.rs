@@ -98,5 +98,6 @@ fn pre_validate(input: &ScheduleInput, violations: &mut Vec<types::Violation>) -
         subjects: input.subjects.clone(),
         timeslots: input.timeslots.clone(),
         requirements: valid_requirements,
+        stundentafeln: input.stundentafeln.clone(),
     }
 }
