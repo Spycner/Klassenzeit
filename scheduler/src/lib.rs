@@ -10,6 +10,8 @@ pub mod construction;
 
 pub mod local_search;
 
+pub mod instances;
+
 use std::time::Instant;
 
 use types::*;
