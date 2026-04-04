@@ -24,71 +24,159 @@ Connect Next.js to Keycloak for login/logout and token forwarding.
 - Spec: `specs/2026-04-03-frontend-auth-design.md`
 - Plan: `plans/2026-04-03-frontend-auth.md`
 
----
-
 ### Step 5: First CRUD Endpoints ✓
 Prove the full stack works end-to-end with a real feature.
 - Spec: `specs/2026-04-03-first-crud-endpoints-design.md`
 - Plan: `plans/2026-04-03-first-crud-endpoints.md`
 
----
+### Step 5b: i18n (DE/EN) ✓
+PR #21 merged.
 
-## Ready (no blockers)
-
-### ~~Step 5b: i18n (DE/EN)~~ ✓
-Completed — PR #21 merged.
-
-### ~~Domain Tables Migration~~ ✓
-Completed — PR #23 merged. All 10 domain tables ported to SeaORM with ERD documentation.
+### Domain Tables Migration ✓
+PR #23 merged. All 10 domain tables ported to SeaORM with ERD documentation.
 - Spec: `specs/2026-04-03-domain-tables-design.md`
 - Plan: `plans/2026-04-03-domain-tables.md`
 
 ### Step 6: Scheduler Integration ✓
-Completed — PR #25 merged. Greedy solver, curriculum CRUD, background worker, solve/preview/apply API, and frontend generation UI.
+PR #25 merged. Greedy solver, curriculum CRUD, background worker, solve/preview/apply API, and frontend generation UI.
 - Spec: `specs/2026-04-03-scheduler-integration-design.md`
 - Plan: `plans/2026-04-03-scheduler-integration.md`
 
+### Reference Data Management ✓
+- Reference data list endpoints — PR #28
+- Reference data CRUD — PR #29
+- Reference data management UI — PR #31
+- Dev seed data — PR #33
+
+### Quality & Testing ✓
+- Test DB setup script — `just test-db-setup`
+- Backend integration tests for scheduler API — PR #34
+- Frontend component tests — PR #35
+
+### Deployment ✓
+- Docker compose, GHA workflows, Caddy, runner, env files, Keycloak clients
+- Staging live: https://klassenzeit-staging.pascalkraus.com
+- Dockerfile fix — PR #37
+
+### Cleanup ✓
+- Loco auth config removed, empty worker/task modules removed
+
 ---
 
-## Backlog — ordered by importance & dependencies
+## Backlog — ranked by importance & dependencies
 
-### Tier 1: Core functionality (app not usable without these)
+### Tier 1: Solver (core value proposition)
 
-- [x] **Reference data CRUD** — PR #29. Create/update/delete for all 6 entities. Soft delete for teachers/rooms/classes; hard delete for subjects/timeslots/terms.
-- [x] **Reference data management UI** — PR #31. Admin-only Settings page with tabbed CRUD for all 6 entities. Includes school years list endpoint.
-- [x] **Dev seed data** — PR #33. SQL seed file + Keycloak bootstrap script. `just dev-setup` for full automated setup.
+The greedy solver works but doesn't backtrack — it can fail to place lessons even when a valid arrangement exists, and produces no quality optimization.
 
-### Tier 2: Quality & confidence
+**Research spike completed** (2026-04-04): report at `~/Zettelkasten/reports/klassenzeit-solver-2026-04-04/report.md`
 
-- [x] **Test DB setup script** — `just test-db-setup` recipe. Auto-creates `loco` user and `klassenzeit-backend_test` database. `backend-test` depends on it.
-- [x] **Backend integration tests for scheduler API** — 12 tests covering solve/status/solution/apply/discard flow, auth checks, and idempotent apply.
-- [x] **Frontend component tests** — Tests for SubjectsTab, CurriculumPage, SchedulePage, and useSchool hook. 21 total frontend tests.
+**Decision: LAHC (Late Acceptance Hill-Climbing) via SolverForge (Rust crate, v0.7.0)**
+- LAHC matched or beat SA on 34/35 benchmarks with only 1 parameter (vs SA's 3)
+- SolverForge provides ConstraintStream API with incremental scoring, same architecture as Timefold
+- Incremental scoring matters more than algorithm choice (orders of magnitude throughput difference)
+- Fallback: if SolverForge is too immature, domain model ports to hand-rolled solver
+- Move types: Change + Swap first; Kempe chains only if needed for larger instances
+- Scoring: HardSoftScore (lexicographic — any 0-hard solution beats any 1+-hard solution)
 
-### Tier 3: Deployment
+| # | Item | Status | Depends on | Effort |
+|---|------|--------|------------|--------|
+| 1a | ~~**Solver research spike**~~ | done | — | — |
+| | Algorithm: LAHC. Framework: SolverForge. Scoring: lexicographic HardSoftScore. See report. | | | |
+| 1b | **Domain model + construction heuristic** | ready | — | M |
+| | Define `Lesson` as planning entity with `timeslot` + `room` as planning variables. Implement 8 hard constraints as ConstraintStream rules. First Fit Decreasing construction heuristic (most-constrained-first). | | | |
+| 1c | **Local search + soft constraints** | ready | 1b | M |
+| | LAHC with Change + Swap moves. 4 soft constraints: teacher gaps (-1/gap), subject distribution (-2/duplicate), preferred slots (-1/miss), class teacher first period (-1/day). Termination: 60s or 30s unimproved. | | | |
+| 1d | **Solver validation + tuning** | ready | 1c | M |
+| | Build 3-5 test instances (6/15/30 classes). Benchmark feasibility, soft score, time-to-best. Add Tabu component (tenure ~7-10) if soft scores plateau. Add ruin-and-recreate if feasibility fails on large instances. | | | |
+| 1e | **Solver constraints UI** | idea | 1c | M |
+| | Frontend for configuring constraint weights, teacher preferences, room preferences. Currently no way to set soft constraints from the UI. | | | |
+| 1f | **Kempe chain moves** | idea | 1d | M |
+| | Only if Change+Swap plateau on larger instances (25+ classes). Kempe chains swap connected components in conflict graph — reaches solution regions simple moves can't access. | | | |
 
-- [x] **Docker compose files for staging/prod** — `docker-compose.staging.yml` and `docker-compose.prod.yml` exist with backend + frontend services on `web` network.
-- [x] **Backend config for staging/prod** — `staging.yaml` and `production.yaml` with DB, server, logging, and Keycloak settings.
-- [x] **GHA deploy workflows** — `deploy-staging.yml` (push to main) and `deploy-prod.yml` (GitHub release) exist.
-- [x] **Caddy reverse proxy** — Routes configured in server-infra Caddyfile for `klassenzeit-staging.pascalkraus.com` and `klassenzeit.pascalkraus.com`.
-- [x] **Runner registration** — `iuno-klassenzeit` runner at `/home/pascal/actions-runner-klassenzeit/` registered for `Spycner/Klassenzeit`.
-- [x] **Env files on VPS** — `.env.staging` and `.env.prod` created with `DATABASE_URL` pointing to shared PostgreSQL.
-- [x] **Keycloak clients** — `klassenzeit-staging` and `klassenzeit-prod` clients exist in `klassenzeit` realm.
-- [x] **Staging live** — https://klassenzeit-staging.pascalkraus.com — auto-deploys on push to main.
-- [x] **Dockerfile fix** — PR #37: corrected binary name in Dockerfile, added `workflow_dispatch` to deploy workflows.
-- [ ] **Docs site URL** — Once GitHub Pages deploy works, add link to CLAUDE.md and repo description.
+### Tier 2: UX polish (make the app usable for real users)
 
-### Tier 4: Cleanup
+| # | Item | Status | Depends on | Effort |
+|---|------|--------|------------|--------|
+| 2a | **Onboarding wizard** | idea | — | M |
+| | Step-by-step setup flow for new schools: create term → add classes → add subjects → add teachers → add rooms → configure timeslots → set curriculum. Currently users land in empty settings with no guidance. | | | |
+| 2b | **Timetable views** | idea | — | M |
+| | Individual views: per-teacher, per-room (currently only per-class grid). Day/week toggle. Printable layout. | | | |
+| 2c | **Manual timetable editing** | idea | — | L |
+| | Drag-and-drop lesson editing after generation. Move lessons between slots, swap teachers/rooms. Validate constraints on each move. | | | |
+| 2d | **Conflict resolution UI** | idea | — | M |
+| | Better violation display: show which constraints are broken, suggest fixes, highlight conflicting resources. Currently just a text list. | | | |
+| 2e | **Data import/export** | idea | — | M |
+| | CSV/Excel import for bulk data entry (classes, teachers, subjects). PDF/Excel export for timetables. Critical for schools migrating from spreadsheets. | | | |
+| 2f | **Responsive / mobile layout** | idea | — | S |
+| | Timetable grid doesn't work well on small screens. Sidebar navigation needs mobile polish. | | | |
 
-- [x] **Loco auth config in yaml** — Already removed (not present in config files).
-- [x] **Empty worker/task modules** — Removed `downloader.rs`, `tasks/mod.rs`, and their references from `app.rs` and `lib.rs`.
+### Tier 3: Production readiness
 
-### Tier 5: Optimization
+| # | Item | Status | Depends on | Effort |
+|---|------|--------|------------|--------|
+| 3a | **Production deployment** | ready | — | S |
+| | Staging is live. Production needs: create release → GHA deploys. Verify prod env files, Keycloak client config, DNS. | | | |
+| 3b | **E2E tests** | idea | — | M |
+| | Playwright tests for critical flows: login → create school → configure → generate timetable → apply. Directory exists but empty. | | | |
+| 3c | **Error handling & loading states** | idea | — | S |
+| | Consistent error toasts, retry logic, loading skeletons across all pages. Some pages handle errors better than others. | | | |
+| 3d | **Docs site deployment** | ready | — | XS |
+| | GitHub Pages for mdBook docs. Add URL to CLAUDE.md and repo description. | | | |
+| 3e | **Monitoring & logging** | idea | — | S |
+| | Structured logging, health check endpoint, basic metrics. Know when things break in prod. | | | |
 
-- [ ] **Solver improvement** — Replace greedy solver with constraint solver (simulated annealing or local search) for better timetable quality. The greedy solver works but doesn't backtrack.
+### Tier 4: Features for real-world use
 
-### Done
+| # | Item | Status | Depends on | Effort |
+|---|------|--------|------------|--------|
+| 4a | **Teacher availability UI** | idea | — | M |
+| | Visual grid for teachers to mark available/blocked/preferred timeslots. Currently only settable via API/seed data. Feeds into solver constraints. | | | |
+| 4b | **Room suitability UI** | idea | — | S |
+| | Configure which subjects can use which rooms from the frontend. Currently only via seed data. | | | |
+| 4c | **School year / term management** | idea | — | S |
+| | Copy curriculum and settings from previous term. Archive old terms. Currently each term starts from scratch. | | | |
+| 4d | **Notifications** | idea | — | M |
+| | Email when added to a school, when timetable is generated, when schedule changes. | | | |
+| 4e | **Teacher/student dashboard** | idea | — | M |
+| | Non-admin view: "my timetable this week". Teachers see their schedule, students see their class schedule. | | | |
+| 4f | **Audit log** | idea | — | S |
+| | Track who changed what and when. Important for schools with multiple admins. | | | |
 
-- [x] **Reference data list endpoints** — PR #28. Created 6 controllers for GET `/api/schools/{id}/terms`, `/classes`, `/subjects`, `/teachers`, `/rooms`, `/timeslots`.
+### Tier 5: Advanced / nice-to-have
+
+| # | Item | Status | Depends on | Effort |
+|---|------|--------|------------|--------|
+| 5a | **A/B week patterns** | idea | 1c | M |
+| | Biweekly alternating schedules (v1 supported this). Requires solver and UI changes. | | | |
+| 5b | **Multi-solution comparison** | idea | 1c | M |
+| | Generate multiple timetable candidates, compare scores, pick the best. | | | |
+| 5c | **Substitution planning** | idea | 4e | L |
+| | When a teacher is absent: suggest replacements, notify affected classes. | | | |
+| 5d | **Calendar integration** | idea | 4e | M |
+| | Export timetables to iCal/Google Calendar. Sync changes. | | | |
+| 5e | **API for external tools** | idea | — | S |
+| | Public API docs, API keys, webhook support for integration with other school systems. | | | |
+
+---
+
+## Recommended next priorities
+
+**Immediate (solver direction decided, build it):**
+1. **1b: Domain model + construction heuristic** — replace greedy solver with SolverForge-based construction
+2. **1c: Local search + soft constraints** — LAHC + the 4 soft constraints = core value proposition
+3. **3a: Production deployment** — staging works, prod is just a release away
+
+**Short-term (make the app usable for real schools):**
+4. **4a + 4b: Teacher availability + room suitability UI** — solver needs good input data from users
+5. **1d: Solver validation + tuning** — benchmark on realistic instances, tune parameters
+6. **2a: Onboarding wizard** — biggest UX gap for new users
+7. **2b: Timetable views** — per-teacher and per-room views are expected by schools
+
+**Medium-term:**
+8. **2e: Data import/export** — schools won't re-type hundreds of entries
+9. **4e: Teacher/student dashboard** — makes the app useful beyond admins
+10. **3b: E2E tests** — confidence for ongoing development
 
 ---
 
@@ -97,3 +185,13 @@ Completed — PR #25 merged. Greedy solver, curriculum CRUD, background worker, 
 - **Each step gets its own brainstorm → spec → plan → implementation cycle.**
 - **TDD throughout** — write failing tests before implementation.
 - **Keep docs updated** — update mdBook when architecture changes.
+- V1 reference: `archive/v1` branch has Timefold solver with 6 hard + 4 soft constraints.
+- V1 soft constraints to port: teacher gap minimization, subject distribution, teacher preferred slots, class teacher first period.
+- Solver research report: `~/Zettelkasten/reports/klassenzeit-solver-2026-04-04/report.md`
+
+## Effort key
+
+- **XS** — < 1 hour
+- **S** — half day
+- **M** — 1-2 days
+- **L** — 3-5 days
