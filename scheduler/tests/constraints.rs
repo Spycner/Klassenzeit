@@ -354,3 +354,59 @@ fn soft_class_teacher_first_period_two_days_one_violated() {
     let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
     assert_eq!(score.soft, -1);
 }
+
+#[test]
+fn hard_class_unavailable_slot() {
+    let num_slots = 4;
+    let mut class_available = bitvec![1; num_slots];
+    class_available.set(0, false); // class unavailable in slot 0
+
+    let facts = ProblemFacts {
+        timeslots: (0..num_slots)
+            .map(|i| Timeslot {
+                day: 0,
+                period: i as u8,
+            })
+            .collect(),
+        teachers: vec![TeacherFact {
+            max_hours: 10,
+            available_slots: bitvec![1; num_slots],
+            qualified_subjects: bitvec![1; 1],
+            preferred_slots: bitvec![1; num_slots],
+        }],
+        classes: vec![ClassFact {
+            student_count: Some(25),
+            class_teacher_idx: None,
+            available_slots: class_available,
+        }],
+        rooms: vec![],
+        subjects: vec![SubjectFact {
+            needs_special_room: false,
+        }],
+    };
+
+    let lessons = vec![PlanningLesson {
+        id: 0,
+        subject_idx: 0,
+        teacher_idx: 0,
+        class_idx: 0,
+        timeslot: Some(0),
+        room: None,
+    }];
+    let score = klassenzeit_scheduler::constraints::full_evaluate(&lessons, &facts);
+    assert_eq!(
+        score.hard, -1,
+        "class in unavailable slot should get -1 hard"
+    );
+
+    let lessons_ok = vec![PlanningLesson {
+        id: 0,
+        subject_idx: 0,
+        teacher_idx: 0,
+        class_idx: 0,
+        timeslot: Some(1),
+        room: None,
+    }];
+    let score_ok = klassenzeit_scheduler::constraints::full_evaluate(&lessons_ok, &facts);
+    assert_eq!(score_ok.hard, 0);
+}

@@ -83,6 +83,11 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
             score += HardSoftScore::hard(-1);
         }
 
+        // 9. Class availability
+        if !facts.classes[lesson.class_idx].available_slots[ts] {
+            score += HardSoftScore::hard(-1);
+        }
+
         // 6. Teacher qualification
         if !teacher.qualified_subjects[lesson.subject_idx] {
             score += HardSoftScore::hard(-1);
@@ -305,6 +310,11 @@ impl IncrementalState {
             delta += HardSoftScore::hard(-1);
         }
 
+        // 9. Class availability
+        if !facts.classes[lesson.class_idx].available_slots[timeslot] {
+            delta += HardSoftScore::hard(-1);
+        }
+
         if !teacher.qualified_subjects[lesson.subject_idx] {
             delta += HardSoftScore::hard(-1);
         }
@@ -465,6 +475,11 @@ impl IncrementalState {
         let teacher = &facts.teachers[lesson.teacher_idx];
 
         if !teacher.available_slots[timeslot] {
+            delta += HardSoftScore::hard(1);
+        }
+
+        // 9. Class availability
+        if !facts.classes[lesson.class_idx].available_slots[timeslot] {
             delta += HardSoftScore::hard(1);
         }
 

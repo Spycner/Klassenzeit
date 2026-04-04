@@ -238,3 +238,63 @@ fn incremental_triple_conflict_counts_pairs() {
     assert_eq!(state.score().hard, -3);
     assert_eq!(state.score(), full_evaluate(&lessons, &facts));
 }
+
+#[test]
+fn incremental_class_availability() {
+    let num_slots = 4;
+    let mut class_available = bitvec![1; num_slots];
+    class_available.set(0, false);
+
+    let facts = ProblemFacts {
+        timeslots: (0..num_slots)
+            .map(|i| Timeslot {
+                day: 0,
+                period: i as u8,
+            })
+            .collect(),
+        teachers: vec![TeacherFact {
+            max_hours: 10,
+            available_slots: bitvec![1; num_slots],
+            qualified_subjects: bitvec![1; 1],
+            preferred_slots: bitvec![1; num_slots],
+        }],
+        classes: vec![ClassFact {
+            student_count: Some(25),
+            class_teacher_idx: None,
+            available_slots: class_available,
+        }],
+        rooms: vec![],
+        subjects: vec![SubjectFact {
+            needs_special_room: false,
+        }],
+    };
+
+    let mut lesson = PlanningLesson {
+        id: 0,
+        subject_idx: 0,
+        teacher_idx: 0,
+        class_idx: 0,
+        timeslot: None,
+        room: None,
+    };
+
+    let mut state = IncrementalState::new(&facts);
+
+    let delta = state.evaluate_assign(&lesson, 0, None, &facts);
+    assert_eq!(
+        delta.hard, -1,
+        "evaluate_assign should detect unavailable class slot"
+    );
+
+    state.assign(&mut lesson, 0, None, &facts);
+    assert_eq!(state.score().hard, -1);
+
+    let full = full_evaluate(&[lesson.clone()], &facts);
+    assert_eq!(state.score(), full, "incremental must match full_evaluate");
+
+    state.unassign(&mut lesson, &facts);
+    assert_eq!(state.score(), HardSoftScore::ZERO);
+
+    state.assign(&mut lesson, 1, None, &facts);
+    assert_eq!(state.score().hard, 0);
+}
