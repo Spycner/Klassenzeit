@@ -65,11 +65,14 @@
 - Staging: https://klassenzeit-staging.pascalkraus.com (auto-deploys on push to main)
 - Keycloak clients: `klassenzeit-staging` and `klassenzeit-prod` in realm
 
+### Solver Domain Model + Construction Heuristic
+- Spec: `superpowers/specs/2026-04-04-solver-domain-model-design.md`
+- Plan: `superpowers/plans/2026-04-04-solver-domain-model.md`
+
 ## Next Up
 
-Solver improvements (Tier 5) — replace greedy solver with constraint solver for better timetable quality.
+Step 1c: Local search + soft constraints — LAHC algorithm with Change + Swap moves, 4 soft constraints (teacher gaps, subject distribution, preferred slots, class teacher first period).
 
 ## Notes from Reviews
 
-- Greedy solver is intentionally simple (no backtracking) — can be replaced with constraint solver later
 - Settings page has duplicate school fetch (layout + page) — acceptable for now, could use shared context later

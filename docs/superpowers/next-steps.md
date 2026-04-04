@@ -83,8 +83,8 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 |---|------|--------|------------|--------|
 | 1a | ~~**Solver research spike**~~ | done | — | — |
 | | Algorithm: LAHC. Framework: SolverForge. Scoring: lexicographic HardSoftScore. See report. | | | |
-| 1b | **Domain model + construction heuristic** | ready | — | M |
-| | Define `Lesson` as planning entity with `timeslot` + `room` as planning variables. Implement 8 hard constraints as ConstraintStream rules. First Fit Decreasing construction heuristic (most-constrained-first). | | | |
+| 1b | ~~**Domain model + construction heuristic**~~ | done | — | M |
+| | Hand-rolled constraint solver: 8 hard constraints with incremental scoring (counter matrices), First Fit Decreasing construction heuristic. Property-based testing for scoring correctness. | | | |
 | 1c | **Local search + soft constraints** | ready | 1b | M |
 | | LAHC with Change + Swap moves. 4 soft constraints: teacher gaps (-1/gap), subject distribution (-2/duplicate), preferred slots (-1/miss), class teacher first period (-1/day). Termination: 60s or 30s unimproved. | | | |
 | 1d | **Solver validation + tuning** | ready | 1c | M |
