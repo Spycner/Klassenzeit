@@ -17,13 +17,13 @@ Four soft constraints evaluated incrementally in `IncrementalState`:
 | Teacher gaps | -1 per gap period | For each teacher on each day, count gaps between first and last lesson minus actual lessons. Teacher with lessons in periods 1, 3, 5 → 2 gap periods → -2 soft. |
 | Subject distribution | -2 per duplicate | For each (class, subject, day) with N lessons, penalize (N-1) * -2. Discourages doubling up the same subject in one day. |
 | Preferred slots | -1 per miss | Each teacher has a `preferred_slots` bitvec. Each assigned lesson not in a preferred slot costs -1 soft. |
-| Class teacher first period | -1 per day | For each day where a class has a class teacher and period 0 exists but isn't taught by the class teacher, penalize -1 soft. |
+| Class teacher first period | -1 per day | For each day where a class has a class teacher and the first period of the day (lowest period number) isn't taught by the class teacher, penalize -1 soft. Only applies if the class has any lesson in that period. |
 
 ### Incremental Tracking Additions to `IncrementalState`
 
 - `teacher_day_periods: Vec<Vec<SmallVec<[u8; 4]>>>` — `[teacher][day]` → sorted list of periods with lessons (for gap calculation)
 - `class_subject_day: Vec<Vec<Vec<u16>>>` — `[class][subject][day]` → count of lessons (for subject distribution)
-- `class_day_period0: Vec<Vec<HashMap<usize, u16>>>` — `[class][day]` → map of teacher_idx → count at period 0 (for class teacher first period)
+- `class_day_first_period: Vec<Vec<HashMap<usize, u16>>>` — `[class][day]` → map of teacher_idx → count at the first period of that day (for class teacher first period)
 
 ### Soft Constraint Evaluation
 
