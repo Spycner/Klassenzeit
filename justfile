@@ -63,11 +63,27 @@ prod-stop:
     docker compose -f docker-compose.prod.yml down
 
 # Database
+db-seed:
+    cat docker/seeds/dev-seed.sql | docker exec -i klassenzeit-postgres-dev psql -U postgres -d klassenzeit_dev
+
+db-bootstrap:
+    bash docker/seeds/bootstrap.sh
+
 db-migrate:
     cd backend && cargo run -- db migrate
 
 db-reset:
     cd backend && cargo run -- db reset
+
+# Full dev setup: start, migrate, seed, bootstrap
+dev-setup:
+    just dev
+    @echo "Waiting for services to start..."
+    @sleep 10
+    just db-migrate
+    just db-seed
+    just db-bootstrap
+    @echo "Dev environment ready! Open http://localhost:3000"
 
 # Reset dev environment (wipe volumes and start fresh)
 dev-reset:

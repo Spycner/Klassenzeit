@@ -8,6 +8,7 @@ services:
       POSTGRES_DB: klassenzeit_dev
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
+      - ./docker/seeds:/seeds:ro
     ports:
       - "5432:5432"
     restart: unless-stopped
