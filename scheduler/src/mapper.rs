@@ -217,6 +217,7 @@ pub fn to_output(
             soft_score: solution.score.soft as f64,
         },
         violations,
+        stats: None,
     }
 }
 
@@ -244,12 +245,14 @@ mod tests {
                 is_part_time: false,
                 available_slots: slots.clone(),
                 qualified_subjects: vec![math_id],
+                preferred_slots: vec![],
             }],
             classes: vec![SchoolClass {
                 id: Uuid::new_v4(),
                 name: "1A".into(),
                 grade_level: 1,
                 student_count: Some(25),
+                class_teacher_id: None,
             }],
             rooms: vec![],
             subjects: vec![Subject {
@@ -304,12 +307,14 @@ mod tests {
                 is_part_time: false,
                 available_slots: vec![slot.clone()],
                 qualified_subjects: vec![math_id],
+                preferred_slots: vec![],
             }],
             classes: vec![SchoolClass {
                 id: class_id,
                 name: "1A".into(),
                 grade_level: 1,
                 student_count: None,
+                class_teacher_id: None,
             }],
             rooms: vec![],
             subjects: vec![Subject {

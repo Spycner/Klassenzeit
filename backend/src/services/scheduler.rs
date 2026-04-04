@@ -142,6 +142,7 @@ pub async fn load_schedule_input(
                 is_part_time: t.is_part_time,
                 available_slots,
                 qualified_subjects,
+                preferred_slots: vec![],
             }
         })
         .collect();
@@ -160,6 +161,7 @@ pub async fn load_schedule_input(
             name: c.name.clone(),
             grade_level: c.grade_level as u8,
             student_count: c.student_count.map(|s| s as u32),
+            class_teacher_id: None,
         })
         .collect();
 

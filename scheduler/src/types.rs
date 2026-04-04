@@ -15,6 +15,19 @@ pub struct ScheduleOutput {
     pub timetable: Vec<Lesson>,
     pub score: Score,
     pub violations: Vec<Violation>,
+    pub stats: Option<SolveStats>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SolveStats {
+    pub construction_ms: u64,
+    pub local_search_ms: u64,
+    pub iterations: u64,
+    pub iterations_per_sec: f64,
+    pub moves_accepted: u64,
+    pub moves_rejected: u64,
+    pub score_history: Vec<(u64, i64, i64)>, // (iteration, hard, soft)
+    pub best_found_at_iteration: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -25,6 +38,7 @@ pub struct Teacher {
     pub is_part_time: bool,
     pub available_slots: Vec<TimeSlot>,
     pub qualified_subjects: Vec<Uuid>,
+    pub preferred_slots: Vec<TimeSlot>,
 }
 
 #[derive(Debug, Clone)]
@@ -33,6 +47,7 @@ pub struct SchoolClass {
     pub name: String,
     pub grade_level: u8,
     pub student_count: Option<u32>,
+    pub class_teacher_id: Option<Uuid>,
 }
 
 #[derive(Debug, Clone)]

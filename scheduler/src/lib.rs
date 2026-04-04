@@ -27,6 +27,7 @@ pub fn solve(input: ScheduleInput) -> ScheduleOutput {
                 soft_score: 0.0,
             },
             violations: pre_violations,
+            stats: None,
         };
     }
 

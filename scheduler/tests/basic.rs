@@ -18,6 +18,7 @@ fn teacher(name: &str, slots: Vec<TimeSlot>, subjects: Vec<Uuid>) -> Teacher {
         is_part_time: false,
         available_slots: slots,
         qualified_subjects: subjects,
+        preferred_slots: vec![],
     }
 }
 
@@ -27,6 +28,7 @@ fn class(name: &str, grade: u8) -> SchoolClass {
         name: name.to_string(),
         grade_level: grade,
         student_count: None,
+        class_teacher_id: None,
     }
 }
 
