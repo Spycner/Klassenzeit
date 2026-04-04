@@ -245,10 +245,12 @@ fn make_requirements(
 }
 
 /// Class availability slots based on grade.
+/// Grade 1/2: periods 0-4 (5 per day × 5 days = 25 slots, enough for 21-22 lessons).
+/// Grade 3/4: all 6 periods (30 slots, enough for 26 lessons).
 fn class_available_slots(timeslots: &[TimeSlot], grade: u8) -> Vec<TimeSlot> {
     match grade {
-        1 | 2 => slots_for_periods(timeslots, 5, &[0, 1, 2, 3]),
-        3 | 4 => slots_for_periods(timeslots, 5, &[0, 1, 2, 3, 4]),
+        1 | 2 => slots_for_periods(timeslots, 5, &[0, 1, 2, 3, 4]),
+        3 | 4 => slots_for_periods(timeslots, 5, &[0, 1, 2, 3, 4, 5]),
         _ => panic!("unsupported grade {grade}"),
     }
 }
@@ -428,18 +430,18 @@ pub fn realistic_8_classes() -> ScheduleInput {
         teachers.push(make_klassenlehrer(&teacher_name, &ss, avail, preferred, 28));
     }
 
-    // Sport Fachlehrer (22h)
+    // Sport Fachlehrer (28h — needs 24h: 8 classes × 3h)
     teachers.push(Teacher {
         id: uuid("teacher-sport"),
         name: "Sport Fachlehrer".into(),
-        max_hours_per_week: 22,
+        max_hours_per_week: 28,
         is_part_time: false,
         available_slots: all_slots.clone(),
         qualified_subjects: vec![ss.sport],
         preferred_slots: vec![],
     });
 
-    // Musik Fachlehrer (14h, part-time, Mon-Wed only)
+    // Musik Fachlehrer (14h, part-time, Mon-Wed only — needs 12h)
     teachers.push(Teacher {
         id: uuid("teacher-musik"),
         name: "Musik Fachlehrer".into(),
@@ -450,11 +452,11 @@ pub fn realistic_8_classes() -> ScheduleInput {
         preferred_slots: vec![],
     });
 
-    // Religion/Englisch Fachlehrer (18h)
+    // Religion/Englisch Fachlehrer (28h — needs 24h: 8×2 religion + 4×2 english)
     teachers.push(Teacher {
         id: uuid("teacher-rel-eng"),
         name: "Religion/Englisch Fachlehrer".into(),
-        max_hours_per_week: 18,
+        max_hours_per_week: 28,
         is_part_time: false,
         available_slots: all_slots.clone(),
         qualified_subjects: vec![ss.religion, ss.englisch],
@@ -727,8 +729,8 @@ mod tests {
         let input = small_4_classes();
         for cls in &input.classes {
             let expected = match cls.grade.unwrap() {
-                1 | 2 => 20, // 5 days × 4 periods
-                3 | 4 => 25, // 5 days × 5 periods
+                1 | 2 => 25, // 5 days × 5 periods
+                3 | 4 => 30, // 5 days × 6 periods
                 _ => panic!(),
             };
             assert_eq!(
