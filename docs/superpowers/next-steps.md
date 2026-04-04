@@ -85,8 +85,8 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 | | Algorithm: LAHC. Framework: SolverForge. Scoring: lexicographic HardSoftScore. See report. | | | |
 | 1b | ~~**Domain model + construction heuristic**~~ | done | — | M |
 | | Hand-rolled constraint solver: 8 hard constraints with incremental scoring (counter matrices), First Fit Decreasing construction heuristic. Property-based testing for scoring correctness. | | | |
-| 1c | **Local search + soft constraints** | ready | 1b | M |
-| | LAHC with Change + Swap moves. 4 soft constraints: teacher gaps (-1/gap), subject distribution (-2/duplicate), preferred slots (-1/miss), class teacher first period (-1/day). Termination: 60s or 30s unimproved. | | | |
+| 1c | ~~**Local search + soft constraints**~~ | done | 1b | M |
+| | LAHC with Change + Swap moves. 4 soft constraints with incremental scoring. Criterion benchmarks. PR #44. | | | |
 | 1d | **Solver validation + tuning** | ready | 1c | M |
 | | Build 3-5 test instances (6/15/30 classes). Benchmark feasibility, soft score, time-to-best. Add Tabu component (tenure ~7-10) if soft scores plateau. Add ruin-and-recreate if feasibility fails on large instances. | | | |
 | 1e | **Solver constraints UI** | idea | 1c | M |
@@ -162,10 +162,10 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 
 ## Recommended next priorities
 
-**Immediate (solver direction decided, build it):**
-1. **1b: Domain model + construction heuristic** — replace greedy solver with SolverForge-based construction
-2. **1c: Local search + soft constraints** — LAHC + the 4 soft constraints = core value proposition
-3. **3a: Production deployment** — staging works, prod is just a release away
+**Immediate:**
+1. **1d: Solver validation + tuning** — benchmark on realistic instances, tune LAHC parameters
+2. **3a: Production deployment** — staging works, prod is just a release away
+3. **4a + 4b: Teacher availability + room suitability UI** — solver needs good input data from users
 
 **Short-term (make the app usable for real schools):**
 4. **4a + 4b: Teacher availability + room suitability UI** — solver needs good input data from users

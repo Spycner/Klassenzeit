@@ -69,9 +69,14 @@
 - Spec: `superpowers/specs/2026-04-04-solver-domain-model-design.md`
 - Plan: `superpowers/plans/2026-04-04-solver-domain-model.md`
 
+### Local Search + Soft Constraints
+- Spec: `superpowers/specs/2026-04-04-local-search-soft-constraints-design.md`
+- Plan: `superpowers/plans/2026-04-04-local-search-soft-constraints.md`
+- PR: #44 (merged)
+
 ## Next Up
 
-Step 1c: Local search + soft constraints — LAHC algorithm with Change + Swap moves, 4 soft constraints (teacher gaps, subject distribution, preferred slots, class teacher first period).
+Step 1d: Solver validation + tuning — Build 3-5 test instances (6/15/30 classes), benchmark feasibility, soft score, time-to-best. Add Tabu component if soft scores plateau.
 
 ## Notes from Reviews
 
