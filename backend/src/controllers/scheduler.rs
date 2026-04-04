@@ -172,17 +172,14 @@ async fn apply_solution(
     // Insert new lessons from solution
     let mut lessons_created: u64 = 0;
     for lesson in &result.timetable {
-        let active = lessons::ActiveModel {
-            id: Set(Uuid::new_v4()),
-            term_id: Set(term_id),
-            school_class_id: Set(lesson.class_id),
-            teacher_id: Set(lesson.teacher_id),
-            subject_id: Set(lesson.subject_id),
-            room_id: Set(lesson.room_id),
-            timeslot_id: Set(lesson.timeslot_id),
-            week_pattern: Set("every".to_string()),
-            ..Default::default()
-        };
+        let mut active = lessons::ActiveModel::new(
+            term_id,
+            lesson.class_id,
+            lesson.teacher_id,
+            lesson.subject_id,
+            lesson.timeslot_id,
+        );
+        active.room_id = Set(lesson.room_id);
         active
             .insert(&ctx.db)
             .await
