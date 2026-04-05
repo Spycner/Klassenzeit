@@ -99,6 +99,33 @@ fn bench_evaluate_assign(c: &mut Criterion) {
     });
 }
 
+fn bench_solve_realistic_kempe_comparison(c: &mut Criterion) {
+    let input = instances::realistic_8_classes();
+    let (base_solution, _) = mapper::to_planning(&input);
+
+    let mut group = c.benchmark_group("kempe_comparison_8cls_10s");
+    group.sample_size(10);
+    group.measurement_time(std::time::Duration::from_secs(15));
+
+    group.bench_function("with_kempe", |b| {
+        let config = LahcConfig {
+            max_seconds: 10,
+            max_idle_ms: 10_000,
+            seed: Some(42),
+            ..Default::default()
+        };
+        b.iter(|| {
+            let mut lessons = base_solution.lessons.clone();
+            let mut state = IncrementalState::new(&base_solution.facts);
+            construct_with_state(&mut lessons, &base_solution.facts, &mut state);
+            local_search::optimize(&mut lessons, &base_solution.facts, &mut state, &config);
+            state.score()
+        })
+    });
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     bench_construct_small,
@@ -107,5 +134,6 @@ criterion_group!(
     bench_solve_small,
     bench_solve_realistic,
     bench_evaluate_assign,
+    bench_solve_realistic_kempe_comparison,
 );
 criterion_main!(benches);
