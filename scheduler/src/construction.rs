@@ -91,9 +91,15 @@ pub fn construct(lessons: &mut [PlanningLesson], facts: &ProblemFacts) -> HardSo
 /// Lower = more constrained = should be placed first.
 fn constraint_tightness(lesson: &PlanningLesson, facts: &ProblemFacts) -> (usize, usize) {
     let teacher = &facts.teachers[lesson.teacher_idx];
+    let class = &facts.classes[lesson.class_idx];
 
-    // Primary: number of available timeslots for this teacher
-    let eligible_slots = teacher.available_slots.count_ones();
+    // Primary: number of timeslots where BOTH teacher and class are available
+    let eligible_slots = teacher
+        .available_slots
+        .iter()
+        .zip(class.available_slots.iter())
+        .filter(|(t, c)| **t && **c)
+        .count();
 
     // Secondary: number of suitable rooms (0 if no special room needed)
     let eligible_rooms = if facts.subjects[lesson.subject_idx].needs_special_room {

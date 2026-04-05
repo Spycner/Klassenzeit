@@ -113,6 +113,7 @@ pub struct TeacherFact {
 pub struct ClassFact {
     pub student_count: Option<u32>,
     pub class_teacher_idx: Option<usize>,
+    pub available_slots: BitVec,
 }
 
 #[derive(Debug, Clone)]

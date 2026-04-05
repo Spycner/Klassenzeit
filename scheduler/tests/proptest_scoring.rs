@@ -15,9 +15,18 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                 proptest::collection::vec(prop::bool::ANY, num_subjects * num_rooms), // room suitability
                 proptest::collection::vec(prop::bool::ANY, num_slots * num_teachers), // teacher preferred slots
                 proptest::collection::vec(proptest::option::of(0..num_teachers), num_classes), // class teacher idx
+                proptest::collection::vec(prop::bool::ANY, num_slots * num_classes), // class availability
             )
                 .prop_map(
-                    move |(avail_bits, qual_bits, max_hours, suit_bits, pref_bits, ct_idxs)| {
+                    move |(
+                        avail_bits,
+                        qual_bits,
+                        max_hours,
+                        suit_bits,
+                        pref_bits,
+                        ct_idxs,
+                        class_avail_bits,
+                    )| {
                         let teachers: Vec<TeacherFact> = (0..num_teachers)
                             .map(|t| {
                                 let mut available_slots = bitvec![0; num_slots];
@@ -64,9 +73,16 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                             teachers,
                             classes: (0..num_classes)
                                 .enumerate()
-                                .map(|(c, _)| ClassFact {
-                                    student_count: Some(25),
-                                    class_teacher_idx: ct_idxs[c],
+                                .map(|(c, _)| {
+                                    let mut available_slots = bitvec![0; num_slots];
+                                    for s in 0..num_slots {
+                                        available_slots.set(s, class_avail_bits[c * num_slots + s]);
+                                    }
+                                    ClassFact {
+                                        student_count: Some(25),
+                                        class_teacher_idx: ct_idxs[c],
+                                        available_slots,
+                                    }
                                 })
                                 .collect(),
                             rooms,

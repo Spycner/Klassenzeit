@@ -87,8 +87,10 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 | | Hand-rolled constraint solver: 8 hard constraints with incremental scoring (counter matrices), First Fit Decreasing construction heuristic. Property-based testing for scoring correctness. | | | |
 | 1c | ~~**Local search + soft constraints**~~ | done | 1b | M |
 | | LAHC with Change + Swap moves. 4 soft constraints with incremental scoring. Criterion benchmarks. PR #44. | | | |
-| 1d | **Solver validation + tuning** | ready | 1c | M |
-| | Build 3-5 test instances (6/15/30 classes). Benchmark feasibility, soft score, time-to-best. Add Tabu component (tenure ~7-10) if soft scores plateau. Add ruin-and-recreate if feasibility fails on large instances. | | | |
+| 1d | ~~**Solver validation + benchmarking**~~ | done | 1c | M |
+| | 3 Hessen Grundschule instances (4/8/16 classes), class availability constraint, Stundentafel expansion, benchmark binary + criterion. PR #TBD. | | | |
+| 1d+ | **Solver tuning** | ready | 1d | S-M |
+| | Based on benchmark results: soft scores plateau (zero variance across seeds) → add Tabu (tenure ~7-10). Stress instance infeasible (Sporthalle bottleneck) → ruin-and-recreate or constraint relaxation. Parameter sweep for LAHC list_length. | | | |
 | 1e | **Solver constraints UI** | idea | 1c | M |
 | | Frontend for configuring constraint weights, teacher preferences, room preferences. Currently no way to set soft constraints from the UI. | | | |
 | 1f | **Kempe chain moves** | idea | 1d | M |
@@ -163,15 +165,13 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 ## Recommended next priorities
 
 **Immediate:**
-1. **1d: Solver validation + tuning** — benchmark on realistic instances, tune LAHC parameters
+1. **1d+: Solver tuning** — soft scores plateau, stress instance infeasible → Tabu + ruin-and-recreate
 2. **3a: Production deployment** — staging works, prod is just a release away
 3. **4a + 4b: Teacher availability + room suitability UI** — solver needs good input data from users
 
 **Short-term (make the app usable for real schools):**
-4. **4a + 4b: Teacher availability + room suitability UI** — solver needs good input data from users
-5. **1d: Solver validation + tuning** — benchmark on realistic instances, tune parameters
-6. **2a: Onboarding wizard** — biggest UX gap for new users
-7. **2b: Timetable views** — per-teacher and per-room views are expected by schools
+4. **2a: Onboarding wizard** — biggest UX gap for new users
+5. **2b: Timetable views** — per-teacher and per-room views are expected by schools
 
 **Medium-term:**
 8. **2e: Data import/export** — schools won't re-type hundreds of entries

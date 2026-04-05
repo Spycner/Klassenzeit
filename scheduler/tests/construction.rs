@@ -37,6 +37,7 @@ fn make_facts_with_availability(
             .map(|_| ClassFact {
                 student_count: Some(25),
                 class_teacher_idx: None,
+                available_slots: bitvec![1; num_timeslots],
             })
             .collect(),
         rooms: (0..num_rooms)
@@ -162,6 +163,59 @@ fn construct_unsolvable_reports_violations() {
     // One lesson placed, one can't be (class conflict at same slot)
     // The second lesson gets placed anyway with best-effort → hard violation
     assert!(!score.is_feasible());
+}
+
+#[test]
+fn respects_class_availability() {
+    let num_slots = 4;
+    let mut class_available = bitvec![0; num_slots];
+    class_available.set(2, true);
+    class_available.set(3, true);
+
+    let facts = ProblemFacts {
+        timeslots: (0..num_slots)
+            .map(|i| Timeslot {
+                day: 0,
+                period: i as u8,
+            })
+            .collect(),
+        teachers: vec![TeacherFact {
+            max_hours: 10,
+            available_slots: bitvec![1; num_slots],
+            qualified_subjects: bitvec![1; 1],
+            preferred_slots: bitvec![1; num_slots],
+        }],
+        classes: vec![ClassFact {
+            student_count: Some(25),
+            class_teacher_idx: None,
+            available_slots: class_available,
+        }],
+        rooms: vec![],
+        subjects: vec![SubjectFact {
+            needs_special_room: false,
+        }],
+    };
+
+    let mut lessons = vec![PlanningLesson {
+        id: 0,
+        subject_idx: 0,
+        teacher_idx: 0,
+        class_idx: 0,
+        timeslot: None,
+        room: None,
+    }];
+
+    let score = construct(&mut lessons, &facts);
+    assert!(
+        score.is_feasible(),
+        "construction should find a feasible slot"
+    );
+    let assigned_slot = lessons[0].timeslot.unwrap();
+    assert!(
+        assigned_slot == 2 || assigned_slot == 3,
+        "lesson should be in available slot (2 or 3), got {}",
+        assigned_slot
+    );
 }
 
 #[test]

@@ -8,6 +8,7 @@ pub struct ScheduleInput {
     pub subjects: Vec<Subject>,
     pub timeslots: Vec<TimeSlot>,
     pub requirements: Vec<LessonRequirement>,
+    pub stundentafeln: Vec<Stundentafel>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -48,6 +49,8 @@ pub struct SchoolClass {
     pub grade_level: u8,
     pub student_count: Option<u32>,
     pub class_teacher_id: Option<Uuid>,
+    pub available_slots: Vec<TimeSlot>,
+    pub grade: Option<u8>,
 }
 
 #[derive(Debug, Clone)]
@@ -78,6 +81,19 @@ pub struct LessonRequirement {
     pub subject_id: Uuid,
     pub teacher_id: Option<Uuid>,
     pub hours_per_week: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct Stundentafel {
+    pub grade: u8,
+    pub entries: Vec<StundentafelEntry>,
+}
+
+#[derive(Debug, Clone)]
+pub struct StundentafelEntry {
+    pub subject_id: Uuid,
+    pub hours_per_week: u32,
+    pub teacher_id: Option<Uuid>,
 }
 
 #[derive(Debug, Clone)]

@@ -23,6 +23,44 @@ pub struct IndexMaps {
     pub timeslot_uuids: Vec<Uuid>,
 }
 
+pub fn expand_stundentafeln(input: &ScheduleInput) -> Vec<LessonRequirement> {
+    use std::collections::HashSet;
+
+    let explicit: HashSet<(Uuid, Uuid)> = input
+        .requirements
+        .iter()
+        .map(|r| (r.class_id, r.subject_id))
+        .collect();
+
+    let mut expanded = Vec::new();
+
+    for class in &input.classes {
+        let grade = match class.grade {
+            Some(g) => g,
+            None => continue,
+        };
+
+        for st in &input.stundentafeln {
+            if st.grade != grade {
+                continue;
+            }
+            for entry in &st.entries {
+                if explicit.contains(&(class.id, entry.subject_id)) {
+                    continue;
+                }
+                expanded.push(LessonRequirement {
+                    class_id: class.id,
+                    subject_id: entry.subject_id,
+                    teacher_id: entry.teacher_id,
+                    hours_per_week: entry.hours_per_week,
+                });
+            }
+        }
+    }
+
+    expanded
+}
+
 pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
     let num_subjects = input.subjects.len();
     let num_timeslots = input.timeslots.len();
@@ -89,11 +127,25 @@ pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
     for (i, c) in input.classes.iter().enumerate() {
         class_uuid_to_idx.insert(c.id, i);
         class_uuids.push(c.id);
+
+        let available_slots = if c.available_slots.is_empty() {
+            bitvec![1; num_timeslots]
+        } else {
+            let mut bits = bitvec![0; num_timeslots];
+            for slot in &c.available_slots {
+                if let Some(&idx) = timeslot_uuid_to_idx.get(&slot.id) {
+                    bits.set(idx, true);
+                }
+            }
+            bits
+        };
+
         classes.push(ClassFact {
             student_count: c.student_count,
             class_teacher_idx: c
                 .class_teacher_id
                 .and_then(|tid| teacher_uuid_to_idx.get(&tid).copied()),
+            available_slots,
         });
     }
 
@@ -134,10 +186,18 @@ pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
         })
         .collect();
 
+    // Merge explicit requirements with Stundentafel-expanded ones
+    let stundentafel_reqs = expand_stundentafeln(input);
+    let all_requirements: Vec<&LessonRequirement> = input
+        .requirements
+        .iter()
+        .chain(stundentafel_reqs.iter())
+        .collect();
+
     // Expand requirements into individual lessons
     let mut lessons = Vec::new();
     let mut lesson_id = 0;
-    for req in &input.requirements {
+    for req in &all_requirements {
         let class_idx = class_uuid_to_idx[&req.class_id];
         let subject_idx = subject_uuid_to_idx[&req.subject_id];
 
@@ -268,6 +328,8 @@ mod tests {
                 grade_level: 1,
                 student_count: Some(25),
                 class_teacher_id: None,
+                available_slots: vec![],
+                grade: None,
             }],
             rooms: vec![],
             subjects: vec![Subject {
@@ -282,6 +344,7 @@ mod tests {
                 teacher_id: None,
                 hours_per_week: 2,
             }],
+            stundentafeln: vec![],
         };
         // Fix up class_id
         let mut input = input;
@@ -330,6 +393,8 @@ mod tests {
                 grade_level: 1,
                 student_count: None,
                 class_teacher_id: None,
+                available_slots: vec![],
+                grade: None,
             }],
             rooms: vec![],
             subjects: vec![Subject {
@@ -344,6 +409,7 @@ mod tests {
                 teacher_id: Some(teacher_id),
                 hours_per_week: 1,
             }],
+            stundentafeln: vec![],
         };
 
         let (mut solution, maps) = to_planning(&input);
@@ -359,5 +425,134 @@ mod tests {
         assert_eq!(output.timetable[0].timeslot.id, slot.id);
         assert_eq!(output.timetable[0].room_id, None);
         assert_eq!(output.score.hard_violations, 0);
+    }
+
+    #[test]
+    fn stundentafel_expands_to_requirements() {
+        let slots = vec![ts(0, 1), ts(0, 2), ts(0, 3)];
+        let math_id = Uuid::new_v4();
+        let deutsch_id = Uuid::new_v4();
+        let teacher_id = Uuid::new_v4();
+        let class_id = Uuid::new_v4();
+
+        let input = ScheduleInput {
+            teachers: vec![Teacher {
+                id: teacher_id,
+                name: "Alice".into(),
+                max_hours_per_week: 28,
+                is_part_time: false,
+                available_slots: slots.clone(),
+                qualified_subjects: vec![math_id, deutsch_id],
+                preferred_slots: vec![],
+            }],
+            classes: vec![SchoolClass {
+                id: class_id,
+                name: "1A".into(),
+                grade_level: 1,
+                student_count: Some(25),
+                class_teacher_id: None,
+                available_slots: vec![],
+                grade: Some(1),
+            }],
+            rooms: vec![],
+            subjects: vec![
+                Subject {
+                    id: math_id,
+                    name: "Math".into(),
+                    needs_special_room: false,
+                },
+                Subject {
+                    id: deutsch_id,
+                    name: "Deutsch".into(),
+                    needs_special_room: false,
+                },
+            ],
+            timeslots: slots,
+            requirements: vec![],
+            stundentafeln: vec![Stundentafel {
+                grade: 1,
+                entries: vec![
+                    StundentafelEntry {
+                        subject_id: math_id,
+                        hours_per_week: 2,
+                        teacher_id: None,
+                    },
+                    StundentafelEntry {
+                        subject_id: deutsch_id,
+                        hours_per_week: 1,
+                        teacher_id: Some(teacher_id),
+                    },
+                ],
+            }],
+        };
+
+        let (solution, _maps) = to_planning(&input);
+        assert_eq!(solution.lessons.len(), 3);
+    }
+
+    #[test]
+    fn stundentafel_explicit_requirement_wins() {
+        let slots = vec![ts(0, 1), ts(0, 2)];
+        let math_id = Uuid::new_v4();
+        let teacher_a = Uuid::new_v4();
+        let teacher_b = Uuid::new_v4();
+        let class_id = Uuid::new_v4();
+
+        let input = ScheduleInput {
+            teachers: vec![
+                Teacher {
+                    id: teacher_a,
+                    name: "Alice".into(),
+                    max_hours_per_week: 28,
+                    is_part_time: false,
+                    available_slots: slots.clone(),
+                    qualified_subjects: vec![math_id],
+                    preferred_slots: vec![],
+                },
+                Teacher {
+                    id: teacher_b,
+                    name: "Bob".into(),
+                    max_hours_per_week: 28,
+                    is_part_time: false,
+                    available_slots: slots.clone(),
+                    qualified_subjects: vec![math_id],
+                    preferred_slots: vec![],
+                },
+            ],
+            classes: vec![SchoolClass {
+                id: class_id,
+                name: "1A".into(),
+                grade_level: 1,
+                student_count: Some(25),
+                class_teacher_id: None,
+                available_slots: vec![],
+                grade: Some(1),
+            }],
+            rooms: vec![],
+            subjects: vec![Subject {
+                id: math_id,
+                name: "Math".into(),
+                needs_special_room: false,
+            }],
+            timeslots: slots,
+            requirements: vec![LessonRequirement {
+                class_id,
+                subject_id: math_id,
+                teacher_id: Some(teacher_b),
+                hours_per_week: 1,
+            }],
+            stundentafeln: vec![Stundentafel {
+                grade: 1,
+                entries: vec![StundentafelEntry {
+                    subject_id: math_id,
+                    hours_per_week: 2,
+                    teacher_id: None,
+                }],
+            }],
+        };
+
+        let (solution, _maps) = to_planning(&input);
+        // Explicit requirement wins, stundentafel skipped for math
+        assert_eq!(solution.lessons.len(), 1);
     }
 }
