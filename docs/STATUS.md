@@ -74,9 +74,14 @@
 - Plan: `superpowers/plans/2026-04-04-local-search-soft-constraints.md`
 - PR: #44 (merged)
 
+### Solver Validation + Benchmarking
+- Spec: `superpowers/specs/2026-04-05-solver-validation-design.md`
+- Plan: `superpowers/plans/2026-04-05-solver-validation.md`
+- PR: #47 (merged)
+
 ## Next Up
 
-Step 1d: Solver validation + tuning — Build 3-5 test instances (6/15/30 classes), benchmark feasibility, soft score, time-to-best. Add Tabu component if soft scores plateau.
+Step 1d+: Solver tuning — Soft scores plateau (zero variance), stress instance infeasible. Add Tabu search, ruin-and-recreate, parameter sweeps.
 
 ## Notes from Reviews
 
