@@ -89,7 +89,7 @@ pub fn construct(lessons: &mut [PlanningLesson], facts: &ProblemFacts) -> HardSo
 }
 
 /// Lower = more constrained = should be placed first.
-fn constraint_tightness(lesson: &PlanningLesson, facts: &ProblemFacts) -> (usize, usize) {
+fn constraint_tightness(lesson: &PlanningLesson, facts: &ProblemFacts) -> (usize, usize, u32) {
     let teacher = &facts.teachers[lesson.teacher_idx];
     let class = &facts.classes[lesson.class_idx];
 
@@ -101,14 +101,25 @@ fn constraint_tightness(lesson: &PlanningLesson, facts: &ProblemFacts) -> (usize
         .filter(|(t, c)| **t && **c)
         .count();
 
-    // Secondary: number of suitable rooms (0 if no special room needed)
+    // Secondary: total capacity of suitable rooms (weighted by max_concurrent)
     let eligible_rooms = if facts.subjects[lesson.subject_idx].needs_special_room {
         (0..facts.rooms.len())
             .filter(|&r| facts.rooms[r].suitable_subjects[lesson.subject_idx])
-            .count()
+            .map(|r| {
+                facts.rooms[r]
+                    .max_concurrent_at_slot
+                    .iter()
+                    .map(|&c| c as usize)
+                    .sum::<usize>()
+            })
+            .sum()
     } else {
         usize::MAX // doesn't need a room, least constrained on this dimension
     };
 
-    (eligible_slots, eligible_rooms)
+    // Tertiary: teacher max_hours — teachers with lower capacity (shared Fachlehrer) are
+    // more globally constrained and should be placed before less-loaded teachers.
+    let teacher_max = teacher.max_hours;
+
+    (eligible_slots, eligible_rooms, teacher_max)
 }
