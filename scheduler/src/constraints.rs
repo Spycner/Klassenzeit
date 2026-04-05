@@ -29,12 +29,25 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
                 if a.class_idx == b.class_idx {
                     score += HardSoftScore::hard(-1);
                 }
+            }
+        }
+    }
 
-                // 3. Room conflict (skip if either room is None)
-                if let (Some(ra), Some(rb)) = (a.room, b.room) {
-                    if ra == rb {
-                        score += HardSoftScore::hard(-1);
-                    }
+    // 3. Room conflict — count-based with per-slot capacity
+    {
+        let num_rooms = facts.rooms.len();
+        let num_ts = facts.timeslots.len();
+        let mut room_at_slot = vec![vec![0u16; num_ts]; num_rooms];
+        for lesson in &assigned {
+            if let (Some(room), Some(ts)) = (lesson.room, lesson.timeslot) {
+                room_at_slot[room][ts] += 1;
+            }
+        }
+        for (room_idx, slots) in room_at_slot.iter().enumerate() {
+            for (ts_idx, &count) in slots.iter().enumerate() {
+                let cap = facts.rooms[room_idx].max_concurrent_at_slot[ts_idx] as u16;
+                if count > cap {
+                    score += HardSoftScore::hard(-((count - cap) as i64));
                 }
             }
         }
@@ -299,8 +312,11 @@ impl IncrementalState {
         delta += HardSoftScore::hard(-k_class);
 
         if let Some(r) = room {
-            let k_room = self.room_at_slot[r][timeslot] as i64;
-            delta += HardSoftScore::hard(-k_room);
+            let k_room = self.room_at_slot[r][timeslot];
+            let cap = facts.rooms[r].max_concurrent_at_slot[timeslot] as u16;
+            if k_room >= cap {
+                delta += HardSoftScore::hard(-1);
+            }
         }
 
         // Per-lesson constraints
@@ -467,8 +483,11 @@ impl IncrementalState {
         delta += HardSoftScore::hard(k_class);
 
         if let Some(r) = room {
-            let k_room = self.room_at_slot[r][timeslot] as i64;
-            delta += HardSoftScore::hard(k_room);
+            let k_room = self.room_at_slot[r][timeslot];
+            let cap = facts.rooms[r].max_concurrent_at_slot[timeslot] as u16;
+            if k_room >= cap {
+                delta += HardSoftScore::hard(1);
+            }
         }
 
         // Per-lesson constraints removed
@@ -570,5 +589,204 @@ impl IncrementalState {
         lesson.room = None;
 
         self.score += delta;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::planning::*;
+    use bitvec::prelude::*;
+
+    fn make_facts_with_room_capacity(cap: u8, num_timeslots: usize) -> ProblemFacts {
+        ProblemFacts {
+            timeslots: (0..num_timeslots)
+                .map(|i| Timeslot {
+                    day: 0,
+                    period: i as u8,
+                })
+                .collect(),
+            rooms: vec![RoomFact {
+                capacity: None,
+                suitable_subjects: bitvec![1; 1],
+                max_concurrent_at_slot: vec![cap; num_timeslots],
+            }],
+            teachers: vec![
+                TeacherFact {
+                    max_hours: 28,
+                    available_slots: bitvec![1; num_timeslots],
+                    qualified_subjects: bitvec![1; 1],
+                    preferred_slots: bitvec![1; num_timeslots],
+                },
+                TeacherFact {
+                    max_hours: 28,
+                    available_slots: bitvec![1; num_timeslots],
+                    qualified_subjects: bitvec![1; 1],
+                    preferred_slots: bitvec![1; num_timeslots],
+                },
+                TeacherFact {
+                    max_hours: 28,
+                    available_slots: bitvec![1; num_timeslots],
+                    qualified_subjects: bitvec![1; 1],
+                    preferred_slots: bitvec![1; num_timeslots],
+                },
+            ],
+            classes: vec![
+                ClassFact {
+                    student_count: None,
+                    class_teacher_idx: None,
+                    available_slots: bitvec![1; num_timeslots],
+                },
+                ClassFact {
+                    student_count: None,
+                    class_teacher_idx: None,
+                    available_slots: bitvec![1; num_timeslots],
+                },
+                ClassFact {
+                    student_count: None,
+                    class_teacher_idx: None,
+                    available_slots: bitvec![1; num_timeslots],
+                },
+            ],
+            subjects: vec![SubjectFact {
+                needs_special_room: true,
+            }],
+        }
+    }
+
+    #[test]
+    fn room_cap_2_allows_two_lessons_same_slot() {
+        let facts = make_facts_with_room_capacity(2, 2);
+        let lessons = vec![
+            PlanningLesson {
+                id: 0,
+                subject_idx: 0,
+                teacher_idx: 0,
+                class_idx: 0,
+                timeslot: Some(0),
+                room: Some(0),
+            },
+            PlanningLesson {
+                id: 1,
+                subject_idx: 0,
+                teacher_idx: 1,
+                class_idx: 1,
+                timeslot: Some(0),
+                room: Some(0),
+            },
+        ];
+        let score = full_evaluate(&lessons, &facts);
+        assert_eq!(
+            score.hard, 0,
+            "2 lessons in room with cap 2 should have 0 hard violations"
+        );
+    }
+
+    #[test]
+    fn room_cap_2_penalizes_third_lesson() {
+        let facts = make_facts_with_room_capacity(2, 2);
+        let lessons = vec![
+            PlanningLesson {
+                id: 0,
+                subject_idx: 0,
+                teacher_idx: 0,
+                class_idx: 0,
+                timeslot: Some(0),
+                room: Some(0),
+            },
+            PlanningLesson {
+                id: 1,
+                subject_idx: 0,
+                teacher_idx: 1,
+                class_idx: 1,
+                timeslot: Some(0),
+                room: Some(0),
+            },
+            PlanningLesson {
+                id: 2,
+                subject_idx: 0,
+                teacher_idx: 2,
+                class_idx: 2,
+                timeslot: Some(0),
+                room: Some(0),
+            },
+        ];
+        let score = full_evaluate(&lessons, &facts);
+        assert_eq!(
+            score.hard, -1,
+            "3 lessons in room with cap 2 should have -1 hard"
+        );
+    }
+
+    #[test]
+    fn room_cap_0_penalizes_any_lesson() {
+        let facts = make_facts_with_room_capacity(0, 2);
+        let lessons = vec![PlanningLesson {
+            id: 0,
+            subject_idx: 0,
+            teacher_idx: 0,
+            class_idx: 0,
+            timeslot: Some(0),
+            room: Some(0),
+        }];
+        let score = full_evaluate(&lessons, &facts);
+        assert_eq!(
+            score.hard, -1,
+            "1 lesson in room with cap 0 should have -1 hard"
+        );
+    }
+
+    #[test]
+    fn incremental_matches_bruteforce_with_capacity() {
+        let facts = make_facts_with_room_capacity(2, 2);
+        let mut lessons = vec![
+            PlanningLesson {
+                id: 0,
+                subject_idx: 0,
+                teacher_idx: 0,
+                class_idx: 0,
+                timeslot: None,
+                room: None,
+            },
+            PlanningLesson {
+                id: 1,
+                subject_idx: 0,
+                teacher_idx: 1,
+                class_idx: 1,
+                timeslot: None,
+                room: None,
+            },
+            PlanningLesson {
+                id: 2,
+                subject_idx: 0,
+                teacher_idx: 2,
+                class_idx: 2,
+                timeslot: None,
+                room: None,
+            },
+        ];
+
+        let mut state = IncrementalState::new(&facts);
+
+        // Assign all 3 lessons to slot 0, room 0
+        state.assign(&mut lessons[0], 0, Some(0), &facts);
+        state.assign(&mut lessons[1], 0, Some(0), &facts);
+        state.assign(&mut lessons[2], 0, Some(0), &facts);
+
+        let incremental_score = state.score();
+        let brute_score = full_evaluate(&lessons, &facts);
+        assert_eq!(
+            incremental_score, brute_score,
+            "incremental and brute-force must agree"
+        );
+
+        // Unassign last lesson — should recover the violation
+        state.unassign(&mut lessons[2], &facts);
+        let brute_after = full_evaluate(&lessons, &facts);
+        assert_eq!(
+            state.score(),
+            brute_after,
+            "after unassign, scores must agree"
+        );
     }
 }

@@ -59,6 +59,7 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                                 RoomFact {
                                     capacity: Some(30),
                                     suitable_subjects,
+                                    max_concurrent_at_slot: vec![1; num_slots],
                                 }
                             })
                             .collect();
