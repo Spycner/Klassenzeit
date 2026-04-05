@@ -2,7 +2,7 @@ use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use loco_rs::prelude::*;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -68,6 +68,13 @@ async fn replace(
         return AuthError::Forbidden("admin role required".into()).into_response();
     }
 
+    // Validate capacity values
+    for item in &body {
+        if item.capacity < 0 {
+            return (StatusCode::BAD_REQUEST, "capacity must be >= 0".to_string()).into_response();
+        }
+    }
+
     let room = rooms::Entity::find_by_id(room_id)
         .filter(rooms::Column::SchoolId.eq(school_ctx.school.id))
         .one(&ctx.db)
@@ -79,9 +86,14 @@ async fn replace(
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }
 
+    let txn = match ctx.db.begin().await {
+        Ok(txn) => txn,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    };
+
     if let Err(e) = room_timeslot_capacities::Entity::delete_many()
         .filter(room_timeslot_capacities::Column::RoomId.eq(room_id))
-        .exec(&ctx.db)
+        .exec(&txn)
         .await
     {
         return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response();
@@ -97,9 +109,13 @@ async fn replace(
             created_at: Set(now),
             updated_at: Set(now),
         };
-        if let Err(e) = entry.insert(&ctx.db).await {
+        if let Err(e) = entry.insert(&txn).await {
             return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response();
         }
+    }
+
+    if let Err(e) = txn.commit().await {
+        return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response();
     }
 
     StatusCode::NO_CONTENT.into_response()

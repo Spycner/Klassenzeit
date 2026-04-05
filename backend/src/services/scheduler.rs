@@ -250,7 +250,7 @@ pub async fn load_schedule_input(
                                         day: ts.day_of_week as u8,
                                         period: ts.period as u8,
                                     },
-                                    co.capacity as u8,
+                                    co.capacity.max(0) as u8,
                                 )
                             })
                     })
@@ -261,7 +261,7 @@ pub async fn load_schedule_input(
                 name: r.name.clone(),
                 capacity: r.capacity.map(|c| c as u32),
                 suitable_subjects,
-                max_concurrent: r.max_concurrent as u8,
+                max_concurrent: r.max_concurrent.max(0) as u8,
                 timeslot_capacity_overrides,
             }
         })

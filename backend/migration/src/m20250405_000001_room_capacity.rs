@@ -90,7 +90,20 @@ impl MigrationTrait for Migration {
                     .unique()
                     .to_owned(),
             )
-            .await
+            .await?;
+
+        // CHECK constraints for non-negative values
+        let db = manager.get_connection();
+        db.execute_unprepared(
+            "ALTER TABLE rooms ADD CONSTRAINT chk_rooms_max_concurrent CHECK (max_concurrent >= 0)",
+        )
+        .await?;
+        db.execute_unprepared(
+            "ALTER TABLE room_timeslot_capacities ADD CONSTRAINT chk_rtc_capacity CHECK (capacity >= 0)",
+        )
+        .await?;
+
+        Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {

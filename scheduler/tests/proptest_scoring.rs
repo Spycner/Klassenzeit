@@ -17,7 +17,7 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                 proptest::collection::vec(proptest::option::of(0..num_teachers), num_classes), // class teacher idx
                 proptest::collection::vec(prop::bool::ANY, num_slots * num_classes), // class availability
                 proptest::collection::vec(
-                    proptest::collection::vec(1u8..=3u8, num_slots),
+                    proptest::collection::vec(0u8..=3u8, num_slots),
                     num_rooms,
                 ), // room capacities per slot
             )
@@ -135,21 +135,30 @@ proptest! {
     #[test]
     fn incremental_matches_full_on_random_assigns(
         (facts, mut lessons) in arb_problem(),
-        slot_assignments in proptest::collection::vec(0..5usize, 1..8),
+        slot_assignments in proptest::collection::vec(0..5usize, 1..16),
+        room_choices in proptest::collection::vec(0..5usize, 1..16),
     ) {
         let num_slots = facts.timeslots.len();
+        let num_rooms = facts.rooms.len();
         let mut state = IncrementalState::new(&facts);
 
         let n = lessons.len();
         for i in 0..n {
             let slot = slot_assignments.get(i).copied().unwrap_or(0) % num_slots;
-            state.assign(&mut lessons[i], slot, None, &facts);
+            let room = if num_rooms > 0 {
+                let r = room_choices.get(i).copied().unwrap_or(0);
+                // Use None ~20% of the time to exercise both paths
+                if r % 5 == 0 { None } else { Some(r % num_rooms) }
+            } else {
+                None
+            };
+            state.assign(&mut lessons[i], slot, room, &facts);
 
             let full_score = full_evaluate(&lessons, &facts);
             prop_assert_eq!(
                 state.score(), full_score,
-                "Mismatch after assigning lesson {} to slot {}",
-                i, slot
+                "Mismatch after assigning lesson {} to slot {} room {:?}",
+                i, slot, room
             );
         }
     }
@@ -157,16 +166,24 @@ proptest! {
     #[test]
     fn incremental_matches_full_after_unassign(
         (facts, mut lessons) in arb_problem(),
-        slot_assignments in proptest::collection::vec(0..5usize, 1..8),
+        slot_assignments in proptest::collection::vec(0..5usize, 1..16),
+        room_choices in proptest::collection::vec(0..5usize, 1..16),
     ) {
         let num_slots = facts.timeslots.len();
+        let num_rooms = facts.rooms.len();
         let mut state = IncrementalState::new(&facts);
 
         // Assign all
         let n = lessons.len();
         for i in 0..n {
             let slot = slot_assignments.get(i).copied().unwrap_or(0) % num_slots;
-            state.assign(&mut lessons[i], slot, None, &facts);
+            let room = if num_rooms > 0 {
+                let r = room_choices.get(i).copied().unwrap_or(0);
+                if r % 5 == 0 { None } else { Some(r % num_rooms) }
+            } else {
+                None
+            };
+            state.assign(&mut lessons[i], slot, room, &facts);
         }
 
         // Unassign one by one and verify

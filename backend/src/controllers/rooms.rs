@@ -69,6 +69,15 @@ async fn create(
         return AuthError::Forbidden("admin role required".into()).into_response();
     }
 
+    let max_concurrent = body.max_concurrent.unwrap_or(1);
+    if max_concurrent < 0 {
+        return (
+            StatusCode::BAD_REQUEST,
+            "max_concurrent must be >= 0".to_string(),
+        )
+            .into_response();
+    }
+
     let school_id = school_ctx.school.id;
     let now = chrono::Utc::now().into();
 
@@ -79,7 +88,7 @@ async fn create(
         building: Set(body.building),
         capacity: Set(body.capacity),
         is_active: Set(true),
-        max_concurrent: Set(body.max_concurrent.unwrap_or(1)),
+        max_concurrent: Set(max_concurrent),
         created_at: Set(now),
         updated_at: Set(now),
     };
@@ -112,6 +121,16 @@ async fn update(
 ) -> impl IntoResponse {
     if school_ctx.role != "admin" {
         return AuthError::Forbidden("admin role required".into()).into_response();
+    }
+
+    if let Some(mc) = body.max_concurrent {
+        if mc < 0 {
+            return (
+                StatusCode::BAD_REQUEST,
+                "max_concurrent must be >= 0".to_string(),
+            )
+                .into_response();
+        }
     }
 
     let school_id = school_ctx.school.id;
