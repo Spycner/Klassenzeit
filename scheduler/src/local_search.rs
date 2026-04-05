@@ -13,6 +13,7 @@ pub struct LahcConfig {
     pub max_idle_ms: u64,
     pub seed: Option<u64>,
     pub history_sample_interval: u64,
+    pub tabu_tenure: usize,
 }
 
 impl Default for LahcConfig {
@@ -23,6 +24,7 @@ impl Default for LahcConfig {
             max_idle_ms: 30_000,
             seed: None,
             history_sample_interval: 1000,
+            tabu_tenure: 7,
         }
     }
 }
