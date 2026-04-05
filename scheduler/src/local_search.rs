@@ -134,6 +134,92 @@ enum UndoInfo {
     },
 }
 
+const MAX_KEMPE_CHAIN_SIZE: usize = 20;
+
+/// Build a Kempe chain by BFS over shared resources between two timeslots.
+///
+/// Returns `Some((from_a, from_b))` where:
+/// - `from_a`: lesson indices currently at `ts_a` that should move to `ts_b`
+/// - `from_b`: lesson indices currently at `ts_b` that should move to `ts_a`
+///
+/// Returns `None` if the chain exceeds `MAX_KEMPE_CHAIN_SIZE`.
+pub fn build_kempe_chain(
+    seed_idx: usize,
+    ts_b: usize,
+    lessons: &[PlanningLesson],
+    _facts: &ProblemFacts,
+) -> Option<(Vec<usize>, Vec<usize>)> {
+    let ts_a = lessons[seed_idx].timeslot.unwrap();
+    debug_assert_ne!(ts_a, ts_b);
+
+    let at_a: Vec<usize> = lessons
+        .iter()
+        .enumerate()
+        .filter(|(_, l)| l.timeslot == Some(ts_a))
+        .map(|(i, _)| i)
+        .collect();
+    let at_b: Vec<usize> = lessons
+        .iter()
+        .enumerate()
+        .filter(|(_, l)| l.timeslot == Some(ts_b))
+        .map(|(i, _)| i)
+        .collect();
+
+    let mut from_a: Vec<usize> = vec![seed_idx];
+    let mut from_b: Vec<usize> = Vec::new();
+    let mut in_chain: Vec<bool> = vec![false; lessons.len()];
+    in_chain[seed_idx] = true;
+
+    let mut changed = true;
+    while changed {
+        changed = false;
+
+        for &b_idx in &at_b {
+            if in_chain[b_idx] {
+                continue;
+            }
+            let b_lesson = &lessons[b_idx];
+            let conflicts = from_a.iter().any(|&a_idx| {
+                let a_lesson = &lessons[a_idx];
+                a_lesson.teacher_idx == b_lesson.teacher_idx
+                    || a_lesson.class_idx == b_lesson.class_idx
+                    || (a_lesson.room.is_some() && a_lesson.room == b_lesson.room)
+            });
+            if conflicts {
+                in_chain[b_idx] = true;
+                from_b.push(b_idx);
+                changed = true;
+                if from_a.len() + from_b.len() > MAX_KEMPE_CHAIN_SIZE {
+                    return None;
+                }
+            }
+        }
+
+        for &a_idx in &at_a {
+            if in_chain[a_idx] {
+                continue;
+            }
+            let a_lesson = &lessons[a_idx];
+            let conflicts = from_b.iter().any(|&b_idx| {
+                let b_lesson = &lessons[b_idx];
+                a_lesson.teacher_idx == b_lesson.teacher_idx
+                    || a_lesson.class_idx == b_lesson.class_idx
+                    || (a_lesson.room.is_some() && a_lesson.room == b_lesson.room)
+            });
+            if conflicts {
+                in_chain[a_idx] = true;
+                from_a.push(a_idx);
+                changed = true;
+                if from_a.len() + from_b.len() > MAX_KEMPE_CHAIN_SIZE {
+                    return None;
+                }
+            }
+        }
+    }
+
+    Some((from_a, from_b))
+}
+
 pub fn optimize(
     lessons: &mut [PlanningLesson],
     facts: &ProblemFacts,
