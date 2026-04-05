@@ -299,3 +299,22 @@ fn incremental_class_availability() {
     state.assign(&mut lesson, 1, None, &facts);
     assert_eq!(state.score().hard, 0);
 }
+
+#[test]
+fn room_count_at_slot_tracks_assignments() {
+    let facts = make_facts(4, 1, 2, 1, 1);
+    let mut state = IncrementalState::new(&facts);
+
+    assert_eq!(state.room_count_at_slot(0, 0), 0);
+
+    let mut l0 = unassigned_lesson(0, 0, 0, 0);
+    state.assign(&mut l0, 0, Some(0), &facts);
+    assert_eq!(state.room_count_at_slot(0, 0), 1);
+
+    let mut l1 = unassigned_lesson(1, 0, 1, 0);
+    state.assign(&mut l1, 0, Some(0), &facts);
+    assert_eq!(state.room_count_at_slot(0, 0), 2);
+
+    state.unassign(&mut l1, &facts);
+    assert_eq!(state.room_count_at_slot(0, 0), 1);
+}

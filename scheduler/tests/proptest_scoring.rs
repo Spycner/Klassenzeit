@@ -1,7 +1,10 @@
 use bitvec::prelude::*;
 use klassenzeit_scheduler::constraints::{full_evaluate, IncrementalState};
+use klassenzeit_scheduler::local_search::{build_kempe_chain, execute_kempe_chain};
 use klassenzeit_scheduler::planning::*;
 use proptest::prelude::*;
+use rand::rngs::SmallRng;
+use rand::SeedableRng;
 
 /// Generate a random problem with constrained dimensions.
 fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
@@ -195,6 +198,153 @@ proptest! {
                 "Mismatch after unassigning lesson {}",
                 i
             );
+        }
+    }
+
+    #[test]
+    fn kempe_chain_score_matches_full_eval(
+        (facts, mut lessons) in arb_problem(),
+        slot_assignments in proptest::collection::vec(0..5usize, 1..16),
+        room_choices in proptest::collection::vec(0..5usize, 1..16),
+        seed_pos in 0..8usize,
+        target_slot in 0..5usize,
+        rng_seed in 0..1000u64,
+    ) {
+        let num_slots = facts.timeslots.len();
+        let num_rooms = facts.rooms.len();
+        if num_slots < 2 { return Ok(()); }
+
+        let mut state = IncrementalState::new(&facts);
+
+        let n = lessons.len();
+        for i in 0..n {
+            let slot = slot_assignments.get(i).copied().unwrap_or(0) % num_slots;
+            let room = if num_rooms > 0 {
+                let r = room_choices.get(i).copied().unwrap_or(0);
+                if r % 5 == 0 { None } else { Some(r % num_rooms) }
+            } else {
+                None
+            };
+            state.assign(&mut lessons[i], slot, room, &facts);
+        }
+
+        let assigned: Vec<usize> = lessons.iter().enumerate()
+            .filter(|(_, l)| l.timeslot.is_some())
+            .map(|(i, _)| i)
+            .collect();
+        if assigned.is_empty() { return Ok(()); }
+        let seed_idx = assigned[seed_pos % assigned.len()];
+        let ts_a = lessons[seed_idx].timeslot.unwrap();
+        let ts_b = target_slot % num_slots;
+        if ts_a == ts_b { return Ok(()); }
+
+        let chain = build_kempe_chain(seed_idx, ts_b, &lessons);
+        if let Some((from_a, from_b)) = chain {
+            let rooms_for_subject: Vec<Vec<usize>> = (0..facts.subjects.len())
+                .map(|subj_idx| {
+                    (0..facts.rooms.len())
+                        .filter(|&r| facts.rooms[r].suitable_subjects[subj_idx])
+                        .collect()
+                })
+                .collect();
+            let mut rng = SmallRng::seed_from_u64(rng_seed);
+
+            let result = execute_kempe_chain(
+                &from_a, &from_b, ts_b, ts_a,
+                &mut lessons, &facts, &mut state,
+                &rooms_for_subject, &mut rng,
+            );
+
+            if result.is_some() {
+                let full = full_evaluate(&lessons, &facts);
+                prop_assert_eq!(
+                    state.score(), full,
+                    "Kempe chain incremental score mismatch"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn kempe_chain_undo_restores_score(
+        (facts, mut lessons) in arb_problem(),
+        slot_assignments in proptest::collection::vec(0..5usize, 1..16),
+        room_choices in proptest::collection::vec(0..5usize, 1..16),
+        seed_pos in 0..8usize,
+        target_slot in 0..5usize,
+        rng_seed in 0..1000u64,
+    ) {
+        let num_slots = facts.timeslots.len();
+        let num_rooms = facts.rooms.len();
+        if num_slots < 2 { return Ok(()); }
+
+        let mut state = IncrementalState::new(&facts);
+
+        let n = lessons.len();
+        for i in 0..n {
+            let slot = slot_assignments.get(i).copied().unwrap_or(0) % num_slots;
+            let room = if num_rooms > 0 {
+                let r = room_choices.get(i).copied().unwrap_or(0);
+                if r % 5 == 0 { None } else { Some(r % num_rooms) }
+            } else {
+                None
+            };
+            state.assign(&mut lessons[i], slot, room, &facts);
+        }
+
+        let original_score = state.score();
+        let original_positions: Vec<(Option<usize>, Option<usize>)> = lessons
+            .iter()
+            .map(|l| (l.timeslot, l.room))
+            .collect();
+
+        let assigned: Vec<usize> = lessons.iter().enumerate()
+            .filter(|(_, l)| l.timeslot.is_some())
+            .map(|(i, _)| i)
+            .collect();
+        if assigned.is_empty() { return Ok(()); }
+        let seed_idx = assigned[seed_pos % assigned.len()];
+        let ts_a = lessons[seed_idx].timeslot.unwrap();
+        let ts_b = target_slot % num_slots;
+        if ts_a == ts_b { return Ok(()); }
+
+        let chain = build_kempe_chain(seed_idx, ts_b, &lessons);
+        if let Some((from_a, from_b)) = chain {
+            let rooms_for_subject: Vec<Vec<usize>> = (0..facts.subjects.len())
+                .map(|subj_idx| {
+                    (0..facts.rooms.len())
+                        .filter(|&r| facts.rooms[r].suitable_subjects[subj_idx])
+                        .collect()
+                })
+                .collect();
+            let mut rng = SmallRng::seed_from_u64(rng_seed);
+
+            let result = execute_kempe_chain(
+                &from_a, &from_b, ts_b, ts_a,
+                &mut lessons, &facts, &mut state,
+                &rooms_for_subject, &mut rng,
+            );
+
+            if let Some(undo_moves) = result {
+                // Undo the chain
+                for &(idx, _, _) in &undo_moves {
+                    state.unassign(&mut lessons[idx], &facts);
+                }
+                for &(idx, old_ts, old_room) in &undo_moves {
+                    state.assign(&mut lessons[idx], old_ts, old_room, &facts);
+                }
+
+                prop_assert_eq!(
+                    state.score(), original_score,
+                    "Score not restored after Kempe undo"
+                );
+                for (i, l) in lessons.iter().enumerate() {
+                    prop_assert_eq!(
+                        (l.timeslot, l.room), original_positions[i],
+                        "Lesson {} position not restored after undo", i
+                    );
+                }
+            }
         }
     }
 }

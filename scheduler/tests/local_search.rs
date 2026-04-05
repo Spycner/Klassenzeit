@@ -272,3 +272,55 @@ fn tabu_enabled_does_not_regress_vs_disabled() {
         output_no_tabu.score.soft_score,
     );
 }
+
+#[test]
+fn tabu_list_rejects_forbidden_kempe_move() {
+    let mut tabu = TabuList::new(3);
+    tabu.push(TabuEntry::Kempe {
+        seed_lesson_idx: 4,
+        target_timeslot: 2,
+    });
+    assert!(tabu.is_tabu(&TabuEntry::Kempe {
+        seed_lesson_idx: 4,
+        target_timeslot: 2,
+    }));
+    // Different seed or timeslot should not match
+    assert!(!tabu.is_tabu(&TabuEntry::Kempe {
+        seed_lesson_idx: 4,
+        target_timeslot: 3,
+    }));
+    assert!(!tabu.is_tabu(&TabuEntry::Kempe {
+        seed_lesson_idx: 5,
+        target_timeslot: 2,
+    }));
+    // Kempe should not match Change or Swap
+    assert!(!tabu.is_tabu(&TabuEntry::Change {
+        lesson_idx: 4,
+        target_timeslot: 2,
+        target_room: None,
+    }));
+}
+
+#[test]
+fn kempe_enabled_solver_finds_feasible_solution() {
+    let config = klassenzeit_scheduler::local_search::LahcConfig {
+        max_seconds: 5,
+        max_idle_ms: 5000,
+        seed: Some(42),
+        ..klassenzeit_scheduler::local_search::LahcConfig::default()
+    };
+
+    let input = klassenzeit_scheduler::instances::small_4_classes();
+    let output = klassenzeit_scheduler::solve_with_config(input, config);
+
+    assert_eq!(
+        output.score.hard_violations, 0,
+        "Solver with Kempe moves should find feasible solution"
+    );
+
+    let stats = output.stats.unwrap();
+    assert!(
+        stats.kempe_attempted > 0,
+        "Expected some Kempe attempts, got 0"
+    );
+}

@@ -28,6 +28,8 @@ pub struct SolveStats {
     pub iterations_per_sec: f64,
     pub moves_accepted: u64,
     pub moves_rejected: u64,
+    pub kempe_attempted: u64,
+    pub kempe_accepted: u64,
     pub score_history: Vec<(u64, i64, i64)>, // (iteration, hard, soft)
     pub best_found_at_iteration: u64,
 }
