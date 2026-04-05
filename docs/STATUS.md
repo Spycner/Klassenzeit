@@ -79,9 +79,14 @@
 - Plan: `superpowers/plans/2026-04-05-solver-validation.md`
 - PR: #47 (merged)
 
+### Room Capacity / Gym Splitting
+- Spec: `superpowers/specs/2026-04-05-room-capacity-design.md`
+- Plan: `superpowers/plans/2026-04-05-room-capacity.md`
+- PR: #50 (pending)
+
 ## Next Up
 
-Step 1d+: Solver tuning — Soft scores plateau (zero variance), stress instance infeasible. Add Tabu search, ruin-and-recreate, parameter sweeps.
+Step 1d+: Solver tuning — Soft scores plateau (zero variance). Add Tabu search, parameter sweeps.
 
 ## Notes from Reviews
 
