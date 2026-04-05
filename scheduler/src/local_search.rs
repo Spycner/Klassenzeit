@@ -126,7 +126,6 @@ enum UndoInfo {
         idx_a: usize,
         idx_b: usize,
     },
-    #[allow(dead_code)]
     Kempe {
         seed_lesson_idx: usize,
         original_timeslot: usize,
@@ -330,7 +329,6 @@ fn find_room_with_capacity(
     }
 }
 
-#[allow(dead_code)]
 fn undo_kempe_chain(
     moves: &[(usize, usize, Option<usize>)],
     lessons: &mut [PlanningLesson],
@@ -417,8 +415,9 @@ pub fn optimize(
 
         iteration += 1;
 
-        // Pick a move: 50% Change, 50% Swap
-        let undo = if rng.gen_bool(0.5) {
+        // Pick a move: 40% Change, 40% Swap, 20% Kempe
+        let roll: f64 = rng.gen();
+        let undo = if roll < 0.4 {
             // Change move
             let idx = assigned_indices[rng.gen_range(0..assigned_indices.len())];
             let old_timeslot = lessons[idx].timeslot.unwrap();
@@ -450,7 +449,7 @@ pub fn optimize(
                 old_timeslot,
                 old_room,
             }
-        } else {
+        } else if roll < 0.8 {
             // Swap move
             let a_pos = rng.gen_range(0..assigned_indices.len());
             let mut b_pos = rng.gen_range(0..assigned_indices.len() - 1);
@@ -477,6 +476,44 @@ pub fn optimize(
             state.assign(&mut lessons[idx_b], ts_a, room_a, facts);
 
             UndoInfo::Swap { idx_a, idx_b }
+        } else {
+            // Kempe chain move
+            stats.kempe_attempted += 1;
+            let seed_pos = rng.gen_range(0..assigned_indices.len());
+            let seed_idx = assigned_indices[seed_pos];
+            let ts_a = lessons[seed_idx].timeslot.unwrap();
+            let ts_b_candidate = rng.gen_range(0..num_timeslots - 1);
+            let ts_b = if ts_b_candidate >= ts_a {
+                ts_b_candidate + 1
+            } else {
+                ts_b_candidate
+            };
+
+            let chain = build_kempe_chain(seed_idx, ts_b, lessons, facts);
+            let (from_a, from_b) = match chain {
+                Some(c) => c,
+                None => continue,
+            };
+
+            let undo_moves = execute_kempe_chain(
+                &from_a,
+                &from_b,
+                ts_b,
+                ts_a,
+                lessons,
+                facts,
+                state,
+                &rooms_for_subject,
+                &mut rng,
+            );
+            match undo_moves {
+                Some(moves) => UndoInfo::Kempe {
+                    seed_lesson_idx: seed_idx,
+                    original_timeslot: ts_a,
+                    moves,
+                },
+                None => continue,
+            }
         };
 
         let new_score = state.score();
@@ -493,7 +530,12 @@ pub fn optimize(
                 idx_a: *idx_a,
                 idx_b: *idx_b,
             },
-            UndoInfo::Kempe { .. } => unreachable!(),
+            UndoInfo::Kempe {
+                seed_lesson_idx, ..
+            } => TabuEntry::Kempe {
+                seed_lesson_idx: *seed_lesson_idx,
+                target_timeslot: lessons[*seed_lesson_idx].timeslot.unwrap(),
+            },
         };
 
         if tabu.is_tabu(&candidate_tabu) && !is_new_best {
@@ -517,7 +559,9 @@ pub fn optimize(
                     state.assign(&mut lessons[idx_a], ts_b, room_b, facts);
                     state.assign(&mut lessons[idx_b], ts_a, room_a, facts);
                 }
-                UndoInfo::Kempe { .. } => unreachable!(),
+                UndoInfo::Kempe { ref moves, .. } => {
+                    undo_kempe_chain(moves, lessons, facts, state);
+                }
             }
             stats.moves_rejected += 1;
             continue;
@@ -543,12 +587,22 @@ pub fn optimize(
                     idx_a: *idx_a,
                     idx_b: *idx_b,
                 },
-                UndoInfo::Kempe { .. } => unreachable!(),
+                UndoInfo::Kempe {
+                    seed_lesson_idx,
+                    original_timeslot,
+                    ..
+                } => TabuEntry::Kempe {
+                    seed_lesson_idx: *seed_lesson_idx,
+                    target_timeslot: *original_timeslot,
+                },
             };
             tabu.push(tabu_record);
 
             current_score = new_score;
             stats.moves_accepted += 1;
+            if matches!(&undo, UndoInfo::Kempe { .. }) {
+                stats.kempe_accepted += 1;
+            }
 
             if is_new_best {
                 best_score = new_score;
@@ -577,7 +631,9 @@ pub fn optimize(
                     state.assign(&mut lessons[idx_a], ts_b, room_b, facts);
                     state.assign(&mut lessons[idx_b], ts_a, room_a, facts);
                 }
-                UndoInfo::Kempe { .. } => unreachable!(),
+                UndoInfo::Kempe { ref moves, .. } => {
+                    undo_kempe_chain(moves, lessons, facts, state);
+                }
             }
             stats.moves_rejected += 1;
         }
