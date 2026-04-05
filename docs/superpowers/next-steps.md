@@ -89,14 +89,14 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 | | LAHC with Change + Swap moves. 4 soft constraints with incremental scoring. Criterion benchmarks. PR #44. | | | |
 | 1d | ~~**Solver validation + benchmarking**~~ | done | 1c | M |
 | | 3 Hessen Grundschule instances (4/8/16 classes), class availability constraint, Stundentafel expansion, benchmark binary + criterion. PR #47. | | | |
-| 1d+ | **Solver tuning** | ready | 1d | S-M |
-| | Based on benchmark results: soft scores plateau (zero variance across seeds) → add Tabu (tenure ~7-10). Parameter sweep for LAHC list_length. | | | |
+| 1d+ | ~~**Solver tuning**~~ | done | 1d | S-M |
+| | Added Tabu overlay to LAHC. Sweep: tenure 0-100, list_length 100-1000. Finding: plateau is Change+Swap ceiling, not cycling. Tabu retained for harder instances. | | | |
 | 1g | ~~**Room capacity / gym splitting**~~ | done | 1d | S |
 | | Per-timeslot room capacity with overrides. Stress instance now feasible (Sporthalle cap 2). PR #50. | | | |
 | 1e | **Solver constraints UI** | idea | 1c | M |
 | | Frontend for configuring constraint weights, teacher preferences, room preferences. Currently no way to set soft constraints from the UI. | | | |
-| 1f | **Kempe chain moves** | idea | 1d | M |
-| | Only if Change+Swap plateau on larger instances (25+ classes). Kempe chains swap connected components in conflict graph — reaches solution regions simple moves can't access. | | | |
+| 1f | **Kempe chain moves** | ready | 1d+ | M |
+| | Confirmed: Change+Swap hit ceiling on all test instances (4-16 classes). Kempe chains swap connected components in conflict graph — reaches solution regions simple moves can't access. Next solver improvement lever. | | | |
 
 ### Tier 2: UX polish (make the app usable for real users)
 
@@ -167,7 +167,7 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 ## Recommended next priorities
 
 **Immediate:**
-1. **1d+: Solver tuning** — soft scores plateau (zero variance) → Tabu search to escape local optima
+1. **1f: Kempe chain moves** — confirmed: Change+Swap hit ceiling on all instances, Kempe chains are the next solver lever
 2. **3a: Production deployment** — staging works, prod is just a release away
 
 **Short-term (make the app usable for real schools):**

@@ -21,6 +21,14 @@ struct Args {
     #[arg(long, default_value_t = 30)]
     max_seconds: u64,
 
+    /// LAHC fitness list length
+    #[arg(long, default_value_t = 500)]
+    list_length: usize,
+
+    /// Tabu tenure, 0 to disable
+    #[arg(long, default_value_t = 7)]
+    tabu_tenure: usize,
+
     /// Output JSON to stdout instead of table to stderr
     #[arg(long)]
     json: bool,
@@ -85,11 +93,12 @@ fn main() {
         for seed in 0..args.seeds {
             let input = builder();
             let config = LahcConfig {
+                list_length: args.list_length,
                 max_seconds: args.max_seconds,
                 max_idle_ms: args.max_seconds * 1000,
                 seed: Some(seed),
                 history_sample_interval: 100,
-                ..LahcConfig::default()
+                tabu_tenure: args.tabu_tenure,
             };
 
             let start = Instant::now();
@@ -166,6 +175,10 @@ fn main() {
         println!("{}", serde_json::to_string_pretty(&results).unwrap());
     } else {
         eprintln!();
+        eprintln!(
+            "Config: list_length={}, tabu_tenure={}, max_seconds={}",
+            args.list_length, args.tabu_tenure, args.max_seconds
+        );
         eprintln!(
             "{:<20} {:>5}   {:>8}  {:>9}  {:>9} {:>10} {:>11}   {:>9}   {:>12}",
             "Instance",

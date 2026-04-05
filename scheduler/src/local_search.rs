@@ -1,5 +1,6 @@
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
+use std::collections::VecDeque;
 use std::time::Instant;
 
 use crate::constraints::IncrementalState;
@@ -12,6 +13,7 @@ pub struct LahcConfig {
     pub max_idle_ms: u64,
     pub seed: Option<u64>,
     pub history_sample_interval: u64,
+    pub tabu_tenure: usize,
 }
 
 impl Default for LahcConfig {
@@ -22,6 +24,80 @@ impl Default for LahcConfig {
             max_idle_ms: 30_000,
             seed: None,
             history_sample_interval: 1000,
+            tabu_tenure: 7,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TabuEntry {
+    Change {
+        lesson_idx: usize,
+        target_timeslot: usize,
+        target_room: Option<usize>,
+    },
+    Swap {
+        idx_a: usize,
+        idx_b: usize,
+    },
+}
+
+pub struct TabuList {
+    entries: VecDeque<TabuEntry>,
+    capacity: usize,
+}
+
+impl TabuList {
+    pub fn new(capacity: usize) -> Self {
+        Self {
+            entries: VecDeque::with_capacity(capacity),
+            capacity,
+        }
+    }
+
+    pub fn push(&mut self, entry: TabuEntry) {
+        if self.capacity == 0 {
+            return;
+        }
+        if self.entries.len() == self.capacity {
+            self.entries.pop_front();
+        }
+        self.entries.push_back(entry);
+    }
+
+    pub fn is_tabu(&self, candidate: &TabuEntry) -> bool {
+        self.entries.iter().any(|e| Self::matches(e, candidate))
+    }
+
+    fn matches(stored: &TabuEntry, candidate: &TabuEntry) -> bool {
+        match (stored, candidate) {
+            (
+                TabuEntry::Change {
+                    lesson_idx: l1,
+                    target_timeslot: ts1,
+                    target_room: r1,
+                },
+                TabuEntry::Change {
+                    lesson_idx: l2,
+                    target_timeslot: ts2,
+                    target_room: r2,
+                },
+            ) => l1 == l2 && ts1 == ts2 && r1 == r2,
+            (
+                TabuEntry::Swap {
+                    idx_a: a1,
+                    idx_b: b1,
+                },
+                TabuEntry::Swap {
+                    idx_a: a2,
+                    idx_b: b2,
+                },
+            ) => {
+                let (min1, max1) = if a1 <= b1 { (a1, b1) } else { (b1, a1) };
+                let (min2, max2) = if a2 <= b2 { (a2, b2) } else { (b2, a2) };
+                min1 == min2 && max1 == max2
+            }
+            _ => false,
         }
     }
 }
@@ -87,6 +163,8 @@ pub fn optimize(
         score_history: vec![(0, initial_score.hard, initial_score.soft)],
         ..Default::default()
     };
+
+    let mut tabu = TabuList::new(config.tabu_tenure);
 
     let mut last_improvement = Instant::now();
     let mut iteration: u64 = 0;
@@ -171,23 +249,23 @@ pub fn optimize(
         };
 
         let new_score = state.score();
-        let list_idx = (iteration as usize) % config.list_length;
-        let list_score = fitness_list[list_idx];
+        let is_new_best = new_score > best_score;
 
-        // Accept if new_score >= list entry OR new_score >= current
-        if new_score >= list_score || new_score >= current_score {
-            // Accept
-            current_score = new_score;
-            stats.moves_accepted += 1;
+        // Tabu check: does this move's target match a forbidden entry?
+        let candidate_tabu = match &undo {
+            UndoInfo::Change { lesson_idx, .. } => TabuEntry::Change {
+                lesson_idx: *lesson_idx,
+                target_timeslot: lessons[*lesson_idx].timeslot.unwrap(),
+                target_room: lessons[*lesson_idx].room,
+            },
+            UndoInfo::Swap { idx_a, idx_b } => TabuEntry::Swap {
+                idx_a: *idx_a,
+                idx_b: *idx_b,
+            },
+        };
 
-            if new_score > best_score {
-                best_score = new_score;
-                best_lessons = lessons.to_vec();
-                stats.best_found_at_iteration = iteration;
-                last_improvement = Instant::now();
-            }
-        } else {
-            // Reject — undo
+        if tabu.is_tabu(&candidate_tabu) && !is_new_best {
+            // Tabu rejection — undo move
             match undo {
                 UndoInfo::Change {
                     lesson_idx,
@@ -198,12 +276,68 @@ pub fn optimize(
                     state.assign(&mut lessons[lesson_idx], old_timeslot, old_room, facts);
                 }
                 UndoInfo::Swap { idx_a, idx_b } => {
-                    // Swap back
                     let ts_a = lessons[idx_a].timeslot.unwrap();
                     let room_a = lessons[idx_a].room;
                     let ts_b = lessons[idx_b].timeslot.unwrap();
                     let room_b = lessons[idx_b].room;
+                    state.unassign(&mut lessons[idx_a], facts);
+                    state.unassign(&mut lessons[idx_b], facts);
+                    state.assign(&mut lessons[idx_a], ts_b, room_b, facts);
+                    state.assign(&mut lessons[idx_b], ts_a, room_a, facts);
+                }
+            }
+            stats.moves_rejected += 1;
+            continue;
+        }
 
+        let list_idx = (iteration as usize) % config.list_length;
+        let list_score = fitness_list[list_idx];
+
+        // LAHC acceptance (or aspiration for new best)
+        if is_new_best || new_score >= list_score || new_score >= current_score {
+            // Accept — record OLD position as tabu (forbid returning)
+            let tabu_record = match &undo {
+                UndoInfo::Change {
+                    lesson_idx,
+                    old_timeslot,
+                    old_room,
+                } => TabuEntry::Change {
+                    lesson_idx: *lesson_idx,
+                    target_timeslot: *old_timeslot,
+                    target_room: *old_room,
+                },
+                UndoInfo::Swap { idx_a, idx_b } => TabuEntry::Swap {
+                    idx_a: *idx_a,
+                    idx_b: *idx_b,
+                },
+            };
+            tabu.push(tabu_record);
+
+            current_score = new_score;
+            stats.moves_accepted += 1;
+
+            if is_new_best {
+                best_score = new_score;
+                best_lessons = lessons.to_vec();
+                stats.best_found_at_iteration = iteration;
+                last_improvement = Instant::now();
+            }
+        } else {
+            // LAHC rejection — undo move
+            match undo {
+                UndoInfo::Change {
+                    lesson_idx,
+                    old_timeslot,
+                    old_room,
+                } => {
+                    state.unassign(&mut lessons[lesson_idx], facts);
+                    state.assign(&mut lessons[lesson_idx], old_timeslot, old_room, facts);
+                }
+                UndoInfo::Swap { idx_a, idx_b } => {
+                    let ts_a = lessons[idx_a].timeslot.unwrap();
+                    let room_a = lessons[idx_a].room;
+                    let ts_b = lessons[idx_b].timeslot.unwrap();
+                    let room_b = lessons[idx_b].room;
                     state.unassign(&mut lessons[idx_a], facts);
                     state.unassign(&mut lessons[idx_b], facts);
                     state.assign(&mut lessons[idx_a], ts_b, room_b, facts);
