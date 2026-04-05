@@ -1,5 +1,6 @@
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
+use std::collections::VecDeque;
 use std::time::Instant;
 
 use crate::constraints::IncrementalState;
@@ -22,6 +23,79 @@ impl Default for LahcConfig {
             max_idle_ms: 30_000,
             seed: None,
             history_sample_interval: 1000,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TabuEntry {
+    Change {
+        lesson_idx: usize,
+        target_timeslot: usize,
+        target_room: Option<usize>,
+    },
+    Swap {
+        idx_a: usize,
+        idx_b: usize,
+    },
+}
+
+pub struct TabuList {
+    entries: VecDeque<TabuEntry>,
+    capacity: usize,
+}
+
+impl TabuList {
+    pub fn new(capacity: usize) -> Self {
+        Self {
+            entries: VecDeque::with_capacity(capacity),
+            capacity,
+        }
+    }
+
+    pub fn push(&mut self, entry: TabuEntry) {
+        if self.capacity == 0 {
+            return;
+        }
+        if self.entries.len() == self.capacity {
+            self.entries.pop_front();
+        }
+        self.entries.push_back(entry);
+    }
+
+    pub fn is_tabu(&self, candidate: &TabuEntry) -> bool {
+        self.entries.iter().any(|e| Self::matches(e, candidate))
+    }
+
+    fn matches(stored: &TabuEntry, candidate: &TabuEntry) -> bool {
+        match (stored, candidate) {
+            (
+                TabuEntry::Change {
+                    lesson_idx: l1,
+                    target_timeslot: ts1,
+                    target_room: r1,
+                },
+                TabuEntry::Change {
+                    lesson_idx: l2,
+                    target_timeslot: ts2,
+                    target_room: r2,
+                },
+            ) => l1 == l2 && ts1 == ts2 && r1 == r2,
+            (
+                TabuEntry::Swap {
+                    idx_a: a1,
+                    idx_b: b1,
+                },
+                TabuEntry::Swap {
+                    idx_a: a2,
+                    idx_b: b2,
+                },
+            ) => {
+                let (min1, max1) = if a1 <= b1 { (a1, b1) } else { (b1, a1) };
+                let (min2, max2) = if a2 <= b2 { (a2, b2) } else { (b2, a2) };
+                min1 == min2 && max1 == max2
+            }
+            _ => false,
         }
     }
 }

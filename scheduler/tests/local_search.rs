@@ -152,3 +152,89 @@ fn undo_swap_restores_score() {
 
     assert_eq!(state.score(), original_score);
 }
+
+use klassenzeit_scheduler::local_search::{TabuEntry, TabuList};
+
+#[test]
+fn tabu_list_rejects_forbidden_change_move() {
+    let mut tabu = TabuList::new(3);
+    tabu.push(TabuEntry::Change {
+        lesson_idx: 5,
+        target_timeslot: 2,
+        target_room: None,
+    });
+    assert!(tabu.is_tabu(&TabuEntry::Change {
+        lesson_idx: 5,
+        target_timeslot: 2,
+        target_room: None,
+    }));
+    assert!(!tabu.is_tabu(&TabuEntry::Change {
+        lesson_idx: 5,
+        target_timeslot: 3,
+        target_room: None,
+    }));
+    assert!(!tabu.is_tabu(&TabuEntry::Change {
+        lesson_idx: 7,
+        target_timeslot: 2,
+        target_room: None,
+    }));
+}
+
+#[test]
+fn tabu_list_rejects_forbidden_swap_move() {
+    let mut tabu = TabuList::new(3);
+    tabu.push(TabuEntry::Swap { idx_a: 2, idx_b: 5 });
+    assert!(tabu.is_tabu(&TabuEntry::Swap { idx_a: 2, idx_b: 5 }));
+    assert!(tabu.is_tabu(&TabuEntry::Swap { idx_a: 5, idx_b: 2 }));
+    assert!(!tabu.is_tabu(&TabuEntry::Swap { idx_a: 2, idx_b: 6 }));
+}
+
+#[test]
+fn tabu_list_evicts_oldest_entry() {
+    let mut tabu = TabuList::new(2);
+    tabu.push(TabuEntry::Change {
+        lesson_idx: 0,
+        target_timeslot: 1,
+        target_room: None,
+    });
+    tabu.push(TabuEntry::Change {
+        lesson_idx: 1,
+        target_timeslot: 2,
+        target_room: None,
+    });
+    assert!(tabu.is_tabu(&TabuEntry::Change {
+        lesson_idx: 0,
+        target_timeslot: 1,
+        target_room: None,
+    }));
+    tabu.push(TabuEntry::Change {
+        lesson_idx: 2,
+        target_timeslot: 3,
+        target_room: None,
+    });
+    assert!(!tabu.is_tabu(&TabuEntry::Change {
+        lesson_idx: 0,
+        target_timeslot: 1,
+        target_room: None,
+    }));
+    assert!(tabu.is_tabu(&TabuEntry::Change {
+        lesson_idx: 2,
+        target_timeslot: 3,
+        target_room: None,
+    }));
+}
+
+#[test]
+fn tabu_list_zero_tenure_allows_everything() {
+    let mut tabu = TabuList::new(0);
+    tabu.push(TabuEntry::Change {
+        lesson_idx: 0,
+        target_timeslot: 1,
+        target_room: None,
+    });
+    assert!(!tabu.is_tabu(&TabuEntry::Change {
+        lesson_idx: 0,
+        target_timeslot: 1,
+        target_room: None,
+    }));
+}
