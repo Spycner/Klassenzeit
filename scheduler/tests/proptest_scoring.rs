@@ -16,6 +16,10 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                 proptest::collection::vec(prop::bool::ANY, num_slots * num_teachers), // teacher preferred slots
                 proptest::collection::vec(proptest::option::of(0..num_teachers), num_classes), // class teacher idx
                 proptest::collection::vec(prop::bool::ANY, num_slots * num_classes), // class availability
+                proptest::collection::vec(
+                    proptest::collection::vec(1u8..=3u8, num_slots),
+                    num_rooms,
+                ), // room capacities per slot
             )
                 .prop_map(
                     move |(
@@ -26,6 +30,7 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                         pref_bits,
                         ct_idxs,
                         class_avail_bits,
+                        room_capacities,
                     )| {
                         let teachers: Vec<TeacherFact> = (0..num_teachers)
                             .map(|t| {
@@ -59,7 +64,7 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                                 RoomFact {
                                     capacity: Some(30),
                                     suitable_subjects,
-                                    max_concurrent_at_slot: vec![1; num_slots],
+                                    max_concurrent_at_slot: room_capacities[r].clone(),
                                 }
                             })
                             .collect();
