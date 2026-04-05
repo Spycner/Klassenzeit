@@ -300,3 +300,27 @@ fn tabu_list_rejects_forbidden_kempe_move() {
         target_room: None,
     }));
 }
+
+#[test]
+fn kempe_enabled_solver_finds_feasible_solution() {
+    let config = klassenzeit_scheduler::local_search::LahcConfig {
+        max_seconds: 5,
+        max_idle_ms: 5000,
+        seed: Some(42),
+        ..klassenzeit_scheduler::local_search::LahcConfig::default()
+    };
+
+    let input = klassenzeit_scheduler::instances::small_4_classes();
+    let output = klassenzeit_scheduler::solve_with_config(input, config);
+
+    assert_eq!(
+        output.score.hard_violations, 0,
+        "Solver with Kempe moves should find feasible solution"
+    );
+
+    let stats = output.stats.unwrap();
+    assert!(
+        stats.kempe_attempted > 0,
+        "Expected some Kempe attempts, got 0"
+    );
+}
