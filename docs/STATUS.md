@@ -82,11 +82,21 @@
 ### Room Capacity / Gym Splitting
 - Spec: `superpowers/specs/2026-04-05-room-capacity-design.md`
 - Plan: `superpowers/plans/2026-04-05-room-capacity.md`
-- PR: #50 (pending)
+- PR: #50 (merged)
+
+### Solver Tuning (LAHC + Tabu Hybrid)
+- Spec: `superpowers/specs/2026-04-05-solver-tuning-design.md`
+- Plan: `superpowers/plans/2026-04-05-solver-tuning.md`
+- Added Tabu search overlay to LAHC solver with aspiration criterion
+- Parameter sweep across tenure (0-100) and list_length (100-1000)
+- Finding: soft score plateau is due to move neighborhood limits (Change+Swap ceiling), not cycling
+- Tabu infrastructure retained for harder instances; defaults: tenure=7, list_length=500
 
 ## Next Up
 
-Step 1d+: Solver tuning — Soft scores plateau (zero variance). Add Tabu search, parameter sweeps.
+Solver improvement options:
+- **1f: Kempe chain moves** — to escape basins Change+Swap can't reach
+- **3a: Production deployment** — staging works, prod is just a release away
 
 ## Notes from Reviews
 
