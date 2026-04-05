@@ -293,6 +293,11 @@ impl IncrementalState {
         self.score
     }
 
+    /// How many lessons occupy this (room, timeslot) pair right now.
+    pub fn room_count_at_slot(&self, room: usize, timeslot: usize) -> u16 {
+        self.room_at_slot[room][timeslot]
+    }
+
     /// Compute the score delta of assigning `lesson` to `timeslot`/`room`
     /// without modifying any state.
     pub fn evaluate_assign(
