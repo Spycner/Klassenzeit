@@ -92,11 +92,20 @@
 - Finding: soft score plateau is due to move neighborhood limits (Change+Swap ceiling), not cycling
 - Tabu infrastructure retained for harder instances; defaults: tenure=7, list_length=500
 
+### Kempe Chain Moves
+- Spec: `superpowers/specs/2026-04-05-kempe-chain-moves-design.md`
+- Plan: `superpowers/plans/2026-04-05-kempe-chain-moves.md`
+- PR: #53 (merged)
+- Resource-pair Kempe chains via BFS over teacher/class/room conflicts
+- 40/40/20 move split (Change/Swap/Kempe), max chain size 20
+- Room capacity handling with abort-and-restore
+- Tabu integration with seed+timeslot entry
+
 ## Next Up
 
-Solver improvement options:
-- **1f: Kempe chain moves** — to escape basins Change+Swap can't reach
 - **3a: Production deployment** — staging works, prod is just a release away
+- **1e: Solver constraints UI** — no way to set soft constraints from frontend
+- **2a: Onboarding wizard** — biggest UX gap for new users
 
 ## Notes from Reviews
 
