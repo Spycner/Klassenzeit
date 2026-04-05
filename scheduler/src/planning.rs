@@ -96,6 +96,8 @@ pub struct RoomFact {
     pub capacity: Option<u32>,
     /// Bit i is set if this room is suitable for subject i.
     pub suitable_subjects: BitVec,
+    /// Dense array indexed by timeslot index giving max concurrent classes allowed.
+    pub max_concurrent_at_slot: Vec<u8>,
 }
 
 #[derive(Debug, Clone)]

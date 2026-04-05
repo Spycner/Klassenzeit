@@ -233,6 +233,8 @@ pub async fn load_schedule_input(
                 name: r.name.clone(),
                 capacity: r.capacity.map(|c| c as u32),
                 suitable_subjects,
+                max_concurrent: 1,
+                timeslot_capacity_overrides: std::collections::HashMap::new(),
             }
         })
         .collect();

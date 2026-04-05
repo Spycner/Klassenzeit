@@ -5,6 +5,7 @@
 //! - `realistic_8_classes()`: 8 classes (2-Züge), 190 lessons
 //! - `stress_16_classes()`: 16 classes (4-Züge), 380 lessons
 
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::types::*;
@@ -152,6 +153,8 @@ fn make_klassenraum(name: &str) -> Room {
         name: name.into(),
         capacity: Some(30),
         suitable_subjects: vec![], // empty = any non-special subject
+        max_concurrent: 1,
+        timeslot_capacity_overrides: HashMap::new(),
     }
 }
 
@@ -161,6 +164,8 @@ fn make_sporthalle(sport_id: Uuid) -> Room {
         name: "Sporthalle".into(),
         capacity: Some(30),
         suitable_subjects: vec![sport_id],
+        max_concurrent: 1,
+        timeslot_capacity_overrides: HashMap::new(),
     }
 }
 
