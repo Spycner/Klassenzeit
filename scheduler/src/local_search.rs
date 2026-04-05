@@ -220,6 +220,131 @@ pub fn build_kempe_chain(
     Some((from_a, from_b))
 }
 
+/// Execute a Kempe chain: unassign all chain members, then reassign swapped.
+///
+/// Returns `Some(undo_moves)` on success — a vec of `(lesson_idx, old_timeslot, old_room)`.
+/// Returns `None` if a room can't be found for a special-room lesson (aborts and restores).
+#[allow(clippy::too_many_arguments)]
+pub fn execute_kempe_chain(
+    from_a: &[usize],
+    from_b: &[usize],
+    ts_b: usize,
+    ts_a: usize,
+    lessons: &mut [PlanningLesson],
+    facts: &ProblemFacts,
+    state: &mut IncrementalState,
+    rooms_for_subject: &[Vec<usize>],
+    rng: &mut SmallRng,
+) -> Option<Vec<(usize, usize, Option<usize>)>> {
+    // Record old positions for undo
+    let mut undo_moves: Vec<(usize, usize, Option<usize>)> =
+        Vec::with_capacity(from_a.len() + from_b.len());
+    for &idx in from_a.iter().chain(from_b.iter()) {
+        undo_moves.push((idx, lessons[idx].timeslot.unwrap(), lessons[idx].room));
+    }
+
+    // Phase 1: Unassign all chain members
+    for &idx in from_a.iter().chain(from_b.iter()) {
+        state.unassign(&mut lessons[idx], facts);
+    }
+
+    // Phase 2: Assign from_a to ts_b, from_b to ts_a
+    let assignments: Vec<(usize, usize)> = from_a
+        .iter()
+        .map(|&idx| (idx, ts_b))
+        .chain(from_b.iter().map(|&idx| (idx, ts_a)))
+        .collect();
+
+    for (assign_pos, &(idx, target_ts)) in assignments.iter().enumerate() {
+        let needs_room = facts.subjects[lessons[idx].subject_idx].needs_special_room;
+
+        let new_room = if needs_room {
+            let old_room = undo_moves.iter().find(|(i, _, _)| *i == idx).unwrap().2;
+            if let Some(r) = old_room {
+                let cap = facts.rooms[r].max_concurrent_at_slot[target_ts] as u16;
+                if state.room_count_at_slot(r, target_ts) < cap {
+                    Some(r)
+                } else {
+                    find_room_with_capacity(
+                        &rooms_for_subject[lessons[idx].subject_idx],
+                        target_ts,
+                        state,
+                        facts,
+                        rng,
+                    )
+                }
+            } else {
+                find_room_with_capacity(
+                    &rooms_for_subject[lessons[idx].subject_idx],
+                    target_ts,
+                    state,
+                    facts,
+                    rng,
+                )
+            }
+        } else {
+            None
+        };
+
+        // If we need a room but couldn't find one, abort
+        if needs_room && new_room.is_none() {
+            // Unassign anything we already assigned in this phase
+            for &(prev_idx, _) in assignments.iter().take(assign_pos) {
+                if lessons[prev_idx].timeslot.is_some() {
+                    state.unassign(&mut lessons[prev_idx], facts);
+                }
+            }
+            // Restore all to original positions
+            for &(orig_idx, orig_ts, orig_room) in &undo_moves {
+                state.assign(&mut lessons[orig_idx], orig_ts, orig_room, facts);
+            }
+            return None;
+        }
+
+        state.assign(&mut lessons[idx], target_ts, new_room, facts);
+    }
+
+    Some(undo_moves)
+}
+
+fn find_room_with_capacity(
+    compatible_rooms: &[usize],
+    timeslot: usize,
+    state: &IncrementalState,
+    facts: &ProblemFacts,
+    rng: &mut SmallRng,
+) -> Option<usize> {
+    let available: Vec<usize> = compatible_rooms
+        .iter()
+        .copied()
+        .filter(|&r| {
+            let cap = facts.rooms[r].max_concurrent_at_slot[timeslot] as u16;
+            state.room_count_at_slot(r, timeslot) < cap
+        })
+        .collect();
+
+    if available.is_empty() {
+        None
+    } else {
+        Some(available[rng.gen_range(0..available.len())])
+    }
+}
+
+#[allow(dead_code)]
+fn undo_kempe_chain(
+    moves: &[(usize, usize, Option<usize>)],
+    lessons: &mut [PlanningLesson],
+    facts: &ProblemFacts,
+    state: &mut IncrementalState,
+) {
+    for &(idx, _, _) in moves {
+        state.unassign(&mut lessons[idx], facts);
+    }
+    for &(idx, old_ts, old_room) in moves {
+        state.assign(&mut lessons[idx], old_ts, old_room, facts);
+    }
+}
+
 pub fn optimize(
     lessons: &mut [PlanningLesson],
     facts: &ProblemFacts,

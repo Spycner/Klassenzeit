@@ -1,6 +1,9 @@
 use bitvec::prelude::*;
-use klassenzeit_scheduler::local_search::build_kempe_chain;
+use klassenzeit_scheduler::constraints::{full_evaluate, IncrementalState};
+use klassenzeit_scheduler::local_search::{build_kempe_chain, execute_kempe_chain};
 use klassenzeit_scheduler::planning::*;
+use rand::rngs::SmallRng;
+use rand::SeedableRng;
 
 /// Helper: create minimal problem facts with given counts.
 fn make_facts(
@@ -122,4 +125,94 @@ fn kempe_chain_respects_max_size() {
 
     let result = build_kempe_chain(0, 1, &lessons, &facts);
     assert!(result.is_none());
+}
+
+fn unassigned_lesson(id: usize, teacher: usize, class: usize, subject: usize) -> PlanningLesson {
+    PlanningLesson {
+        id,
+        subject_idx: subject,
+        teacher_idx: teacher,
+        class_idx: class,
+        timeslot: None,
+        room: None,
+    }
+}
+
+#[test]
+fn kempe_execute_score_matches_full_eval() {
+    let facts = make_facts(4, 2, 2, 0, 1);
+    let mut state = IncrementalState::new(&facts);
+
+    let mut lessons = vec![
+        unassigned_lesson(0, 0, 0, 0),
+        unassigned_lesson(1, 1, 1, 0),
+        unassigned_lesson(2, 0, 1, 0),
+    ];
+
+    state.assign(&mut lessons[0], 0, None, &facts);
+    state.assign(&mut lessons[1], 0, None, &facts);
+    state.assign(&mut lessons[2], 1, None, &facts);
+
+    let from_a = vec![0, 1];
+    let from_b = vec![2];
+
+    let mut rng = SmallRng::seed_from_u64(42);
+    let rooms_for_subject: Vec<Vec<usize>> = vec![vec![]];
+
+    let result = execute_kempe_chain(
+        &from_a,
+        &from_b,
+        1,
+        0,
+        &mut lessons,
+        &facts,
+        &mut state,
+        &rooms_for_subject,
+        &mut rng,
+    );
+
+    assert!(result.is_some());
+    assert_eq!(lessons[0].timeslot, Some(1));
+    assert_eq!(lessons[1].timeslot, Some(1));
+    assert_eq!(lessons[2].timeslot, Some(0));
+    assert_eq!(state.score(), full_evaluate(&lessons, &facts));
+}
+
+#[test]
+fn kempe_execute_aborts_when_no_room_available() {
+    let mut facts = make_facts(2, 2, 2, 1, 1);
+    facts.subjects[0].needs_special_room = true;
+    let mut state = IncrementalState::new(&facts);
+
+    let mut lessons = vec![unassigned_lesson(0, 0, 0, 0), unassigned_lesson(1, 1, 1, 0)];
+
+    state.assign(&mut lessons[0], 0, Some(0), &facts);
+    state.assign(&mut lessons[1], 1, Some(0), &facts);
+
+    let original_score = state.score();
+
+    let from_a = vec![0];
+    let from_b: Vec<usize> = vec![];
+
+    let mut rng = SmallRng::seed_from_u64(42);
+    let rooms_for_subject: Vec<Vec<usize>> = vec![vec![0]];
+
+    let result = execute_kempe_chain(
+        &from_a,
+        &from_b,
+        1,
+        0,
+        &mut lessons,
+        &facts,
+        &mut state,
+        &rooms_for_subject,
+        &mut rng,
+    );
+
+    assert!(result.is_none());
+    assert_eq!(lessons[0].timeslot, Some(0));
+    assert_eq!(lessons[0].room, Some(0));
+    assert_eq!(lessons[1].timeslot, Some(1));
+    assert_eq!(lessons[1].room, Some(0));
+    assert_eq!(state.score(), original_score);
 }
