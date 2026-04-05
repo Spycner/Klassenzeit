@@ -238,7 +238,7 @@ proptest! {
         let ts_b = target_slot % num_slots;
         if ts_a == ts_b { return Ok(()); }
 
-        let chain = build_kempe_chain(seed_idx, ts_b, &lessons, &facts);
+        let chain = build_kempe_chain(seed_idx, ts_b, &lessons);
         if let Some((from_a, from_b)) = chain {
             let rooms_for_subject: Vec<Vec<usize>> = (0..facts.subjects.len())
                 .map(|subj_idx| {
@@ -308,7 +308,7 @@ proptest! {
         let ts_b = target_slot % num_slots;
         if ts_a == ts_b { return Ok(()); }
 
-        let chain = build_kempe_chain(seed_idx, ts_b, &lessons, &facts);
+        let chain = build_kempe_chain(seed_idx, ts_b, &lessons);
         if let Some((from_a, from_b)) = chain {
             let rooms_for_subject: Vec<Vec<usize>> = (0..facts.subjects.len())
                 .map(|subj_idx| {

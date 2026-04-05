@@ -84,7 +84,7 @@ fn kempe_chain_links_shared_teacher() {
         assigned_lesson(2, 0, 1, 0, 1), // L2: teacher0, class1 @ ts1
     ];
 
-    let result = build_kempe_chain(0, 1, &lessons, &facts);
+    let result = build_kempe_chain(0, 1, &lessons);
     let (from_a, from_b): (Vec<usize>, Vec<usize>) = result.unwrap();
 
     // from_a = lessons moving ts0→ts1: should include L0 and L1
@@ -105,7 +105,7 @@ fn kempe_chain_single_lesson_no_conflicts() {
         assigned_lesson(1, 1, 1, 0, 1),
     ];
 
-    let result = build_kempe_chain(0, 1, &lessons, &facts);
+    let result = build_kempe_chain(0, 1, &lessons);
     let (from_a, from_b): (Vec<usize>, Vec<usize>) = result.unwrap();
 
     assert_eq!(from_a, vec![0usize]);
@@ -123,7 +123,7 @@ fn kempe_chain_respects_max_size() {
         lessons.push(assigned_lesson(25 + i, i, (i + 1) % 25, 0, 1));
     }
 
-    let result = build_kempe_chain(0, 1, &lessons, &facts);
+    let result = build_kempe_chain(0, 1, &lessons);
     assert!(result.is_none());
 }
 
@@ -230,7 +230,7 @@ fn kempe_chain_is_closed_under_resources() {
         assigned_lesson(4, 2, 2, 0, 2), // L4: t2, c2 @ ts2 (different timeslot entirely)
     ];
 
-    let result = build_kempe_chain(0, 1, &lessons, &facts);
+    let result = build_kempe_chain(0, 1, &lessons);
     let (from_a, from_b) = result.unwrap();
 
     // L3 is at ts1 but should NOT be in the chain (no shared resources)

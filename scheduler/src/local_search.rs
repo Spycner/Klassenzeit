@@ -146,7 +146,6 @@ pub fn build_kempe_chain(
     seed_idx: usize,
     ts_b: usize,
     lessons: &[PlanningLesson],
-    _facts: &ProblemFacts,
 ) -> Option<(Vec<usize>, Vec<usize>)> {
     let ts_a = lessons[seed_idx].timeslot.unwrap();
     debug_assert_ne!(ts_a, ts_b);
@@ -489,7 +488,7 @@ pub fn optimize(
                 ts_b_candidate
             };
 
-            let chain = build_kempe_chain(seed_idx, ts_b, lessons, facts);
+            let chain = build_kempe_chain(seed_idx, ts_b, lessons);
             let (from_a, from_b) = match chain {
                 Some(c) => c,
                 None => continue,
