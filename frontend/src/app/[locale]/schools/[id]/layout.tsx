@@ -54,6 +54,9 @@ export default function SchoolLayout({
 
   const [school, setSchool] = useState<SchoolResponse | null>(null);
 
+  // Sync provider state from URL — drives X-School-Id header for child pages
+  selectSchool(schoolId);
+
   useEffect(() => {
     apiClient
       .get<SchoolResponse>(`/api/schools/${schoolId}`)
@@ -94,10 +97,6 @@ export default function SchoolLayout({
         ]
       : []),
   ];
-
-  useEffect(() => {
-    selectSchool(schoolId);
-  }, [schoolId, selectSchool]);
 
   return (
     <SidebarProvider>
