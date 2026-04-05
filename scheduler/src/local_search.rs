@@ -164,6 +164,8 @@ pub fn optimize(
         ..Default::default()
     };
 
+    let mut tabu = TabuList::new(config.tabu_tenure);
+
     let mut last_improvement = Instant::now();
     let mut iteration: u64 = 0;
 
@@ -247,23 +249,23 @@ pub fn optimize(
         };
 
         let new_score = state.score();
-        let list_idx = (iteration as usize) % config.list_length;
-        let list_score = fitness_list[list_idx];
+        let is_new_best = new_score > best_score;
 
-        // Accept if new_score >= list entry OR new_score >= current
-        if new_score >= list_score || new_score >= current_score {
-            // Accept
-            current_score = new_score;
-            stats.moves_accepted += 1;
+        // Tabu check: does this move's target match a forbidden entry?
+        let candidate_tabu = match &undo {
+            UndoInfo::Change { lesson_idx, .. } => TabuEntry::Change {
+                lesson_idx: *lesson_idx,
+                target_timeslot: lessons[*lesson_idx].timeslot.unwrap(),
+                target_room: lessons[*lesson_idx].room,
+            },
+            UndoInfo::Swap { idx_a, idx_b } => TabuEntry::Swap {
+                idx_a: *idx_a,
+                idx_b: *idx_b,
+            },
+        };
 
-            if new_score > best_score {
-                best_score = new_score;
-                best_lessons = lessons.to_vec();
-                stats.best_found_at_iteration = iteration;
-                last_improvement = Instant::now();
-            }
-        } else {
-            // Reject — undo
+        if tabu.is_tabu(&candidate_tabu) && !is_new_best {
+            // Tabu rejection — undo move
             match undo {
                 UndoInfo::Change {
                     lesson_idx,
@@ -274,12 +276,68 @@ pub fn optimize(
                     state.assign(&mut lessons[lesson_idx], old_timeslot, old_room, facts);
                 }
                 UndoInfo::Swap { idx_a, idx_b } => {
-                    // Swap back
                     let ts_a = lessons[idx_a].timeslot.unwrap();
                     let room_a = lessons[idx_a].room;
                     let ts_b = lessons[idx_b].timeslot.unwrap();
                     let room_b = lessons[idx_b].room;
+                    state.unassign(&mut lessons[idx_a], facts);
+                    state.unassign(&mut lessons[idx_b], facts);
+                    state.assign(&mut lessons[idx_a], ts_b, room_b, facts);
+                    state.assign(&mut lessons[idx_b], ts_a, room_a, facts);
+                }
+            }
+            stats.moves_rejected += 1;
+            continue;
+        }
 
+        let list_idx = (iteration as usize) % config.list_length;
+        let list_score = fitness_list[list_idx];
+
+        // LAHC acceptance (or aspiration for new best)
+        if is_new_best || new_score >= list_score || new_score >= current_score {
+            // Accept — record OLD position as tabu (forbid returning)
+            let tabu_record = match &undo {
+                UndoInfo::Change {
+                    lesson_idx,
+                    old_timeslot,
+                    old_room,
+                } => TabuEntry::Change {
+                    lesson_idx: *lesson_idx,
+                    target_timeslot: *old_timeslot,
+                    target_room: *old_room,
+                },
+                UndoInfo::Swap { idx_a, idx_b } => TabuEntry::Swap {
+                    idx_a: *idx_a,
+                    idx_b: *idx_b,
+                },
+            };
+            tabu.push(tabu_record);
+
+            current_score = new_score;
+            stats.moves_accepted += 1;
+
+            if is_new_best {
+                best_score = new_score;
+                best_lessons = lessons.to_vec();
+                stats.best_found_at_iteration = iteration;
+                last_improvement = Instant::now();
+            }
+        } else {
+            // LAHC rejection — undo move
+            match undo {
+                UndoInfo::Change {
+                    lesson_idx,
+                    old_timeslot,
+                    old_room,
+                } => {
+                    state.unassign(&mut lessons[lesson_idx], facts);
+                    state.assign(&mut lessons[lesson_idx], old_timeslot, old_room, facts);
+                }
+                UndoInfo::Swap { idx_a, idx_b } => {
+                    let ts_a = lessons[idx_a].timeslot.unwrap();
+                    let room_a = lessons[idx_a].room;
+                    let ts_b = lessons[idx_b].timeslot.unwrap();
+                    let room_b = lessons[idx_b].room;
                     state.unassign(&mut lessons[idx_a], facts);
                     state.unassign(&mut lessons[idx_b], facts);
                     state.assign(&mut lessons[idx_a], ts_b, room_b, facts);

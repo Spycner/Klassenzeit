@@ -238,3 +238,37 @@ fn tabu_list_zero_tenure_allows_everything() {
         target_room: None,
     }));
 }
+
+#[test]
+fn tabu_enabled_does_not_regress_vs_disabled() {
+    let config_no_tabu = klassenzeit_scheduler::local_search::LahcConfig {
+        max_seconds: 5,
+        max_idle_ms: 5000,
+        seed: Some(42),
+        tabu_tenure: 0,
+        ..klassenzeit_scheduler::local_search::LahcConfig::default()
+    };
+    let config_with_tabu = klassenzeit_scheduler::local_search::LahcConfig {
+        max_seconds: 5,
+        max_idle_ms: 5000,
+        seed: Some(42),
+        tabu_tenure: 7,
+        ..klassenzeit_scheduler::local_search::LahcConfig::default()
+    };
+
+    let input = klassenzeit_scheduler::instances::small_4_classes();
+    let output_no_tabu = klassenzeit_scheduler::solve_with_config(input.clone(), config_no_tabu);
+    let input = klassenzeit_scheduler::instances::small_4_classes();
+    let output_with_tabu = klassenzeit_scheduler::solve_with_config(input, config_with_tabu);
+
+    // Both should be feasible
+    assert_eq!(output_no_tabu.score.hard_violations, 0);
+    assert_eq!(output_with_tabu.score.hard_violations, 0);
+    // Tabu should not make soft score worse
+    assert!(
+        output_with_tabu.score.soft_score >= output_no_tabu.score.soft_score,
+        "tabu regressed: {} vs {} (no tabu)",
+        output_with_tabu.score.soft_score,
+        output_no_tabu.score.soft_score,
+    );
+}
