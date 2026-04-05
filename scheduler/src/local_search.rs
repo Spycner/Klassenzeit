@@ -40,6 +40,10 @@ pub enum TabuEntry {
         idx_a: usize,
         idx_b: usize,
     },
+    Kempe {
+        seed_lesson_idx: usize,
+        target_timeslot: usize,
+    },
 }
 
 pub struct TabuList {
@@ -97,6 +101,16 @@ impl TabuList {
                 let (min2, max2) = if a2 <= b2 { (a2, b2) } else { (b2, a2) };
                 min1 == min2 && max1 == max2
             }
+            (
+                TabuEntry::Kempe {
+                    seed_lesson_idx: s1,
+                    target_timeslot: ts1,
+                },
+                TabuEntry::Kempe {
+                    seed_lesson_idx: s2,
+                    target_timeslot: ts2,
+                },
+            ) => s1 == s2 && ts1 == ts2,
             _ => false,
         }
     }
@@ -111,6 +125,12 @@ enum UndoInfo {
     Swap {
         idx_a: usize,
         idx_b: usize,
+    },
+    #[allow(dead_code)]
+    Kempe {
+        seed_lesson_idx: usize,
+        original_timeslot: usize,
+        moves: Vec<(usize, usize, Option<usize>)>, // (lesson_idx, old_timeslot, old_room)
     },
 }
 
@@ -262,6 +282,7 @@ pub fn optimize(
                 idx_a: *idx_a,
                 idx_b: *idx_b,
             },
+            UndoInfo::Kempe { .. } => unreachable!(),
         };
 
         if tabu.is_tabu(&candidate_tabu) && !is_new_best {
@@ -285,6 +306,7 @@ pub fn optimize(
                     state.assign(&mut lessons[idx_a], ts_b, room_b, facts);
                     state.assign(&mut lessons[idx_b], ts_a, room_a, facts);
                 }
+                UndoInfo::Kempe { .. } => unreachable!(),
             }
             stats.moves_rejected += 1;
             continue;
@@ -310,6 +332,7 @@ pub fn optimize(
                     idx_a: *idx_a,
                     idx_b: *idx_b,
                 },
+                UndoInfo::Kempe { .. } => unreachable!(),
             };
             tabu.push(tabu_record);
 
@@ -343,6 +366,7 @@ pub fn optimize(
                     state.assign(&mut lessons[idx_a], ts_b, room_b, facts);
                     state.assign(&mut lessons[idx_b], ts_a, room_a, facts);
                 }
+                UndoInfo::Kempe { .. } => unreachable!(),
             }
             stats.moves_rejected += 1;
         }

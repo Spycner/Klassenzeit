@@ -272,3 +272,31 @@ fn tabu_enabled_does_not_regress_vs_disabled() {
         output_no_tabu.score.soft_score,
     );
 }
+
+#[test]
+fn tabu_list_rejects_forbidden_kempe_move() {
+    let mut tabu = TabuList::new(3);
+    tabu.push(TabuEntry::Kempe {
+        seed_lesson_idx: 4,
+        target_timeslot: 2,
+    });
+    assert!(tabu.is_tabu(&TabuEntry::Kempe {
+        seed_lesson_idx: 4,
+        target_timeslot: 2,
+    }));
+    // Different seed or timeslot should not match
+    assert!(!tabu.is_tabu(&TabuEntry::Kempe {
+        seed_lesson_idx: 4,
+        target_timeslot: 3,
+    }));
+    assert!(!tabu.is_tabu(&TabuEntry::Kempe {
+        seed_lesson_idx: 5,
+        target_timeslot: 2,
+    }));
+    // Kempe should not match Change or Swap
+    assert!(!tabu.is_tabu(&TabuEntry::Change {
+        lesson_idx: 4,
+        target_timeslot: 2,
+        target_room: None,
+    }));
+}
