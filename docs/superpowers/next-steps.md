@@ -95,8 +95,8 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 | | Per-timeslot room capacity with overrides. Stress instance now feasible (Sporthalle cap 2). PR #50. | | | |
 | 1e | **Solver constraints UI** | idea | 1c | M |
 | | Frontend for configuring constraint weights, teacher preferences, room preferences. Currently no way to set soft constraints from the UI. | | | |
-| 1f | **Kempe chain moves** | ready | 1d+ | M |
-| | Confirmed: Change+Swap hit ceiling on all test instances (4-16 classes). Kempe chains swap connected components in conflict graph — reaches solution regions simple moves can't access. Next solver improvement lever. | | | |
+| 1f | ~~**Kempe chain moves**~~ | done | 1d+ | M |
+| | Resource-pair Kempe chains (BFS over teacher/class/room). 40/40/20 move split. Max chain size 20. Room capacity handling with abort. PR #53. | | | |
 
 ### Tier 2: UX polish (make the app usable for real users)
 
@@ -167,8 +167,8 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 ## Recommended next priorities
 
 **Immediate:**
-1. **1f: Kempe chain moves** — confirmed: Change+Swap hit ceiling on all instances, Kempe chains are the next solver lever
-2. **3a: Production deployment** — staging works, prod is just a release away
+1. **3a: Production deployment** — staging works, prod is just a release away
+2. **1e: Solver constraints UI** — no way to configure soft constraints from the frontend
 
 **Short-term (make the app usable for real schools):**
 4. **2a: Onboarding wizard** — biggest UX gap for new users
