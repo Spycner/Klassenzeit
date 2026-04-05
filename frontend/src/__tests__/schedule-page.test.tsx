@@ -116,7 +116,14 @@ const mockTeachers: TeacherResponse[] = [
 ];
 
 const mockRooms: RoomResponse[] = [
-  { id: "room-1", name: "101", building: null, capacity: 30, is_active: true },
+  {
+    id: "room-1",
+    name: "101",
+    building: null,
+    capacity: 30,
+    max_concurrent: 1,
+    is_active: true,
+  },
 ];
 
 const mockTimeslots: TimeSlotResponse[] = [
