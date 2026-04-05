@@ -23,7 +23,7 @@ pub struct IndexMaps {
     pub timeslot_uuids: Vec<Uuid>,
 }
 
-fn expand_stundentafeln(input: &ScheduleInput) -> Vec<LessonRequirement> {
+pub fn expand_stundentafeln(input: &ScheduleInput) -> Vec<LessonRequirement> {
     use std::collections::HashSet;
 
     let explicit: HashSet<(Uuid, Uuid)> = input

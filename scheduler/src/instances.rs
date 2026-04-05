@@ -579,7 +579,7 @@ pub fn stress_16_classes() -> ScheduleInput {
         preferred_slots: vec![],
     });
 
-    // Sport Fachlehrer 2 (22h) — teaches 3a-4d (8 classes × 3h = 24h Sport)
+    // Sport Fachlehrer 2 (28h max) — teaches 3a-4d (8 classes × 3h = 24h Sport)
     teachers.push(Teacher {
         id: uuid("teacher-sport-2"),
         name: "Sport Fachlehrer 2".into(),
@@ -601,7 +601,7 @@ pub fn stress_16_classes() -> ScheduleInput {
         preferred_slots: vec![],
     });
 
-    // Religion/Englisch Fachlehrer 1 (22h) — teaches 1a-2d (Religion) + 3a-3d (Religion + Englisch)
+    // Religion/Englisch Fachlehrer 1 (22h max) — teaches grades 1-3 Religion + grade 3 Englisch
     teachers.push(Teacher {
         id: uuid("teacher-rel-eng-1"),
         name: "Religion/Englisch Fachlehrer 1".into(),
@@ -612,7 +612,7 @@ pub fn stress_16_classes() -> ScheduleInput {
         preferred_slots: vec![],
     });
 
-    // Religion/Englisch Fachlehrer 2 (14h, part-time) — teaches 4a-4d (Religion + Englisch)
+    // Religion/Englisch Fachlehrer 2 (22h max, part-time Mon-Thu) — teaches grade 4 Religion + Englisch
     teachers.push(Teacher {
         id: uuid("teacher-rel-eng-2"),
         name: "Religion/Englisch Fachlehrer 2".into(),

@@ -20,7 +20,15 @@ pub fn solve(input: ScheduleInput) -> ScheduleOutput {
     solve_with_config(input, local_search::LahcConfig::default())
 }
 
-pub fn solve_with_config(input: ScheduleInput, config: local_search::LahcConfig) -> ScheduleOutput {
+pub fn solve_with_config(
+    mut input: ScheduleInput,
+    config: local_search::LahcConfig,
+) -> ScheduleOutput {
+    // Expand Stundentafeln into requirements before any checks
+    let expanded = mapper::expand_stundentafeln(&input);
+    input.requirements.extend(expanded);
+    input.stundentafeln.clear();
+
     if input.requirements.is_empty() {
         return ScheduleOutput::default();
     }
