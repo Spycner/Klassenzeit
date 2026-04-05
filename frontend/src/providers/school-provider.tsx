@@ -1,6 +1,11 @@
 "use client";
 
-import { createContext, useCallback, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 
 export interface SchoolContextValue {
   selectedSchoolId: string | null;
@@ -13,10 +18,28 @@ export const SchoolContext = createContext<SchoolContextValue>({
 });
 
 export function SchoolProvider({ children }: { children: React.ReactNode }) {
-  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  const storeRef = useRef<string | null>(null);
+  const listenersRef = useRef(new Set<() => void>());
+
+  const subscribe = useCallback((listener: () => void) => {
+    listenersRef.current.add(listener);
+    return () => listenersRef.current.delete(listener);
+  }, []);
+
+  const getSnapshot = useCallback(() => storeRef.current, []);
+
+  const selectedSchoolId = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getSnapshot,
+  );
 
   const selectSchool = useCallback((id: string | null) => {
-    setSelectedSchoolId(id);
+    if (storeRef.current === id) return;
+    storeRef.current = id;
+    for (const listener of listenersRef.current) {
+      listener();
+    }
   }, []);
 
   return (

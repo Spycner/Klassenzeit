@@ -1,8 +1,8 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { usePathname, useRouter } from "@/i18n/navigation";
 
 export function LanguageSwitcher() {
   const locale = useLocale();
@@ -10,15 +10,12 @@ export function LanguageSwitcher() {
   const pathname = usePathname();
 
   const switchTo = locale === "de" ? "en" : "de";
-  const segments = pathname.split("/");
-  segments[1] = switchTo;
-  const newPath = segments.join("/");
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => router.push(newPath)}
+      onClick={() => router.replace(pathname, { locale: switchTo })}
       title={switchTo === "de" ? "Deutsch" : "English"}
     >
       {switchTo.toUpperCase()}
