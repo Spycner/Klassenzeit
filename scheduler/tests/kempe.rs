@@ -216,3 +216,58 @@ fn kempe_execute_aborts_when_no_room_available() {
     assert_eq!(lessons[1].room, Some(0));
     assert_eq!(state.score(), original_score);
 }
+
+#[test]
+fn kempe_chain_is_closed_under_resources() {
+    // Verify: no lesson OUTSIDE the chain at the target timeslot shares a
+    // resource with any lesson INSIDE the chain.
+    let facts = make_facts(3, 3, 3, 0, 1);
+    let lessons = vec![
+        assigned_lesson(0, 0, 0, 0, 0), // L0: t0, c0 @ ts0
+        assigned_lesson(1, 1, 1, 0, 0), // L1: t1, c1 @ ts0
+        assigned_lesson(2, 0, 1, 0, 1), // L2: t0, c1 @ ts1 (links L0 via teacher, L1 via class)
+        assigned_lesson(3, 2, 2, 0, 1), // L3: t2, c2 @ ts1 (no shared resources with chain)
+        assigned_lesson(4, 2, 2, 0, 2), // L4: t2, c2 @ ts2 (different timeslot entirely)
+    ];
+
+    let result = build_kempe_chain(0, 1, &lessons, &facts);
+    let (from_a, from_b) = result.unwrap();
+
+    // L3 is at ts1 but should NOT be in the chain (no shared resources)
+    assert!(!from_b.contains(&3));
+    // L4 is at ts2, irrelevant
+    assert!(!from_a.contains(&4));
+    assert!(!from_b.contains(&4));
+
+    // Verify closure: for every lesson at ts1 NOT in from_b, it must not
+    // share teacher/class/room with any lesson in from_a
+    let lessons_at_ts1_outside_chain: Vec<usize> = lessons
+        .iter()
+        .enumerate()
+        .filter(|(i, l)| l.timeslot == Some(1) && !from_b.contains(i))
+        .map(|(i, _)| i)
+        .collect();
+
+    for &outside_idx in &lessons_at_ts1_outside_chain {
+        let outside = &lessons[outside_idx];
+        for &inside_idx in &from_a {
+            let inside = &lessons[inside_idx];
+            assert_ne!(
+                outside.teacher_idx, inside.teacher_idx,
+                "Closure violation: L{} (outside) shares teacher with L{} (inside)",
+                outside_idx, inside_idx
+            );
+            assert_ne!(
+                outside.class_idx, inside.class_idx,
+                "Closure violation: L{} (outside) shares class with L{} (inside)",
+                outside_idx, inside_idx
+            );
+            assert!(
+                outside.room.is_none() || outside.room != inside.room,
+                "Closure violation: L{} (outside) shares room with L{} (inside)",
+                outside_idx,
+                inside_idx
+            );
+        }
+    }
+}
