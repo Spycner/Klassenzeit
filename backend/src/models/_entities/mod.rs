@@ -3,6 +3,7 @@ pub mod curriculum_entries;
 pub mod lessons;
 pub mod prelude;
 pub mod room_subject_suitabilities;
+pub mod room_timeslot_capacities;
 pub mod rooms;
 pub mod school_classes;
 pub mod school_memberships;

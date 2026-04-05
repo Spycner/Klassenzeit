@@ -11,6 +11,7 @@ pub struct Model {
     pub building: Option<String>,
     pub capacity: Option<i32>,
     pub is_active: bool,
+    pub max_concurrent: i16,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
 }
@@ -25,6 +26,8 @@ pub enum Relation {
     School,
     #[sea_orm(has_many = "super::room_subject_suitabilities::Entity")]
     RoomSubjectSuitabilities,
+    #[sea_orm(has_many = "super::room_timeslot_capacities::Entity")]
+    RoomTimeslotCapacities,
     #[sea_orm(has_many = "super::lessons::Entity")]
     Lessons,
 }
@@ -38,6 +41,12 @@ impl Related<super::schools::Entity> for Entity {
 impl Related<super::room_subject_suitabilities::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::RoomSubjectSuitabilities.def()
+    }
+}
+
+impl Related<super::room_timeslot_capacities::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::RoomTimeslotCapacities.def()
     }
 }
 
