@@ -88,9 +88,11 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 | 1c | ~~**Local search + soft constraints**~~ | done | 1b | M |
 | | LAHC with Change + Swap moves. 4 soft constraints with incremental scoring. Criterion benchmarks. PR #44. | | | |
 | 1d | ~~**Solver validation + benchmarking**~~ | done | 1c | M |
-| | 3 Hessen Grundschule instances (4/8/16 classes), class availability constraint, Stundentafel expansion, benchmark binary + criterion. PR #TBD. | | | |
+| | 3 Hessen Grundschule instances (4/8/16 classes), class availability constraint, Stundentafel expansion, benchmark binary + criterion. PR #47. | | | |
 | 1d+ | **Solver tuning** | ready | 1d | S-M |
 | | Based on benchmark results: soft scores plateau (zero variance across seeds) → add Tabu (tenure ~7-10). Stress instance infeasible (Sporthalle bottleneck) → ruin-and-recreate or constraint relaxation. Parameter sweep for LAHC list_length. | | | |
+| 1g | **Room capacity / gym splitting** | idea | 1d | S |
+| | Allow rooms to host multiple classes simultaneously (e.g. Sporthalle with capacity 2). Model as `max_concurrent: u8` on Room — room conflict constraint counts occupants and penalizes when exceeding max_concurrent instead of when > 1. Solves the 4-Züge Sporthalle bottleneck (48 Sport lessons, 30 slots → fits with capacity 2). Also useful for shared lecture halls. | | | |
 | 1e | **Solver constraints UI** | idea | 1c | M |
 | | Frontend for configuring constraint weights, teacher preferences, room preferences. Currently no way to set soft constraints from the UI. | | | |
 | 1f | **Kempe chain moves** | idea | 1d | M |
@@ -165,9 +167,9 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 ## Recommended next priorities
 
 **Immediate:**
-1. **1d+: Solver tuning** — soft scores plateau, stress instance infeasible → Tabu + ruin-and-recreate
-2. **3a: Production deployment** — staging works, prod is just a release away
-3. **4a + 4b: Teacher availability + room suitability UI** — solver needs good input data from users
+1. **1g: Room capacity / gym splitting** — quick win, solves stress instance infeasibility without algorithmic changes
+2. **1d+: Solver tuning** — soft scores plateau (zero variance) → Tabu search to escape local optima
+3. **3a: Production deployment** — staging works, prod is just a release away
 
 **Short-term (make the app usable for real schools):**
 4. **2a: Onboarding wizard** — biggest UX gap for new users
