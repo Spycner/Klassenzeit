@@ -7,8 +7,9 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::models::_entities::{
-    curriculum_entries, room_subject_suitabilities, rooms, school_classes, subjects,
-    teacher_availabilities, teacher_subject_qualifications, teachers, time_slots,
+    curriculum_entries, room_subject_suitabilities, room_timeslot_capacities, rooms,
+    school_classes, subjects, teacher_availabilities, teacher_subject_qualifications, teachers,
+    time_slots,
 };
 
 // ---------------------------------------------------------------------------
@@ -216,7 +217,12 @@ pub async fn load_schedule_input(
 
     let room_ids: Vec<Uuid> = db_rooms.iter().map(|r| r.id).collect();
     let suitabilities = room_subject_suitabilities::Entity::find()
-        .filter(room_subject_suitabilities::Column::RoomId.is_in(room_ids))
+        .filter(room_subject_suitabilities::Column::RoomId.is_in(room_ids.clone()))
+        .all(db)
+        .await?;
+
+    let capacity_overrides = room_timeslot_capacities::Entity::find()
+        .filter(room_timeslot_capacities::Column::RoomId.is_in(room_ids))
         .all(db)
         .await?;
 
@@ -228,11 +234,35 @@ pub async fn load_schedule_input(
                 .filter(|s| s.room_id == r.id)
                 .map(|s| s.subject_id)
                 .collect();
+
+            let timeslot_capacity_overrides: std::collections::HashMap<sched::TimeSlot, u8> =
+                capacity_overrides
+                    .iter()
+                    .filter(|co| co.room_id == r.id)
+                    .filter_map(|co| {
+                        db_timeslots
+                            .iter()
+                            .find(|ts| ts.id == co.timeslot_id)
+                            .map(|ts| {
+                                (
+                                    sched::TimeSlot {
+                                        id: ts.id,
+                                        day: ts.day_of_week as u8,
+                                        period: ts.period as u8,
+                                    },
+                                    co.capacity.max(0) as u8,
+                                )
+                            })
+                    })
+                    .collect();
+
             sched::Room {
                 id: r.id,
                 name: r.name.clone(),
                 capacity: r.capacity.map(|c| c as u32),
                 suitable_subjects,
+                max_concurrent: r.max_concurrent.max(0) as u8,
+                timeslot_capacity_overrides,
             }
         })
         .collect();

@@ -166,6 +166,15 @@ pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
         rooms.push(RoomFact {
             capacity: r.capacity,
             suitable_subjects,
+            max_concurrent_at_slot: {
+                let mut caps = vec![r.max_concurrent; num_timeslots];
+                for (ts, &cap) in &r.timeslot_capacity_overrides {
+                    if let Some(&idx) = timeslot_uuid_to_idx.get(&ts.id) {
+                        caps[idx] = cap;
+                    }
+                }
+                caps
+            },
         });
     }
 

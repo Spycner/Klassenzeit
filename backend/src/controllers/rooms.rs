@@ -15,6 +15,7 @@ struct CreateRequest {
     name: String,
     building: Option<String>,
     capacity: Option<i32>,
+    max_concurrent: Option<i16>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -22,6 +23,7 @@ struct UpdateRequest {
     name: Option<String>,
     building: Option<String>,
     capacity: Option<i32>,
+    max_concurrent: Option<i16>,
 }
 
 #[derive(Debug, Serialize)]
@@ -31,6 +33,7 @@ struct RoomResponse {
     building: Option<String>,
     capacity: Option<i32>,
     is_active: bool,
+    max_concurrent: i16,
 }
 
 impl RoomResponse {
@@ -41,6 +44,7 @@ impl RoomResponse {
             building: m.building.clone(),
             capacity: m.capacity,
             is_active: m.is_active,
+            max_concurrent: m.max_concurrent,
         }
     }
 }
@@ -65,6 +69,15 @@ async fn create(
         return AuthError::Forbidden("admin role required".into()).into_response();
     }
 
+    let max_concurrent = body.max_concurrent.unwrap_or(1);
+    if max_concurrent < 0 {
+        return (
+            StatusCode::BAD_REQUEST,
+            "max_concurrent must be >= 0".to_string(),
+        )
+            .into_response();
+    }
+
     let school_id = school_ctx.school.id;
     let now = chrono::Utc::now().into();
 
@@ -75,6 +88,7 @@ async fn create(
         building: Set(body.building),
         capacity: Set(body.capacity),
         is_active: Set(true),
+        max_concurrent: Set(max_concurrent),
         created_at: Set(now),
         updated_at: Set(now),
     };
@@ -109,6 +123,16 @@ async fn update(
         return AuthError::Forbidden("admin role required".into()).into_response();
     }
 
+    if let Some(mc) = body.max_concurrent {
+        if mc < 0 {
+            return (
+                StatusCode::BAD_REQUEST,
+                "max_concurrent must be >= 0".to_string(),
+            )
+                .into_response();
+        }
+    }
+
     let school_id = school_ctx.school.id;
 
     let existing = match rooms::Entity::find_by_id(room_id)
@@ -131,6 +155,9 @@ async fn update(
     }
     if let Some(capacity) = body.capacity {
         active.capacity = Set(Some(capacity));
+    }
+    if let Some(mc) = body.max_concurrent {
+        active.max_concurrent = Set(mc);
     }
     active.updated_at = Set(chrono::Utc::now().into());
 

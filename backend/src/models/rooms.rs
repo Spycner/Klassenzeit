@@ -15,6 +15,7 @@ impl ActiveModel {
             building: sea_orm::ActiveValue::Set(None),
             capacity: sea_orm::ActiveValue::Set(None),
             is_active: sea_orm::ActiveValue::Set(true),
+            max_concurrent: sea_orm::ActiveValue::Set(1),
             created_at: sea_orm::ActiveValue::Set(now),
             updated_at: sea_orm::ActiveValue::Set(now),
         }

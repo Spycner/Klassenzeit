@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Default)]
@@ -59,6 +60,8 @@ pub struct Room {
     pub name: String,
     pub capacity: Option<u32>,
     pub suitable_subjects: Vec<Uuid>,
+    pub max_concurrent: u8,
+    pub timeslot_capacity_overrides: HashMap<TimeSlot, u8>,
 }
 
 #[derive(Debug, Clone)]

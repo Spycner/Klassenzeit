@@ -44,6 +44,7 @@ fn make_facts_with_availability(
             .map(|_| RoomFact {
                 capacity: Some(30),
                 suitable_subjects: bitvec![1; num_subjects],
+                max_concurrent_at_slot: vec![1; num_timeslots],
             })
             .collect(),
         subjects: (0..num_subjects)

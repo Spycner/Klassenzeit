@@ -5,6 +5,7 @@
 //! - `realistic_8_classes()`: 8 classes (2-Züge), 190 lessons
 //! - `stress_16_classes()`: 16 classes (4-Züge), 380 lessons
 
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::types::*;
@@ -152,6 +153,8 @@ fn make_klassenraum(name: &str) -> Room {
         name: name.into(),
         capacity: Some(30),
         suitable_subjects: vec![], // empty = any non-special subject
+        max_concurrent: 1,
+        timeslot_capacity_overrides: HashMap::new(),
     }
 }
 
@@ -161,6 +164,8 @@ fn make_sporthalle(sport_id: Uuid) -> Room {
         name: "Sporthalle".into(),
         capacity: Some(30),
         suitable_subjects: vec![sport_id],
+        max_concurrent: 1,
+        timeslot_capacity_overrides: HashMap::new(),
     }
 }
 
@@ -601,7 +606,7 @@ pub fn stress_16_classes() -> ScheduleInput {
         preferred_slots: vec![],
     });
 
-    // Religion/Englisch Fachlehrer 1 (22h max) — teaches grades 1-3 Religion + grade 3 Englisch
+    // Religion/Englisch Fachlehrer 1 (22h max) — teaches grades 1-2 Religion (8 classes × 2h = 16h)
     teachers.push(Teacher {
         id: uuid("teacher-rel-eng-1"),
         name: "Religion/Englisch Fachlehrer 1".into(),
@@ -612,10 +617,21 @@ pub fn stress_16_classes() -> ScheduleInput {
         preferred_slots: vec![],
     });
 
-    // Religion/Englisch Fachlehrer 2 (22h max, part-time Mon-Thu) — teaches grade 4 Religion + Englisch
+    // Religion/Englisch Fachlehrer 2 (22h max) — teaches grade 3 Religion + Englisch (4 classes × 4h = 16h)
     teachers.push(Teacher {
         id: uuid("teacher-rel-eng-2"),
         name: "Religion/Englisch Fachlehrer 2".into(),
+        max_hours_per_week: 22,
+        is_part_time: false,
+        available_slots: all_slots.clone(),
+        qualified_subjects: vec![ss.religion, ss.englisch],
+        preferred_slots: vec![],
+    });
+
+    // Religion/Englisch Fachlehrer 3 (22h max, part-time Mon-Thu) — teaches grade 4 Religion + Englisch (4 classes × 4h = 16h)
+    teachers.push(Teacher {
+        id: uuid("teacher-rel-eng-3"),
+        name: "Religion/Englisch Fachlehrer 3".into(),
         max_hours_per_week: 22,
         is_part_time: true,
         available_slots: {
@@ -634,13 +650,16 @@ pub fn stress_16_classes() -> ScheduleInput {
         .map(|(name, _)| make_klassenraum(&format!("Klassenraum-{name}")))
         .collect();
     rooms.push(make_sporthalle(ss.sport));
+    // Sporthalle can host 2 classes simultaneously
+    rooms.last_mut().unwrap().max_concurrent = 2;
 
-    // Requirements — split across the two sport teachers and two rel/eng teachers
+    // Requirements — split across the two sport teachers and three rel/eng teachers
     let sport_tid_1 = uuid("teacher-sport-1");
     let sport_tid_2 = uuid("teacher-sport-2");
     let musik_tid = uuid("teacher-musik");
     let rel_eng_tid_1 = uuid("teacher-rel-eng-1");
     let rel_eng_tid_2 = uuid("teacher-rel-eng-2");
+    let rel_eng_tid_3 = uuid("teacher-rel-eng-3");
 
     let mut requirements = Vec::new();
     for cls in &classes {
@@ -650,11 +669,11 @@ pub fn stress_16_classes() -> ScheduleInput {
         // Sport teacher: grades 1-2 → teacher 1, grades 3-4 → teacher 2
         let sport_tid = if grade <= 2 { sport_tid_1 } else { sport_tid_2 };
 
-        // Rel/Eng teacher: grades 1-3 → teacher 1, grade 4 → teacher 2
-        let rel_eng_tid = if grade <= 3 {
-            rel_eng_tid_1
-        } else {
-            rel_eng_tid_2
+        // Rel/Eng teacher: grades 1-2 → teacher 1, grade 3 → teacher 2, grade 4 → teacher 3
+        let rel_eng_tid = match grade {
+            1 | 2 => rel_eng_tid_1,
+            3 => rel_eng_tid_2,
+            _ => rel_eng_tid_3,
         };
 
         requirements.extend(make_requirements(
@@ -716,6 +735,17 @@ mod tests {
         assert_eq!(total, 380);
         assert_eq!(input.classes.len(), 16);
         assert_eq!(input.rooms.len(), 17);
+    }
+
+    #[test]
+    fn stress_instance_is_feasible_with_gym_cap_2() {
+        let input = stress_16_classes();
+        let output = crate::solve(input);
+        assert_eq!(
+            output.score.hard_violations, 0,
+            "stress instance with gym capacity 2 should be feasible, got {} hard violations",
+            output.score.hard_violations
+        );
     }
 
     #[test]

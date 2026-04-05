@@ -4,6 +4,7 @@ pub use sea_orm_migration::prelude::*;
 mod m20250403_000001_core_tables;
 mod m20250403_000002_domain_tables;
 mod m20250403_000003_curriculum_entries;
+pub mod m20250405_000001_room_capacity;
 
 pub struct Migrator;
 
@@ -14,6 +15,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250403_000001_core_tables::Migration),
             Box::new(m20250403_000002_domain_tables::Migration),
             Box::new(m20250403_000003_curriculum_entries::Migration),
+            Box::new(m20250405_000001_room_capacity::Migration),
             // inject-above (do not remove this comment)
         ]
     }

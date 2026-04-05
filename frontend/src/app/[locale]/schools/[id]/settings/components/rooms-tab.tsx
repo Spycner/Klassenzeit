@@ -25,7 +25,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useApiClient } from "@/hooks/use-api-client";
-import type { RoomResponse } from "@/lib/types";
+import type {
+  RoomResponse,
+  TimeSlotResponse,
+  TimeslotCapacityOverride,
+} from "@/lib/types";
+import { TimeslotCapacityGrid } from "./timeslot-capacity-grid";
 
 export function RoomsTab() {
   const params = useParams<{ id: string }>();
@@ -45,6 +50,12 @@ export function RoomsTab() {
   const [name, setName] = useState("");
   const [building, setBuilding] = useState("");
   const [capacity, setCapacity] = useState<number | "">("");
+  const [maxConcurrent, setMaxConcurrent] = useState<number>(1);
+
+  const [timeslots, setTimeslots] = useState<TimeSlotResponse[]>([]);
+  const [capacityOverrides, setCapacityOverrides] = useState<
+    TimeslotCapacityOverride[]
+  >([]);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<RoomResponse | null>(null);
@@ -63,19 +74,37 @@ export function RoomsTab() {
     fetchItems();
   }, [fetchItems]);
 
+  useEffect(() => {
+    apiClient
+      .get<TimeSlotResponse[]>(`/api/schools/${schoolId}/timeslots`)
+      .then(setTimeslots)
+      .catch(() => {});
+  }, [apiClient, schoolId]);
+
   function openAddDialog() {
     setEditingItem(null);
     setName("");
     setBuilding("");
     setCapacity("");
+    setMaxConcurrent(1);
+    setCapacityOverrides([]);
     setDialogOpen(true);
   }
 
-  function openEditDialog(item: RoomResponse) {
+  async function openEditDialog(item: RoomResponse) {
     setEditingItem(item);
     setName(item.name);
     setBuilding(item.building ?? "");
     setCapacity(item.capacity ?? "");
+    setMaxConcurrent(item.max_concurrent);
+    try {
+      const overrides = await apiClient.get<TimeslotCapacityOverride[]>(
+        `/api/schools/${schoolId}/rooms/${item.id}/timeslot-capacities`,
+      );
+      setCapacityOverrides(overrides);
+    } catch {
+      setCapacityOverrides([]);
+    }
     setDialogOpen(true);
   }
 
@@ -87,14 +116,28 @@ export function RoomsTab() {
         name: name.trim(),
         building: building.trim() || null,
         capacity: capacity === "" ? null : Number(capacity),
+        max_concurrent: maxConcurrent,
       };
       if (editingItem) {
         await apiClient.put(
           `/api/schools/${schoolId}/rooms/${editingItem.id}`,
           body,
         );
+        await apiClient.put(
+          `/api/schools/${schoolId}/rooms/${editingItem.id}/timeslot-capacities`,
+          capacityOverrides,
+        );
       } else {
-        await apiClient.post(`/api/schools/${schoolId}/rooms`, body);
+        const created = await apiClient.post<RoomResponse>(
+          `/api/schools/${schoolId}/rooms`,
+          body,
+        );
+        if (capacityOverrides.length > 0) {
+          await apiClient.put(
+            `/api/schools/${schoolId}/rooms/${created.id}/timeslot-capacities`,
+            capacityOverrides,
+          );
+        }
       }
       toast.success(t("saved"));
       setDialogOpen(false);
@@ -144,6 +187,7 @@ export function RoomsTab() {
             <TableHead>{t("name")}</TableHead>
             <TableHead>{t("building")}</TableHead>
             <TableHead>{t("capacity")}</TableHead>
+            <TableHead>{t("maxConcurrent")}</TableHead>
             <TableHead className="w-24" />
           </TableRow>
         </TableHeader>
@@ -155,6 +199,7 @@ export function RoomsTab() {
                 {item.building ?? "\u2014"}
               </TableCell>
               <TableCell>{item.capacity ?? "\u2014"}</TableCell>
+              <TableCell>{item.max_concurrent}</TableCell>
               <TableCell>
                 <div className="flex gap-1">
                   <Button
@@ -182,7 +227,7 @@ export function RoomsTab() {
           {items.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={4}
+                colSpan={5}
                 className="py-8 text-center text-muted-foreground"
               >
                 {t("empty")}
@@ -234,6 +279,26 @@ export function RoomsTab() {
                 />
               </div>
             </div>
+            <div className="grid gap-2">
+              <Label>{t("maxConcurrent")}</Label>
+              <Input
+                type="number"
+                min={0}
+                value={maxConcurrent}
+                onChange={(e) => setMaxConcurrent(Number(e.target.value) || 0)}
+                disabled={saving}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("maxConcurrentHint")}
+              </p>
+            </div>
+            <TimeslotCapacityGrid
+              timeslots={timeslots}
+              maxConcurrent={maxConcurrent}
+              overrides={capacityOverrides}
+              onChange={setCapacityOverrides}
+              disabled={saving}
+            />
           </div>
           <DialogFooter>
             <Button

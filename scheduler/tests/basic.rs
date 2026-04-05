@@ -49,6 +49,8 @@ fn room(name: &str, capacity: Option<u32>, suitable: Vec<Uuid>) -> Room {
         name: name.to_string(),
         capacity,
         suitable_subjects: suitable,
+        max_concurrent: 1,
+        timeslot_capacity_overrides: std::collections::HashMap::new(),
     }
 }
 

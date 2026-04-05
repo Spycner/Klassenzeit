@@ -80,7 +80,13 @@ export interface RoomResponse {
   name: string;
   building: string | null;
   capacity: number | null;
+  max_concurrent: number;
   is_active: boolean;
+}
+
+export interface TimeslotCapacityOverride {
+  timeslot_id: string;
+  capacity: number;
 }
 
 export interface TimeSlotResponse {
