@@ -82,6 +82,7 @@ fn single_requirement_single_slot_assigns_one_lesson() {
             hours_per_week: 1,
         }],
         stundentafeln: vec![],
+        weights: Default::default(),
     };
 
     let output = solve(input);
@@ -121,6 +122,7 @@ fn teacher_conflict_produces_violation() {
             },
         ],
         stundentafeln: vec![],
+        weights: Default::default(),
     };
 
     let output = solve(input);
@@ -160,6 +162,7 @@ fn class_conflict_avoids_double_booking() {
             },
         ],
         stundentafeln: vec![],
+        weights: Default::default(),
     };
 
     let output = solve(input);
@@ -189,6 +192,7 @@ fn teacher_availability_respected() {
             hours_per_week: 1,
         }],
         stundentafeln: vec![],
+        weights: Default::default(),
     };
 
     let output = solve(input);
@@ -217,6 +221,7 @@ fn room_assigned_for_special_subject() {
             hours_per_week: 1,
         }],
         stundentafeln: vec![],
+        weights: Default::default(),
     };
 
     let output = solve(input);
@@ -256,6 +261,7 @@ fn room_conflict_assigns_different_rooms() {
             },
         ],
         stundentafeln: vec![],
+        weights: Default::default(),
     };
 
     let output = solve(input);
@@ -285,6 +291,7 @@ fn auto_assigns_teacher_from_qualified() {
             hours_per_week: 1,
         }],
         stundentafeln: vec![],
+        weights: Default::default(),
     };
 
     let output = solve(input);
@@ -310,6 +317,7 @@ fn unplaceable_requirement_produces_violation() {
             hours_per_week: 1,
         }],
         stundentafeln: vec![],
+        weights: Default::default(),
     };
 
     let output = solve(input);
@@ -380,6 +388,7 @@ fn local_search_produces_stats() {
             },
         ],
         stundentafeln: vec![],
+        weights: Default::default(),
     };
 
     let config = LahcConfig {

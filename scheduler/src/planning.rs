@@ -73,6 +73,50 @@ impl fmt::Display for HardSoftScore {
 }
 
 // ---------------------------------------------------------------------------
+// Constraint weights
+// ---------------------------------------------------------------------------
+
+/// Per-school tunable weights for soft constraints and optional softening of
+/// business-rule hard constraints.
+///
+/// Soft weight of `0` disables the corresponding soft constraint.
+/// A `Some(p)` in a `soften_*` field converts the corresponding hard
+/// constraint into a soft penalty of `p`; `None` keeps it strict.
+/// Structural conflict constraints (teacher/class/room pairwise) are never
+/// softened.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConstraintWeights {
+    pub w_preferred_slot: i64,
+    pub w_teacher_gap: i64,
+    pub w_subject_distribution: i64,
+    pub w_class_teacher_first_period: i64,
+
+    pub soften_teacher_availability: Option<i64>,
+    pub soften_teacher_max_hours: Option<i64>,
+    pub soften_teacher_qualification: Option<i64>,
+    pub soften_room_suitability: Option<i64>,
+    pub soften_room_capacity: Option<i64>,
+    pub soften_class_availability: Option<i64>,
+}
+
+impl Default for ConstraintWeights {
+    fn default() -> Self {
+        Self {
+            w_preferred_slot: 1,
+            w_teacher_gap: 1,
+            w_subject_distribution: 2,
+            w_class_teacher_first_period: 1,
+            soften_teacher_availability: None,
+            soften_teacher_max_hours: None,
+            soften_teacher_qualification: None,
+            soften_room_suitability: None,
+            soften_room_capacity: None,
+            soften_class_availability: None,
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Problem facts (immutable during solving)
 // ---------------------------------------------------------------------------
 
@@ -83,6 +127,7 @@ pub struct ProblemFacts {
     pub teachers: Vec<TeacherFact>,
     pub classes: Vec<ClassFact>,
     pub subjects: Vec<SubjectFact>,
+    pub weights: ConstraintWeights,
 }
 
 #[derive(Debug, Clone)]

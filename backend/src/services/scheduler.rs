@@ -284,6 +284,11 @@ pub async fn load_schedule_input(
         })
         .collect();
 
+    let weights: klassenzeit_scheduler::planning::ConstraintWeights =
+        crate::services::scheduler_settings::load(db, school_id)
+            .await?
+            .into();
+
     Ok(sched::ScheduleInput {
         teachers: sched_teachers,
         classes: sched_classes,
@@ -292,6 +297,7 @@ pub async fn load_schedule_input(
         timeslots: sched_timeslots,
         requirements,
         stundentafeln: vec![],
+        weights,
     })
 }
 

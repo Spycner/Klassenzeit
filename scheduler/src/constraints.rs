@@ -4,6 +4,17 @@ use smallvec::SmallVec;
 
 use crate::planning::{HardSoftScore, PlanningLesson, ProblemFacts};
 
+/// Return a score for a hard-violation magnitude of `amount` (>= 0),
+/// routed through the optional softening penalty.
+/// `soften = None` → strict hard. `soften = Some(p)` → soft penalty `amount * p`.
+#[inline]
+fn hard_or_soften(amount: i64, soften: Option<i64>) -> HardSoftScore {
+    match soften {
+        None => HardSoftScore::hard(-amount),
+        Some(p) => HardSoftScore::soft(-amount * p),
+    }
+}
+
 /// Evaluate all hard constraints from scratch. O(n²) for conflict constraints.
 /// This is the reference implementation for correctness testing.
 pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSoftScore {
@@ -93,17 +104,17 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
 
         // 4. Teacher availability
         if !teacher.available_slots[ts] {
-            score += HardSoftScore::hard(-1);
+            score += hard_or_soften(1, facts.weights.soften_teacher_availability);
         }
 
         // 9. Class availability
         if !facts.classes[lesson.class_idx].available_slots[ts] {
-            score += HardSoftScore::hard(-1);
+            score += hard_or_soften(1, facts.weights.soften_class_availability);
         }
 
         // 6. Teacher qualification
         if !teacher.qualified_subjects[lesson.subject_idx] {
-            score += HardSoftScore::hard(-1);
+            score += hard_or_soften(1, facts.weights.soften_teacher_qualification);
         }
 
         // Count hours for over-capacity check
@@ -115,7 +126,7 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
 
             // 7. Room suitability
             if !room.suitable_subjects[lesson.subject_idx] {
-                score += HardSoftScore::hard(-1);
+                score += hard_or_soften(1, facts.weights.soften_room_suitability);
             }
 
             // 8. Room capacity
@@ -123,7 +134,7 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
                 (room.capacity, facts.classes[lesson.class_idx].student_count)
             {
                 if cap < count {
-                    score += HardSoftScore::hard(-1);
+                    score += hard_or_soften(1, facts.weights.soften_room_capacity);
                 }
             }
         }
@@ -138,7 +149,7 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
 
         // Preferred slot penalty (direct)
         if !teacher.preferred_slots[ts] {
-            score += HardSoftScore::soft(-1);
+            score += HardSoftScore::soft(-facts.weights.w_preferred_slot);
         }
 
         // Class teacher first period tracking
@@ -156,7 +167,7 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
     for (&teacher_idx, &hours) in &teacher_hours {
         let max = facts.teachers[teacher_idx].max_hours;
         if hours > max {
-            score += HardSoftScore::hard(-((hours - max) as i64));
+            score += hard_or_soften((hours - max) as i64, facts.weights.soften_teacher_max_hours);
         }
     }
 
@@ -172,7 +183,7 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
                 let lessons_count = periods.len() as i64;
                 let gaps = span - (lessons_count - 1);
                 if gaps > 0 {
-                    score += HardSoftScore::soft(-gaps);
+                    score += HardSoftScore::soft(-gaps * facts.weights.w_teacher_gap);
                 }
             }
         }
@@ -183,7 +194,9 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
         for subject_days in class_subjects {
             for &count in subject_days {
                 if count > 1 {
-                    score += HardSoftScore::soft(-((count - 1) as i64 * 2));
+                    score += HardSoftScore::soft(
+                        -((count - 1) as i64) * facts.weights.w_subject_distribution,
+                    );
                 }
             }
         }
@@ -197,7 +210,7 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
         }
         for &(ct_teaches, has_lesson) in class_days {
             if has_lesson && !ct_teaches {
-                score += HardSoftScore::soft(-1);
+                score += HardSoftScore::soft(-facts.weights.w_class_teacher_first_period);
             }
         }
     }
@@ -328,29 +341,29 @@ impl IncrementalState {
         let teacher = &facts.teachers[lesson.teacher_idx];
 
         if !teacher.available_slots[timeslot] {
-            delta += HardSoftScore::hard(-1);
+            delta += hard_or_soften(1, facts.weights.soften_teacher_availability);
         }
 
         // 9. Class availability
         if !facts.classes[lesson.class_idx].available_slots[timeslot] {
-            delta += HardSoftScore::hard(-1);
+            delta += hard_or_soften(1, facts.weights.soften_class_availability);
         }
 
         if !teacher.qualified_subjects[lesson.subject_idx] {
-            delta += HardSoftScore::hard(-1);
+            delta += hard_or_soften(1, facts.weights.soften_teacher_qualification);
         }
 
         if let Some(r) = room {
             let room_fact = &facts.rooms[r];
             if !room_fact.suitable_subjects[lesson.subject_idx] {
-                delta += HardSoftScore::hard(-1);
+                delta += hard_or_soften(1, facts.weights.soften_room_suitability);
             }
             if let (Some(cap), Some(count)) = (
                 room_fact.capacity,
                 facts.classes[lesson.class_idx].student_count,
             ) {
                 if cap < count {
-                    delta += HardSoftScore::hard(-1);
+                    delta += hard_or_soften(1, facts.weights.soften_room_capacity);
                 }
             }
         }
@@ -358,7 +371,7 @@ impl IncrementalState {
         // Teacher over-capacity
         let old_hours = self.teacher_hours[lesson.teacher_idx];
         if old_hours >= teacher.max_hours {
-            delta += HardSoftScore::hard(-1);
+            delta += hard_or_soften(1, facts.weights.soften_teacher_max_hours);
         }
 
         // ── Soft constraint deltas ──
@@ -373,17 +386,17 @@ impl IncrementalState {
         let pos = new_periods.binary_search(&period).unwrap_or_else(|p| p);
         new_periods.insert(pos, period);
         let new_gap = Self::gap_penalty(&new_periods);
-        delta += HardSoftScore::soft(new_gap - old_gap);
+        delta += HardSoftScore::soft((new_gap - old_gap) * facts.weights.w_teacher_gap);
 
         // Subject distribution delta
         let count = self.class_subject_day[lesson.class_idx][lesson.subject_idx][day];
         if count > 0 {
-            delta += HardSoftScore::soft(-2);
+            delta += HardSoftScore::soft(-facts.weights.w_subject_distribution);
         }
 
         // Preferred slots
         if !facts.teachers[lesson.teacher_idx].preferred_slots[timeslot] {
-            delta += HardSoftScore::soft(-1);
+            delta += HardSoftScore::soft(-facts.weights.w_preferred_slot);
         }
 
         // Class teacher first period
@@ -402,9 +415,9 @@ impl IncrementalState {
                 };
                 let new_violated = new_total > 0 && new_ct_count == 0;
                 if !old_violated && new_violated {
-                    delta += HardSoftScore::soft(-1);
+                    delta += HardSoftScore::soft(-facts.weights.w_class_teacher_first_period);
                 } else if old_violated && !new_violated {
-                    delta += HardSoftScore::soft(1);
+                    delta += HardSoftScore::soft(facts.weights.w_class_teacher_first_period);
                 }
             }
         }
@@ -499,29 +512,44 @@ impl IncrementalState {
         let teacher = &facts.teachers[lesson.teacher_idx];
 
         if !teacher.available_slots[timeslot] {
-            delta += HardSoftScore::hard(1);
+            delta += match facts.weights.soften_teacher_availability {
+                None => HardSoftScore::hard(1),
+                Some(p) => HardSoftScore::soft(p),
+            };
         }
 
         // 9. Class availability
         if !facts.classes[lesson.class_idx].available_slots[timeslot] {
-            delta += HardSoftScore::hard(1);
+            delta += match facts.weights.soften_class_availability {
+                None => HardSoftScore::hard(1),
+                Some(p) => HardSoftScore::soft(p),
+            };
         }
 
         if !teacher.qualified_subjects[lesson.subject_idx] {
-            delta += HardSoftScore::hard(1);
+            delta += match facts.weights.soften_teacher_qualification {
+                None => HardSoftScore::hard(1),
+                Some(p) => HardSoftScore::soft(p),
+            };
         }
 
         if let Some(r) = room {
             let room_fact = &facts.rooms[r];
             if !room_fact.suitable_subjects[lesson.subject_idx] {
-                delta += HardSoftScore::hard(1);
+                delta += match facts.weights.soften_room_suitability {
+                    None => HardSoftScore::hard(1),
+                    Some(p) => HardSoftScore::soft(p),
+                };
             }
             if let (Some(cap), Some(count)) = (
                 room_fact.capacity,
                 facts.classes[lesson.class_idx].student_count,
             ) {
                 if cap < count {
-                    delta += HardSoftScore::hard(1);
+                    delta += match facts.weights.soften_room_capacity {
+                        None => HardSoftScore::hard(1),
+                        Some(p) => HardSoftScore::soft(p),
+                    };
                 }
             }
         }
@@ -529,7 +557,10 @@ impl IncrementalState {
         // Teacher over-capacity
         let new_hours = self.teacher_hours[lesson.teacher_idx];
         if new_hours >= teacher.max_hours {
-            delta += HardSoftScore::hard(1);
+            delta += match facts.weights.soften_teacher_max_hours {
+                None => HardSoftScore::hard(1),
+                Some(p) => HardSoftScore::soft(p),
+            };
         }
 
         // ── Soft delta ──
@@ -545,17 +576,17 @@ impl IncrementalState {
             new_periods.remove(pos);
         }
         let new_gap = Self::gap_penalty(&new_periods);
-        delta += HardSoftScore::soft(new_gap - old_gap);
+        delta += HardSoftScore::soft((new_gap - old_gap) * facts.weights.w_teacher_gap);
 
         // Subject distribution
         let old_count = self.class_subject_day[lesson.class_idx][lesson.subject_idx][day];
         if old_count > 1 {
-            delta += HardSoftScore::soft(2); // removing one duplicate
+            delta += HardSoftScore::soft(facts.weights.w_subject_distribution); // removing one duplicate
         }
 
         // Preferred slots
         if !facts.teachers[lesson.teacher_idx].preferred_slots[timeslot] {
-            delta += HardSoftScore::soft(1); // removing a miss
+            delta += HardSoftScore::soft(facts.weights.w_preferred_slot); // removing a miss
         }
 
         // Class teacher first period
@@ -575,9 +606,9 @@ impl IncrementalState {
                 };
                 let new_violated = new_total > 0 && new_ct_count == 0;
                 if old_violated && !new_violated {
-                    delta += HardSoftScore::soft(1);
+                    delta += HardSoftScore::soft(facts.weights.w_class_teacher_first_period);
                 } else if !old_violated && new_violated {
-                    delta += HardSoftScore::soft(-1);
+                    delta += HardSoftScore::soft(-facts.weights.w_class_teacher_first_period);
                 }
             }
         }
@@ -656,7 +687,87 @@ mod tests {
             subjects: vec![SubjectFact {
                 needs_special_room: true,
             }],
+            weights: ConstraintWeights::default(),
         }
+    }
+
+    #[test]
+    fn zero_weight_disables_gap_penalty() {
+        // 3 lessons same teacher, different classes/subjects, periods 0,2,4 on day 0.
+        // With default weight this produces a gap penalty of -2 (span=4, count=3, gaps=2).
+        // With w_teacher_gap=0 the gap penalty must be zero.
+        // Using different classes/subjects to avoid subject_distribution and class conflicts.
+        let mut facts = make_facts_with_room_capacity(3, 5);
+        // Extend to 3 subjects so each lesson can use a distinct one.
+        facts.subjects.push(SubjectFact {
+            needs_special_room: true,
+        });
+        facts.subjects.push(SubjectFact {
+            needs_special_room: true,
+        });
+        for teacher in facts.teachers.iter_mut() {
+            teacher.qualified_subjects = bitvec![1; 3];
+        }
+        for room in facts.rooms.iter_mut() {
+            room.suitable_subjects = bitvec![1; 3];
+        }
+        facts.weights.w_teacher_gap = 0;
+        let lessons = vec![
+            PlanningLesson {
+                id: 0,
+                teacher_idx: 0,
+                class_idx: 0,
+                subject_idx: 0,
+                timeslot: Some(0),
+                room: Some(0),
+            },
+            PlanningLesson {
+                id: 1,
+                teacher_idx: 0,
+                class_idx: 1,
+                subject_idx: 1,
+                timeslot: Some(2),
+                room: Some(0),
+            },
+            PlanningLesson {
+                id: 2,
+                teacher_idx: 0,
+                class_idx: 2,
+                subject_idx: 2,
+                timeslot: Some(4),
+                room: Some(0),
+            },
+        ];
+        // First verify that default weights produce a gap penalty, then check w=0 eliminates it.
+        let default_facts = {
+            let mut f = make_facts_with_room_capacity(3, 5);
+            f.subjects.push(SubjectFact {
+                needs_special_room: true,
+            });
+            f.subjects.push(SubjectFact {
+                needs_special_room: true,
+            });
+            for teacher in f.teachers.iter_mut() {
+                teacher.qualified_subjects = bitvec![1; 3];
+            }
+            for room in f.rooms.iter_mut() {
+                room.suitable_subjects = bitvec![1; 3];
+            }
+            f
+        };
+        let default_score = full_evaluate(&lessons, &default_facts);
+        assert!(
+            default_score.soft < 0,
+            "default weights should produce a gap penalty, got {}",
+            default_score.soft
+        );
+
+        let score = full_evaluate(&lessons, &facts);
+        assert_eq!(
+            score.soft, 0,
+            "expected no soft penalty with w_teacher_gap=0, got {}",
+            score.soft
+        );
     }
 
     #[test]
@@ -738,6 +849,54 @@ mod tests {
         assert_eq!(
             score.hard, -1,
             "1 lesson in room with cap 0 should have -1 hard"
+        );
+    }
+
+    #[test]
+    fn soften_teacher_max_hours_converts_hard_to_soft() {
+        // Teacher max_hours=2, assign 3 lessons → 1 hour over.
+        let mut facts = make_facts_with_room_capacity(3, 3);
+        facts.teachers[0].max_hours = 2;
+        facts.weights.soften_teacher_max_hours = Some(100);
+        // 3 lessons of same subject/class on same day → disable subject_distribution penalty
+        facts.weights.w_subject_distribution = 0;
+
+        let lessons = vec![
+            PlanningLesson {
+                id: 0,
+                teacher_idx: 0,
+                class_idx: 0,
+                subject_idx: 0,
+                timeslot: Some(0),
+                room: Some(0),
+            },
+            PlanningLesson {
+                id: 1,
+                teacher_idx: 0,
+                class_idx: 0,
+                subject_idx: 0,
+                timeslot: Some(1),
+                room: Some(0),
+            },
+            PlanningLesson {
+                id: 2,
+                teacher_idx: 0,
+                class_idx: 0,
+                subject_idx: 0,
+                timeslot: Some(2),
+                room: Some(0),
+            },
+        ];
+        let score = full_evaluate(&lessons, &facts);
+        assert_eq!(
+            score.hard, 0,
+            "max_hours should be softened, got hard={}",
+            score.hard
+        );
+        assert_eq!(
+            score.soft, -100,
+            "expected 1 hour over * penalty 100, got {}",
+            score.soft
         );
     }
 

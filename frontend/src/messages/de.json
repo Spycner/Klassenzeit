@@ -116,7 +116,8 @@
       "subjects": "Fächer",
       "teachers": "Lehrkräfte",
       "rooms": "Räume",
-      "timeslots": "Zeitraster"
+      "timeslots": "Zeitraster",
+      "scheduler": "Planung"
     },
     "terms": {
       "addTitle": "Halbjahr hinzufügen",
@@ -227,6 +228,64 @@
         "3": "Donnerstag",
         "4": "Freitag",
         "5": "Samstag"
+      }
+    },
+    "scheduler": {
+      "tab_label": "Planung",
+      "section_soft": "Weiche Randbedingungen",
+      "section_soft_description": "Höhere Gewichte priorisieren die Randbedingung. 0 deaktiviert sie.",
+      "section_hard": "Harte Randbedingungen lockern",
+      "section_hard_description": "Verletzung mit der angegebenen Strafe erlauben, wenn keine strikte Lösung existiert.",
+      "section_actions": "Aktionen",
+      "save": "Speichern",
+      "saving": "Speichere…",
+      "reset_defaults": "Auf Standard zurücksetzen",
+      "saved_toast": "Planungseinstellungen gespeichert",
+      "error_toast": "Planungseinstellungen konnten nicht gespeichert werden",
+      "disabled_hint": "Deaktiviert",
+      "strict": "Strikt",
+      "allow_with_penalty": "Mit Strafe erlauben",
+      "constraints": {
+        "preferred_slot": {
+          "label": "Bevorzugte Stunden",
+          "description": "Unterricht in nicht bevorzugten Stunden bestrafen."
+        },
+        "teacher_gap": {
+          "label": "Lehrer-Freistunden",
+          "description": "Freistunden zwischen Unterrichtsstunden am selben Tag bestrafen."
+        },
+        "subject_distribution": {
+          "label": "Fächerverteilung",
+          "description": "Zwei Stunden desselben Fachs am selben Tag bestrafen."
+        },
+        "class_teacher_first_period": {
+          "label": "Klassenlehrer erste Stunde",
+          "description": "Klassenlehrer sollte die erste Stunde unterrichten."
+        },
+        "teacher_availability": {
+          "label": "Lehrerverfügbarkeit",
+          "description": "Lehrer hat diese Stunde blockiert."
+        },
+        "teacher_max_hours": {
+          "label": "Maximale Lehrerstunden",
+          "description": "Lehrer überschreitet sein Wochenstundenkontingent."
+        },
+        "teacher_qualification": {
+          "label": "Lehrerqualifikation",
+          "description": "Lehrer ist für das Fach nicht qualifiziert."
+        },
+        "room_suitability": {
+          "label": "Raumeignung",
+          "description": "Raum ist für das Fach nicht geeignet."
+        },
+        "room_capacity": {
+          "label": "Raumkapazität",
+          "description": "Raum ist zu klein für die Klasse."
+        },
+        "class_availability": {
+          "label": "Klassenverfügbarkeit",
+          "description": "Klasse hat diese Stunde blockiert."
+        }
       }
     },
     "actions": {

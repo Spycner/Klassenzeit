@@ -49,6 +49,7 @@ fn make_facts(
                 needs_special_room: false,
             })
             .collect(),
+        weights: ConstraintWeights::default(),
     }
 }
 
@@ -268,6 +269,7 @@ fn incremental_class_availability() {
         subjects: vec![SubjectFact {
             needs_special_room: false,
         }],
+        weights: ConstraintWeights::default(),
     };
 
     let mut lesson = PlanningLesson {

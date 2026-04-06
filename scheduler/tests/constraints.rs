@@ -43,6 +43,7 @@ fn make_facts(
                 needs_special_room: false,
             })
             .collect(),
+        weights: ConstraintWeights::default(),
     }
 }
 
@@ -384,6 +385,7 @@ fn hard_class_unavailable_slot() {
         subjects: vec![SubjectFact {
             needs_special_room: false,
         }],
+        weights: ConstraintWeights::default(),
     };
 
     let lessons = vec![PlanningLesson {

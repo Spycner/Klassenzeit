@@ -368,6 +368,7 @@ pub fn small_4_classes() -> ScheduleInput {
         timeslots,
         requirements,
         stundentafeln: vec![],
+        weights: Default::default(),
     }
 }
 
@@ -508,6 +509,7 @@ pub fn realistic_8_classes() -> ScheduleInput {
         timeslots,
         requirements,
         stundentafeln: vec![],
+        weights: Default::default(),
     }
 }
 
@@ -701,6 +703,7 @@ pub fn stress_16_classes() -> ScheduleInput {
         timeslots,
         requirements,
         stundentafeln: vec![],
+        weights: Default::default(),
     }
 }
 

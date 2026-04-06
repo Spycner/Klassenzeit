@@ -101,10 +101,19 @@
 - Room capacity handling with abort-and-restore
 - Tabu integration with seed+timeslot entry
 
+### Solver Constraints UI — PR1 (Weights + Softening)
+- Spec: `superpowers/specs/2026-04-06-solver-constraints-ui-design.md`
+- Plan: `superpowers/plans/2026-04-06-solver-constraints-ui.md`
+- `ConstraintWeights` in scheduler crate — 4 soft weights + 6 softenable hard toggles, threaded through `ScheduleInput`/`ProblemFacts`
+- Scoring property tests parameterised over random weights
+- `school_scheduler_settings` table (JSONB) + `GET`/`PUT /api/schools/{id}/scheduler-settings` (admin-gated)
+- New "Scheduler" tab in school settings UI with soft weight sliders and hard→soft toggles
+- PR2 (teacher preferred slots editor + room suitability matrix) tracked as 4a/4b
+
 ## Next Up
 
 - **3a: Production deployment** — staging works, prod is just a release away
-- **1e: Solver constraints UI** — no way to set soft constraints from frontend
+- **4a/4b: Preferred slots + room suitability editors** — PR2 of solver-constraints-ui
 - **2a: Onboarding wizard** — biggest UX gap for new users
 
 ## Notes from Reviews

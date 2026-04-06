@@ -47,6 +47,7 @@ fn make_facts(
                 needs_special_room: false,
             })
             .collect(),
+        weights: ConstraintWeights::default(),
     }
 }
 

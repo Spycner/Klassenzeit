@@ -10,6 +10,7 @@ pub struct ScheduleInput {
     pub timeslots: Vec<TimeSlot>,
     pub requirements: Vec<LessonRequirement>,
     pub stundentafeln: Vec<Stundentafel>,
+    pub weights: crate::planning::ConstraintWeights,
 }
 
 #[derive(Debug, Clone, Default)]

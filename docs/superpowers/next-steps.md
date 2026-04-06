@@ -93,8 +93,8 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 | | Added Tabu overlay to LAHC. Sweep: tenure 0-100, list_length 100-1000. Finding: plateau is Change+Swap ceiling, not cycling. Tabu retained for harder instances. | | | |
 | 1g | ~~**Room capacity / gym splitting**~~ | done | 1d | S |
 | | Per-timeslot room capacity with overrides. Stress instance now feasible (Sporthalle cap 2). PR #50. | | | |
-| 1e | **Solver constraints UI** | idea | 1c | M |
-| | Frontend for configuring constraint weights, teacher preferences, room preferences. Currently no way to set soft constraints from the UI. | | | |
+| 1e | ~~**Solver constraints UI — PR1 (weights + softening)**~~ | done | 1c | M |
+| | `ConstraintWeights` in scheduler + `school_scheduler_settings` table + admin-only GET/PUT endpoints + Scheduler settings tab with soft weights and hard→soft toggles. Teacher/room preference editors tracked separately as 4a/4b. | | | |
 | 1f | ~~**Kempe chain moves**~~ | done | 1d+ | M |
 | | Resource-pair Kempe chains (BFS over teacher/class/room). 40/40/20 move split. Max chain size 20. Room capacity handling with abort. PR #53. | | | |
 
@@ -168,7 +168,7 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 
 **Immediate:**
 1. **3a: Production deployment** — staging works, prod is just a release away
-2. **1e: Solver constraints UI** — no way to configure soft constraints from the frontend
+2. **4a/4b: Teacher preferred slots + Room suitability editors** — PR2 of the solver-constraints-ui work
 
 **Short-term (make the app usable for real schools):**
 4. **2a: Onboarding wizard** — biggest UX gap for new users

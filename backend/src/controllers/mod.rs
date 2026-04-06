@@ -5,6 +5,7 @@ pub mod members;
 pub mod room_timeslot_capacities;
 pub mod rooms;
 pub mod scheduler;
+pub mod scheduler_settings;
 pub mod school_years;
 pub mod schools;
 pub mod subjects;
