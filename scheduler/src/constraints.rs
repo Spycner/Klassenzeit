@@ -138,7 +138,7 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
 
         // Preferred slot penalty (direct)
         if !teacher.preferred_slots[ts] {
-            score += HardSoftScore::soft(-1);
+            score += HardSoftScore::soft(-facts.weights.w_preferred_slot);
         }
 
         // Class teacher first period tracking
@@ -172,7 +172,7 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
                 let lessons_count = periods.len() as i64;
                 let gaps = span - (lessons_count - 1);
                 if gaps > 0 {
-                    score += HardSoftScore::soft(-gaps);
+                    score += HardSoftScore::soft(-gaps * facts.weights.w_teacher_gap);
                 }
             }
         }
@@ -183,7 +183,9 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
         for subject_days in class_subjects {
             for &count in subject_days {
                 if count > 1 {
-                    score += HardSoftScore::soft(-((count - 1) as i64 * 2));
+                    score += HardSoftScore::soft(
+                        -((count - 1) as i64) * facts.weights.w_subject_distribution,
+                    );
                 }
             }
         }
@@ -197,7 +199,7 @@ pub fn full_evaluate(lessons: &[PlanningLesson], facts: &ProblemFacts) -> HardSo
         }
         for &(ct_teaches, has_lesson) in class_days {
             if has_lesson && !ct_teaches {
-                score += HardSoftScore::soft(-1);
+                score += HardSoftScore::soft(-facts.weights.w_class_teacher_first_period);
             }
         }
     }
@@ -373,17 +375,17 @@ impl IncrementalState {
         let pos = new_periods.binary_search(&period).unwrap_or_else(|p| p);
         new_periods.insert(pos, period);
         let new_gap = Self::gap_penalty(&new_periods);
-        delta += HardSoftScore::soft(new_gap - old_gap);
+        delta += HardSoftScore::soft((new_gap - old_gap) * facts.weights.w_teacher_gap);
 
         // Subject distribution delta
         let count = self.class_subject_day[lesson.class_idx][lesson.subject_idx][day];
         if count > 0 {
-            delta += HardSoftScore::soft(-2);
+            delta += HardSoftScore::soft(-facts.weights.w_subject_distribution);
         }
 
         // Preferred slots
         if !facts.teachers[lesson.teacher_idx].preferred_slots[timeslot] {
-            delta += HardSoftScore::soft(-1);
+            delta += HardSoftScore::soft(-facts.weights.w_preferred_slot);
         }
 
         // Class teacher first period
@@ -402,9 +404,9 @@ impl IncrementalState {
                 };
                 let new_violated = new_total > 0 && new_ct_count == 0;
                 if !old_violated && new_violated {
-                    delta += HardSoftScore::soft(-1);
+                    delta += HardSoftScore::soft(-facts.weights.w_class_teacher_first_period);
                 } else if old_violated && !new_violated {
-                    delta += HardSoftScore::soft(1);
+                    delta += HardSoftScore::soft(facts.weights.w_class_teacher_first_period);
                 }
             }
         }
@@ -545,17 +547,17 @@ impl IncrementalState {
             new_periods.remove(pos);
         }
         let new_gap = Self::gap_penalty(&new_periods);
-        delta += HardSoftScore::soft(new_gap - old_gap);
+        delta += HardSoftScore::soft((new_gap - old_gap) * facts.weights.w_teacher_gap);
 
         // Subject distribution
         let old_count = self.class_subject_day[lesson.class_idx][lesson.subject_idx][day];
         if old_count > 1 {
-            delta += HardSoftScore::soft(2); // removing one duplicate
+            delta += HardSoftScore::soft(facts.weights.w_subject_distribution); // removing one duplicate
         }
 
         // Preferred slots
         if !facts.teachers[lesson.teacher_idx].preferred_slots[timeslot] {
-            delta += HardSoftScore::soft(1); // removing a miss
+            delta += HardSoftScore::soft(facts.weights.w_preferred_slot); // removing a miss
         }
 
         // Class teacher first period
@@ -575,9 +577,9 @@ impl IncrementalState {
                 };
                 let new_violated = new_total > 0 && new_ct_count == 0;
                 if old_violated && !new_violated {
-                    delta += HardSoftScore::soft(1);
+                    delta += HardSoftScore::soft(facts.weights.w_class_teacher_first_period);
                 } else if !old_violated && new_violated {
-                    delta += HardSoftScore::soft(-1);
+                    delta += HardSoftScore::soft(-facts.weights.w_class_teacher_first_period);
                 }
             }
         }
@@ -658,6 +660,85 @@ mod tests {
             }],
             weights: ConstraintWeights::default(),
         }
+    }
+
+    #[test]
+    fn zero_weight_disables_gap_penalty() {
+        // 3 lessons same teacher, different classes/subjects, periods 0,2,4 on day 0.
+        // With default weight this produces a gap penalty of -2 (span=4, count=3, gaps=2).
+        // With w_teacher_gap=0 the gap penalty must be zero.
+        // Using different classes/subjects to avoid subject_distribution and class conflicts.
+        let mut facts = make_facts_with_room_capacity(3, 5);
+        // Extend to 3 subjects so each lesson can use a distinct one.
+        facts.subjects.push(SubjectFact {
+            needs_special_room: true,
+        });
+        facts.subjects.push(SubjectFact {
+            needs_special_room: true,
+        });
+        for teacher in facts.teachers.iter_mut() {
+            teacher.qualified_subjects = bitvec![1; 3];
+        }
+        for room in facts.rooms.iter_mut() {
+            room.suitable_subjects = bitvec![1; 3];
+        }
+        facts.weights.w_teacher_gap = 0;
+        let lessons = vec![
+            PlanningLesson {
+                id: 0,
+                teacher_idx: 0,
+                class_idx: 0,
+                subject_idx: 0,
+                timeslot: Some(0),
+                room: Some(0),
+            },
+            PlanningLesson {
+                id: 1,
+                teacher_idx: 0,
+                class_idx: 1,
+                subject_idx: 1,
+                timeslot: Some(2),
+                room: Some(0),
+            },
+            PlanningLesson {
+                id: 2,
+                teacher_idx: 0,
+                class_idx: 2,
+                subject_idx: 2,
+                timeslot: Some(4),
+                room: Some(0),
+            },
+        ];
+        // First verify that default weights produce a gap penalty, then check w=0 eliminates it.
+        let default_facts = {
+            let mut f = make_facts_with_room_capacity(3, 5);
+            f.subjects.push(SubjectFact {
+                needs_special_room: true,
+            });
+            f.subjects.push(SubjectFact {
+                needs_special_room: true,
+            });
+            for teacher in f.teachers.iter_mut() {
+                teacher.qualified_subjects = bitvec![1; 3];
+            }
+            for room in f.rooms.iter_mut() {
+                room.suitable_subjects = bitvec![1; 3];
+            }
+            f
+        };
+        let default_score = full_evaluate(&lessons, &default_facts);
+        assert!(
+            default_score.soft < 0,
+            "default weights should produce a gap penalty, got {}",
+            default_score.soft
+        );
+
+        let score = full_evaluate(&lessons, &facts);
+        assert_eq!(
+            score.soft, 0,
+            "expected no soft penalty with w_teacher_gap=0, got {}",
+            score.soft
+        );
     }
 
     #[test]
