@@ -1,11 +1,13 @@
 mod auth;
 mod classes;
 mod members;
+mod room_suitabilities;
 mod rooms;
 mod scheduler;
 mod scheduler_settings;
 mod schools;
 mod subjects;
+mod teacher_availabilities;
 mod teachers;
 mod terms;
 mod time_slots;

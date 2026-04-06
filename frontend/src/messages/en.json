@@ -184,7 +184,22 @@
       "empty": "No teachers yet.",
       "saved": "Teacher saved",
       "deleted": "Teacher deactivated",
-      "deleteConfirm": "This will deactivate the teacher \"{name}\". It can be restored later."
+      "deleteConfirm": "This will deactivate the teacher \"{name}\". It can be restored later.",
+      "availability": {
+        "button_label": "Availability",
+        "button_tooltip": "Edit preferred/blocked slots",
+        "dialog_title": "Availability for {name}",
+        "legend": {
+          "available": "Available",
+          "preferred": "Preferred",
+          "blocked": "Blocked"
+        },
+        "save": "Save",
+        "cancel": "Cancel",
+        "saved_toast": "Availability saved",
+        "error_toast": "Failed to save availability",
+        "loading": "Loading…"
+      }
     },
     "rooms": {
       "addTitle": "Add Room",
@@ -203,7 +218,18 @@
       "empty": "No rooms yet.",
       "saved": "Room saved",
       "deleted": "Room deactivated",
-      "deleteConfirm": "This will deactivate the room \"{name}\". It can be restored later."
+      "deleteConfirm": "This will deactivate the room \"{name}\". It can be restored later.",
+      "suitability": {
+        "button_label": "Subjects",
+        "button_tooltip": "Edit suitable subjects",
+        "dialog_title": "Suitable subjects for {name}",
+        "save": "Save",
+        "cancel": "Cancel",
+        "saved_toast": "Suitability saved",
+        "error_toast": "Failed to save suitability",
+        "empty_subjects_hint": "No subjects configured for this school yet.",
+        "loading": "Loading…"
+      }
     },
     "timeslots": {
       "addTitle": "Add Timeslot",

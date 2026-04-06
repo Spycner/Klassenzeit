@@ -66,7 +66,9 @@ impl Hooks for App {
             .add_route(controllers::classes::routes())
             .add_route(controllers::subjects::routes())
             .add_route(controllers::teachers::routes())
+            .add_route(controllers::teacher_availabilities::routes())
             .add_route(controllers::rooms::routes())
+            .add_route(controllers::room_suitabilities::routes())
             .add_route(controllers::room_timeslot_capacities::routes())
             .add_route(controllers::time_slots::routes())
     }

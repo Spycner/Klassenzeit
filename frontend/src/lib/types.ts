@@ -145,3 +145,20 @@ export const DEFAULT_CONSTRAINT_WEIGHTS: ConstraintWeightsDto = {
   soften_room_capacity: null,
   soften_class_availability: null,
 };
+
+export type AvailabilityType = "available" | "blocked" | "preferred";
+
+export interface TeacherAvailabilityEntry {
+  day_of_week: number;
+  period: number;
+  availability_type: AvailabilityType;
+  reason?: string | null;
+}
+
+export interface RoomSuitabilityEntry {
+  subject_id: string;
+}
+
+export interface RoomSuitabilityPutBody {
+  subject_ids: string[];
+}

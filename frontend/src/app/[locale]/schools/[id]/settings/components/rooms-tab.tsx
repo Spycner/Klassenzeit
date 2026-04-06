@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -27,9 +27,11 @@ import {
 import { useApiClient } from "@/hooks/use-api-client";
 import type {
   RoomResponse,
+  SubjectResponse,
   TimeSlotResponse,
   TimeslotCapacityOverride,
 } from "@/lib/types";
+import { RoomSuitabilityDialog } from "./room-suitability-dialog";
 import { TimeslotCapacityGrid } from "./timeslot-capacity-grid";
 
 export function RoomsTab() {
@@ -39,6 +41,7 @@ export function RoomsTab() {
   const t = useTranslations("settings.rooms");
   const tc = useTranslations("common");
   const ta = useTranslations("settings.actions");
+  const tSuitability = useTranslations("settings.rooms.suitability");
 
   const [items, setItems] = useState<RoomResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +59,12 @@ export function RoomsTab() {
   const [capacityOverrides, setCapacityOverrides] = useState<
     TimeslotCapacityOverride[]
   >([]);
+
+  // Suitability dialog state
+  const [suitabilityRoom, setSuitabilityRoom] = useState<RoomResponse | null>(
+    null,
+  );
+  const [subjects, setSubjects] = useState<SubjectResponse[]>([]);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<RoomResponse | null>(null);
@@ -78,6 +87,13 @@ export function RoomsTab() {
     apiClient
       .get<TimeSlotResponse[]>(`/api/schools/${schoolId}/timeslots`)
       .then(setTimeslots)
+      .catch(() => {});
+  }, [apiClient, schoolId]);
+
+  useEffect(() => {
+    apiClient
+      .get<SubjectResponse[]>(`/api/schools/${schoolId}/subjects`)
+      .then(setSubjects)
       .catch(() => {});
   }, [apiClient, schoolId]);
 
@@ -202,6 +218,15 @@ export function RoomsTab() {
               <TableCell>{item.max_concurrent}</TableCell>
               <TableCell>
                 <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSuitabilityRoom(item)}
+                    aria-label={tSuitability("button_label")}
+                    title={tSuitability("button_tooltip")}
+                  >
+                    <BookOpen className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -342,6 +367,15 @@ export function RoomsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RoomSuitabilityDialog
+        room={suitabilityRoom}
+        subjects={subjects}
+        open={!!suitabilityRoom}
+        onOpenChange={(o) => {
+          if (!o) setSuitabilityRoom(null);
+        }}
+      />
     </>
   );
 }

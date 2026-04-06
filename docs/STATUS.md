@@ -108,13 +108,21 @@
 - Scoring property tests parameterised over random weights
 - `school_scheduler_settings` table (JSONB) + `GET`/`PUT /api/schools/{id}/scheduler-settings` (admin-gated)
 - New "Scheduler" tab in school settings UI with soft weight sliders and hard→soft toggles
-- PR2 (teacher preferred slots editor + room suitability matrix) tracked as 4a/4b
+
+### Preference Editors — PR2 (4a + 4b)
+- Spec: `superpowers/specs/2026-04-06-preference-editors-design.md`
+- Plan: `superpowers/plans/2026-04-06-preference-editors.md`
+- `GET`/`PUT /api/schools/{id}/teachers/{tid}/availabilities` — admin-gated replace-all, validates day/period/type, tenant-scoped, optional `?term_id` query param
+- `GET`/`PUT /api/schools/{id}/rooms/{rid}/suitabilities` — admin-gated replace-all with cross-tenant subject validation
+- `TeacherAvailabilityDialog`: weekly grid with single-click cycle (available → preferred → blocked)
+- `RoomSuitabilityDialog`: subject checkbox list
+- Default-scope only; per-term overrides deferred to a future PR
 
 ## Next Up
 
 - **3a: Production deployment** — staging works, prod is just a release away
-- **4a/4b: Preferred slots + room suitability editors** — PR2 of solver-constraints-ui
 - **2a: Onboarding wizard** — biggest UX gap for new users
+- **2b: Timetable views** — per-teacher and per-room views
 
 ## Notes from Reviews
 
