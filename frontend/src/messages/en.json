@@ -318,5 +318,64 @@
       "add": "Add {entity}",
       "deleteTitle": "Confirm Delete"
     }
+  },
+  "onboarding": {
+    "wizard": {
+      "title": "Set up your school",
+      "stepCounter": "Step {current} of {total}",
+      "progressLabel": "{percent}% complete"
+    },
+    "buttons": {
+      "back": "Back",
+      "skip": "Skip",
+      "next": "Next",
+      "finish": "Finish",
+      "close": "Close"
+    },
+    "steps": {
+      "term": {
+        "title": "Create a term",
+        "description": "Most other settings need at least one term."
+      },
+      "classes": {
+        "title": "Add classes",
+        "description": "List the school classes that need a timetable."
+      },
+      "subjects": {
+        "title": "Add subjects",
+        "description": "Define the subjects taught at your school."
+      },
+      "teachers": {
+        "title": "Add teachers",
+        "description": "Add the teachers who will be assigned lessons."
+      },
+      "rooms": {
+        "title": "Add rooms",
+        "description": "Where will lessons take place?"
+      },
+      "timeslots": {
+        "title": "Configure timeslots",
+        "description": "Set up the school's weekly periods."
+      },
+      "curriculum": {
+        "title": "Set up curriculum",
+        "description": "Decide which subjects each class gets, how often, and with whom.",
+        "openHint": "The curriculum editor is on its own page.",
+        "openButton": "Open curriculum editor"
+      }
+    },
+    "exampleData": {
+      "button": "Try with example data",
+      "loading": "Loading example…",
+      "success": "Example data loaded",
+      "alreadyHasData": "School already has data — example loader skipped",
+      "genericError": "Failed to load example data"
+    },
+    "checklist": {
+      "title": "Set up your school",
+      "resume": "Resume setup",
+      "open": "Open",
+      "review": "Review"
+    }
   }
 }
