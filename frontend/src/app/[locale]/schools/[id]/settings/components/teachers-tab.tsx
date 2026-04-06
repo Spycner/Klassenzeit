@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Calendar, Pencil, Plus, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -25,7 +25,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useApiClient } from "@/hooks/use-api-client";
-import type { TeacherResponse } from "@/lib/types";
+import type { TeacherResponse, TimeSlotResponse } from "@/lib/types";
+import { TeacherAvailabilityDialog } from "./teacher-availability-dialog";
 
 export function TeachersTab() {
   const params = useParams<{ id: string }>();
@@ -34,6 +35,7 @@ export function TeachersTab() {
   const t = useTranslations("settings.teachers");
   const tc = useTranslations("common");
   const ta = useTranslations("settings.actions");
+  const tAvailability = useTranslations("settings.teachers.availability");
 
   const [items, setItems] = useState<TeacherResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +52,11 @@ export function TeachersTab() {
   const [email, setEmail] = useState("");
   const [maxHours, setMaxHours] = useState(28);
   const [isPartTime, setIsPartTime] = useState(false);
+
+  // Availability dialog state
+  const [availabilityTeacher, setAvailabilityTeacher] =
+    useState<TeacherResponse | null>(null);
+  const [timeslots, setTimeslots] = useState<TimeSlotResponse[]>([]);
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -70,6 +77,13 @@ export function TeachersTab() {
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
+
+  useEffect(() => {
+    apiClient
+      .get<TimeSlotResponse[]>(`/api/schools/${schoolId}/timeslots`)
+      .then(setTimeslots)
+      .catch(() => {});
+  }, [apiClient, schoolId]);
 
   function openAddDialog() {
     setEditingItem(null);
@@ -186,6 +200,15 @@ export function TeachersTab() {
               </TableCell>
               <TableCell>
                 <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setAvailabilityTeacher(item)}
+                    aria-label={tAvailability("button_label")}
+                    title={tAvailability("button_tooltip")}
+                  >
+                    <Calendar className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -350,6 +373,15 @@ export function TeachersTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TeacherAvailabilityDialog
+        teacher={availabilityTeacher}
+        timeslots={timeslots}
+        open={!!availabilityTeacher}
+        onOpenChange={(o) => {
+          if (!o) setAvailabilityTeacher(null);
+        }}
+      />
     </>
   );
 }
