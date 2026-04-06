@@ -7,6 +7,7 @@ import { useApiClient } from "@/hooks/use-api-client";
 import type { SchoolResponse } from "@/lib/types";
 import { ClassesTab } from "./components/classes-tab";
 import { RoomsTab } from "./components/rooms-tab";
+import { SchedulerTab } from "./components/scheduler-tab";
 import { SubjectsTab } from "./components/subjects-tab";
 import { TeachersTab } from "./components/teachers-tab";
 import { TermsTab } from "./components/terms-tab";
@@ -19,6 +20,7 @@ const TABS = [
   "teachers",
   "rooms",
   "timeslots",
+  "scheduler",
 ] as const;
 type Tab = (typeof TABS)[number];
 
@@ -102,6 +104,7 @@ export default function SettingsPage() {
         {activeTab === "teachers" && <TeachersTab />}
         {activeTab === "rooms" && <RoomsTab />}
         {activeTab === "timeslots" && <TimeslotsTab />}
+        {activeTab === "scheduler" && <SchedulerTab />}
       </div>
     </div>
   );

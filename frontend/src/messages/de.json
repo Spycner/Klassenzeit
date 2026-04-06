@@ -116,7 +116,8 @@
       "subjects": "Fächer",
       "teachers": "Lehrkräfte",
       "rooms": "Räume",
-      "timeslots": "Zeitraster"
+      "timeslots": "Zeitraster",
+      "scheduler": "Planung"
     },
     "terms": {
       "addTitle": "Halbjahr hinzufügen",
