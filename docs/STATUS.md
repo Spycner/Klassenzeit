@@ -118,11 +118,19 @@
 - `RoomSuitabilityDialog`: subject checkbox list
 - Default-scope only; per-term overrides deferred to a future PR
 
+### Onboarding Wizard (2a)
+- Spec: `superpowers/specs/2026-04-06-onboarding-wizard-design.md`
+- Plan: `superpowers/plans/2026-04-06-onboarding-wizard.md`
+- `useOnboardingProgress` hook derives 7-step status from existing entity counts (terms, classes, subjects, teachers, rooms, timeslots, curriculum); stale-response guard via request-id counter.
+- `WizardDialog` embeds existing settings tabs inside a `WizardShell` (header, progress bar, Back/Skip/Next/Finish). Curriculum step links to its own page via a CTA button instead of embedding.
+- `ChecklistCard` on the school dashboard shows remaining steps with deep-links and a "Resume setup" button; hides itself when all complete.
+- Auto-launches once on empty schools for admins; implicit "school is empty" rule — no dismissal flag needed.
+- New `POST /api/schools/{id}/load-example` endpoint (admin-gated, 409 on non-empty) populates the canonical example dataset in a single transaction via `services::example_data::load_example_school_data`.
+
 ## Next Up
 
-Tier 2 (UX polish) prioritised — make the app usable for real schools before pushing to prod.
+Tier 2 (UX polish) continues — make the app usable for real schools before pushing to prod.
 
-- **2a: Onboarding wizard** — biggest UX gap for new users (step-by-step setup: term → classes → subjects → teachers → rooms → timeslots → curriculum)
 - **2b: Timetable views** — per-teacher and per-room views (currently only per-class grid)
 - **2c: Manual timetable editing** — drag-and-drop lesson editing after generation
 - **2d: Conflict resolution UI** — show which constraints are broken, suggest fixes

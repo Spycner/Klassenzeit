@@ -57,6 +57,7 @@ impl Hooks for App {
         AppRoutes::with_default_routes()
             .add_route(controllers::auth::routes())
             .add_route(controllers::schools::routes())
+            .add_route(controllers::example_data::routes())
             .add_route(controllers::members::routes())
             .add_route(controllers::curriculum::routes())
             .add_route(controllers::scheduler::routes())

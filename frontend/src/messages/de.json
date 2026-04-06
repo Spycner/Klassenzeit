@@ -318,5 +318,64 @@
       "add": "{entity} hinzufügen",
       "deleteTitle": "Löschen bestätigen"
     }
+  },
+  "onboarding": {
+    "wizard": {
+      "title": "Schule einrichten",
+      "stepCounter": "Schritt {current} von {total}",
+      "progressLabel": "{percent}% abgeschlossen"
+    },
+    "buttons": {
+      "back": "Zurück",
+      "skip": "Überspringen",
+      "next": "Weiter",
+      "finish": "Fertig",
+      "close": "Schließen"
+    },
+    "steps": {
+      "term": {
+        "title": "Halbjahr anlegen",
+        "description": "Die meisten Einstellungen benötigen mindestens ein Halbjahr."
+      },
+      "classes": {
+        "title": "Klassen hinzufügen",
+        "description": "Liste die Klassen auf, die einen Stundenplan brauchen."
+      },
+      "subjects": {
+        "title": "Fächer hinzufügen",
+        "description": "Lege die an deiner Schule unterrichteten Fächer an."
+      },
+      "teachers": {
+        "title": "Lehrkräfte hinzufügen",
+        "description": "Füge die Lehrkräfte hinzu, denen Stunden zugewiesen werden."
+      },
+      "rooms": {
+        "title": "Räume hinzufügen",
+        "description": "Wo finden die Stunden statt?"
+      },
+      "timeslots": {
+        "title": "Stundenraster festlegen",
+        "description": "Definiere die wöchentlichen Stunden deiner Schule."
+      },
+      "curriculum": {
+        "title": "Lehrplan einrichten",
+        "description": "Bestimme, welche Fächer jede Klasse bekommt, wie oft und von wem.",
+        "openHint": "Der Lehrplaneditor liegt auf einer eigenen Seite.",
+        "openButton": "Lehrplaneditor öffnen"
+      }
+    },
+    "exampleData": {
+      "button": "Mit Beispieldaten ausprobieren",
+      "loading": "Beispiel wird geladen…",
+      "success": "Beispieldaten geladen",
+      "alreadyHasData": "Schule enthält bereits Daten — Beispielloader übersprungen",
+      "genericError": "Beispieldaten konnten nicht geladen werden"
+    },
+    "checklist": {
+      "title": "Schule einrichten",
+      "resume": "Einrichtung fortsetzen",
+      "open": "Öffnen",
+      "review": "Ansehen"
+    }
   }
 }

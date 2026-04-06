@@ -4,6 +4,8 @@ import { Pencil } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
+import { ChecklistCard } from "@/components/onboarding/checklist-card";
+import { WizardDialog } from "@/components/onboarding/wizard-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,6 +20,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useApiClient } from "@/hooks/use-api-client";
+import {
+  ONBOARDING_STEP_IDS,
+  useOnboardingProgress,
+} from "@/hooks/use-onboarding-progress";
 import type { SchoolResponse } from "@/lib/types";
 
 export default function SchoolDashboardPage() {
@@ -55,6 +61,22 @@ export default function SchoolDashboardPage() {
   useEffect(() => {
     fetchSchool();
   }, [fetchSchool]);
+
+  const progress = useOnboardingProgress(schoolId);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [autoLaunchedOnce, setAutoLaunchedOnce] = useState(false);
+
+  useEffect(() => {
+    if (
+      !progress.loading &&
+      progress.isEmpty &&
+      school?.role === "admin" &&
+      !autoLaunchedOnce
+    ) {
+      setWizardOpen(true);
+      setAutoLaunchedOnce(true);
+    }
+  }, [progress.loading, progress.isEmpty, school?.role, autoLaunchedOnce]);
 
   async function handleSaveName() {
     if (!newName.trim() || saving) return;
@@ -177,6 +199,27 @@ export default function SchoolDashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {isAdmin && !progress.loading && (
+        <ChecklistCard
+          schoolId={schoolId}
+          progress={progress}
+          onResume={() => setWizardOpen(true)}
+        />
+      )}
+      {isAdmin && (
+        <WizardDialog
+          schoolId={schoolId}
+          open={wizardOpen}
+          initialStep={
+            progress.firstIncomplete
+              ? ONBOARDING_STEP_IDS.indexOf(progress.firstIncomplete)
+              : 0
+          }
+          onClose={() => setWizardOpen(false)}
+          onProgressChange={progress.refetch}
+        />
+      )}
     </div>
   );
 }
