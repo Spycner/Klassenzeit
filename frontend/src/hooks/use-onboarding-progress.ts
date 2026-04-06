@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useApiClient } from "@/hooks/use-api-client";
 
 export const ONBOARDING_STEP_IDS = [
@@ -44,8 +44,15 @@ export function useOnboardingProgress(schoolId: string): OnboardingProgress {
   const [error, setError] = useState<string | null>(null);
   const [steps, setSteps] =
     useState<Record<OnboardingStepId, OnboardingStepState>>(EMPTY_STEPS);
+  const requestIdRef = useRef(0);
 
   const fetchAll = useCallback(async () => {
+    if (!schoolId) {
+      setLoading(false);
+      setError(null);
+      return;
+    }
+    const thisRequest = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -67,6 +74,7 @@ export function useOnboardingProgress(schoolId: string): OnboardingProgress {
         );
       }
 
+      if (requestIdRef.current !== thisRequest) return;
       setSteps({
         term: { count: terms.length, done: terms.length > 0 },
         classes: { count: classes.length, done: classes.length > 0 },
@@ -80,11 +88,14 @@ export function useOnboardingProgress(schoolId: string): OnboardingProgress {
         },
       });
     } catch (e) {
+      if (requestIdRef.current !== thisRequest) return;
       setError(
         e instanceof Error ? e.message : "Failed to load onboarding progress",
       );
     } finally {
-      setLoading(false);
+      if (requestIdRef.current === thisRequest) {
+        setLoading(false);
+      }
     }
   }, [apiClient, schoolId]);
 

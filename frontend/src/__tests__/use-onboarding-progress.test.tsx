@@ -18,6 +18,16 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 function mockResponses(map: Record<string, unknown>) {
   mockApiClient.get.mockImplementation((path: string) => {
     const key = Object.keys(map).find((k) => path === k);
@@ -97,5 +107,47 @@ describe("useOnboardingProgress", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.allComplete).toBe(true);
     expect(result.current.firstIncomplete).toBe(null);
+  });
+
+  it("ignores stale responses when schoolId changes mid-flight", async () => {
+    const slowDeferred = createDeferred<unknown[]>();
+    const fastEmpty: Record<string, unknown[]> = {
+      "/api/schools/s2/terms": [{ id: "t-new" }],
+      "/api/schools/s2/classes": [{}],
+      "/api/schools/s2/subjects": [{}],
+      "/api/schools/s2/teachers": [{}],
+      "/api/schools/s2/rooms": [{}],
+      "/api/schools/s2/time-slots": [{}],
+      "/api/schools/s2/terms/t-new/curriculum": [{}],
+    };
+    mockApiClient.get.mockImplementation((path: string) => {
+      if (path === "/api/schools/s1/terms") return slowDeferred.promise;
+      if (path in fastEmpty) return Promise.resolve(fastEmpty[path]);
+      return Promise.resolve([]);
+    });
+
+    const { result, rerender } = renderHook(
+      ({ id }: { id: string }) => useOnboardingProgress(id),
+      { initialProps: { id: "s1" } },
+    );
+
+    rerender({ id: "s2" });
+
+    slowDeferred.resolve([{ id: "t-old" }]);
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.allComplete).toBe(true);
+  });
+
+  it("does not fetch when schoolId is empty", async () => {
+    mockApiClient.get.mockImplementation(() => {
+      throw new Error("should not be called");
+    });
+
+    const { result } = renderHook(() => useOnboardingProgress(""));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(mockApiClient.get).not.toHaveBeenCalled();
+    expect(result.current.isEmpty).toBe(true);
   });
 });
