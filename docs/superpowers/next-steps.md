@@ -166,18 +166,20 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 
 ## Recommended next priorities
 
-**Immediate:**
-1. **3a: Production deployment** — staging works, prod is just a release away
-2. **2a: Onboarding wizard** — biggest UX gap for new users
+Tier 2 (UX polish) comes first — real schools need a usable app before we ship to prod. **3a: Production deployment** is intentionally moved to the bottom of this list: staging is live and the release-to-prod step is small, but there's no point deploying an app that isn't ready for real users.
 
-**Short-term (make the app usable for real schools):**
-4. **2a: Onboarding wizard** — biggest UX gap for new users
-5. **2b: Timetable views** — per-teacher and per-room views are expected by schools
+**Immediate (UX polish):**
+1. **2a: Onboarding wizard** — biggest UX gap for new users; step-by-step setup flow
+2. **2b: Timetable views** — per-teacher and per-room views (currently only per-class grid)
+3. **2d: Conflict resolution UI** — show which constraints are broken, suggest fixes
+4. **2c: Manual timetable editing** — drag-and-drop lesson editing after generation
+5. **2e: Data import/export** — CSV/Excel import for bulk data, PDF/Excel export for timetables
+6. **2f: Responsive / mobile layout** — timetable grid on small screens
 
-**Medium-term:**
-8. **2e: Data import/export** — schools won't re-type hundreds of entries
-9. **4e: Teacher/student dashboard** — makes the app useful beyond admins
-10. **3b: E2E tests** — confidence for ongoing development
+**After Tier 2 is done:**
+7. **4e: Teacher/student dashboard** — makes the app useful beyond admins
+8. **3b: E2E tests** — confidence for ongoing development
+9. **3a: Production deployment** — ship once the UX above is in place
 
 ---
 
