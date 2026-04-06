@@ -1,6 +1,7 @@
 mod auth;
 mod classes;
 mod members;
+mod room_suitabilities;
 mod rooms;
 mod scheduler;
 mod scheduler_settings;
