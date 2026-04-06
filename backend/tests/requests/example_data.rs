@@ -265,11 +265,8 @@ async fn admin_of_other_school_cannot_load() {
             )
             .await;
 
-        assert_ne!(resp.status_code(), StatusCode::NO_CONTENT);
-        assert!(
-            resp.status_code() == StatusCode::FORBIDDEN
-                || resp.status_code() == StatusCode::NOT_FOUND
-        );
+        // Membership check in SchoolContext extractor returns 403 for cross-tenant access.
+        resp.assert_status(StatusCode::FORBIDDEN);
     })
     .await;
 }
