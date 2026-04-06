@@ -115,3 +115,33 @@ export interface TermResponse {
   end_date: string;
   is_current: boolean;
 }
+
+export interface ConstraintWeightsDto {
+  w_preferred_slot: number;
+  w_teacher_gap: number;
+  w_subject_distribution: number;
+  w_class_teacher_first_period: number;
+  soften_teacher_availability: number | null;
+  soften_teacher_max_hours: number | null;
+  soften_teacher_qualification: number | null;
+  soften_room_suitability: number | null;
+  soften_room_capacity: number | null;
+  soften_class_availability: number | null;
+}
+
+export interface SchedulerSettingsResponse {
+  weights: ConstraintWeightsDto;
+}
+
+export const DEFAULT_CONSTRAINT_WEIGHTS: ConstraintWeightsDto = {
+  w_preferred_slot: 1,
+  w_teacher_gap: 1,
+  w_subject_distribution: 2,
+  w_class_teacher_first_period: 1,
+  soften_teacher_availability: null,
+  soften_teacher_max_hours: null,
+  soften_teacher_qualification: null,
+  soften_room_suitability: null,
+  soften_room_capacity: null,
+  soften_class_availability: null,
+};
