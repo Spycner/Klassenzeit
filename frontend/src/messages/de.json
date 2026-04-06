@@ -184,7 +184,22 @@
       "empty": "Noch keine Lehrkräfte.",
       "saved": "Lehrkraft gespeichert",
       "deleted": "Lehrkraft deaktiviert",
-      "deleteConfirm": "Die Lehrkraft \"{name}\" wird deaktiviert. Sie kann später wiederhergestellt werden."
+      "deleteConfirm": "Die Lehrkraft \"{name}\" wird deaktiviert. Sie kann später wiederhergestellt werden.",
+      "availability": {
+        "button_label": "Verfügbarkeit",
+        "button_tooltip": "Bevorzugte/blockierte Stunden bearbeiten",
+        "dialog_title": "Verfügbarkeit für {name}",
+        "legend": {
+          "available": "Verfügbar",
+          "preferred": "Bevorzugt",
+          "blocked": "Blockiert"
+        },
+        "save": "Speichern",
+        "cancel": "Abbrechen",
+        "saved_toast": "Verfügbarkeit gespeichert",
+        "error_toast": "Verfügbarkeit konnte nicht gespeichert werden",
+        "loading": "Lade…"
+      }
     },
     "rooms": {
       "addTitle": "Raum hinzufügen",
@@ -203,7 +218,18 @@
       "empty": "Noch keine Räume.",
       "saved": "Raum gespeichert",
       "deleted": "Raum deaktiviert",
-      "deleteConfirm": "Der Raum \"{name}\" wird deaktiviert. Er kann später wiederhergestellt werden."
+      "deleteConfirm": "Der Raum \"{name}\" wird deaktiviert. Er kann später wiederhergestellt werden.",
+      "suitability": {
+        "button_label": "Fächer",
+        "button_tooltip": "Geeignete Fächer bearbeiten",
+        "dialog_title": "Geeignete Fächer für {name}",
+        "save": "Speichern",
+        "cancel": "Abbrechen",
+        "saved_toast": "Fächerzuordnung gespeichert",
+        "error_toast": "Fächerzuordnung konnte nicht gespeichert werden",
+        "empty_subjects_hint": "Für diese Schule sind noch keine Fächer angelegt.",
+        "loading": "Lade…"
+      }
     },
     "timeslots": {
       "addTitle": "Zeitraster hinzufügen",
