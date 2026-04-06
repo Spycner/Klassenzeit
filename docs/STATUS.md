@@ -120,9 +120,15 @@
 
 ## Next Up
 
-- **3a: Production deployment** — staging works, prod is just a release away
-- **2a: Onboarding wizard** — biggest UX gap for new users
-- **2b: Timetable views** — per-teacher and per-room views
+Tier 2 (UX polish) prioritised — make the app usable for real schools before pushing to prod.
+
+- **2a: Onboarding wizard** — biggest UX gap for new users (step-by-step setup: term → classes → subjects → teachers → rooms → timeslots → curriculum)
+- **2b: Timetable views** — per-teacher and per-room views (currently only per-class grid)
+- **2c: Manual timetable editing** — drag-and-drop lesson editing after generation
+- **2d: Conflict resolution UI** — show which constraints are broken, suggest fixes
+- **2e: Data import/export** — CSV/Excel import for bulk data, PDF/Excel export for timetables
+- **2f: Responsive / mobile layout** — timetable grid on small screens
+- **3a: Production deployment** — staging works, prod is just a release away (do last; ship polished UX first)
 
 ## Notes from Reviews
 
