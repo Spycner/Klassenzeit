@@ -6,6 +6,33 @@ use proptest::prelude::*;
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
 
+fn arb_weights() -> impl Strategy<Value = ConstraintWeights> {
+    (
+        0i64..=10,
+        0i64..=10,
+        0i64..=10,
+        0i64..=10,
+        proptest::option::of(1i64..=100),
+        proptest::option::of(1i64..=100),
+        proptest::option::of(1i64..=100),
+        proptest::option::of(1i64..=100),
+        proptest::option::of(1i64..=100),
+        proptest::option::of(1i64..=100),
+    )
+        .prop_map(|(a, b, c, d, e, f, g, h, i, j)| ConstraintWeights {
+            w_preferred_slot: a,
+            w_teacher_gap: b,
+            w_subject_distribution: c,
+            w_class_teacher_first_period: d,
+            soften_teacher_availability: e,
+            soften_teacher_max_hours: f,
+            soften_teacher_qualification: g,
+            soften_room_suitability: h,
+            soften_room_capacity: i,
+            soften_class_availability: j,
+        })
+}
+
 /// Generate a random problem with constrained dimensions.
 fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
     // Small sizes to keep tests fast
@@ -138,10 +165,12 @@ proptest! {
 
     #[test]
     fn incremental_matches_full_on_random_assigns(
-        (facts, mut lessons) in arb_problem(),
+        (mut facts, mut lessons) in arb_problem(),
         slot_assignments in proptest::collection::vec(0..5usize, 1..16),
         room_choices in proptest::collection::vec(0..5usize, 1..16),
+        weights in arb_weights(),
     ) {
+        facts.weights = weights;
         let num_slots = facts.timeslots.len();
         let num_rooms = facts.rooms.len();
         let mut state = IncrementalState::new(&facts);
@@ -169,10 +198,12 @@ proptest! {
 
     #[test]
     fn incremental_matches_full_after_unassign(
-        (facts, mut lessons) in arb_problem(),
+        (mut facts, mut lessons) in arb_problem(),
         slot_assignments in proptest::collection::vec(0..5usize, 1..16),
         room_choices in proptest::collection::vec(0..5usize, 1..16),
+        weights in arb_weights(),
     ) {
+        facts.weights = weights;
         let num_slots = facts.timeslots.len();
         let num_rooms = facts.rooms.len();
         let mut state = IncrementalState::new(&facts);
@@ -204,13 +235,15 @@ proptest! {
 
     #[test]
     fn kempe_chain_score_matches_full_eval(
-        (facts, mut lessons) in arb_problem(),
+        (mut facts, mut lessons) in arb_problem(),
         slot_assignments in proptest::collection::vec(0..5usize, 1..16),
         room_choices in proptest::collection::vec(0..5usize, 1..16),
         seed_pos in 0..8usize,
         target_slot in 0..5usize,
         rng_seed in 0..1000u64,
+        weights in arb_weights(),
     ) {
+        facts.weights = weights;
         let num_slots = facts.timeslots.len();
         let num_rooms = facts.rooms.len();
         if num_slots < 2 { return Ok(()); }
@@ -268,13 +301,15 @@ proptest! {
 
     #[test]
     fn kempe_chain_undo_restores_score(
-        (facts, mut lessons) in arb_problem(),
+        (mut facts, mut lessons) in arb_problem(),
         slot_assignments in proptest::collection::vec(0..5usize, 1..16),
         room_choices in proptest::collection::vec(0..5usize, 1..16),
         seed_pos in 0..8usize,
         target_slot in 0..5usize,
         rng_seed in 0..1000u64,
+        weights in arb_weights(),
     ) {
+        facts.weights = weights;
         let num_slots = facts.timeslots.len();
         let num_rooms = facts.rooms.len();
         if num_slots < 2 { return Ok(()); }
