@@ -102,8 +102,8 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 
 | # | Item | Status | Depends on | Effort |
 |---|------|--------|------------|--------|
-| 2a | **Onboarding wizard** | idea | — | M |
-| | Step-by-step setup flow for new schools: create term → add classes → add subjects → add teachers → add rooms → configure timeslots → set curriculum. Currently users land in empty settings with no guidance. | | | |
+| 2a | ~~**Onboarding wizard**~~ | done | — | M |
+| | PR #58. Auto-launching wizard (embeds existing settings tabs) + dashboard checklist + `POST /load-example` endpoint. Existence-based progress, 7 linear steps with per-step Skip. | | | |
 | 2b | **Timetable views** | idea | — | M |
 | | Individual views: per-teacher, per-room (currently only per-class grid). Day/week toggle. Printable layout. | | | |
 | 2c | **Manual timetable editing** | idea | — | L |
@@ -169,12 +169,11 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 Tier 2 (UX polish) comes first — real schools need a usable app before we ship to prod. **3a: Production deployment** is intentionally moved to the bottom of this list: staging is live and the release-to-prod step is small, but there's no point deploying an app that isn't ready for real users.
 
 **Immediate (UX polish):**
-1. **2a: Onboarding wizard** — biggest UX gap for new users; step-by-step setup flow
-2. **2b: Timetable views** — per-teacher and per-room views (currently only per-class grid)
-3. **2d: Conflict resolution UI** — show which constraints are broken, suggest fixes
-4. **2c: Manual timetable editing** — drag-and-drop lesson editing after generation
-5. **2e: Data import/export** — CSV/Excel import for bulk data, PDF/Excel export for timetables
-6. **2f: Responsive / mobile layout** — timetable grid on small screens
+1. **2b: Timetable views** — per-teacher and per-room views (currently only per-class grid)
+2. **2d: Conflict resolution UI** — show which constraints are broken, suggest fixes
+3. **2c: Manual timetable editing** — drag-and-drop lesson editing after generation
+4. **2e: Data import/export** — CSV/Excel import for bulk data, PDF/Excel export for timetables
+5. **2f: Responsive / mobile layout** — timetable grid on small screens
 
 **After Tier 2 is done:**
 7. **4e: Teacher/student dashboard** — makes the app useful beyond admins
