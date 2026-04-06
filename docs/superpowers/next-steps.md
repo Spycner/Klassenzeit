@@ -134,10 +134,10 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 
 | # | Item | Status | Depends on | Effort |
 |---|------|--------|------------|--------|
-| 4a | **Teacher availability UI** | idea | — | M |
-| | Visual grid for teachers to mark available/blocked/preferred timeslots. Currently only settable via API/seed data. Feeds into solver constraints. | | | |
-| 4b | **Room suitability UI** | idea | — | S |
-| | Configure which subjects can use which rooms from the frontend. Currently only via seed data. | | | |
+| 4a | ~~**Teacher availability UI**~~ | done | — | M |
+| | Weekly grid dialog with single-click cycling (available → preferred → blocked). Admin-gated `GET`/`PUT /api/schools/{id}/teachers/{tid}/availabilities`. Feeds solver `teacher_availabilities` table. Per-term overrides deferred. | | | |
+| 4b | ~~**Room suitability UI**~~ | done | — | S |
+| | Subject checkbox dialog launched from rooms tab. Admin-gated `GET`/`PUT /api/schools/{id}/rooms/{rid}/suitabilities` with cross-tenant validation. Feeds solver `room_subject_suitabilities` table. | | | |
 | 4c | **School year / term management** | idea | — | S |
 | | Copy curriculum and settings from previous term. Archive old terms. Currently each term starts from scratch. | | | |
 | 4d | **Notifications** | idea | — | M |
@@ -168,7 +168,7 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 
 **Immediate:**
 1. **3a: Production deployment** — staging works, prod is just a release away
-2. **4a/4b: Teacher preferred slots + Room suitability editors** — PR2 of the solver-constraints-ui work
+2. **2a: Onboarding wizard** — biggest UX gap for new users
 
 **Short-term (make the app usable for real schools):**
 4. **2a: Onboarding wizard** — biggest UX gap for new users
