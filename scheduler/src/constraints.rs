@@ -656,6 +656,7 @@ mod tests {
             subjects: vec![SubjectFact {
                 needs_special_room: true,
             }],
+            weights: ConstraintWeights::default(),
         }
     }
 

@@ -239,6 +239,7 @@ pub fn to_planning(input: &ScheduleInput) -> (PlanningSolution, IndexMaps) {
         teachers,
         classes,
         subjects,
+        weights: input.weights.clone(),
     };
 
     let solution = PlanningSolution {
@@ -354,6 +355,7 @@ mod tests {
                 hours_per_week: 2,
             }],
             stundentafeln: vec![],
+            weights: Default::default(),
         };
         // Fix up class_id
         let mut input = input;
@@ -419,6 +421,7 @@ mod tests {
                 hours_per_week: 1,
             }],
             stundentafeln: vec![],
+            weights: Default::default(),
         };
 
         let (mut solution, maps) = to_planning(&input);
@@ -493,6 +496,7 @@ mod tests {
                     },
                 ],
             }],
+            weights: Default::default(),
         };
 
         let (solution, _maps) = to_planning(&input);
@@ -558,6 +562,7 @@ mod tests {
                     teacher_id: None,
                 }],
             }],
+            weights: Default::default(),
         };
 
         let (solution, _maps) = to_planning(&input);

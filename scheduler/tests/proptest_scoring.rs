@@ -100,6 +100,7 @@ fn arb_problem() -> impl Strategy<Value = (ProblemFacts, Vec<PlanningLesson>)> {
                                     needs_special_room: false,
                                 })
                                 .collect(),
+                            weights: ConstraintWeights::default(),
                         }
                     },
                 );

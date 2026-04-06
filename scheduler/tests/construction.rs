@@ -52,6 +52,7 @@ fn make_facts_with_availability(
                 needs_special_room: false,
             })
             .collect(),
+        weights: ConstraintWeights::default(),
     }
 }
 
@@ -195,6 +196,7 @@ fn respects_class_availability() {
         subjects: vec![SubjectFact {
             needs_special_room: false,
         }],
+        weights: ConstraintWeights::default(),
     };
 
     let mut lessons = vec![PlanningLesson {
