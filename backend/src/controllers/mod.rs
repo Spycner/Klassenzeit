@@ -9,6 +9,7 @@ pub mod scheduler_settings;
 pub mod school_years;
 pub mod schools;
 pub mod subjects;
+pub mod teacher_availabilities;
 pub mod teachers;
 pub mod terms;
 pub mod time_slots;
