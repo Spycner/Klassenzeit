@@ -3,6 +3,7 @@ mod classes;
 mod members;
 mod rooms;
 mod scheduler;
+mod scheduler_settings;
 mod schools;
 mod subjects;
 mod teachers;
