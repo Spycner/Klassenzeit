@@ -229,6 +229,64 @@
         "5": "Saturday"
       }
     },
+    "scheduler": {
+      "tab_label": "Scheduler",
+      "section_soft": "Soft constraint weights",
+      "section_soft_description": "Higher weights prioritise the constraint. Set to 0 to disable.",
+      "section_hard": "Hard constraint relaxation",
+      "section_hard_description": "Allow the solver to violate a rule with the given penalty when no strict solution exists.",
+      "section_actions": "Actions",
+      "save": "Save",
+      "saving": "Saving…",
+      "reset_defaults": "Reset to defaults",
+      "saved_toast": "Scheduler settings saved",
+      "error_toast": "Failed to save scheduler settings",
+      "disabled_hint": "Disabled",
+      "strict": "Strict",
+      "allow_with_penalty": "Allow with penalty",
+      "constraints": {
+        "preferred_slot": {
+          "label": "Preferred slot",
+          "description": "Penalise teaching in slots not marked as preferred."
+        },
+        "teacher_gap": {
+          "label": "Teacher gaps",
+          "description": "Penalise free periods between lessons on the same day."
+        },
+        "subject_distribution": {
+          "label": "Subject distribution",
+          "description": "Penalise teaching the same subject twice on one day."
+        },
+        "class_teacher_first_period": {
+          "label": "Class teacher first period",
+          "description": "Prefer the class teacher to teach the first period of each day."
+        },
+        "teacher_availability": {
+          "label": "Teacher availability",
+          "description": "Teacher blocked this slot."
+        },
+        "teacher_max_hours": {
+          "label": "Teacher max hours",
+          "description": "Teacher exceeds their weekly hour budget."
+        },
+        "teacher_qualification": {
+          "label": "Teacher qualification",
+          "description": "Teacher is not qualified for the subject."
+        },
+        "room_suitability": {
+          "label": "Room suitability",
+          "description": "Room is not suitable for the subject."
+        },
+        "room_capacity": {
+          "label": "Room capacity",
+          "description": "Room is too small for the class."
+        },
+        "class_availability": {
+          "label": "Class availability",
+          "description": "Class blocked this slot."
+        }
+      }
+    },
     "actions": {
       "add": "Add {entity}",
       "deleteTitle": "Confirm Delete"
