@@ -127,11 +127,18 @@
 - Auto-launches once on empty schools for admins; implicit "school is empty" rule — no dismissal flag needed.
 - New `POST /api/schools/{id}/load-example` endpoint (admin-gated, 409 on non-empty) populates the canonical example dataset in a single transaction via `services::example_data::load_example_school_data`.
 
+### Timetable Views (2b)
+- Spec: `superpowers/specs/2026-04-07-timetable-views-design.md`
+- Plan: `superpowers/plans/2026-04-07-timetable-views.md`
+- New `GET /api/schools/{id}/terms/{term_id}/lessons` endpoint (any school member, tenant-scoped via `school_years.school_id`).
+- Shared `<TimetableGrid>` component (`@/components/timetable/timetable-grid`) and `<ViewModeSelector>` with class/teacher/room toggle and `localStorage`-persisted last view per school.
+- New read-only `/timetable` route loads applied lessons; `/schedule` preview gains all three view modes via the same components.
+- Sidebar gains a `Timetable` entry (separate from `Schedule`).
+
 ## Next Up
 
 Tier 2 (UX polish) continues — make the app usable for real schools before pushing to prod.
 
-- **2b: Timetable views** — per-teacher and per-room views (currently only per-class grid)
 - **2c: Manual timetable editing** — drag-and-drop lesson editing after generation
 - **2d: Conflict resolution UI** — show which constraints are broken, suggest fixes
 - **2e: Data import/export** — CSV/Excel import for bulk data, PDF/Excel export for timetables
