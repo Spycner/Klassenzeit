@@ -8,6 +8,7 @@ import type {
   TeacherResponse,
   TermResponse,
   TimeSlotResponse,
+  ViolationDto,
 } from "@/lib/types";
 
 const mockApiClient = {
@@ -220,7 +221,7 @@ describe("SchedulePage", () => {
         },
       ],
       score: { hard_violations: 0, soft_score: 1.0 },
-      violations: [] as any,
+      violations: [] as ViolationDto[],
     };
 
     mockApiClient.get.mockImplementation((url: string) => {
@@ -251,5 +252,82 @@ describe("SchedulePage", () => {
     expect(screen.getByText("MA")).toBeInTheDocument();
     expect(screen.getByText("AS - 101")).toBeInTheDocument();
     expect(screen.getByText("No violations")).toBeInTheDocument();
+  });
+
+  it("clicking a teacher_conflict violation switches to teacher view and highlights cells", async () => {
+    const user = userEvent.setup();
+    const violation: ViolationDto = {
+      kind: "teacher_conflict",
+      severity: "hard",
+      message: "Teacher conflict",
+      lesson_refs: [
+        {
+          class_id: "class-1",
+          subject_id: "sub-1",
+          teacher_id: "teacher-1",
+          room_id: "room-1",
+          timeslot_id: "ts-1",
+        },
+      ],
+      resources: [{ type: "teacher", id: "teacher-1" }],
+    };
+    const solvedSolution = {
+      timetable: [
+        {
+          teacher_id: "teacher-1",
+          class_id: "class-1",
+          subject_id: "sub-1",
+          room_id: "room-1",
+          timeslot_id: "ts-1",
+        },
+      ],
+      score: { hard_violations: 1, soft_score: 0.0 },
+      violations: [violation],
+    };
+
+    mockApiClient.get.mockImplementation((url: string) => {
+      if (url.includes("/terms") && !url.includes("/scheduler"))
+        return Promise.resolve(mockTerms);
+      if (url.includes("/classes")) return Promise.resolve(mockClasses);
+      if (url.includes("/subjects")) return Promise.resolve(mockSubjects);
+      if (url.includes("/teachers")) return Promise.resolve(mockTeachers);
+      if (url.includes("/rooms")) return Promise.resolve(mockRooms);
+      if (url.includes("/timeslots")) return Promise.resolve(mockTimeslots);
+      if (url.includes("/scheduler/status"))
+        return Promise.resolve({
+          status: "solved",
+          hard_violations: 1,
+          soft_score: 0.0,
+        });
+      if (url.includes("/scheduler/solution"))
+        return Promise.resolve(solvedSolution);
+      return Promise.resolve([]);
+    });
+
+    const { container } = render(<SchedulePage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Hard violations: 1")).toBeInTheDocument();
+    });
+
+    // The violations panel renders a button per violation with the kind title.
+    // Translation mock returns the literal key path.
+    // Find buttons that contain the kind title text (the violations panel
+    // renders one button per violation row).
+    const allButtons = container.querySelectorAll("button");
+    const violationButton = Array.from(allButtons).find((b) =>
+      b.textContent?.includes(
+        "scheduler.violationsPanel.kind.teacher_conflict.title",
+      ),
+    );
+    expect(violationButton).toBeDefined();
+    if (!violationButton) throw new Error("violation button not found");
+    await user.click(violationButton);
+
+    // After clicking, a cell should have the ring-red-500 highlight class.
+    await waitFor(() => {
+      const highlighted = container.querySelector("td.ring-red-500");
+      expect(highlighted).not.toBeNull();
+    });
   });
 });
