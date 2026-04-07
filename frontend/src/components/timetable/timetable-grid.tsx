@@ -23,6 +23,8 @@ interface TimetableGridProps {
   rooms: RoomResponse[];
   classes: SchoolClassResponse[];
   locale: string;
+  highlightedCells?: Set<string>;
+  highlightTone?: "error" | "warn";
 }
 
 export function TimetableGrid({
@@ -35,6 +37,8 @@ export function TimetableGrid({
   rooms,
   classes,
   locale,
+  highlightedCells,
+  highlightTone = "error",
 }: TimetableGridProps) {
   const dayLabels = locale === "de" ? DAY_LABELS_DE : DAY_LABELS_EN;
 
@@ -121,19 +125,31 @@ export function TimetableGrid({
               {[0, 1, 2, 3, 4].map((day) => {
                 const lesson = getLessonForCell(day, period);
                 if (!lesson) {
+                  const cellKey = `${day}-${period}`;
+                  const isHighlighted = highlightedCells?.has(cellKey) ?? false;
+                  const ringClass = isHighlighted
+                    ? "ring-2 ring-red-500 ring-offset-1 animate-[pulse_600ms_ease-out_1]"
+                    : "";
                   return (
                     <td
                       key={`cell-${day}-${period}`}
-                      className="border-l p-2"
+                      className={`border-l p-2 ${ringClass}`}
                     />
                   );
                 }
+                const cellKey = `${day}-${period}`;
+                const isHighlighted = highlightedCells?.has(cellKey) ?? false;
+                const ringClass = isHighlighted
+                  ? highlightTone === "warn"
+                    ? "ring-2 ring-amber-500 ring-offset-1 animate-[pulse_600ms_ease-out_1]"
+                    : "ring-2 ring-red-500 ring-offset-1 animate-[pulse_600ms_ease-out_1]"
+                  : "";
                 const subject = subjectMap.get(lesson.subject_id);
                 const color = subject?.color ?? null;
                 return (
                   <td
                     key={`cell-${day}-${period}`}
-                    className="border-l p-2"
+                    className={`border-l p-2 ${ringClass}`}
                     style={
                       color ? { backgroundColor: `${color}20` } : undefined
                     }
