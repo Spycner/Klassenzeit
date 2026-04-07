@@ -144,11 +144,22 @@
 - "How to fix" popover deep-links into the relevant settings tab (`?tab=teachers&focus=<id>` etc.); teachers/rooms/subjects tabs scroll the focused row into view and flash it for 1.5s.
 - All 15 violation kind titles + fix hints localised in DE and EN.
 
+### Manual Timetable Editing (2c)
+- Spec: `superpowers/specs/2026-04-07-manual-timetable-editing-design.md`
+- Plan: `superpowers/plans/2026-04-07-manual-timetable-editing.md`
+- PR: #62 (merged)
+- New `evaluate_term_violations(db, school_id, term_id)` helper in `services::scheduler` rebuilds a `PlanningSolution` from the persisted DB lessons (vs. the curriculum-derived skeleton) and runs the existing `diagnose()` pass — single source of truth for both solver and manual edits.
+- Two new admin endpoints in `controllers::lessons`: `PATCH /api/schools/{id}/terms/{tid}/lessons/{lid}` (timeslot/room/teacher, room nullable via double-Option deserializer) and `POST .../lessons/swap`. Both return `{ lesson(s), violations }`.
+- Swap is a **three-step transactional update** (park A's room → move B → move A) to dodge the partial unique index `uq_lessons_room_timeslot` which is non-deferrable.
+- `GET .../lessons?include_violations=true` returns a wrapped `{ lessons, violations }` object so the page fetches both in one round trip; default behavior unchanged.
+- Frontend: `<TimetableGrid>` gains an `editable` mode wired with `@dnd-kit/core` (PointerSensor 4px activation distance to avoid kebab-vs-drag confusion). Drag = move timeslot; drop on occupied = swap; kebab opens `<LessonEditDialog>` for room/teacher reassignment.
+- New `<LessonEditDialog>` (diff-only submit) and `<UndoToolbar>`. In-memory undo stack capped at 10, cleared on term change. Undo issues inverse PATCH; swap pushes both snapshots so two undos fully revert.
+- `/timetable` page is now editable for admins (role from existing `GET /api/schools/{id}` pattern), with `<ViolationsPanel>` mounted and fed fresh violations after every edit. Edits that introduce hard violations are allowed — surfaced, not refused.
+
 ## Next Up
 
 Tier 2 (UX polish) continues — make the app usable for real schools before pushing to prod.
 
-- **2c: Manual timetable editing** — drag-and-drop lesson editing after generation
 - **2e: Data import/export** — CSV/Excel import for bulk data, PDF/Excel export for timetables
 - **2f: Responsive / mobile layout** — timetable grid on small screens
 - **3a: Production deployment** — staging works, prod is just a release away (do last; ship polished UX first)
