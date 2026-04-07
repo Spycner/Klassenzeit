@@ -7,7 +7,7 @@ use klassenzeit_backend::models::{
     teachers, terms, time_slots,
 };
 use loco_rs::testing::prelude::*;
-use sea_orm::ActiveModelTrait;
+use sea_orm::{ActiveModelTrait, EntityTrait};
 use serial_test::serial;
 
 use crate::helpers::jwt::{TestKeyPair, TEST_CLIENT_ID, TEST_ISSUER};
@@ -479,6 +479,152 @@ async fn list_lessons_with_violations_returns_wrapped_object() {
         assert!(body["lessons"].is_array());
         assert!(body["violations"].is_array());
         assert_eq!(body["lessons"].as_array().unwrap().len(), 1);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn swap_lessons_exchanges_timeslot_and_room() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        let auth_state = ctx.shared_store.get_ref::<AuthState>().unwrap();
+        auth_state.jwks.set_keys(kp.jwk_set.clone()).await;
+
+        let (school, token) = setup_admin_school(&ctx, &kp, "lesson-swap").await;
+        let term = create_term(&ctx, school.id, "2025/2026", "Term").await;
+        let l1 = create_lesson_in_term(&ctx, school.id, term.id, "sw1").await;
+        let l2 = create_lesson_in_term(&ctx, school.id, term.id, "sw2").await;
+
+        // Pre-assign distinct rooms so we can verify they swap.
+        let r1 = klassenzeit_backend::models::rooms::ActiveModel::new(school.id, "Room A".into())
+            .insert(&ctx.db)
+            .await
+            .unwrap();
+        let r2 = klassenzeit_backend::models::rooms::ActiveModel::new(school.id, "Room B".into())
+            .insert(&ctx.db)
+            .await
+            .unwrap();
+
+        // Patch each lesson to its room via SeaORM directly to keep the test focused.
+        let mut a1: lessons::ActiveModel = l1.clone().into();
+        a1.room_id = sea_orm::ActiveValue::Set(Some(r1.id));
+        a1.update(&ctx.db).await.unwrap();
+        let mut a2: lessons::ActiveModel = l2.clone().into();
+        a2.room_id = sea_orm::ActiveValue::Set(Some(r2.id));
+        a2.update(&ctx.db).await.unwrap();
+
+        let original_ts1 = l1.timeslot_id;
+        let original_ts2 = l2.timeslot_id;
+
+        let resp = server
+            .post(&format!(
+                "/api/schools/{}/terms/{}/lessons/swap",
+                school.id, term.id
+            ))
+            .add_header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .add_header(
+                HeaderName::from_static("x-school-id"),
+                school.id.to_string(),
+            )
+            .json(&serde_json::json!({
+                "lesson_a_id": l1.id,
+                "lesson_b_id": l2.id,
+            }))
+            .await;
+
+        resp.assert_status_ok();
+        let body: serde_json::Value = resp.json();
+        let arr = body["lessons"].as_array().expect("lessons array");
+        assert_eq!(arr.len(), 2);
+
+        // Reload from DB and verify the swap landed.
+        let after_l1 = lessons::Entity::find_by_id(l1.id)
+            .one(&ctx.db)
+            .await
+            .unwrap()
+            .unwrap();
+        let after_l2 = lessons::Entity::find_by_id(l2.id)
+            .one(&ctx.db)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(after_l1.timeslot_id, original_ts2);
+        assert_eq!(after_l2.timeslot_id, original_ts1);
+        assert_eq!(after_l1.room_id, Some(r2.id));
+        assert_eq!(after_l2.room_id, Some(r1.id));
+
+        assert!(body["violations"].is_array());
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn swap_lessons_rejected_for_non_admin() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        let auth_state = ctx.shared_store.get_ref::<AuthState>().unwrap();
+        auth_state.jwks.set_keys(kp.jwk_set.clone()).await;
+
+        let (school, token) =
+            setup_school_with_role(&ctx, &kp, "lesson-swap-noadm", "teacher").await;
+        let term = create_term(&ctx, school.id, "2025/2026", "Term").await;
+        let l1 = create_lesson_in_term(&ctx, school.id, term.id, "sn1").await;
+        let l2 = create_lesson_in_term(&ctx, school.id, term.id, "sn2").await;
+
+        let resp = server
+            .post(&format!(
+                "/api/schools/{}/terms/{}/lessons/swap",
+                school.id, term.id
+            ))
+            .add_header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .add_header(
+                HeaderName::from_static("x-school-id"),
+                school.id.to_string(),
+            )
+            .json(&serde_json::json!({
+                "lesson_a_id": l1.id,
+                "lesson_b_id": l2.id,
+            }))
+            .await;
+
+        resp.assert_status(StatusCode::FORBIDDEN);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn swap_lessons_rejected_when_terms_differ() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        let auth_state = ctx.shared_store.get_ref::<AuthState>().unwrap();
+        auth_state.jwks.set_keys(kp.jwk_set.clone()).await;
+
+        let (school, token) = setup_admin_school(&ctx, &kp, "lesson-swap-terms").await;
+        let term_a = create_term(&ctx, school.id, "2025/2026", "Term A").await;
+        let term_b = create_term(&ctx, school.id, "2026/2027", "Term B").await;
+        let l_a = create_lesson_in_term(&ctx, school.id, term_a.id, "st1").await;
+        let l_b = create_lesson_in_term(&ctx, school.id, term_b.id, "st2").await;
+
+        let resp = server
+            .post(&format!(
+                "/api/schools/{}/terms/{}/lessons/swap",
+                school.id, term_a.id
+            ))
+            .add_header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .add_header(
+                HeaderName::from_static("x-school-id"),
+                school.id.to_string(),
+            )
+            .json(&serde_json::json!({
+                "lesson_a_id": l_a.id,
+                "lesson_b_id": l_b.id,
+            }))
+            .await;
+
+        resp.assert_status(StatusCode::BAD_REQUEST);
     })
     .await;
 }

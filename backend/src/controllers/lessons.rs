@@ -3,7 +3,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::patch;
 use loco_rs::prelude::*;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -241,9 +241,138 @@ async fn patch_one(
     }))
 }
 
+#[derive(Debug, Deserialize)]
+struct SwapLessonsRequest {
+    lesson_a_id: Uuid,
+    lesson_b_id: Uuid,
+}
+
+#[derive(Debug, Serialize)]
+struct SwapLessonsResponse {
+    lessons: Vec<LessonResponse>,
+    violations: Vec<ViolationDto>,
+}
+
+/// POST /api/schools/{school_id}/terms/{term_id}/lessons/swap
+async fn swap(
+    State(ctx): State<AppContext>,
+    Path((_school_id, term_id)): Path<(Uuid, Uuid)>,
+    school_ctx: SchoolContext,
+    axum::Json(body): axum::Json<SwapLessonsRequest>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    require_admin_or_403(&school_ctx)?;
+    let school_id = school_ctx.school.id;
+
+    // Verify the term belongs to the caller's school.
+    match terms::Entity::find_by_id(term_id)
+        .find_also_related(school_years::Entity)
+        .one(&ctx.db)
+        .await
+    {
+        Ok(Some((_term, Some(year)))) if year.school_id == school_id => {}
+        Ok(_) => return Err((StatusCode::NOT_FOUND, "term not found".to_string())),
+        Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+    }
+
+    if body.lesson_a_id == body.lesson_b_id {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "cannot swap a lesson with itself".to_string(),
+        ));
+    }
+
+    let txn = ctx
+        .db
+        .begin()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let l_a = lessons::Entity::find_by_id(body.lesson_a_id)
+        .one(&txn)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((StatusCode::NOT_FOUND, "lesson_a not found".to_string()))?;
+    let l_b = lessons::Entity::find_by_id(body.lesson_b_id)
+        .one(&txn)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((StatusCode::NOT_FOUND, "lesson_b not found".to_string()))?;
+
+    if l_a.term_id != term_id || l_b.term_id != term_id {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "both lessons must belong to the requested term".to_string(),
+        ));
+    }
+
+    let (a_ts, a_room) = (l_a.timeslot_id, l_a.room_id);
+    let (b_ts, b_room) = (l_b.timeslot_id, l_b.room_id);
+    let now = chrono::Utc::now();
+
+    // The partial unique index `uq_lessons_room_timeslot` on
+    // (term_id, room_id, timeslot_id, week_pattern) WHERE room_id IS NOT NULL
+    // is a non-deferrable index, so a single UPDATE that swaps
+    // (timeslot_id, room_id) between two rows collides mid-statement.
+    //
+    // Workaround: park lesson A outside the partial index by nulling its
+    // room_id first, then move lesson B to A's old slot+room, then move
+    // lesson A to B's old slot+room. All three updates run inside the
+    // transaction opened above.
+    let mut a_stage: lessons::ActiveModel = l_a.into();
+    a_stage.room_id = Set(None);
+    a_stage.updated_at = Set(now.into());
+    a_stage
+        .update(&txn)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut b_active: lessons::ActiveModel = l_b.into();
+    b_active.timeslot_id = Set(a_ts);
+    b_active.room_id = Set(a_room);
+    b_active.updated_at = Set(now.into());
+    let updated_b = b_active
+        .update(&txn)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let a_reloaded = lessons::Entity::find_by_id(body.lesson_a_id)
+        .one(&txn)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "lesson_a vanished".to_string(),
+        ))?;
+    let mut a_final: lessons::ActiveModel = a_reloaded.into();
+    a_final.timeslot_id = Set(b_ts);
+    a_final.room_id = Set(b_room);
+    a_final.updated_at = Set(now.into());
+    let updated_a = a_final
+        .update(&txn)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    txn.commit()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let violations = evaluate_term_violations(&ctx.db, school_id, term_id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(axum::Json(SwapLessonsResponse {
+        lessons: vec![
+            LessonResponse::from(updated_a),
+            LessonResponse::from(updated_b),
+        ],
+        violations,
+    }))
+}
+
 pub fn routes() -> Routes {
     Routes::new()
         .prefix("api/schools/{school_id}/terms")
         .add("/{term_id}/lessons", get(list))
+        .add("/{term_id}/lessons/swap", post(swap))
         .add("/{term_id}/lessons/{lesson_id}", patch(patch_one))
 }
