@@ -39,9 +39,37 @@ pub enum SolveStatus {
 pub struct SolveResult {
     pub timetable: Vec<SolveLesson>,
     pub score: SolveScore,
-    pub violations: Vec<String>,
+    pub violations: Vec<ViolationDto>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stats: Option<SolveStatsDto>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ViolationDto {
+    pub kind: String,
+    pub severity: String,
+    pub message: String,
+    pub lesson_refs: Vec<LessonRefDto>,
+    pub resources: Vec<ResourceRefDto>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LessonRefDto {
+    pub class_id: Uuid,
+    pub subject_id: Uuid,
+    pub teacher_id: Uuid,
+    pub room_id: Option<Uuid>,
+    pub timeslot_id: Uuid,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "type", content = "id", rename_all = "snake_case")]
+pub enum ResourceRefDto {
+    Teacher(Uuid),
+    Class(Uuid),
+    Room(Uuid),
+    Subject(Uuid),
+    Timeslot(Uuid),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -319,7 +347,40 @@ pub fn to_solve_result(output: sched::ScheduleOutput) -> SolveResult {
             hard_violations: output.score.hard_violations,
             soft_score: output.score.soft_score,
         },
-        violations: output.violations.into_iter().map(|v| v.message).collect(),
+        violations: output
+            .violations
+            .into_iter()
+            .map(|v| ViolationDto {
+                kind: v.kind.as_snake_case().to_string(),
+                severity: match v.severity {
+                    sched::Severity::Hard => "hard".to_string(),
+                    sched::Severity::Soft => "soft".to_string(),
+                },
+                message: v.message,
+                lesson_refs: v
+                    .lesson_refs
+                    .into_iter()
+                    .map(|r| LessonRefDto {
+                        class_id: r.class_id,
+                        subject_id: r.subject_id,
+                        teacher_id: r.teacher_id,
+                        room_id: r.room_id,
+                        timeslot_id: r.timeslot_id,
+                    })
+                    .collect(),
+                resources: v
+                    .resources
+                    .into_iter()
+                    .map(|r| match r {
+                        sched::ResourceRef::Teacher(id) => ResourceRefDto::Teacher(id),
+                        sched::ResourceRef::Class(id) => ResourceRefDto::Class(id),
+                        sched::ResourceRef::Room(id) => ResourceRefDto::Room(id),
+                        sched::ResourceRef::Subject(id) => ResourceRefDto::Subject(id),
+                        sched::ResourceRef::Timeslot(id) => ResourceRefDto::Timeslot(id),
+                    })
+                    .collect(),
+            })
+            .collect(),
         stats: output.stats.map(|s| SolveStatsDto {
             construction_ms: s.construction_ms,
             local_search_ms: s.local_search_ms,

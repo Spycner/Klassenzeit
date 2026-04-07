@@ -136,6 +136,58 @@ async fn setup_schedule_data(
     (term.id, teacher.id, class.id, subject.id, ts.id)
 }
 
+/// Helper: like [`setup_schedule_data`] but does NOT create a teacher-subject qualification,
+/// so the resulting instance is infeasible (no qualified teacher for the required subject).
+async fn setup_unqualified_schedule_data(
+    ctx: &loco_rs::app::AppContext,
+    school_id: Uuid,
+) -> (Uuid, Uuid, Uuid, Uuid, Uuid) {
+    let school_year = school_years::ActiveModel::new(
+        school_id,
+        "2025/26".into(),
+        NaiveDate::from_ymd_opt(2025, 8, 1).unwrap(),
+        NaiveDate::from_ymd_opt(2026, 7, 31).unwrap(),
+    );
+    let school_year = school_year.insert(&ctx.db).await.unwrap();
+
+    let term = terms::ActiveModel::new(
+        school_year.id,
+        "Semester 1".into(),
+        NaiveDate::from_ymd_opt(2025, 8, 1).unwrap(),
+        NaiveDate::from_ymd_opt(2026, 1, 31).unwrap(),
+    );
+    let term = term.insert(&ctx.db).await.unwrap();
+
+    let teacher =
+        teachers::ActiveModel::new(school_id, "Anna".into(), "Schmidt".into(), "AS".into());
+    let teacher = teacher.insert(&ctx.db).await.unwrap();
+
+    let class = school_classes::ActiveModel::new(school_id, "1a".into(), 1);
+    let class = class.insert(&ctx.db).await.unwrap();
+
+    let subject = subjects::ActiveModel::new(school_id, "Math".into(), "MA".into());
+    let subject = subject.insert(&ctx.db).await.unwrap();
+
+    // NOTE: deliberately no teacher_subject_qualifications — renders the instance
+    // infeasible so the scheduler must emit a NoQualifiedTeacher violation.
+
+    let ts = time_slots::ActiveModel::new(
+        school_id,
+        1,
+        1,
+        chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
+        chrono::NaiveTime::from_hms_opt(8, 45, 0).unwrap(),
+    );
+    let ts = ts.insert(&ctx.db).await.unwrap();
+
+    // Curriculum: 1 hour of math per week for class 1a, no explicit teacher
+    let ce =
+        curriculum_entries::ActiveModel::new(school_id, term.id, class.id, subject.id, None, 1);
+    ce.insert(&ctx.db).await.unwrap();
+
+    (term.id, teacher.id, class.id, subject.id, ts.id)
+}
+
 fn scheduler_url(school_id: Uuid, term_id: Uuid, endpoint: &str) -> String {
     format!("/api/schools/{school_id}/terms/{term_id}/scheduler/{endpoint}")
 }
@@ -348,6 +400,93 @@ async fn get_solution_after_solve_returns_timetable() {
         assert_eq!(lesson["class_id"], class_id.to_string());
         assert_eq!(lesson["subject_id"], subject_id.to_string());
         assert_eq!(lesson["timeslot_id"], timeslot_id.to_string());
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn solve_returns_structured_violation_for_unqualified_teacher() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        let auth_state = ctx.shared_store.get_ref::<AuthState>().unwrap();
+        auth_state.jwks.set_keys(kp.jwk_set.clone()).await;
+
+        let (school, token) = setup_admin_school(&ctx, &kp, "sched-violation").await;
+        let (term_id, _teacher_id, _class_id, subject_id, _timeslot_id) =
+            setup_unqualified_schedule_data(&ctx, school.id).await;
+
+        // Trigger solve (synchronous in test mode)
+        let solve_url = scheduler_url(school.id, term_id, "solve");
+        server
+            .post(&solve_url)
+            .add_header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .add_header(
+                HeaderName::from_static("x-school-id"),
+                school.id.to_string(),
+            )
+            .await;
+
+        // Confirm the job reached `solved` status (not still `solving`).
+        let status_url = scheduler_url(school.id, term_id, "status");
+        let status_resp = server
+            .get(&status_url)
+            .add_header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .add_header(
+                HeaderName::from_static("x-school-id"),
+                school.id.to_string(),
+            )
+            .await;
+        status_resp.assert_status_ok();
+        let status_body: serde_json::Value = status_resp.json();
+        assert_eq!(status_body["status"], "solved");
+
+        // Fetch the solution and assert structured violation shape
+        let solution_url = scheduler_url(school.id, term_id, "solution");
+        let resp = server
+            .get(&solution_url)
+            .add_header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .add_header(
+                HeaderName::from_static("x-school-id"),
+                school.id.to_string(),
+            )
+            .await;
+        resp.assert_status_ok();
+
+        let body: serde_json::Value = resp.json();
+        let violations = body["violations"]
+            .as_array()
+            .expect("violations must be an array");
+        assert!(
+            !violations.is_empty(),
+            "expected at least one violation for infeasible instance"
+        );
+
+        let first = &violations[0];
+        assert_eq!(
+            first["kind"], "no_qualified_teacher",
+            "first violation should be no_qualified_teacher; got: {first:?}"
+        );
+        assert_eq!(first["severity"], "hard");
+        assert!(
+            first["message"].is_string(),
+            "message field should be a string"
+        );
+        assert!(
+            first["lesson_refs"].is_array(),
+            "lesson_refs should be an array"
+        );
+
+        let resources = first["resources"]
+            .as_array()
+            .expect("resources should be an array");
+        let has_subject_ref = resources.iter().any(|r| {
+            r["type"] == "subject" && r["id"] == serde_json::Value::String(subject_id.to_string())
+        });
+        assert!(
+            has_subject_ref,
+            "expected a subject resource ref referencing {subject_id}; resources={resources:?}"
+        );
     })
     .await;
 }
