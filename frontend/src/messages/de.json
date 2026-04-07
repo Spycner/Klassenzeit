@@ -190,6 +190,16 @@
       "class": "Klasse wählen",
       "teacher": "Lehrkraft wählen",
       "room": "Raum wählen"
+    },
+    "edit": {
+      "title": "Stunde bearbeiten",
+      "apply": "Übernehmen",
+      "cancel": "Abbrechen",
+      "noRoom": "— Kein Raum —",
+      "undo": "Rückgängig",
+      "moveError": "Stunde konnte nicht verschoben werden",
+      "swapError": "Stunden konnten nicht getauscht werden",
+      "patchError": "Stunde konnte nicht aktualisiert werden"
     }
   },
   "settings": {
