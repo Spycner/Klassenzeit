@@ -64,7 +64,13 @@ pub fn solve_with_config(
 
     solution.score = state.score();
 
+    let diagnosed = constraints::diagnose(&solution.lessons, &solution.facts);
+    let translated = mapper::translate_diagnosed(diagnosed, &solution, &maps, &filterable_input);
+
     let mut output = mapper::to_output(&solution, &maps, &filterable_input);
+
+    // Append diagnose() violations after the unplaced-lesson ones from to_output.
+    output.violations.extend(translated);
 
     // Merge pre-validation violations
     output.score.hard_violations += pre_violations.len() as u32;

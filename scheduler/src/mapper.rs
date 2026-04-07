@@ -317,6 +317,58 @@ pub fn to_output(
     }
 }
 
+pub fn translate_diagnosed(
+    diagnosed: Vec<DiagnosedViolation>,
+    solution: &PlanningSolution,
+    maps: &IndexMaps,
+    input: &ScheduleInput,
+) -> Vec<Violation> {
+    use smallvec::SmallVec;
+
+    diagnosed
+        .into_iter()
+        .map(|d| {
+            let lesson_refs: SmallVec<[LessonRef; 4]> = d
+                .lesson_indices
+                .iter()
+                .filter_map(|&i| {
+                    let l = solution.lessons.get(i)?;
+                    let ts_idx = l.timeslot?;
+                    Some(LessonRef {
+                        class_id: maps.class_uuids[l.class_idx],
+                        subject_id: maps.subject_uuids[l.subject_idx],
+                        teacher_id: maps.teacher_uuids[l.teacher_idx],
+                        room_id: l.room.map(|r| maps.room_uuids[r]),
+                        timeslot_id: input.timeslots[ts_idx].id,
+                    })
+                })
+                .collect();
+
+            let resources: SmallVec<[ResourceRef; 4]> = d
+                .resources
+                .iter()
+                .map(|r| match *r {
+                    DiagnosedResourceRef::Teacher(i) => ResourceRef::Teacher(maps.teacher_uuids[i]),
+                    DiagnosedResourceRef::Class(i) => ResourceRef::Class(maps.class_uuids[i]),
+                    DiagnosedResourceRef::Room(i) => ResourceRef::Room(maps.room_uuids[i]),
+                    DiagnosedResourceRef::Subject(i) => ResourceRef::Subject(maps.subject_uuids[i]),
+                    DiagnosedResourceRef::Timeslot(i) => {
+                        ResourceRef::Timeslot(input.timeslots[i].id)
+                    }
+                })
+                .collect();
+
+            Violation {
+                kind: d.kind,
+                severity: d.severity,
+                message: d.message,
+                lesson_refs,
+                resources,
+            }
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
