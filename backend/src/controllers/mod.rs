@@ -2,6 +2,7 @@ pub mod auth;
 pub mod classes;
 pub mod curriculum;
 pub mod example_data;
+pub mod lessons;
 pub mod members;
 pub mod room_suitabilities;
 pub mod room_timeslot_capacities;
