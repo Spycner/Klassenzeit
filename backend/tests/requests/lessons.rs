@@ -309,3 +309,39 @@ async fn list_lessons_allows_non_admin_member() {
     })
     .await;
 }
+
+#[tokio::test]
+#[serial]
+async fn list_lessons_with_violations_returns_wrapped_object() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        let auth_state = ctx.shared_store.get_ref::<AuthState>().unwrap();
+        auth_state.jwks.set_keys(kp.jwk_set.clone()).await;
+
+        let (school, token) = setup_admin_school(&ctx, &kp, "lessons-violations").await;
+        let term = create_term(&ctx, school.id, "2025/2026", "Fall").await;
+        let _lesson = create_lesson_in_term(&ctx, school.id, term.id, "lv1").await;
+
+        let resp = server
+            .get(&format!(
+                "/api/schools/{}/terms/{}/lessons?include_violations=true",
+                school.id, term.id
+            ))
+            .add_header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .add_header(
+                HeaderName::from_static("x-school-id"),
+                school.id.to_string(),
+            )
+            .await;
+
+        resp.assert_status_ok();
+        let body: serde_json::Value = resp.json();
+        assert!(body.is_object(), "expected object, got: {body}");
+        assert!(body.get("lessons").is_some(), "missing lessons key");
+        assert!(body.get("violations").is_some(), "missing violations key");
+        assert!(body["lessons"].is_array());
+        assert!(body["violations"].is_array());
+        assert_eq!(body["lessons"].as_array().unwrap().len(), 1);
+    })
+    .await;
+}

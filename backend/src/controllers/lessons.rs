@@ -1,13 +1,26 @@
-use axum::extract::Path;
+use axum::extract::{Path, Query};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use loco_rs::prelude::*;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::keycloak::extractors::SchoolContext;
 use crate::models::_entities::{lessons, school_years, terms};
+use crate::services::scheduler::{evaluate_term_violations, ViolationDto};
+
+#[derive(Debug, Deserialize, Default)]
+struct ListQuery {
+    #[serde(default)]
+    include_violations: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct LessonsWithViolations {
+    lessons: Vec<LessonResponse>,
+    violations: Vec<ViolationDto>,
+}
 
 #[derive(Debug, Serialize)]
 struct LessonResponse {
@@ -36,10 +49,11 @@ impl From<lessons::Model> for LessonResponse {
     }
 }
 
-/// GET /api/schools/{school_id}/terms/{term_id}/lessons
+/// GET /api/schools/{school_id}/terms/{term_id}/lessons[?include_violations=true]
 async fn list(
     State(ctx): State<AppContext>,
     Path((_school_id, term_id)): Path<(Uuid, Uuid)>,
+    Query(query): Query<ListQuery>,
     school_ctx: SchoolContext,
 ) -> impl IntoResponse {
     let school_id = school_ctx.school.id;
@@ -57,16 +71,29 @@ async fn list(
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }
 
-    match lessons::Entity::find()
+    let items = match lessons::Entity::find()
         .filter(lessons::Column::TermId.eq(term_id))
         .all(&ctx.db)
         .await
     {
-        Ok(items) => {
-            let resp: Vec<LessonResponse> = items.into_iter().map(LessonResponse::from).collect();
-            axum::Json(resp).into_response()
-        }
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+        Ok(items) => items,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    };
+    let lesson_responses: Vec<LessonResponse> =
+        items.into_iter().map(LessonResponse::from).collect();
+
+    if query.include_violations {
+        let violations = match evaluate_term_violations(&ctx.db, school_id, term_id).await {
+            Ok(v) => v,
+            Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+        };
+        axum::Json(LessonsWithViolations {
+            lessons: lesson_responses,
+            violations,
+        })
+        .into_response()
+    } else {
+        axum::Json(lesson_responses).into_response()
     }
 }
 
