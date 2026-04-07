@@ -319,11 +319,7 @@ pub fn to_solve_result(output: sched::ScheduleOutput) -> SolveResult {
             hard_violations: output.score.hard_violations,
             soft_score: output.score.soft_score,
         },
-        violations: output
-            .violations
-            .into_iter()
-            .map(|v| v.description)
-            .collect(),
+        violations: output.violations.into_iter().map(|v| v.message).collect(),
         stats: output.stats.map(|s| SolveStatsDto {
             construction_ms: s.construction_ms,
             local_search_ms: s.local_search_ms,

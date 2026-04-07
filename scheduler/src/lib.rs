@@ -75,6 +75,9 @@ pub fn solve_with_config(
 
 /// Filter out requirements that can never be satisfied (e.g. no qualified teacher).
 fn pre_validate(input: &ScheduleInput, violations: &mut Vec<types::Violation>) -> ScheduleInput {
+    use smallvec::smallvec;
+    use types::{ResourceRef, Severity, Violation, ViolationKind};
+
     let mut valid_requirements = Vec::new();
 
     for req in &input.requirements {
@@ -91,11 +94,18 @@ fn pre_validate(input: &ScheduleInput, violations: &mut Vec<types::Violation>) -
             valid_requirements.push(req.clone());
         } else {
             for _ in 0..req.hours_per_week {
-                violations.push(types::Violation {
-                    description: format!(
+                violations.push(Violation {
+                    kind: ViolationKind::NoQualifiedTeacher,
+                    severity: Severity::Hard,
+                    message: format!(
                         "No qualified teacher for subject {} in class {}",
                         req.subject_id, req.class_id
                     ),
+                    lesson_refs: smallvec![],
+                    resources: smallvec![
+                        ResourceRef::Class(req.class_id),
+                        ResourceRef::Subject(req.subject_id),
+                    ],
                 });
             }
         }

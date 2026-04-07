@@ -270,7 +270,7 @@ pub fn to_output(
     input: &ScheduleInput,
 ) -> ScheduleOutput {
     let mut timetable = Vec::new();
-    let mut violations = Vec::new();
+    let mut violations: Vec<Violation> = Vec::new();
 
     for lesson in &solution.lessons {
         if let Some(ts_idx) = lesson.timeslot {
@@ -282,11 +282,22 @@ pub fn to_output(
                 timeslot: input.timeslots[ts_idx].clone(),
             });
         } else {
+            let class_id = maps.class_uuids[lesson.class_idx];
+            let subject_id = maps.subject_uuids[lesson.subject_idx];
+            let teacher_id = maps.teacher_uuids[lesson.teacher_idx];
             violations.push(Violation {
-                description: format!(
+                kind: ViolationKind::UnplacedLesson,
+                severity: Severity::Hard,
+                message: format!(
                     "Could not place lesson: subject {} for class {}",
-                    maps.subject_uuids[lesson.subject_idx], maps.class_uuids[lesson.class_idx],
+                    subject_id, class_id
                 ),
+                lesson_refs: smallvec::smallvec![],
+                resources: smallvec::smallvec![
+                    ResourceRef::Class(class_id),
+                    ResourceRef::Subject(subject_id),
+                    ResourceRef::Teacher(teacher_id),
+                ],
             });
         }
     }
