@@ -112,13 +112,22 @@ const lesson: LessonResponse = {
 
 function mockReferenceData(lessons: LessonResponse[]) {
   mockApiClient.get.mockImplementation((url: string) => {
-    if (url.includes("/terms/term-1/lessons")) return Promise.resolve(lessons);
+    if (url.includes("/terms/term-1/lessons"))
+      return Promise.resolve({ lessons, violations: [] });
     if (url.endsWith("/terms")) return Promise.resolve([term]);
     if (url.endsWith("/classes")) return Promise.resolve([cls]);
     if (url.endsWith("/subjects")) return Promise.resolve([subject]);
     if (url.endsWith("/teachers")) return Promise.resolve([teacher]);
     if (url.endsWith("/rooms")) return Promise.resolve([room]);
     if (url.endsWith("/timeslots")) return Promise.resolve([ts]);
+    if (url === "/api/schools/school-1")
+      return Promise.resolve({
+        id: "school-1",
+        name: "Test",
+        slug: "test",
+        role: "viewer",
+        created_at: "2026-01-01T00:00:00Z",
+      });
     return Promise.resolve([]);
   });
 }
