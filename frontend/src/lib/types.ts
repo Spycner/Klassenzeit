@@ -216,6 +216,32 @@ export interface LessonResponse {
   week_pattern: string;
 }
 
+export interface ListLessonsResponse {
+  lessons: LessonResponse[];
+  violations: ViolationDto[];
+}
+
+export interface PatchLessonRequest {
+  timeslot_id?: string;
+  room_id?: string | null;
+  teacher_id?: string;
+}
+
+export interface PatchLessonResponse {
+  lesson: LessonResponse;
+  violations: ViolationDto[];
+}
+
+export interface SwapLessonsRequest {
+  lesson_a_id: string;
+  lesson_b_id: string;
+}
+
+export interface SwapLessonsResponse {
+  lessons: LessonResponse[];
+  violations: ViolationDto[];
+}
+
 export type TimetableViewMode = "class" | "teacher" | "room";
 
 /**
