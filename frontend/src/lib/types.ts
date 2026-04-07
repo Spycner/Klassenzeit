@@ -162,3 +162,28 @@ export interface RoomSuitabilityEntry {
 export interface RoomSuitabilityPutBody {
   subject_ids: string[];
 }
+
+export interface LessonResponse {
+  id: string;
+  term_id: string;
+  class_id: string;
+  teacher_id: string;
+  subject_id: string;
+  room_id: string | null;
+  timeslot_id: string;
+  week_pattern: string;
+}
+
+export type TimetableViewMode = "class" | "teacher" | "room";
+
+/**
+ * Common shape used by `<TimetableGrid>` so it can render either a
+ * SolveLesson (preview) or a LessonResponse (persisted).
+ */
+export interface TimetableLesson {
+  class_id: string;
+  teacher_id: string;
+  subject_id: string;
+  room_id: string | null;
+  timeslot_id: string;
+}

@@ -106,6 +106,22 @@
     "hardViolations": "Unplaced lessons",
     "alreadySolving": "A schedule is already being generated"
   },
+  "timetable": {
+    "title": "Timetable",
+    "description": "View the published timetable",
+    "noTimetable": "No timetable has been published yet.",
+    "goToSchedule": "Generate a timetable",
+    "viewMode": {
+      "class": "Class",
+      "teacher": "Teacher",
+      "room": "Room"
+    },
+    "selectEntity": {
+      "class": "Select class",
+      "teacher": "Select teacher",
+      "room": "Select room"
+    }
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "Manage school reference data",

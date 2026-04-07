@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { TimetableGrid } from "@/components/timetable/timetable-grid";
+import { ViewModeSelector } from "@/components/timetable/view-mode-selector";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,10 +32,8 @@ import type {
   TeacherResponse,
   TermResponse,
   TimeSlotResponse,
+  TimetableViewMode,
 } from "@/lib/types";
-
-const DAY_LABELS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-const DAY_LABELS_DE = ["Mo", "Di", "Mi", "Do", "Fr"];
 
 export default function SchedulePage() {
   const params = useParams<{ id: string; locale: string }>();
@@ -42,8 +42,6 @@ export default function SchedulePage() {
   const apiClient = useApiClient();
   const t = useTranslations("scheduler");
   const tc = useTranslations("common");
-
-  const dayLabels = locale === "de" ? DAY_LABELS_DE : DAY_LABELS_EN;
 
   // Reference data
   const [terms, setTerms] = useState<TermResponse[]>([]);
@@ -59,7 +57,8 @@ export default function SchedulePage() {
   const [solving, setSolving] = useState(false);
   const [status, setStatus] = useState<SchedulerStatusResponse | null>(null);
   const [solution, setSolution] = useState<SolveResult | null>(null);
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<TimetableViewMode>("class");
+  const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
   const [applying, setApplying] = useState(false);
   const [violationsOpen, setViolationsOpen] = useState(false);
@@ -108,7 +107,7 @@ export default function SchedulePage() {
             setSelectedTermId(termsData[0].id);
           }
           if (classesData.length > 0) {
-            setSelectedClassId(classesData[0].id);
+            setSelectedEntityId(classesData[0].id);
           }
         },
       )
@@ -251,30 +250,6 @@ export default function SchedulePage() {
     }
   }
 
-  // Lookup helpers
-  const subjectMap = new Map(subjects.map((s) => [s.id, s]));
-  const teacherMap = new Map(teachers.map((t) => [t.id, t]));
-  const roomMap = new Map(rooms.map((r) => [r.id, r]));
-  const timeslotMap = new Map(timeslots.map((ts) => [ts.id, ts]));
-
-  // Timetable grid helpers
-  const periods = [
-    ...new Set(timeslots.filter((ts) => !ts.is_break).map((ts) => ts.period)),
-  ].sort((a, b) => a - b);
-
-  function getLessonForCell(day: number, period: number) {
-    if (!solution || !selectedClassId) return null;
-    return solution.timetable.find((lesson) => {
-      const ts = timeslotMap.get(lesson.timeslot_id);
-      return (
-        ts &&
-        ts.day_of_week === day &&
-        ts.period === period &&
-        lesson.class_id === selectedClassId
-      );
-    });
-  }
-
   if (loading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-6">
@@ -393,91 +368,32 @@ export default function SchedulePage() {
             <p className="text-sm text-green-600">{t("noViolations")}</p>
           )}
 
-          {/* Class selector + timetable grid */}
+          {/* View mode selector + timetable grid */}
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t("selectClass")}:</span>
-              {classes.length > 0 && selectedClassId && (
-                <Select
-                  value={selectedClassId}
-                  onValueChange={setSelectedClassId}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {classes.map((cls) => (
-                      <SelectItem key={cls.id} value={cls.id}>
-                        {cls.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+            <ViewModeSelector
+              schoolId={schoolId}
+              viewMode={viewMode}
+              selectedEntityId={selectedEntityId}
+              classes={classes}
+              teachers={teachers}
+              rooms={rooms}
+              onChange={({ viewMode: m, selectedEntityId: e }) => {
+                setViewMode(m);
+                setSelectedEntityId(e);
+              }}
+            />
 
-            {/* Timetable grid */}
-            <div className="overflow-x-auto rounded-md border">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="p-2 text-left font-medium" />
-                    {dayLabels.map((day) => (
-                      <th key={day} className="p-2 text-center font-medium">
-                        {day}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {periods.map((period) => (
-                    <tr key={`period-${period}`} className="border-b">
-                      <td className="p-2 text-center font-medium text-muted-foreground">
-                        {period}
-                      </td>
-                      {[0, 1, 2, 3, 4].map((day) => {
-                        const lesson = getLessonForCell(day, period);
-                        if (!lesson) {
-                          return (
-                            <td
-                              key={`cell-${day}-${period}`}
-                              className="border-l p-2"
-                            />
-                          );
-                        }
-                        const subject = subjectMap.get(lesson.subject_id);
-                        const teacher = teacherMap.get(lesson.teacher_id);
-                        const room = lesson.room_id
-                          ? roomMap.get(lesson.room_id)
-                          : null;
-                        const color = subject?.color ?? null;
-                        return (
-                          <td
-                            key={`cell-${day}-${period}`}
-                            className="border-l p-2"
-                            style={
-                              color
-                                ? { backgroundColor: `${color}20` }
-                                : undefined
-                            }
-                          >
-                            <div className="text-center">
-                              <div className="font-medium">
-                                {subject?.abbreviation ?? ""}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {teacher?.abbreviation ?? ""}
-                                {room ? ` - ${room.name}` : ""}
-                              </div>
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <TimetableGrid
+              lessons={solution.timetable}
+              viewMode={viewMode}
+              selectedEntityId={selectedEntityId}
+              timeslots={timeslots}
+              subjects={subjects}
+              teachers={teachers}
+              rooms={rooms}
+              classes={classes}
+              locale={locale}
+            />
           </div>
         </div>
       )}
