@@ -312,6 +312,143 @@ async fn list_lessons_allows_non_admin_member() {
 
 #[tokio::test]
 #[serial]
+async fn patch_lesson_moves_to_new_timeslot() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        let auth_state = ctx.shared_store.get_ref::<AuthState>().unwrap();
+        auth_state.jwks.set_keys(kp.jwk_set.clone()).await;
+
+        let (school, token) = setup_admin_school(&ctx, &kp, "lesson-patch-move").await;
+        let term = create_term(&ctx, school.id, "2025/2026", "Term").await;
+        let lesson = create_lesson_in_term(&ctx, school.id, term.id, "pm1").await;
+
+        // Create a second timeslot we can move into.
+        let new_ts = time_slots::ActiveModel::new(
+            school.id,
+            2,
+            3,
+            chrono::NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
+            chrono::NaiveTime::from_hms_opt(9, 45, 0).unwrap(),
+        )
+        .insert(&ctx.db)
+        .await
+        .unwrap();
+
+        let resp = server
+            .patch(&format!(
+                "/api/schools/{}/terms/{}/lessons/{}",
+                school.id, term.id, lesson.id
+            ))
+            .add_header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .add_header(
+                HeaderName::from_static("x-school-id"),
+                school.id.to_string(),
+            )
+            .json(&serde_json::json!({ "timeslot_id": new_ts.id }))
+            .await;
+
+        resp.assert_status_ok();
+        let body: serde_json::Value = resp.json();
+        assert_eq!(body["lesson"]["id"], lesson.id.to_string());
+        assert_eq!(body["lesson"]["timeslot_id"], new_ts.id.to_string());
+        assert!(body["violations"].is_array());
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn patch_lesson_rejected_for_non_admin() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        let auth_state = ctx.shared_store.get_ref::<AuthState>().unwrap();
+        auth_state.jwks.set_keys(kp.jwk_set.clone()).await;
+
+        let (school, token) =
+            setup_school_with_role(&ctx, &kp, "lesson-patch-noadm", "teacher").await;
+        let term = create_term(&ctx, school.id, "2025/2026", "Term").await;
+        let lesson = create_lesson_in_term(&ctx, school.id, term.id, "pn1").await;
+
+        let new_ts = time_slots::ActiveModel::new(
+            school.id,
+            3,
+            7,
+            chrono::NaiveTime::from_hms_opt(9, 0, 0).unwrap(),
+            chrono::NaiveTime::from_hms_opt(9, 45, 0).unwrap(),
+        )
+        .insert(&ctx.db)
+        .await
+        .unwrap();
+
+        let resp = server
+            .patch(&format!(
+                "/api/schools/{}/terms/{}/lessons/{}",
+                school.id, term.id, lesson.id
+            ))
+            .add_header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .add_header(
+                HeaderName::from_static("x-school-id"),
+                school.id.to_string(),
+            )
+            .json(&serde_json::json!({ "timeslot_id": new_ts.id }))
+            .await;
+
+        resp.assert_status(StatusCode::FORBIDDEN);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn patch_lesson_rejected_when_timeslot_belongs_to_other_school() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        let auth_state = ctx.shared_store.get_ref::<AuthState>().unwrap();
+        auth_state.jwks.set_keys(kp.jwk_set.clone()).await;
+
+        let (school_a, token) = setup_admin_school(&ctx, &kp, "lesson-patch-cross").await;
+        let term = create_term(&ctx, school_a.id, "2025/2026", "Term").await;
+        let lesson = create_lesson_in_term(&ctx, school_a.id, term.id, "pc1").await;
+
+        let school_b = schools::ActiveModel::new(
+            "lesson-patch-cross-b".into(),
+            "lesson-patch-cross-b-slug".into(),
+        )
+        .insert(&ctx.db)
+        .await
+        .unwrap();
+
+        let foreign_ts = time_slots::ActiveModel::new(
+            school_b.id,
+            0,
+            1,
+            chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap(),
+            chrono::NaiveTime::from_hms_opt(8, 45, 0).unwrap(),
+        )
+        .insert(&ctx.db)
+        .await
+        .unwrap();
+
+        let resp = server
+            .patch(&format!(
+                "/api/schools/{}/terms/{}/lessons/{}",
+                school_a.id, term.id, lesson.id
+            ))
+            .add_header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .add_header(
+                HeaderName::from_static("x-school-id"),
+                school_a.id.to_string(),
+            )
+            .json(&serde_json::json!({ "timeslot_id": foreign_ts.id }))
+            .await;
+
+        resp.assert_status(StatusCode::BAD_REQUEST);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
 async fn list_lessons_with_violations_returns_wrapped_object() {
     request::<App, _, _>(|server, ctx| async move {
         let kp = TestKeyPair::generate();
