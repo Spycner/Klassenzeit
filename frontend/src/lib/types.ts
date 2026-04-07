@@ -216,6 +216,32 @@ export interface LessonResponse {
   week_pattern: string;
 }
 
+export interface ListLessonsResponse {
+  lessons: LessonResponse[];
+  violations: ViolationDto[];
+}
+
+export interface PatchLessonRequest {
+  timeslot_id?: string;
+  room_id?: string | null;
+  teacher_id?: string;
+}
+
+export interface PatchLessonResponse {
+  lesson: LessonResponse;
+  violations: ViolationDto[];
+}
+
+export interface SwapLessonsRequest {
+  lesson_a_id: string;
+  lesson_b_id: string;
+}
+
+export interface SwapLessonsResponse {
+  lessons: LessonResponse[];
+  violations: ViolationDto[];
+}
+
 export type TimetableViewMode = "class" | "teacher" | "room";
 
 /**
@@ -223,6 +249,8 @@ export type TimetableViewMode = "class" | "teacher" | "room";
  * SolveLesson (preview) or a LessonResponse (persisted).
  */
 export interface TimetableLesson {
+  /** Optional persisted lesson id. Required when the grid is rendered in editable mode. */
+  id?: string;
   class_id: string;
   teacher_id: string;
   subject_id: string;

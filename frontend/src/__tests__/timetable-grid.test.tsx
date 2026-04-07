@@ -162,3 +162,40 @@ describe("TimetableGrid", () => {
     expect(screen.getByText("Fr")).toBeInTheDocument();
   });
 });
+
+describe("TimetableGrid editable mode", () => {
+  const editableProps = {
+    lessons: [
+      {
+        id: "l1",
+        class_id: "cls-1",
+        teacher_id: "tch-1",
+        subject_id: "sub-1",
+        room_id: "rm-1",
+        timeslot_id: "ts-1",
+      },
+    ] satisfies TimetableLesson[],
+    viewMode: "class" as const,
+    selectedEntityId: "cls-1",
+    timeslots,
+    subjects,
+    teachers,
+    rooms,
+    classes,
+    locale: "en",
+  };
+
+  it("renders no edit kebab when editable is false", () => {
+    const { queryAllByLabelText } = render(
+      <TimetableGrid {...editableProps} />,
+    );
+    expect(queryAllByLabelText("Edit lesson")).toHaveLength(0);
+  });
+
+  it("renders edit kebab on each lesson when editable is true", () => {
+    const { queryAllByLabelText } = render(
+      <TimetableGrid {...editableProps} editable onLessonEdit={() => {}} />,
+    );
+    expect(queryAllByLabelText("Edit lesson")).toHaveLength(1);
+  });
+});

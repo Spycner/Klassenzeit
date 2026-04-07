@@ -2,13 +2,19 @@
 
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { LessonEditDialog } from "@/components/timetable/lesson-edit-dialog";
 import { TimetableGrid } from "@/components/timetable/timetable-grid";
+import { UndoToolbar } from "@/components/timetable/undo-toolbar";
 import {
   loadPersistedView,
   ViewModeSelector,
 } from "@/components/timetable/view-mode-selector";
+import {
+  ViolationsPanel,
+  violationId,
+} from "@/components/timetable/violations-panel";
 import {
   Select,
   SelectContent,
@@ -19,14 +25,31 @@ import {
 import { useApiClient } from "@/hooks/use-api-client";
 import type {
   LessonResponse,
+  ListLessonsResponse,
+  PatchLessonRequest,
+  PatchLessonResponse,
   RoomResponse,
   SchoolClassResponse,
+  SchoolResponse,
   SubjectResponse,
+  SwapLessonsResponse,
   TeacherResponse,
   TermResponse,
   TimeSlotResponse,
   TimetableViewMode,
+  ViolationDto,
 } from "@/lib/types";
+
+interface UndoEntry {
+  lessonId: string;
+  prev: {
+    timeslot_id: string;
+    room_id: string | null;
+    teacher_id: string;
+  };
+}
+
+const UNDO_LIMIT = 10;
 
 export default function TimetablePage() {
   const params = useParams<{ id: string; locale: string }>();
@@ -34,8 +57,10 @@ export default function TimetablePage() {
   const locale = params.locale;
   const apiClient = useApiClient();
   const t = useTranslations("timetable");
+  const te = useTranslations("timetable.edit");
   const tc = useTranslations("common");
 
+  const [school, setSchool] = useState<SchoolResponse | null>(null);
   const [terms, setTerms] = useState<TermResponse[]>([]);
   const [classes, setClasses] = useState<SchoolClassResponse[]>([]);
   const [subjects, setSubjects] = useState<SubjectResponse[]>([]);
@@ -43,16 +68,37 @@ export default function TimetablePage() {
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
   const [timeslots, setTimeslots] = useState<TimeSlotResponse[]>([]);
   const [lessons, setLessons] = useState<LessonResponse[]>([]);
+  const [violations, setViolations] = useState<ViolationDto[]>([]);
 
   const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<TimetableViewMode>("class");
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
+  const [highlighted, setHighlighted] = useState<{
+    v: ViolationDto;
+    id: string;
+  } | null>(null);
+
+  const isAdmin = school?.role === "admin";
+
+  const highlightedCells = (() => {
+    if (!highlighted) return undefined;
+    const set = new Set<string>();
+    for (const ref of highlighted.v.lesson_refs) {
+      const ts = timeslots.find((ts) => ts.id === ref.timeslot_id);
+      if (ts) set.add(`${ts.day_of_week}-${ts.period}`);
+    }
+    return set;
+  })();
+
   // Load reference data
   useEffect(() => {
     setLoading(true);
     Promise.all([
+      apiClient.get<SchoolResponse>(`/api/schools/${schoolId}`),
       apiClient.get<TermResponse[]>(`/api/schools/${schoolId}/terms`),
       apiClient.get<SchoolClassResponse[]>(`/api/schools/${schoolId}/classes`),
       apiClient.get<SubjectResponse[]>(`/api/schools/${schoolId}/subjects`),
@@ -60,7 +106,8 @@ export default function TimetablePage() {
       apiClient.get<RoomResponse[]>(`/api/schools/${schoolId}/rooms`),
       apiClient.get<TimeSlotResponse[]>(`/api/schools/${schoolId}/timeslots`),
     ])
-      .then(([termsData, cls, subs, tchs, rms, tss]) => {
+      .then(([schoolData, termsData, cls, subs, tchs, rms, tss]) => {
+        setSchool(schoolData);
         setTerms(termsData);
         setClasses(cls);
         setSubjects(subs);
@@ -94,19 +141,263 @@ export default function TimetablePage() {
       .finally(() => setLoading(false));
   }, [apiClient, schoolId, tc]);
 
-  // Load lessons for the selected term
+  // Load lessons for the selected term (with violations)
   useEffect(() => {
     if (!selectedTermId) return;
     apiClient
-      .get<LessonResponse[]>(
-        `/api/schools/${schoolId}/terms/${selectedTermId}/lessons`,
+      .get<ListLessonsResponse>(
+        `/api/schools/${schoolId}/terms/${selectedTermId}/lessons?include_violations=true`,
       )
-      .then(setLessons)
+      .then((data) => {
+        setLessons(data.lessons);
+        setViolations(data.violations);
+        setUndoStack([]);
+        setHighlighted(null);
+      })
       .catch(() => {
         setLessons([]);
+        setViolations([]);
+        setUndoStack([]);
+        setHighlighted(null);
         toast.error(tc("errorGeneric"));
       });
   }, [apiClient, schoolId, selectedTermId, tc]);
+
+  const snapshotLesson = useCallback(
+    (lessonId: string): UndoEntry | null => {
+      const l = lessons.find((x) => x.id === lessonId);
+      if (!l) return null;
+      return {
+        lessonId,
+        prev: {
+          timeslot_id: l.timeslot_id,
+          room_id: l.room_id,
+          teacher_id: l.teacher_id,
+        },
+      };
+    },
+    [lessons],
+  );
+
+  const pushUndo = useCallback((entry: UndoEntry) => {
+    setUndoStack((stack) => {
+      const next = [...stack, entry];
+      if (next.length > UNDO_LIMIT) next.shift();
+      return next;
+    });
+  }, []);
+
+  const applyChangesLocal = useCallback(
+    (lessonId: string, changes: PatchLessonRequest) => {
+      setLessons((prev) =>
+        prev.map((l) => {
+          if (l.id !== lessonId) return l;
+          const next: LessonResponse = { ...l };
+          if (changes.timeslot_id !== undefined)
+            next.timeslot_id = changes.timeslot_id;
+          if (changes.teacher_id !== undefined)
+            next.teacher_id = changes.teacher_id;
+          if (changes.room_id !== undefined) next.room_id = changes.room_id;
+          return next;
+        }),
+      );
+    },
+    [],
+  );
+
+  const patchLesson = useCallback(
+    async (
+      lessonId: string,
+      changes: PatchLessonRequest,
+      errorKey: "moveError" | "patchError",
+    ) => {
+      if (!selectedTermId) return;
+      const snapshot = snapshotLesson(lessonId);
+      if (!snapshot) return;
+      // Optimistic
+      applyChangesLocal(lessonId, changes);
+      try {
+        const res = await apiClient.patch<PatchLessonResponse>(
+          `/api/schools/${schoolId}/terms/${selectedTermId}/lessons/${lessonId}`,
+          changes,
+        );
+        setLessons((prev) =>
+          prev.map((l) => (l.id === lessonId ? res.lesson : l)),
+        );
+        setViolations(res.violations);
+        pushUndo(snapshot);
+      } catch {
+        // Rollback
+        setLessons((prev) =>
+          prev.map((l) =>
+            l.id === lessonId
+              ? {
+                  ...l,
+                  timeslot_id: snapshot.prev.timeslot_id,
+                  room_id: snapshot.prev.room_id,
+                  teacher_id: snapshot.prev.teacher_id,
+                }
+              : l,
+          ),
+        );
+        toast.error(te(errorKey));
+      }
+    },
+    [
+      apiClient,
+      applyChangesLocal,
+      pushUndo,
+      schoolId,
+      selectedTermId,
+      snapshotLesson,
+      te,
+    ],
+  );
+
+  const handleMove = useCallback(
+    (lessonId: string, targetTimeslotId: string) => {
+      if (!isAdmin) return;
+      patchLesson(lessonId, { timeslot_id: targetTimeslotId }, "moveError");
+    },
+    [isAdmin, patchLesson],
+  );
+
+  const handleSwap = useCallback(
+    async (lessonAId: string, lessonBId: string) => {
+      if (!isAdmin || !selectedTermId) return;
+      const snapA = snapshotLesson(lessonAId);
+      const snapB = snapshotLesson(lessonBId);
+      if (!snapA || !snapB) return;
+      // Optimistic swap of timeslots
+      setLessons((prev) =>
+        prev.map((l) => {
+          if (l.id === lessonAId)
+            return { ...l, timeslot_id: snapB.prev.timeslot_id };
+          if (l.id === lessonBId)
+            return { ...l, timeslot_id: snapA.prev.timeslot_id };
+          return l;
+        }),
+      );
+      try {
+        const res = await apiClient.post<SwapLessonsResponse>(
+          `/api/schools/${schoolId}/terms/${selectedTermId}/lessons/swap`,
+          { lesson_a_id: lessonAId, lesson_b_id: lessonBId },
+        );
+        setLessons((prev) => {
+          const map = new Map(res.lessons.map((l) => [l.id, l]));
+          return prev.map((l) => map.get(l.id) ?? l);
+        });
+        setViolations(res.violations);
+        // Push both snapshots so two undo steps revert the swap.
+        pushUndo(snapB);
+        pushUndo(snapA);
+      } catch {
+        // Rollback
+        setLessons((prev) =>
+          prev.map((l) => {
+            if (l.id === lessonAId)
+              return {
+                ...l,
+                timeslot_id: snapA.prev.timeslot_id,
+                room_id: snapA.prev.room_id,
+                teacher_id: snapA.prev.teacher_id,
+              };
+            if (l.id === lessonBId)
+              return {
+                ...l,
+                timeslot_id: snapB.prev.timeslot_id,
+                room_id: snapB.prev.room_id,
+                teacher_id: snapB.prev.teacher_id,
+              };
+            return l;
+          }),
+        );
+        toast.error(te("swapError"));
+      }
+    },
+    [
+      apiClient,
+      isAdmin,
+      pushUndo,
+      schoolId,
+      selectedTermId,
+      snapshotLesson,
+      te,
+    ],
+  );
+
+  const handleEdit = useCallback(
+    (lessonId: string) => {
+      if (!isAdmin) return;
+      setEditingLessonId(lessonId);
+    },
+    [isAdmin],
+  );
+
+  const handleEditSubmit = useCallback(
+    async (changes: PatchLessonRequest) => {
+      if (!editingLessonId) return;
+      const id = editingLessonId;
+      setEditingLessonId(null);
+      await patchLesson(id, changes, "patchError");
+    },
+    [editingLessonId, patchLesson],
+  );
+
+  const handleUndo = useCallback(async () => {
+    if (!selectedTermId || undoStack.length === 0) return;
+    const top = undoStack[undoStack.length - 1];
+    setUndoStack((stack) => stack.slice(0, -1));
+    const current = lessons.find((l) => l.id === top.lessonId);
+    if (!current) return;
+    const changes: PatchLessonRequest = {};
+    if (current.timeslot_id !== top.prev.timeslot_id)
+      changes.timeslot_id = top.prev.timeslot_id;
+    if (current.teacher_id !== top.prev.teacher_id)
+      changes.teacher_id = top.prev.teacher_id;
+    if ((current.room_id ?? null) !== (top.prev.room_id ?? null))
+      changes.room_id = top.prev.room_id;
+    if (Object.keys(changes).length === 0) return;
+    // Optimistic
+    applyChangesLocal(top.lessonId, changes);
+    try {
+      const res = await apiClient.patch<PatchLessonResponse>(
+        `/api/schools/${schoolId}/terms/${selectedTermId}/lessons/${top.lessonId}`,
+        changes,
+      );
+      setLessons((prev) =>
+        prev.map((l) => (l.id === top.lessonId ? res.lesson : l)),
+      );
+      setViolations(res.violations);
+    } catch {
+      // Rollback
+      setLessons((prev) =>
+        prev.map((l) =>
+          l.id === top.lessonId
+            ? {
+                ...l,
+                timeslot_id: current.timeslot_id,
+                room_id: current.room_id,
+                teacher_id: current.teacher_id,
+              }
+            : l,
+        ),
+      );
+      toast.error(te("patchError"));
+    }
+  }, [
+    apiClient,
+    applyChangesLocal,
+    lessons,
+    schoolId,
+    selectedTermId,
+    te,
+    undoStack,
+  ]);
+
+  const editingLesson = editingLessonId
+    ? (lessons.find((l) => l.id === editingLessonId) ?? null)
+    : null;
 
   if (loading) {
     return (
@@ -123,23 +414,28 @@ export default function TimetablePage() {
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
-        {terms.length > 0 && selectedTermId && (
-          <Select
-            value={selectedTermId}
-            onValueChange={(val) => setSelectedTermId(val)}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {terms.map((term) => (
-                <SelectItem key={term.id} value={term.id}>
-                  {term.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <UndoToolbar canUndo={undoStack.length > 0} onUndo={handleUndo} />
+          )}
+          {terms.length > 0 && selectedTermId && (
+            <Select
+              value={selectedTermId}
+              onValueChange={(val) => setSelectedTermId(val)}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {terms.map((term) => (
+                  <SelectItem key={term.id} value={term.id}>
+                    {term.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
 
       <ViewModeSelector
@@ -154,6 +450,55 @@ export default function TimetablePage() {
           setSelectedEntityId(e);
         }}
       />
+
+      {violations.length > 0 && (
+        <ViolationsPanel
+          violations={violations}
+          highlightedId={highlighted?.id ?? null}
+          onHighlight={(v) => {
+            if (!v) {
+              setHighlighted(null);
+              return;
+            }
+            const idx = violations.indexOf(v);
+            const id = violationId(v, idx);
+            setHighlighted({ v, id });
+            const teacherKinds = new Set([
+              "teacher_conflict",
+              "teacher_unavailable",
+              "teacher_over_capacity",
+              "teacher_unqualified",
+              "teacher_gap",
+              "not_preferred_slot",
+            ]);
+            const roomKinds = new Set([
+              "room_capacity",
+              "room_unsuitable",
+              "room_too_small",
+            ]);
+            const ref = v.lesson_refs[0];
+            if (teacherKinds.has(v.kind) && ref) {
+              setViewMode("teacher");
+              setSelectedEntityId(ref.teacher_id);
+            } else if (roomKinds.has(v.kind) && ref?.room_id) {
+              setViewMode("room");
+              setSelectedEntityId(ref.room_id);
+            } else if (ref) {
+              setViewMode("class");
+              setSelectedEntityId(ref.class_id);
+            }
+          }}
+          refs={{
+            teachers,
+            classes,
+            rooms,
+            subjects,
+            timeslots,
+            locale,
+          }}
+          schoolId={schoolId}
+        />
+      )}
 
       {lessons.length === 0 ? (
         <div className="flex flex-1 items-center justify-center">
@@ -170,8 +515,23 @@ export default function TimetablePage() {
           rooms={rooms}
           classes={classes}
           locale={locale}
+          highlightedCells={highlightedCells}
+          highlightTone={highlighted?.v.severity === "soft" ? "warn" : "error"}
+          editable={isAdmin}
+          onLessonMove={handleMove}
+          onLessonSwap={handleSwap}
+          onLessonEdit={handleEdit}
         />
       )}
+
+      <LessonEditDialog
+        open={editingLesson !== null}
+        lesson={editingLesson}
+        teachers={teachers}
+        rooms={rooms}
+        onClose={() => setEditingLessonId(null)}
+        onSubmit={handleEditSubmit}
+      />
     </div>
   );
 }

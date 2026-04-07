@@ -190,6 +190,16 @@
       "class": "Select class",
       "teacher": "Select teacher",
       "room": "Select room"
+    },
+    "edit": {
+      "title": "Edit lesson",
+      "apply": "Apply",
+      "cancel": "Cancel",
+      "noRoom": "— No room —",
+      "undo": "Undo",
+      "moveError": "Could not move lesson",
+      "swapError": "Could not swap lessons",
+      "patchError": "Could not update lesson"
     }
   },
   "settings": {
