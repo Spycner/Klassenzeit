@@ -27,7 +27,7 @@ frontend-dev:
     cd frontend && bun run dev
 
 frontend-test:
-    cd frontend && bun test
+    cd frontend && bun run test
 
 frontend-check:
     cd frontend && bun run check && bun run typecheck
