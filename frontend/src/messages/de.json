@@ -106,6 +106,22 @@
     "hardViolations": "Nicht platzierte Stunden",
     "alreadySolving": "Ein Stundenplan wird bereits erstellt"
   },
+  "timetable": {
+    "title": "Stundenplan",
+    "description": "Den veröffentlichten Stundenplan ansehen",
+    "noTimetable": "Es wurde noch kein Stundenplan veröffentlicht.",
+    "goToSchedule": "Stundenplan erstellen",
+    "viewMode": {
+      "class": "Klasse",
+      "teacher": "Lehrkraft",
+      "room": "Raum"
+    },
+    "selectEntity": {
+      "class": "Klasse wählen",
+      "teacher": "Lehrkraft wählen",
+      "room": "Raum wählen"
+    }
+  },
   "settings": {
     "title": "Einstellungen",
     "subtitle": "Stammdaten der Schule verwalten",
