@@ -36,6 +36,54 @@ interface ViolationsPanelProps {
   highlightedId: string | null;
   onHighlight: (v: ViolationDto | null) => void;
   refs: Refs;
+  schoolId: string;
+}
+
+export function FixLinks({
+  violation,
+  schoolId,
+  locale,
+  fixCtaText,
+}: {
+  violation: ViolationDto;
+  schoolId: string;
+  locale: string;
+  fixCtaText: { teacher: string; room: string; subject: string };
+}) {
+  const links: { label: string; href: string; key: string }[] = [];
+  for (const r of violation.resources) {
+    if (r.type === "teacher") {
+      links.push({
+        key: `teacher-${r.id}`,
+        label: fixCtaText.teacher,
+        href: `/${locale}/schools/${schoolId}/settings?tab=teachers&focus=${r.id}`,
+      });
+    } else if (r.type === "room") {
+      links.push({
+        key: `room-${r.id}`,
+        label: fixCtaText.room,
+        href: `/${locale}/schools/${schoolId}/settings?tab=rooms&focus=${r.id}`,
+      });
+    } else if (r.type === "subject") {
+      links.push({
+        key: `subject-${r.id}`,
+        label: fixCtaText.subject,
+        href: `/${locale}/schools/${schoolId}/settings?tab=subjects&focus=${r.id}`,
+      });
+    }
+  }
+  if (links.length === 0) return null;
+  return (
+    <ul className="mt-2 flex flex-col gap-1">
+      {links.map((l) => (
+        <li key={l.key}>
+          <a className="text-primary underline" href={l.href}>
+            {l.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export function violationId(v: ViolationDto, i: number): string {
@@ -88,6 +136,7 @@ export function ViolationsPanel({
   highlightedId,
   onHighlight,
   refs,
+  schoolId,
 }: ViolationsPanelProps) {
   const t = useTranslations("scheduler.violationsPanel");
   const [tab, setTab] = useState<Severity>("hard");
@@ -164,7 +213,17 @@ export function ViolationsPanel({
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-72 text-sm">
-                          {t(`kind.${v.kind}.fix`)}
+                          <p className="mb-2">{t(`kind.${v.kind}.fix`)}</p>
+                          <FixLinks
+                            violation={v}
+                            schoolId={schoolId}
+                            locale={refs.locale}
+                            fixCtaText={{
+                              teacher: t("openTeacher"),
+                              room: t("openRoom"),
+                              subject: t("openSubject"),
+                            }}
+                          />
                         </PopoverContent>
                       </Popover>
                     </div>

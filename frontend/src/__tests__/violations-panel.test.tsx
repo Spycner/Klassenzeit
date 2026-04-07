@@ -1,7 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { describe, expect, it, vi } from "vitest";
-import { ViolationsPanel } from "@/components/timetable/violations-panel";
+import {
+  FixLinks,
+  ViolationsPanel,
+} from "@/components/timetable/violations-panel";
 import type {
   RoomResponse,
   SchoolClassResponse,
@@ -97,6 +100,7 @@ function renderPanel(onHighlight = vi.fn()) {
           timeslots: [ts],
           locale: "en",
         }}
+        schoolId="abc"
       />
     </NextIntlClientProvider>,
   );
@@ -127,5 +131,47 @@ describe("ViolationsPanel", () => {
     fireEvent.click(row as HTMLElement);
     expect(onHighlight).toHaveBeenCalledTimes(1);
     expect(onHighlight.mock.calls[0][0].kind).toBe("teacher_conflict");
+  });
+
+  it("FixLinks renders deep links to settings tabs for each resource type", () => {
+    render(
+      <FixLinks
+        violation={{
+          kind: "teacher_conflict",
+          severity: "hard",
+          message: "x",
+          lesson_refs: [],
+          resources: [
+            { type: "teacher", id: "t1" },
+            { type: "room", id: "r1" },
+            { type: "subject", id: "s1" },
+            { type: "timeslot", id: "ts1" },
+            { type: "class", id: "c1" },
+          ],
+        }}
+        schoolId="abc"
+        locale="en"
+        fixCtaText={{
+          teacher: "Open teacher",
+          room: "Open room",
+          subject: "Open subject",
+        }}
+      />,
+    );
+    const teacherLink = screen.getByRole("link", { name: /Open teacher/i });
+    expect(teacherLink).toHaveAttribute(
+      "href",
+      "/en/schools/abc/settings?tab=teachers&focus=t1",
+    );
+    const roomLink = screen.getByRole("link", { name: /Open room/i });
+    expect(roomLink).toHaveAttribute(
+      "href",
+      "/en/schools/abc/settings?tab=rooms&focus=r1",
+    );
+    const subjectLink = screen.getByRole("link", { name: /Open subject/i });
+    expect(subjectLink).toHaveAttribute(
+      "href",
+      "/en/schools/abc/settings?tab=subjects&focus=s1",
+    );
   });
 });

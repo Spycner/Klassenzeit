@@ -407,6 +407,7 @@ export default function SchedulePage() {
                 timeslots,
                 locale,
               }}
+              schoolId={schoolId}
             />
           ) : (
             <p className="text-sm text-green-600">{t("noViolations")}</p>

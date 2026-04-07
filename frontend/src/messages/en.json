@@ -98,6 +98,9 @@
       "tabs": { "hard": "Hard ({count})", "soft": "Soft ({count})" },
       "empty": "No violations of this type.",
       "fixCta": "How to fix",
+      "openTeacher": "Open teacher",
+      "openRoom": "Open room",
+      "openSubject": "Open subject",
       "kind": {
         "teacher_conflict": {
           "title": "Teacher double-booked",

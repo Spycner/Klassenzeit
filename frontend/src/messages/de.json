@@ -98,6 +98,9 @@
       "tabs": { "hard": "Hart ({count})", "soft": "Weich ({count})" },
       "empty": "Keine Verletzungen dieser Art.",
       "fixCta": "So beheben",
+      "openTeacher": "Lehrkraft öffnen",
+      "openRoom": "Raum öffnen",
+      "openSubject": "Fach öffnen",
       "kind": {
         "teacher_conflict": {
           "title": "Lehrkraft doppelt belegt",
