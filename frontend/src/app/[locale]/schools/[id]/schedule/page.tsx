@@ -357,8 +357,8 @@ export default function SchedulePage() {
               {violationsOpen && (
                 <ul className="border-t px-4 py-2 text-sm">
                   {solution.violations.map((v) => (
-                    <li key={v} className="py-1 text-muted-foreground">
-                      {v}
+                    <li key={v.message} className="py-1 text-muted-foreground">
+                      {v.message}
                     </li>
                   ))}
                 </ul>

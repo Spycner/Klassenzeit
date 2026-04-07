@@ -33,10 +33,52 @@ export interface SchedulerStatusResponse {
   error?: string;
 }
 
+export type Severity = "hard" | "soft";
+
+export type ViolationKind =
+  | "teacher_conflict"
+  | "class_conflict"
+  | "room_capacity"
+  | "teacher_unavailable"
+  | "class_unavailable"
+  | "teacher_over_capacity"
+  | "teacher_unqualified"
+  | "room_unsuitable"
+  | "room_too_small"
+  | "unplaced_lesson"
+  | "no_qualified_teacher"
+  | "teacher_gap"
+  | "subject_clustered"
+  | "not_preferred_slot"
+  | "class_teacher_first_period";
+
+export interface ViolationLessonRef {
+  class_id: string;
+  subject_id: string;
+  teacher_id: string;
+  room_id: string | null;
+  timeslot_id: string;
+}
+
+export type ResourceRefDto =
+  | { type: "teacher"; id: string }
+  | { type: "class"; id: string }
+  | { type: "room"; id: string }
+  | { type: "subject"; id: string }
+  | { type: "timeslot"; id: string };
+
+export interface ViolationDto {
+  kind: ViolationKind;
+  severity: Severity;
+  message: string;
+  lesson_refs: ViolationLessonRef[];
+  resources: ResourceRefDto[];
+}
+
 export interface SolveResult {
   timetable: SolveLesson[];
   score: { hard_violations: number; soft_score: number };
-  violations: string[];
+  violations: ViolationDto[];
 }
 
 export interface SolveLesson {

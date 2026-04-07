@@ -220,7 +220,7 @@ describe("SchedulePage", () => {
         },
       ],
       score: { hard_violations: 0, soft_score: 1.0 },
-      violations: [],
+      violations: [] as any,
     };
 
     mockApiClient.get.mockImplementation((url: string) => {
