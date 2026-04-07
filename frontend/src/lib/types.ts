@@ -249,6 +249,8 @@ export type TimetableViewMode = "class" | "teacher" | "room";
  * SolveLesson (preview) or a LessonResponse (persisted).
  */
 export interface TimetableLesson {
+  /** Optional persisted lesson id. Required when the grid is rendered in editable mode. */
+  id?: string;
   class_id: string;
   teacher_id: string;
   subject_id: string;
