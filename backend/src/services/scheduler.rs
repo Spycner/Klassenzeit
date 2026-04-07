@@ -6,8 +6,12 @@ use serde::Serialize;
 use std::sync::Arc;
 use uuid::Uuid;
 
+use klassenzeit_scheduler::constraints::diagnose;
+use klassenzeit_scheduler::mapper::{to_planning, translate_diagnosed};
+use klassenzeit_scheduler::planning::PlanningLesson;
+
 use crate::models::_entities::{
-    curriculum_entries, room_subject_suitabilities, room_timeslot_capacities, rooms,
+    curriculum_entries, lessons, room_subject_suitabilities, room_timeslot_capacities, rooms,
     school_classes, subjects, teacher_availabilities, teacher_subject_qualifications, teachers,
     time_slots,
 };
@@ -391,4 +395,97 @@ pub fn to_solve_result(output: sched::ScheduleOutput) -> SolveResult {
             best_found_at_iteration: s.best_found_at_iteration,
         }),
     }
+}
+
+/// Evaluate hard+soft violations for the **applied** lessons of a term.
+///
+/// Re-uses `load_schedule_input` for facts/index maps but replaces the
+/// curriculum-derived planning lessons with the actual DB rows so the
+/// diagnosis reflects what's persisted, not what the solver started from.
+pub async fn evaluate_term_violations(
+    db: &DatabaseConnection,
+    school_id: Uuid,
+    term_id: Uuid,
+) -> Result<Vec<ViolationDto>, sea_orm::DbErr> {
+    let input = load_schedule_input(db, school_id, term_id).await?;
+    let (mut solution, maps) = to_planning(&input);
+
+    // Replace planning lessons with the actual applied DB rows.
+    let db_lessons = lessons::Entity::find()
+        .filter(lessons::Column::TermId.eq(term_id))
+        .all(db)
+        .await?;
+
+    let mut planning_lessons: Vec<PlanningLesson> = Vec::with_capacity(db_lessons.len());
+    for (i, l) in db_lessons.iter().enumerate() {
+        let class_idx = match maps.class_uuid_to_idx.get(&l.school_class_id) {
+            Some(&v) => v,
+            None => continue, // class deleted/inactive — skip silently
+        };
+        let subject_idx = match maps.subject_uuid_to_idx.get(&l.subject_id) {
+            Some(&v) => v,
+            None => continue,
+        };
+        let teacher_idx = match maps.teacher_uuid_to_idx.get(&l.teacher_id) {
+            Some(&v) => v,
+            None => continue,
+        };
+        let timeslot_idx = match maps.timeslot_uuid_to_idx.get(&l.timeslot_id) {
+            Some(&v) => v,
+            None => continue,
+        };
+        let room_idx = l
+            .room_id
+            .and_then(|rid| maps.room_uuid_to_idx.get(&rid).copied());
+
+        planning_lessons.push(PlanningLesson {
+            id: i,
+            subject_idx,
+            teacher_idx,
+            class_idx,
+            timeslot: Some(timeslot_idx),
+            room: room_idx,
+        });
+    }
+
+    solution.lessons = planning_lessons;
+
+    let diagnosed = diagnose(&solution.lessons, &solution.facts);
+    let violations = translate_diagnosed(diagnosed, &solution, &maps, &input);
+
+    let dtos: Vec<ViolationDto> = violations
+        .into_iter()
+        .map(|v| ViolationDto {
+            kind: v.kind.as_snake_case().to_string(),
+            severity: match v.severity {
+                sched::Severity::Hard => "hard".to_string(),
+                sched::Severity::Soft => "soft".to_string(),
+            },
+            message: v.message,
+            lesson_refs: v
+                .lesson_refs
+                .into_iter()
+                .map(|r| LessonRefDto {
+                    class_id: r.class_id,
+                    subject_id: r.subject_id,
+                    teacher_id: r.teacher_id,
+                    room_id: r.room_id,
+                    timeslot_id: r.timeslot_id,
+                })
+                .collect(),
+            resources: v
+                .resources
+                .into_iter()
+                .map(|r| match r {
+                    sched::ResourceRef::Teacher(id) => ResourceRefDto::Teacher(id),
+                    sched::ResourceRef::Class(id) => ResourceRefDto::Class(id),
+                    sched::ResourceRef::Room(id) => ResourceRefDto::Room(id),
+                    sched::ResourceRef::Subject(id) => ResourceRefDto::Subject(id),
+                    sched::ResourceRef::Timeslot(id) => ResourceRefDto::Timeslot(id),
+                })
+                .collect(),
+        })
+        .collect();
+
+    Ok(dtos)
 }
