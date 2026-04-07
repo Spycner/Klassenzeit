@@ -7,6 +7,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TimetableGrid } from "@/components/timetable/timetable-grid";
 import { ViewModeSelector } from "@/components/timetable/view-mode-selector";
+import {
+  ViolationsPanel,
+  violationId,
+} from "@/components/timetable/violations-panel";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +37,7 @@ import type {
   TermResponse,
   TimeSlotResponse,
   TimetableViewMode,
+  ViolationDto,
 } from "@/lib/types";
 
 export default function SchedulePage() {
@@ -61,7 +66,20 @@ export default function SchedulePage() {
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
   const [applying, setApplying] = useState(false);
-  const [violationsOpen, setViolationsOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState<{
+    v: ViolationDto;
+    id: string;
+  } | null>(null);
+
+  const highlightedCells = (() => {
+    if (!highlighted) return undefined;
+    const set = new Set<string>();
+    for (const ref of highlighted.v.lesson_refs) {
+      const ts = timeslots.find((t) => t.id === ref.timeslot_id);
+      if (ts) set.add(`${ts.day_of_week}-${ts.period}`);
+    }
+    return set;
+  })();
 
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -199,6 +217,7 @@ export default function SchedulePage() {
     setSolving(true);
     setSolution(null);
     setStatus(null);
+    setHighlighted(null);
     try {
       await apiClient.post(
         `/api/schools/${schoolId}/terms/${selectedTermId}/scheduler/solve`,
@@ -228,6 +247,7 @@ export default function SchedulePage() {
       );
       setSolution(null);
       setStatus(null);
+      setHighlighted(null);
       setApplyDialogOpen(false);
     } catch {
       toast.error(tc("errorGeneric"));
@@ -245,6 +265,7 @@ export default function SchedulePage() {
       toast.success(t("discarded"));
       setSolution(null);
       setStatus(null);
+      setHighlighted(null);
     } catch {
       toast.error(tc("errorGeneric"));
     }
@@ -274,6 +295,7 @@ export default function SchedulePage() {
                 setSelectedTermId(val);
                 setSolution(null);
                 setStatus(null);
+                setHighlighted(null);
               }}
             >
               <SelectTrigger className="w-48">
@@ -341,29 +363,52 @@ export default function SchedulePage() {
 
           {/* Violations list */}
           {solution.violations.length > 0 ? (
-            <div className="rounded-md border">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between p-3 text-left text-sm font-medium hover:bg-muted/50"
-                onClick={() => setViolationsOpen(!violationsOpen)}
-              >
-                <span>
-                  {t("violations")} ({solution.violations.length})
-                </span>
-                <span className="text-muted-foreground">
-                  {violationsOpen ? "-" : "+"}
-                </span>
-              </button>
-              {violationsOpen && (
-                <ul className="border-t px-4 py-2 text-sm">
-                  {solution.violations.map((v) => (
-                    <li key={v} className="py-1 text-muted-foreground">
-                      {v}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <ViolationsPanel
+              violations={solution.violations}
+              highlightedId={highlighted?.id ?? null}
+              onHighlight={(v) => {
+                if (!v) {
+                  setHighlighted(null);
+                  return;
+                }
+                const idx = solution.violations.indexOf(v);
+                const id = violationId(v, idx);
+                setHighlighted({ v, id });
+                const teacherKinds = new Set([
+                  "teacher_conflict",
+                  "teacher_unavailable",
+                  "teacher_over_capacity",
+                  "teacher_unqualified",
+                  "teacher_gap",
+                  "not_preferred_slot",
+                ]);
+                const roomKinds = new Set([
+                  "room_capacity",
+                  "room_unsuitable",
+                  "room_too_small",
+                ]);
+                const ref = v.lesson_refs[0];
+                if (teacherKinds.has(v.kind) && ref) {
+                  setViewMode("teacher");
+                  setSelectedEntityId(ref.teacher_id);
+                } else if (roomKinds.has(v.kind) && ref?.room_id) {
+                  setViewMode("room");
+                  setSelectedEntityId(ref.room_id);
+                } else if (ref) {
+                  setViewMode("class");
+                  setSelectedEntityId(ref.class_id);
+                }
+              }}
+              refs={{
+                teachers,
+                classes,
+                rooms,
+                subjects,
+                timeslots,
+                locale,
+              }}
+              schoolId={schoolId}
+            />
           ) : (
             <p className="text-sm text-green-600">{t("noViolations")}</p>
           )}
@@ -393,6 +438,10 @@ export default function SchedulePage() {
               rooms={rooms}
               classes={classes}
               locale={locale}
+              highlightedCells={highlightedCells}
+              highlightTone={
+                highlighted?.v.severity === "soft" ? "warn" : "error"
+              }
             />
           </div>
         </div>

@@ -12,6 +12,7 @@ const mockApiClient = {
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "school-1", locale: "en" }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // Cache per namespace to avoid infinite re-render (useCallback depends on translation fn)

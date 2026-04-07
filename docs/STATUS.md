@@ -135,12 +135,20 @@
 - New read-only `/timetable` route loads applied lessons; `/schedule` preview gains all three view modes via the same components.
 - Sidebar gains a `Timetable` entry (separate from `Schedule`).
 
+### Conflict Resolution UI (2d)
+- Spec: `superpowers/specs/2026-04-07-conflict-resolution-ui-design.md`
+- Plan: `superpowers/plans/2026-04-07-conflict-resolution-ui.md`
+- New `diagnose()` pass in `scheduler/src/constraints.rs` mirrors `full_evaluate` and emits structured `Violation { kind, severity, message, lesson_refs, resources }` for all 11 hard + 4 soft constraint kinds. Runs once after local search; no perf regression. Invariant test guards parity with `full_evaluate`.
+- Backend `ViolationDto`/`LessonRefDto`/`ResourceRefDto` serialized as part of `SolveResult.violations`. Integration test asserts the structured shape on an unqualified-teacher instance.
+- New `<ViolationsPanel>` (`@/components/timetable/violations-panel`) with hard/soft tabs, per-kind grouping, click-to-highlight rows that pivot the timetable view (teacher/room/class) and decorate matching cells in `<TimetableGrid>` via new `highlightedCells`/`highlightTone` props.
+- "How to fix" popover deep-links into the relevant settings tab (`?tab=teachers&focus=<id>` etc.); teachers/rooms/subjects tabs scroll the focused row into view and flash it for 1.5s.
+- All 15 violation kind titles + fix hints localised in DE and EN.
+
 ## Next Up
 
 Tier 2 (UX polish) continues — make the app usable for real schools before pushing to prod.
 
 - **2c: Manual timetable editing** — drag-and-drop lesson editing after generation
-- **2d: Conflict resolution UI** — show which constraints are broken, suggest fixes
 - **2e: Data import/export** — CSV/Excel import for bulk data, PDF/Excel export for timetables
 - **2f: Responsive / mobile layout** — timetable grid on small screens
 - **3a: Production deployment** — staging works, prod is just a release away (do last; ship polished UX first)

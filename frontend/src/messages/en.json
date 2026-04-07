@@ -94,6 +94,76 @@
     "failed": "Schedule generation failed",
     "violations": "Violations",
     "noViolations": "No violations — all lessons placed successfully",
+    "violationsPanel": {
+      "tabs": { "hard": "Hard ({count})", "soft": "Soft ({count})" },
+      "empty": "No violations of this type.",
+      "fixCta": "How to fix",
+      "openTeacher": "Open teacher",
+      "openRoom": "Open room",
+      "openSubject": "Open subject",
+      "kind": {
+        "teacher_conflict": {
+          "title": "Teacher double-booked",
+          "fix": "Two lessons assigned to the same teacher in the same slot. Reassign one to a different teacher or move it to another slot."
+        },
+        "class_conflict": {
+          "title": "Class double-booked",
+          "fix": "Two lessons assigned to the same class in the same slot. Move one to another slot."
+        },
+        "room_capacity": {
+          "title": "Room over capacity",
+          "fix": "More lessons share this room/slot than its max concurrent setting allows. Increase capacity in Rooms or move a lesson elsewhere."
+        },
+        "teacher_unavailable": {
+          "title": "Teacher unavailable",
+          "fix": "Lesson placed in a slot the teacher marked as blocked. Update the teacher's availability or move the lesson."
+        },
+        "class_unavailable": {
+          "title": "Class unavailable",
+          "fix": "Lesson placed in a slot the class is unavailable. Adjust class availability or move the lesson."
+        },
+        "teacher_over_capacity": {
+          "title": "Teacher over weekly hours",
+          "fix": "Teacher is scheduled for more hours than max_hours_per_week. Increase max hours or remove a lesson."
+        },
+        "teacher_unqualified": {
+          "title": "Teacher not qualified",
+          "fix": "Add this subject to the teacher's qualifications, or assign a qualified teacher."
+        },
+        "room_unsuitable": {
+          "title": "Room not suitable",
+          "fix": "Add this subject to the room's suitable subjects, or pick a different room."
+        },
+        "room_too_small": {
+          "title": "Room too small",
+          "fix": "Room capacity is below the class's student count. Increase capacity or pick a larger room."
+        },
+        "unplaced_lesson": {
+          "title": "Lesson could not be placed",
+          "fix": "No feasible slot/teacher/room combination was found. Loosen constraints or add more slots."
+        },
+        "no_qualified_teacher": {
+          "title": "No qualified teacher",
+          "fix": "No teacher is qualified for this subject. Add a qualification on an existing teacher or create a new one."
+        },
+        "teacher_gap": {
+          "title": "Teacher idle period",
+          "fix": "Teacher has gaps between lessons on this day. Reorder lessons to remove the gap."
+        },
+        "subject_clustered": {
+          "title": "Subject clustered",
+          "fix": "Same subject scheduled multiple times for this class on one day. Spread it across different days."
+        },
+        "not_preferred_slot": {
+          "title": "Non-preferred slot",
+          "fix": "Lesson is in a slot the teacher did not prefer. Move it to a preferred slot."
+        },
+        "class_teacher_first_period": {
+          "title": "Class teacher missing in first period",
+          "fix": "First-period lessons should be taught by the class teacher. Reassign the first-period lesson."
+        }
+      }
+    },
     "apply": "Apply Schedule",
     "applyConfirm": "Apply this schedule? This will replace any existing timetable for this term.",
     "applied": "Schedule applied successfully",

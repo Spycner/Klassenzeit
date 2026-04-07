@@ -1,3 +1,4 @@
+use smallvec::SmallVec;
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -117,7 +118,100 @@ pub struct Score {
     pub soft_score: f64,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Severity {
+    Hard,
+    Soft,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ViolationKind {
+    // Hard / softenable
+    TeacherConflict,
+    ClassConflict,
+    RoomCapacity,
+    TeacherUnavailable,
+    ClassUnavailable,
+    TeacherOverCapacity,
+    TeacherUnqualified,
+    RoomUnsuitable,
+    RoomTooSmall,
+    UnplacedLesson,
+    NoQualifiedTeacher,
+    // Soft
+    TeacherGap,
+    SubjectClustered,
+    NotPreferredSlot,
+    ClassTeacherFirstPeriod,
+}
+
+impl ViolationKind {
+    pub fn as_snake_case(self) -> &'static str {
+        match self {
+            ViolationKind::TeacherConflict => "teacher_conflict",
+            ViolationKind::ClassConflict => "class_conflict",
+            ViolationKind::RoomCapacity => "room_capacity",
+            ViolationKind::TeacherUnavailable => "teacher_unavailable",
+            ViolationKind::ClassUnavailable => "class_unavailable",
+            ViolationKind::TeacherOverCapacity => "teacher_over_capacity",
+            ViolationKind::TeacherUnqualified => "teacher_unqualified",
+            ViolationKind::RoomUnsuitable => "room_unsuitable",
+            ViolationKind::RoomTooSmall => "room_too_small",
+            ViolationKind::UnplacedLesson => "unplaced_lesson",
+            ViolationKind::NoQualifiedTeacher => "no_qualified_teacher",
+            ViolationKind::TeacherGap => "teacher_gap",
+            ViolationKind::SubjectClustered => "subject_clustered",
+            ViolationKind::NotPreferredSlot => "not_preferred_slot",
+            ViolationKind::ClassTeacherFirstPeriod => "class_teacher_first_period",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LessonRef {
+    pub class_id: Uuid,
+    pub subject_id: Uuid,
+    pub teacher_id: Uuid,
+    pub room_id: Option<Uuid>,
+    pub timeslot_id: Uuid,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ResourceRef {
+    Teacher(Uuid),
+    Class(Uuid),
+    Room(Uuid),
+    Subject(Uuid),
+    Timeslot(Uuid),
+}
+
 #[derive(Debug, Clone)]
 pub struct Violation {
-    pub description: String,
+    pub kind: ViolationKind,
+    pub severity: Severity,
+    pub message: String,
+    pub lesson_refs: SmallVec<[LessonRef; 4]>,
+    pub resources: SmallVec<[ResourceRef; 4]>,
+}
+
+/// Index-based intermediate produced by `constraints::diagnose`. The mapper
+/// translates these to public `Violation`s with UUIDs.
+#[derive(Debug, Clone)]
+pub struct DiagnosedViolation {
+    pub kind: ViolationKind,
+    pub severity: Severity,
+    pub message: String,
+    /// Indices into the `lessons` slice passed to `diagnose`.
+    pub lesson_indices: SmallVec<[usize; 4]>,
+    /// Resource refs by index into the corresponding `ProblemFacts` vectors.
+    pub resources: SmallVec<[DiagnosedResourceRef; 4]>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DiagnosedResourceRef {
+    Teacher(usize),
+    Class(usize),
+    Room(usize),
+    Subject(usize),
+    Timeslot(usize),
 }

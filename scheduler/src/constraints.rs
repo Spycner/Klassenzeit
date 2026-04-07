@@ -628,11 +628,758 @@ impl IncrementalState {
     }
 }
 
+use crate::types::{DiagnosedResourceRef, DiagnosedViolation, Severity, ViolationKind};
+
+#[inline]
+fn severity_for(soften: Option<i64>) -> Severity {
+    if soften.is_some() {
+        Severity::Soft
+    } else {
+        Severity::Hard
+    }
+}
+
+/// Walk every constraint defined in `full_evaluate` and emit a structured
+/// item for each violation. The Hard count must equal `-full_evaluate(...).hard`
+/// when no `soften_*` is set; covered by `diagnose_hard_count_matches_full_evaluate`.
+pub fn diagnose(lessons: &[PlanningLesson], facts: &ProblemFacts) -> Vec<DiagnosedViolation> {
+    use smallvec::smallvec;
+    let mut out: Vec<DiagnosedViolation> = Vec::new();
+
+    let assigned: Vec<(usize, &PlanningLesson)> = lessons
+        .iter()
+        .enumerate()
+        .filter(|(_, l)| l.timeslot.is_some())
+        .collect();
+
+    // 1 & 2 — pairwise teacher/class conflicts
+    for i in 0..assigned.len() {
+        for j in (i + 1)..assigned.len() {
+            let (ai, a) = assigned[i];
+            let (bj, b) = assigned[j];
+            if a.timeslot != b.timeslot {
+                continue;
+            }
+            let ts = a.timeslot.unwrap();
+            if a.teacher_idx == b.teacher_idx {
+                out.push(DiagnosedViolation {
+                    kind: ViolationKind::TeacherConflict,
+                    severity: Severity::Hard,
+                    message: format!("Teacher double-booked at timeslot {}", ts),
+                    lesson_indices: smallvec![ai, bj],
+                    resources: smallvec![
+                        DiagnosedResourceRef::Teacher(a.teacher_idx),
+                        DiagnosedResourceRef::Timeslot(ts),
+                    ],
+                });
+            }
+            if a.class_idx == b.class_idx {
+                out.push(DiagnosedViolation {
+                    kind: ViolationKind::ClassConflict,
+                    severity: Severity::Hard,
+                    message: format!("Class double-booked at timeslot {}", ts),
+                    lesson_indices: smallvec![ai, bj],
+                    resources: smallvec![
+                        DiagnosedResourceRef::Class(a.class_idx),
+                        DiagnosedResourceRef::Timeslot(ts),
+                    ],
+                });
+            }
+        }
+    }
+
+    // 3 — room over-capacity (count-based, mirrors full_evaluate)
+    {
+        let num_rooms = facts.rooms.len();
+        let num_ts = facts.timeslots.len();
+        let mut room_at_slot: Vec<Vec<SmallVec<[usize; 4]>>> =
+            vec![vec![SmallVec::new(); num_ts]; num_rooms];
+        for (idx, l) in &assigned {
+            if let (Some(r), Some(ts)) = (l.room, l.timeslot) {
+                room_at_slot[r][ts].push(*idx);
+            }
+        }
+        for (room_idx, slots) in room_at_slot.iter().enumerate() {
+            for (ts_idx, indices) in slots.iter().enumerate() {
+                let cap = facts.rooms[room_idx].max_concurrent_at_slot[ts_idx] as usize;
+                if indices.len() > cap {
+                    let excess = indices.len() - cap;
+                    for _ in 0..excess {
+                        out.push(DiagnosedViolation {
+                            kind: ViolationKind::RoomCapacity,
+                            severity: Severity::Hard,
+                            message: format!(
+                                "Room over capacity at timeslot {} ({} > {})",
+                                ts_idx,
+                                indices.len(),
+                                cap
+                            ),
+                            lesson_indices: indices.iter().copied().collect(),
+                            resources: smallvec![
+                                DiagnosedResourceRef::Room(room_idx),
+                                DiagnosedResourceRef::Timeslot(ts_idx),
+                            ],
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // Day computation (same as full_evaluate)
+    let num_days = facts
+        .timeslots
+        .iter()
+        .map(|t| t.day as usize + 1)
+        .max()
+        .unwrap_or(0);
+    let mut first_period_per_day = vec![u8::MAX; num_days];
+    for ts in &facts.timeslots {
+        let d = ts.day as usize;
+        if ts.period < first_period_per_day[d] {
+            first_period_per_day[d] = ts.period;
+        }
+    }
+
+    let num_teachers = facts.teachers.len();
+    let num_classes = facts.classes.len();
+    let num_subjects = facts.subjects.len();
+    let mut teacher_hours: HashMap<usize, u32> = HashMap::new();
+    let mut teacher_day_periods: Vec<Vec<Vec<(u8, usize)>>> =
+        vec![vec![Vec::new(); num_days]; num_teachers];
+    let mut class_subject_day: Vec<Vec<Vec<SmallVec<[usize; 4]>>>> = (0..num_classes)
+        .map(|_| {
+            (0..num_subjects)
+                .map(|_| vec![SmallVec::new(); num_days])
+                .collect()
+        })
+        .collect();
+    type FirstPeriodEntry = (bool, bool, SmallVec<[usize; 4]>);
+    let mut class_day_first_period: Vec<Vec<FirstPeriodEntry>> =
+        vec![vec![(false, false, SmallVec::new()); num_days]; num_classes];
+
+    for (idx, l) in &assigned {
+        let ts = l.timeslot.unwrap();
+        let teacher = &facts.teachers[l.teacher_idx];
+        let timeslot = &facts.timeslots[ts];
+        let day = timeslot.day as usize;
+        let period = timeslot.period;
+
+        // 4 — teacher availability
+        if !teacher.available_slots[ts] {
+            out.push(DiagnosedViolation {
+                kind: ViolationKind::TeacherUnavailable,
+                severity: severity_for(facts.weights.soften_teacher_availability),
+                message: format!("Teacher unavailable at timeslot {}", ts),
+                lesson_indices: smallvec![*idx],
+                resources: smallvec![
+                    DiagnosedResourceRef::Teacher(l.teacher_idx),
+                    DiagnosedResourceRef::Timeslot(ts),
+                ],
+            });
+        }
+        // 9 — class availability
+        if !facts.classes[l.class_idx].available_slots[ts] {
+            out.push(DiagnosedViolation {
+                kind: ViolationKind::ClassUnavailable,
+                severity: severity_for(facts.weights.soften_class_availability),
+                message: format!("Class unavailable at timeslot {}", ts),
+                lesson_indices: smallvec![*idx],
+                resources: smallvec![
+                    DiagnosedResourceRef::Class(l.class_idx),
+                    DiagnosedResourceRef::Timeslot(ts),
+                ],
+            });
+        }
+        // 6 — teacher qualification
+        if !teacher.qualified_subjects[l.subject_idx] {
+            out.push(DiagnosedViolation {
+                kind: ViolationKind::TeacherUnqualified,
+                severity: severity_for(facts.weights.soften_teacher_qualification),
+                message: format!("Teacher not qualified for subject {}", l.subject_idx),
+                lesson_indices: smallvec![*idx],
+                resources: smallvec![
+                    DiagnosedResourceRef::Teacher(l.teacher_idx),
+                    DiagnosedResourceRef::Subject(l.subject_idx),
+                ],
+            });
+        }
+        *teacher_hours.entry(l.teacher_idx).or_insert(0) += 1;
+
+        if let Some(room_idx) = l.room {
+            let room = &facts.rooms[room_idx];
+            // 7 — room suitability
+            if !room.suitable_subjects[l.subject_idx] {
+                out.push(DiagnosedViolation {
+                    kind: ViolationKind::RoomUnsuitable,
+                    severity: severity_for(facts.weights.soften_room_suitability),
+                    message: format!("Room not suitable for subject {}", l.subject_idx),
+                    lesson_indices: smallvec![*idx],
+                    resources: smallvec![
+                        DiagnosedResourceRef::Room(room_idx),
+                        DiagnosedResourceRef::Subject(l.subject_idx),
+                    ],
+                });
+            }
+            // 8 — room capacity
+            if let (Some(cap), Some(count)) =
+                (room.capacity, facts.classes[l.class_idx].student_count)
+            {
+                if cap < count {
+                    out.push(DiagnosedViolation {
+                        kind: ViolationKind::RoomTooSmall,
+                        severity: severity_for(facts.weights.soften_room_capacity),
+                        message: format!("Room too small ({} < {})", cap, count),
+                        lesson_indices: smallvec![*idx],
+                        resources: smallvec![
+                            DiagnosedResourceRef::Room(room_idx),
+                            DiagnosedResourceRef::Class(l.class_idx),
+                        ],
+                    });
+                }
+            }
+        }
+
+        // Soft tracking
+        teacher_day_periods[l.teacher_idx][day].push((period, *idx));
+        class_subject_day[l.class_idx][l.subject_idx][day].push(*idx);
+
+        if !teacher.preferred_slots[ts] {
+            // Always soft
+            out.push(DiagnosedViolation {
+                kind: ViolationKind::NotPreferredSlot,
+                severity: Severity::Soft,
+                message: "Lesson in non-preferred slot for teacher".to_string(),
+                lesson_indices: smallvec![*idx],
+                resources: smallvec![
+                    DiagnosedResourceRef::Teacher(l.teacher_idx),
+                    DiagnosedResourceRef::Timeslot(ts),
+                ],
+            });
+        }
+
+        if period == first_period_per_day[day] {
+            let class_teacher = facts.classes[l.class_idx].class_teacher_idx;
+            let entry = &mut class_day_first_period[l.class_idx][day];
+            entry.1 = true;
+            entry.2.push(*idx);
+            if class_teacher == Some(l.teacher_idx) {
+                entry.0 = true;
+            }
+        }
+    }
+
+    // 5 — teacher over-capacity
+    for (&teacher_idx, &hours) in &teacher_hours {
+        let max = facts.teachers[teacher_idx].max_hours;
+        if hours > max {
+            let excess = hours - max;
+            for _ in 0..excess {
+                out.push(DiagnosedViolation {
+                    kind: ViolationKind::TeacherOverCapacity,
+                    severity: severity_for(facts.weights.soften_teacher_max_hours),
+                    message: format!(
+                        "Teacher {} over capacity ({} > {})",
+                        teacher_idx, hours, max
+                    ),
+                    lesson_indices: smallvec![],
+                    resources: smallvec![DiagnosedResourceRef::Teacher(teacher_idx)],
+                });
+            }
+        }
+    }
+
+    // Soft: teacher gaps — emit one violation per (teacher, day) with gaps>0
+    for (t_idx, days) in teacher_day_periods.iter().enumerate() {
+        for (d_idx, periods) in days.iter().enumerate() {
+            if periods.len() < 2 {
+                continue;
+            }
+            let min_p = periods.iter().map(|(p, _)| *p).min().unwrap() as i64;
+            let max_p = periods.iter().map(|(p, _)| *p).max().unwrap() as i64;
+            let span = max_p - min_p;
+            let gaps = span - (periods.len() as i64 - 1);
+            if gaps > 0 {
+                out.push(DiagnosedViolation {
+                    kind: ViolationKind::TeacherGap,
+                    severity: Severity::Soft,
+                    message: format!(
+                        "Teacher {} has {} idle period(s) on day {}",
+                        t_idx, gaps, d_idx
+                    ),
+                    lesson_indices: periods.iter().map(|(_, i)| *i).collect(),
+                    resources: smallvec![DiagnosedResourceRef::Teacher(t_idx)],
+                });
+            }
+        }
+    }
+
+    // Soft: subject clustering — emit one per (class, subject, day) with count>1
+    for (c_idx, subjects) in class_subject_day.iter().enumerate() {
+        for (s_idx, days) in subjects.iter().enumerate() {
+            for (d_idx, idxs) in days.iter().enumerate() {
+                if idxs.len() > 1 {
+                    out.push(DiagnosedViolation {
+                        kind: ViolationKind::SubjectClustered,
+                        severity: Severity::Soft,
+                        message: format!(
+                            "Subject {} clustered on day {} for class {}",
+                            s_idx, d_idx, c_idx
+                        ),
+                        lesson_indices: idxs.iter().copied().collect(),
+                        resources: smallvec![
+                            DiagnosedResourceRef::Class(c_idx),
+                            DiagnosedResourceRef::Subject(s_idx),
+                        ],
+                    });
+                }
+            }
+        }
+    }
+
+    // Soft: class teacher first period
+    for (c_idx, days) in class_day_first_period.iter().enumerate() {
+        if facts.classes[c_idx].class_teacher_idx.is_none() {
+            continue;
+        }
+        for (d_idx, (ct_teaches, has_lesson, idxs)) in days.iter().enumerate() {
+            if *has_lesson && !ct_teaches {
+                out.push(DiagnosedViolation {
+                    kind: ViolationKind::ClassTeacherFirstPeriod,
+                    severity: Severity::Soft,
+                    message: format!(
+                        "Class teacher does not teach first period on day {} for class {}",
+                        d_idx, c_idx
+                    ),
+                    lesson_indices: idxs.iter().copied().collect(),
+                    resources: smallvec![DiagnosedResourceRef::Class(c_idx)],
+                });
+            }
+        }
+    }
+
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::planning::*;
+    use crate::types::{DiagnosedResourceRef, DiagnosedViolation, Severity, ViolationKind};
     use bitvec::prelude::*;
+
+    fn count_kind(violations: &[DiagnosedViolation], k: ViolationKind) -> usize {
+        violations.iter().filter(|v| v.kind == k).count()
+    }
+
+    /// Build a minimal `ProblemFacts` with all constraints trivially satisfied.
+    /// `num_ts` timeslots on day 0, periods 0..num_ts.
+    fn mini_facts(
+        num_ts: usize,
+        num_teachers: usize,
+        num_classes: usize,
+        num_rooms: usize,
+        num_subjects: usize,
+    ) -> ProblemFacts {
+        ProblemFacts {
+            timeslots: (0..num_ts)
+                .map(|i| Timeslot {
+                    day: 0,
+                    period: i as u8,
+                })
+                .collect(),
+            teachers: (0..num_teachers)
+                .map(|_| TeacherFact {
+                    max_hours: 100,
+                    available_slots: bitvec![1; num_ts],
+                    qualified_subjects: bitvec![1; num_subjects],
+                    preferred_slots: bitvec![1; num_ts],
+                })
+                .collect(),
+            classes: (0..num_classes)
+                .map(|_| ClassFact {
+                    student_count: None,
+                    class_teacher_idx: None,
+                    available_slots: bitvec![1; num_ts],
+                })
+                .collect(),
+            rooms: (0..num_rooms)
+                .map(|_| RoomFact {
+                    capacity: None,
+                    suitable_subjects: bitvec![1; num_subjects],
+                    max_concurrent_at_slot: vec![10; num_ts],
+                })
+                .collect(),
+            subjects: (0..num_subjects)
+                .map(|_| SubjectFact {
+                    needs_special_room: false,
+                })
+                .collect(),
+            weights: ConstraintWeights::default(),
+        }
+    }
+
+    fn lesson(
+        id: usize,
+        teacher_idx: usize,
+        class_idx: usize,
+        subject_idx: usize,
+        timeslot: Option<usize>,
+        room: Option<usize>,
+    ) -> PlanningLesson {
+        PlanningLesson {
+            id,
+            teacher_idx,
+            class_idx,
+            subject_idx,
+            timeslot,
+            room,
+        }
+    }
+
+    #[test]
+    fn diagnose_reports_teacher_conflict() {
+        let facts = mini_facts(2, 1, 2, 1, 1);
+        let lessons = vec![
+            lesson(0, 0, 0, 0, Some(0), Some(0)),
+            lesson(1, 0, 1, 0, Some(0), Some(0)),
+        ];
+        let v = diagnose(&lessons, &facts);
+        let tc: Vec<_> = v
+            .iter()
+            .filter(|x| x.kind == ViolationKind::TeacherConflict)
+            .collect();
+        assert_eq!(tc.len(), 1);
+        assert_eq!(tc[0].severity, Severity::Hard);
+        assert!(tc[0].lesson_indices.contains(&0) && tc[0].lesson_indices.contains(&1));
+        assert!(tc[0]
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Teacher(0))));
+        assert!(tc[0]
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Timeslot(0))));
+    }
+
+    #[test]
+    fn diagnose_reports_class_conflict() {
+        let facts = mini_facts(2, 2, 1, 1, 1);
+        let lessons = vec![
+            lesson(0, 0, 0, 0, Some(0), Some(0)),
+            lesson(1, 1, 0, 0, Some(0), Some(0)),
+        ];
+        let v = diagnose(&lessons, &facts);
+        let cc: Vec<_> = v
+            .iter()
+            .filter(|x| x.kind == ViolationKind::ClassConflict)
+            .collect();
+        assert_eq!(cc.len(), 1);
+        assert_eq!(cc[0].severity, Severity::Hard);
+        assert!(cc[0].lesson_indices.contains(&0) && cc[0].lesson_indices.contains(&1));
+        assert!(cc[0]
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Class(0))));
+    }
+
+    #[test]
+    fn diagnose_reports_room_capacity() {
+        let mut facts = mini_facts(2, 3, 3, 1, 1);
+        facts.rooms[0].max_concurrent_at_slot = vec![2; 2];
+        let lessons = vec![
+            lesson(0, 0, 0, 0, Some(0), Some(0)),
+            lesson(1, 1, 1, 0, Some(0), Some(0)),
+            lesson(2, 2, 2, 0, Some(0), Some(0)),
+        ];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::RoomCapacity), 1);
+        let rc = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::RoomCapacity)
+            .unwrap();
+        assert_eq!(rc.severity, Severity::Hard);
+        assert!(rc
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Room(0))));
+        assert!(rc
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Timeslot(0))));
+    }
+
+    #[test]
+    fn diagnose_reports_teacher_unavailable() {
+        let mut facts = mini_facts(2, 1, 1, 1, 1);
+        facts.teachers[0].available_slots.set(0, false);
+        let lessons = vec![lesson(0, 0, 0, 0, Some(0), Some(0))];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::TeacherUnavailable), 1);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::TeacherUnavailable)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Hard);
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Teacher(0))));
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Timeslot(0))));
+    }
+
+    #[test]
+    fn diagnose_reports_class_unavailable() {
+        let mut facts = mini_facts(2, 1, 1, 1, 1);
+        facts.classes[0].available_slots.set(0, false);
+        let lessons = vec![lesson(0, 0, 0, 0, Some(0), Some(0))];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::ClassUnavailable), 1);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::ClassUnavailable)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Hard);
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Class(0))));
+    }
+
+    #[test]
+    fn diagnose_reports_teacher_over_capacity() {
+        let mut facts = mini_facts(2, 1, 2, 1, 1);
+        facts.teachers[0].max_hours = 1;
+        // use two distinct classes to avoid class conflict (different timeslots anyway)
+        let lessons = vec![
+            lesson(0, 0, 0, 0, Some(0), Some(0)),
+            lesson(1, 0, 1, 0, Some(1), Some(0)),
+        ];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::TeacherOverCapacity), 1);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::TeacherOverCapacity)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Hard);
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Teacher(0))));
+    }
+
+    #[test]
+    fn diagnose_reports_teacher_unqualified() {
+        let mut facts = mini_facts(2, 1, 1, 1, 2);
+        facts.teachers[0].qualified_subjects.set(1, false);
+        let lessons = vec![lesson(0, 0, 0, 1, Some(0), Some(0))];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::TeacherUnqualified), 1);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::TeacherUnqualified)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Hard);
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Teacher(0))));
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Subject(1))));
+    }
+
+    #[test]
+    fn diagnose_reports_room_unsuitable() {
+        let mut facts = mini_facts(2, 1, 1, 1, 2);
+        facts.rooms[0].suitable_subjects.set(1, false);
+        let lessons = vec![lesson(0, 0, 0, 1, Some(0), Some(0))];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::RoomUnsuitable), 1);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::RoomUnsuitable)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Hard);
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Room(0))));
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Subject(1))));
+    }
+
+    #[test]
+    fn diagnose_reports_room_too_small() {
+        let mut facts = mini_facts(2, 1, 1, 1, 1);
+        facts.rooms[0].capacity = Some(10);
+        facts.classes[0].student_count = Some(25);
+        let lessons = vec![lesson(0, 0, 0, 0, Some(0), Some(0))];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::RoomTooSmall), 1);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::RoomTooSmall)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Hard);
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Room(0))));
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Class(0))));
+    }
+
+    #[test]
+    fn diagnose_reports_teacher_gap() {
+        // periods 1 and 3 → span 2, 2 lessons, gaps = 2 - 1 = 1
+        let facts = mini_facts(5, 1, 2, 1, 2);
+        let lessons = vec![
+            lesson(0, 0, 0, 0, Some(1), Some(0)),
+            lesson(1, 0, 1, 1, Some(3), Some(0)),
+        ];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::TeacherGap), 1);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::TeacherGap)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Soft);
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Teacher(0))));
+    }
+
+    #[test]
+    fn diagnose_reports_subject_clustered() {
+        // 2 lessons same class, same subject, same day (different teachers/timeslots to avoid conflicts)
+        let facts = mini_facts(3, 2, 1, 1, 1);
+        let lessons = vec![
+            lesson(0, 0, 0, 0, Some(0), Some(0)),
+            lesson(1, 1, 0, 0, Some(1), Some(0)),
+        ];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::SubjectClustered), 1);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::SubjectClustered)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Soft);
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Class(0))));
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Subject(0))));
+    }
+
+    #[test]
+    fn diagnose_reports_not_preferred_slot() {
+        let mut facts = mini_facts(2, 1, 1, 1, 1);
+        facts.teachers[0].preferred_slots.set(0, false);
+        let lessons = vec![lesson(0, 0, 0, 0, Some(0), Some(0))];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::NotPreferredSlot), 1);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::NotPreferredSlot)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Soft);
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Teacher(0))));
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Timeslot(0))));
+    }
+
+    #[test]
+    fn diagnose_reports_class_teacher_first_period() {
+        let mut facts = mini_facts(2, 2, 1, 1, 1);
+        facts.classes[0].class_teacher_idx = Some(0);
+        // first-period lesson taught by teacher 1 (not the class teacher)
+        let lessons = vec![lesson(0, 1, 0, 0, Some(0), Some(0))];
+        let v = diagnose(&lessons, &facts);
+        assert_eq!(count_kind(&v, ViolationKind::ClassTeacherFirstPeriod), 1);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::ClassTeacherFirstPeriod)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Soft);
+        assert!(x
+            .resources
+            .iter()
+            .any(|r| matches!(r, DiagnosedResourceRef::Class(0))));
+    }
+
+    #[test]
+    fn diagnose_softening_changes_severity() {
+        let mut facts = mini_facts(2, 1, 1, 1, 2);
+        facts.teachers[0].qualified_subjects.set(1, false);
+        facts.weights.soften_teacher_qualification = Some(1);
+        let lessons = vec![lesson(0, 0, 0, 1, Some(0), Some(0))];
+        let v = diagnose(&lessons, &facts);
+        let x = v
+            .iter()
+            .find(|x| x.kind == ViolationKind::TeacherUnqualified)
+            .unwrap();
+        assert_eq!(x.severity, Severity::Soft);
+    }
+
+    #[test]
+    fn diagnose_hard_count_matches_full_evaluate() {
+        // Build an instance with multiple hard violations:
+        //  - teacher conflict (teacher 0 at ts 0)
+        //  - class conflict (class 0 at ts 1)
+        //  - room over-capacity at ts 2 (cap=1, 2 lessons)
+        //  - teacher unavailable (teacher 1 at ts 3)
+        //  - class unavailable (class 2 at ts 4)
+        let mut facts = mini_facts(5, 3, 3, 2, 2);
+        // Teacher 1 unavailable at ts 3
+        facts.teachers[1].available_slots.set(3, false);
+        // Class 2 unavailable at ts 4
+        facts.classes[2].available_slots.set(4, false);
+        // Room 1 cap=1 everywhere
+        facts.rooms[1].max_concurrent_at_slot = vec![1; 5];
+
+        let lessons = vec![
+            // Teacher conflict: teacher 0, two diff classes, ts 0
+            lesson(0, 0, 0, 0, Some(0), Some(0)),
+            lesson(1, 0, 1, 0, Some(0), Some(0)),
+            // Class conflict: class 0, two diff teachers, ts 1
+            lesson(2, 0, 0, 0, Some(1), Some(0)),
+            lesson(3, 1, 0, 0, Some(1), Some(0)),
+            // Room over-capacity: room 1, ts 2, two lessons (cap=1)
+            lesson(4, 0, 0, 0, Some(2), Some(1)),
+            lesson(5, 1, 1, 0, Some(2), Some(1)),
+            // Teacher unavailable: teacher 1 at ts 3
+            lesson(6, 1, 1, 0, Some(3), Some(0)),
+            // Class unavailable: class 2 at ts 4
+            lesson(7, 2, 2, 0, Some(4), Some(0)),
+        ];
+
+        let score = full_evaluate(&lessons, &facts);
+        let v = diagnose(&lessons, &facts);
+        let hard_count = v.iter().filter(|x| x.severity == Severity::Hard).count() as i64;
+        assert_eq!(
+            hard_count, -score.hard,
+            "diagnose hard count must match full_evaluate hard magnitude (got {} vs {})",
+            hard_count, -score.hard
+        );
+    }
 
     fn make_facts_with_room_capacity(cap: u8, num_timeslots: usize) -> ProblemFacts {
         ProblemFacts {

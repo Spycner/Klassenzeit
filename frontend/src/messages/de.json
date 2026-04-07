@@ -94,6 +94,76 @@
     "failed": "Stundenplanerstellung fehlgeschlagen",
     "violations": "Konflikte",
     "noViolations": "Keine Konflikte — alle Stunden wurden erfolgreich platziert",
+    "violationsPanel": {
+      "tabs": { "hard": "Hart ({count})", "soft": "Weich ({count})" },
+      "empty": "Keine Verletzungen dieser Art.",
+      "fixCta": "So beheben",
+      "openTeacher": "Lehrkraft öffnen",
+      "openRoom": "Raum öffnen",
+      "openSubject": "Fach öffnen",
+      "kind": {
+        "teacher_conflict": {
+          "title": "Lehrkraft doppelt belegt",
+          "fix": "Zwei Stunden derselben Lehrkraft im gleichen Slot. Eine umverteilen oder verschieben."
+        },
+        "class_conflict": {
+          "title": "Klasse doppelt belegt",
+          "fix": "Zwei Stunden derselben Klasse im gleichen Slot. Eine verschieben."
+        },
+        "room_capacity": {
+          "title": "Raum überfüllt",
+          "fix": "Mehr Stunden in diesem Raum/Slot als die maximale Belegung erlaubt. Belegung erhöhen oder Stunde verschieben."
+        },
+        "teacher_unavailable": {
+          "title": "Lehrkraft nicht verfügbar",
+          "fix": "Stunde liegt in einem geblockten Slot der Lehrkraft. Verfügbarkeit anpassen oder Stunde verschieben."
+        },
+        "class_unavailable": {
+          "title": "Klasse nicht verfügbar",
+          "fix": "Stunde liegt in einem nicht verfügbaren Klassenslot. Verfügbarkeit anpassen oder verschieben."
+        },
+        "teacher_over_capacity": {
+          "title": "Lehrkraft über Stundenzahl",
+          "fix": "Lehrkraft ist über max_hours_per_week eingeplant. Max-Stunden erhöhen oder Stunde entfernen."
+        },
+        "teacher_unqualified": {
+          "title": "Lehrkraft nicht qualifiziert",
+          "fix": "Fach zu den Qualifikationen der Lehrkraft hinzufügen oder andere Lehrkraft zuweisen."
+        },
+        "room_unsuitable": {
+          "title": "Raum nicht geeignet",
+          "fix": "Fach zu den geeigneten Fächern des Raums hinzufügen oder anderen Raum wählen."
+        },
+        "room_too_small": {
+          "title": "Raum zu klein",
+          "fix": "Raumkapazität ist kleiner als Klassengröße. Kapazität erhöhen oder größeren Raum wählen."
+        },
+        "unplaced_lesson": {
+          "title": "Stunde nicht platzierbar",
+          "fix": "Keine machbare Kombination gefunden. Constraints lockern oder mehr Slots anlegen."
+        },
+        "no_qualified_teacher": {
+          "title": "Keine qualifizierte Lehrkraft",
+          "fix": "Niemand ist für dieses Fach qualifiziert. Qualifikation hinzufügen oder Lehrkraft anlegen."
+        },
+        "teacher_gap": {
+          "title": "Freistunde der Lehrkraft",
+          "fix": "Lehrkraft hat Lücken zwischen Stunden. Reihenfolge anpassen."
+        },
+        "subject_clustered": {
+          "title": "Fach gehäuft",
+          "fix": "Gleiches Fach mehrfach am selben Tag für die Klasse. Auf andere Tage verteilen."
+        },
+        "not_preferred_slot": {
+          "title": "Kein bevorzugter Slot",
+          "fix": "Stunde liegt in einem nicht bevorzugten Slot. In bevorzugten Slot verschieben."
+        },
+        "class_teacher_first_period": {
+          "title": "Klassenlehrkraft fehlt in erster Stunde",
+          "fix": "Erste Stunde sollte von der Klassenlehrkraft unterrichtet werden. Umverteilen."
+        }
+      }
+    },
     "apply": "Stundenplan übernehmen",
     "applyConfirm": "Diesen Stundenplan übernehmen? Der bestehende Stundenplan für dieses Halbjahr wird ersetzt.",
     "applied": "Stundenplan erfolgreich übernommen",

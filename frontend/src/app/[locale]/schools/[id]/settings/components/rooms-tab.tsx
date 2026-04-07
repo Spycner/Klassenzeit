@@ -1,9 +1,9 @@
 "use client";
 
 import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,6 +96,25 @@ export function RoomsTab() {
       .then(setSubjects)
       .catch(() => {});
   }, [apiClient, schoolId]);
+
+  // Deep-link focus handling: ?focus=<id> scrolls the row into view and
+  // briefly highlights it.
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("focus");
+  const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  useEffect(() => {
+    if (!focusId || items.length === 0) return;
+    const el = rowRefs.current.get(focusId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("bg-yellow-100", "transition-colors");
+      const timer = setTimeout(() => {
+        el.classList.remove("bg-yellow-100");
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [focusId, items]);
 
   function openAddDialog() {
     setEditingItem(null);
@@ -209,7 +228,13 @@ export function RoomsTab() {
         </TableHeader>
         <TableBody>
           {items.map((item) => (
-            <TableRow key={item.id}>
+            <TableRow
+              key={item.id}
+              ref={(el) => {
+                if (el) rowRefs.current.set(item.id, el);
+                else rowRefs.current.delete(item.id);
+              }}
+            >
               <TableCell className="font-medium">{item.name}</TableCell>
               <TableCell className="text-muted-foreground">
                 {item.building ?? "\u2014"}
