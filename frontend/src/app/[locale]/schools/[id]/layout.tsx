@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   BookOpen,
   Calendar,
+  CalendarDays,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -47,6 +48,7 @@ export default function SchoolLayout({
   const tc = useTranslations("common");
   const tCurriculum = useTranslations("curriculum");
   const tScheduler = useTranslations("scheduler");
+  const tTimetable = useTranslations("timetable");
   const tSettings = useTranslations("settings");
   const { logout } = useAuth();
   const { selectSchool } = useSchool();
@@ -86,6 +88,11 @@ export default function SchoolLayout({
       title: tScheduler("title"),
       href: `/${locale}/schools/${schoolId}/schedule`,
       icon: Calendar,
+    },
+    {
+      title: tTimetable("title"),
+      href: `/${locale}/schools/${schoolId}/timetable`,
+      icon: CalendarDays,
     },
     ...(isAdmin
       ? [
