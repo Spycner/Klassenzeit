@@ -193,3 +193,25 @@ pub struct Violation {
     pub lesson_refs: SmallVec<[LessonRef; 4]>,
     pub resources: SmallVec<[ResourceRef; 4]>,
 }
+
+/// Index-based intermediate produced by `constraints::diagnose`. The mapper
+/// translates these to public `Violation`s with UUIDs.
+#[derive(Debug, Clone)]
+pub struct DiagnosedViolation {
+    pub kind: ViolationKind,
+    pub severity: Severity,
+    pub message: String,
+    /// Indices into the `lessons` slice passed to `diagnose`.
+    pub lesson_indices: SmallVec<[usize; 4]>,
+    /// Resource refs by index into the corresponding `ProblemFacts` vectors.
+    pub resources: SmallVec<[DiagnosedResourceRef; 4]>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DiagnosedResourceRef {
+    Teacher(usize),
+    Class(usize),
+    Room(usize),
+    Subject(usize),
+    Timeslot(usize),
+}
