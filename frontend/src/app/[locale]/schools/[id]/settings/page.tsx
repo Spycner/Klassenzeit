@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useApiClient } from "@/hooks/use-api-client";
 import type { SchoolResponse } from "@/lib/types";
 import { ClassesTab } from "./components/classes-tab";
+import { ImportExportTab } from "./components/import-export-tab";
 import { RoomsTab } from "./components/rooms-tab";
 import { SchedulerTab } from "./components/scheduler-tab";
 import { SubjectsTab } from "./components/subjects-tab";
@@ -21,6 +22,7 @@ const TABS = [
   "rooms",
   "timeslots",
   "scheduler",
+  "importExport",
 ] as const;
 type Tab = (typeof TABS)[number];
 
@@ -105,6 +107,7 @@ export default function SettingsPage() {
         {activeTab === "rooms" && <RoomsTab />}
         {activeTab === "timeslots" && <TimeslotsTab />}
         {activeTab === "scheduler" && <SchedulerTab />}
+        {activeTab === "importExport" && <ImportExportTab />}
       </div>
     </div>
   );
