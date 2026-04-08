@@ -156,11 +156,21 @@
 - New `<LessonEditDialog>` (diff-only submit) and `<UndoToolbar>`. In-memory undo stack capped at 10, cleared on term change. Undo issues inverse PATCH; swap pushes both snapshots so two undos fully revert.
 - `/timetable` page is now editable for admins (role from existing `GET /api/schools/{id}` pattern), with `<ViolationsPanel>` mounted and fed fresh violations after every edit. Edits that introduce hard violations are allowed — surfaced, not refused.
 
+### Data Import/Export (2e)
+- Spec: `superpowers/specs/2026-04-08-data-import-export-design.md`
+- Plan: `superpowers/plans/2026-04-08-data-import-export.md`
+- CSV round-trip (export → edit → preview → commit) for all six reference-data entities (teachers, subjects, rooms, classes, timeslots, curriculum). Natural-key upsert; rows missing from the CSV are left alone.
+- Backend `services::import_export` module: per-entity parse/diff/commit/export, shared `csv_io` helpers, and a `PreviewTokenCache` (DashMap, 10-min TTL, 100 entries/school) keyed on a UUID returned by preview.
+- Three controller endpoints under `/api/schools/{id}`: `GET /export/{entity}` (route does not include `.csv`; the `Content-Disposition` filename does), `POST /import/{entity}/preview` (multipart), `POST /import/{entity}/commit` (json `{token}`). All admin-gated. Curriculum requires `?term_id`. Cross-tenant or cross-entity tokens → 410.
+- Commit re-validates the cached rows against current DB state and applies them in a single SeaORM transaction. Any DB error rolls back the whole import. Preview rows with `invalid` actions block commit.
+- Frontend: new "Import / Export" admin settings tab with one card per entity (Export + Import buttons; term selector for curriculum). Reusable `<ImportPreviewDialog>` shows summary chips, file warnings, and per-row diff/errors with a Confirm gate.
+- Print-to-PDF for the timetable view via a Print button + `@media print` rules in `globals.css` (A4 landscape, hides app shell, scopes to `.printable-timetable`).
+- 14 backend integration tests cover the round-trip per entity, dry-run/commit happy path, expired/cross-tenant/cross-entity tokens, missing required column, non-admin 403, and rollback atomicity. 70 frontend Vitest tests pass.
+
 ## Next Up
 
 Tier 2 (UX polish) continues — make the app usable for real schools before pushing to prod.
 
-- **2e: Data import/export** — CSV/Excel import for bulk data, PDF/Excel export for timetables
 - **2f: Responsive / mobile layout** — timetable grid on small screens
 - **3a: Production deployment** — staging works, prod is just a release away (do last; ship polished UX first)
 
