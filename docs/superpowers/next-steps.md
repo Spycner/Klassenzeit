@@ -112,8 +112,8 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 | | PR #TBD. New `diagnose()` pass in scheduler emits structured `Violation { kind, severity, lesson_refs, resources }` for all 11 hard + 4 soft kinds. New `<ViolationsPanel>` groups by severity/kind, click-to-highlight pivots view mode and rings matching cells. "How to fix" popovers deep-link into settings (`?tab=...&focus=<id>`); teachers/rooms/subjects tabs scroll the focused row into view. DE/EN i18n. | | | |
 | 2e | ~~**Data import/export**~~ | done | — | M |
 | | PR #TBD. CSV round-trip (export → edit → preview → commit) for all six reference-data entities. Backend `services::import_export` with per-entity parse/diff/commit + shared csv_io helpers + DashMap-backed `PreviewTokenCache` (10-min TTL, 100/school cap). Three admin endpoints under `/api/schools/{id}`: `GET /export/{entity}`, `POST /import/{entity}/preview` (multipart), `POST /import/{entity}/commit`. Curriculum is term-scoped via `?term_id`. Natural-key upsert; missing rows in CSV are left alone. Commit re-validates and applies in one SeaORM transaction; any error rolls back. Frontend "Import / Export" admin tab with reusable `<ImportPreviewDialog>` showing summary chips + per-row diff/errors. Print-to-PDF for timetable via `@media print` (A4 landscape, scoped to `.printable-timetable`). 14 backend integration tests cover round-trip per entity, error/expiry/tenant/atomicity paths. | | | |
-| 2f | **Responsive / mobile layout** | idea | — | S |
-| | Timetable grid doesn't work well on small screens. Sidebar navigation needs mobile polish. | | | |
+| 2f | ~~**Responsive / mobile layout**~~ | done | — | M |
+| | PR #TBD. Mobile header bar with `SidebarTrigger` (closes the "phone users have no nav" gap). Timetable single-day view on mobile via new `visibleDays` prop on `<TimetableGrid>` + day-tab strip + persistence (`mobileDay` field in `localStorage`); mobile is read-only (drag-and-drop disabled). Mobile card-list rendering for every reference-data tab (rooms, teachers, subjects, classes, terms, timeslots), members, and curriculum — pattern: existing `<Table>` wrapped `hidden md:block`, sibling `space-y-2 md:hidden` cards with full-width action buttons. Settings tab strip becomes horizontally scrollable with bleed margin. Viewport-aware widths on every dialog. `break-words` polish on violations panel. No new translation keys; all reuses existing namespaces. Tests: new `visibleDays` and `MobileHeader` tests; existing tests updated to `getAllByText(...)[0]` where dual desktop/mobile rendering caused matches. | | | |
 
 ### Tier 3: Production readiness
 
@@ -168,10 +168,7 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 
 Tier 2 (UX polish) comes first — real schools need a usable app before we ship to prod. **3a: Production deployment** is intentionally moved to the bottom of this list: staging is live and the release-to-prod step is small, but there's no point deploying an app that isn't ready for real users.
 
-**Immediate (UX polish):**
-1. **2f: Responsive / mobile layout** — timetable grid on small screens
-
-**After Tier 2 is done:**
+**Tier 2 is now complete.** Next:
 7. **4e: Teacher/student dashboard** — makes the app useful beyond admins
 8. **3b: E2E tests** — confidence for ongoing development
 9. **3a: Production deployment** — ship once the UX above is in place

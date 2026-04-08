@@ -60,7 +60,7 @@ School timetabling application — Loco (Rust/Axum) backend, Next.js frontend, P
 
 - Backend unit tests: `cargo test --workspace`
 - Backend integration tests: `cargo test -p klassenzeit-backend --test mod` (requires running Postgres)
-- Frontend: `bun test` in `frontend/`
+- Frontend: `bun run test` in `frontend/` (NOT `bun test` — that uses bun's built-in runner instead of vitest)
 - E2E: TBD (in `e2e/`)
 - Integration tests require: `docker compose up -d postgres-dev`, then `just test-db-setup` (creates `loco` user and `klassenzeit-backend_test` database if they don't exist). `just backend-test` runs this automatically.
 
