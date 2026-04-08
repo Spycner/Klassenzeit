@@ -50,3 +50,4 @@ insta = { version = "1.34", features = ["redactions", "yaml", "filters"] }
 rsa = { version = "0.9", features = ["pem"] }
 rand = "0.8"
 base64 = "0.22"
+axum-test = { version = "17" }

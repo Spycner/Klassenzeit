@@ -246,7 +246,7 @@ async fn commit(
 pub fn routes() -> Routes {
     Routes::new()
         .prefix("api/schools/{id}")
-        .add("/export/{entity}.csv", get(export))
+        .add("/export/{entity}", get(export))
         .add("/import/{entity}/preview", post(preview))
         .add("/import/{entity}/commit", post(commit))
 }

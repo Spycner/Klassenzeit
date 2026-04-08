@@ -1,6 +1,7 @@
 mod auth;
 mod classes;
 mod example_data;
+mod import_export;
 mod lessons;
 mod members;
 mod room_suitabilities;
