@@ -27,6 +27,7 @@ sea-orm = { version = "1.1", features = [
   "macros",
 ] }
 chrono = { version = "0.4" }
+csv = "1"
 validator = { version = "0.20" }
 uuid = { version = "1.6", features = ["v4"] }
 include_dir = { version = "0.7" }
@@ -49,3 +50,4 @@ insta = { version = "1.34", features = ["redactions", "yaml", "filters"] }
 rsa = { version = "0.9", features = ["pem"] }
 rand = "0.8"
 base64 = "0.22"
+axum-test = { version = "17" }

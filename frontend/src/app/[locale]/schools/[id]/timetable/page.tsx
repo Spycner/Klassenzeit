@@ -1,5 +1,6 @@
 "use client";
 
+import { Printer } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -15,6 +16,7 @@ import {
   ViolationsPanel,
   violationId,
 } from "@/components/timetable/violations-panel";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -435,6 +437,10 @@ export default function TimetablePage() {
               </SelectContent>
             </Select>
           )}
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4" />
+            {t("print")}
+          </Button>
         </div>
       </div>
 
@@ -500,29 +506,33 @@ export default function TimetablePage() {
         />
       )}
 
-      {lessons.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center">
-          <p className="text-muted-foreground">{t("noTimetable")}</p>
-        </div>
-      ) : (
-        <TimetableGrid
-          lessons={lessons}
-          viewMode={viewMode}
-          selectedEntityId={selectedEntityId}
-          timeslots={timeslots}
-          subjects={subjects}
-          teachers={teachers}
-          rooms={rooms}
-          classes={classes}
-          locale={locale}
-          highlightedCells={highlightedCells}
-          highlightTone={highlighted?.v.severity === "soft" ? "warn" : "error"}
-          editable={isAdmin}
-          onLessonMove={handleMove}
-          onLessonSwap={handleSwap}
-          onLessonEdit={handleEdit}
-        />
-      )}
+      <div className="printable-timetable">
+        {lessons.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-muted-foreground">{t("noTimetable")}</p>
+          </div>
+        ) : (
+          <TimetableGrid
+            lessons={lessons}
+            viewMode={viewMode}
+            selectedEntityId={selectedEntityId}
+            timeslots={timeslots}
+            subjects={subjects}
+            teachers={teachers}
+            rooms={rooms}
+            classes={classes}
+            locale={locale}
+            highlightedCells={highlightedCells}
+            highlightTone={
+              highlighted?.v.severity === "soft" ? "warn" : "error"
+            }
+            editable={isAdmin}
+            onLessonMove={handleMove}
+            onLessonSwap={handleSwap}
+            onLessonEdit={handleEdit}
+          />
+        )}
+      </div>
 
       <LessonEditDialog
         open={editingLesson !== null}

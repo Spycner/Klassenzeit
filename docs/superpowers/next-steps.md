@@ -110,8 +110,8 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 | | PR #62. Drag-and-drop on `/timetable` for admins via `@dnd-kit/core`. New admin `PATCH /lessons/{id}` and `POST /lessons/swap` endpoints reuse `diagnose()` (via new `evaluate_term_violations` helper) so violations refresh after every edit. Swap is a 3-step transactional update to dodge the non-deferrable partial unique index. Edit dialog for room/teacher reassignment, in-memory undo stack (10-deep, cleared on term change), `?include_violations=true` on the list endpoint for one-shot fetch. Edits that introduce hard violations are allowed — surfaced via `<ViolationsPanel>`, not refused. | | | |
 | 2d | ~~**Conflict resolution UI**~~ | done | — | M |
 | | PR #TBD. New `diagnose()` pass in scheduler emits structured `Violation { kind, severity, lesson_refs, resources }` for all 11 hard + 4 soft kinds. New `<ViolationsPanel>` groups by severity/kind, click-to-highlight pivots view mode and rings matching cells. "How to fix" popovers deep-link into settings (`?tab=...&focus=<id>`); teachers/rooms/subjects tabs scroll the focused row into view. DE/EN i18n. | | | |
-| 2e | **Data import/export** | idea | — | M |
-| | CSV/Excel import for bulk data entry (classes, teachers, subjects). PDF/Excel export for timetables. Critical for schools migrating from spreadsheets. | | | |
+| 2e | ~~**Data import/export**~~ | done | — | M |
+| | PR #TBD. CSV round-trip (export → edit → preview → commit) for all six reference-data entities. Backend `services::import_export` with per-entity parse/diff/commit + shared csv_io helpers + DashMap-backed `PreviewTokenCache` (10-min TTL, 100/school cap). Three admin endpoints under `/api/schools/{id}`: `GET /export/{entity}`, `POST /import/{entity}/preview` (multipart), `POST /import/{entity}/commit`. Curriculum is term-scoped via `?term_id`. Natural-key upsert; missing rows in CSV are left alone. Commit re-validates and applies in one SeaORM transaction; any error rolls back. Frontend "Import / Export" admin tab with reusable `<ImportPreviewDialog>` showing summary chips + per-row diff/errors. Print-to-PDF for timetable via `@media print` (A4 landscape, scoped to `.printable-timetable`). 14 backend integration tests cover round-trip per entity, error/expiry/tenant/atomicity paths. | | | |
 | 2f | **Responsive / mobile layout** | idea | — | S |
 | | Timetable grid doesn't work well on small screens. Sidebar navigation needs mobile polish. | | | |
 
@@ -169,8 +169,7 @@ The greedy solver works but doesn't backtrack — it can fail to place lessons e
 Tier 2 (UX polish) comes first — real schools need a usable app before we ship to prod. **3a: Production deployment** is intentionally moved to the bottom of this list: staging is live and the release-to-prod step is small, but there's no point deploying an app that isn't ready for real users.
 
 **Immediate (UX polish):**
-1. **2e: Data import/export** — CSV/Excel import for bulk data, PDF/Excel export for timetables
-2. **2f: Responsive / mobile layout** — timetable grid on small screens
+1. **2f: Responsive / mobile layout** — timetable grid on small screens
 
 **After Tier 2 is done:**
 7. **4e: Teacher/student dashboard** — makes the app useful beyond admins

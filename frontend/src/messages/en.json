@@ -181,6 +181,7 @@
     "description": "View the published timetable",
     "noTimetable": "No timetable has been published yet.",
     "goToSchedule": "Generate a timetable",
+    "print": "Print",
     "viewMode": {
       "class": "Class",
       "teacher": "Teacher",
@@ -202,6 +203,65 @@
       "patchError": "Could not update lesson"
     }
   },
+  "importExport": {
+    "tab": {
+      "title": "Import / Export",
+      "description": "Move data in and out of Klassenzeit using CSV files."
+    },
+    "import": "Import",
+    "export": "Export",
+    "selectFile": "Select CSV file",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "termRequired": "Choose a term first.",
+    "entities": {
+      "teachers": {
+        "title": "Teachers",
+        "description": "first_name, last_name, abbreviation, email, max_hours_per_week, is_part_time"
+      },
+      "subjects": {
+        "title": "Subjects",
+        "description": "name, abbreviation, color, needs_special_room"
+      },
+      "rooms": {
+        "title": "Rooms",
+        "description": "name, building, capacity, max_concurrent"
+      },
+      "classes": {
+        "title": "Classes",
+        "description": "name, grade_level, student_count, class_teacher_abbreviation"
+      },
+      "timeslots": {
+        "title": "Time slots",
+        "description": "day_of_week (1-7), period, start_time (HH:MM), end_time, is_break, label"
+      },
+      "curriculum": {
+        "title": "Curriculum",
+        "description": "class_name, subject_abbr, teacher_abbreviation, hours_per_week (per term)"
+      }
+    },
+    "preview": {
+      "title": "Review changes",
+      "summary": {
+        "create": "Create",
+        "update": "Update",
+        "unchanged": "Unchanged",
+        "invalid": "Invalid"
+      },
+      "lineColumn": "Line",
+      "actionColumn": "Action",
+      "keyColumn": "Key",
+      "errorsColumn": "Errors",
+      "invalidDisabled": "Fix the errors in the CSV and re-upload.",
+      "fileWarnings": "Warnings"
+    },
+    "toast": {
+      "importSuccess": "Import complete.",
+      "exportFailed": "Export failed.",
+      "previewExpired": "Preview expired. Please re-upload.",
+      "commitFailed": "Import failed."
+    }
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "Manage school reference data",
@@ -213,7 +273,8 @@
       "teachers": "Teachers",
       "rooms": "Rooms",
       "timeslots": "Timeslots",
-      "scheduler": "Scheduler"
+      "scheduler": "Scheduler",
+      "importExport": "Import / Export"
     },
     "terms": {
       "addTitle": "Add Term",
