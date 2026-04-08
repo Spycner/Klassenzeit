@@ -42,8 +42,9 @@ FK targets are resolved by natural key; unknown references become row errors. Th
 - RFC 4180, UTF-8, `,` separator, first row is the header.
 - Column order in exports is the canonical template. Columns are matched by header name, not position, so users can reorder columns in the spreadsheet without breaking import.
 - Booleans: `true` / `false` (case-insensitive).
-- Enums (e.g. `day_of_week`): lowercase names matching the DB enum (`monday`, …).
-- Colors: `#rrggbb`.
+- `day_of_week`: integer 1–7 (Monday=1).
+- `start_time` / `end_time`: `HH:MM` 24-hour.
+- Colors: `#rrggbb` (or empty for nullable).
 - Empty cell → `NULL` for nullable columns; empty required-column → row error.
 - Unknown columns → ignored with a file-level warning in the preview.
 - Missing required columns → file-level error before per-row validation.
