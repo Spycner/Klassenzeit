@@ -696,3 +696,267 @@ async fn commit_atomicity_rollback_on_db_error() {
     })
     .await;
 }
+
+// ========== Task 16: Round-trip tests for all 5 remaining entities ==========
+
+#[tokio::test]
+#[serial]
+async fn subjects_export_then_reimport_is_unchanged() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-sub-rt").await;
+        seed_subject(&ctx, school.id, "Mathematics", "MATH").await;
+        seed_subject(&ctx, school.id, "English", "ENG").await;
+
+        let mut req = server.get(&format!("/api/schools/{}/export/subjects", school.id));
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let csv_bytes = resp.as_bytes().to_vec();
+        assert!(String::from_utf8_lossy(&csv_bytes).contains("MATH"));
+
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/subjects/preview",
+                school.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv_bytes)
+                        .file_name("subjects.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let body: serde_json::Value = resp.json();
+        assert_eq!(body["summary"]["create"], 0);
+        assert_eq!(body["summary"]["update"], 0);
+        assert_eq!(body["summary"]["unchanged"], 2);
+        assert_eq!(body["summary"]["invalid"], 0);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn rooms_export_then_reimport_is_unchanged() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-room-rt").await;
+        seed_room(&ctx, school.id, "Room 101").await;
+        seed_room(&ctx, school.id, "Room 102").await;
+
+        let mut req = server.get(&format!("/api/schools/{}/export/rooms", school.id));
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let csv_bytes = resp.as_bytes().to_vec();
+        assert!(String::from_utf8_lossy(&csv_bytes).contains("Room 101"));
+
+        let mut req = server
+            .post(&format!("/api/schools/{}/import/rooms/preview", school.id))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv_bytes)
+                        .file_name("rooms.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let body: serde_json::Value = resp.json();
+        assert_eq!(body["summary"]["create"], 0);
+        assert_eq!(body["summary"]["update"], 0);
+        assert_eq!(body["summary"]["unchanged"], 2);
+        assert_eq!(body["summary"]["invalid"], 0);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn classes_export_then_reimport_is_unchanged() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-cls-rt").await;
+        seed_class(&ctx, school.id, "10A", 10).await;
+        seed_class(&ctx, school.id, "10B", 10).await;
+
+        let mut req = server.get(&format!("/api/schools/{}/export/classes", school.id));
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let csv_bytes = resp.as_bytes().to_vec();
+        assert!(String::from_utf8_lossy(&csv_bytes).contains("10A"));
+
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/classes/preview",
+                school.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv_bytes)
+                        .file_name("classes.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let body: serde_json::Value = resp.json();
+        assert_eq!(body["summary"]["create"], 0);
+        assert_eq!(body["summary"]["update"], 0);
+        assert_eq!(body["summary"]["unchanged"], 2);
+        assert_eq!(body["summary"]["invalid"], 0);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn timeslots_export_then_reimport_is_unchanged() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-ts-rt").await;
+        seed_timeslot(&ctx, school.id, 1, 1).await;
+        seed_timeslot(&ctx, school.id, 1, 2).await;
+
+        let mut req = server.get(&format!("/api/schools/{}/export/timeslots", school.id));
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let csv_bytes = resp.as_bytes().to_vec();
+        assert!(String::from_utf8_lossy(&csv_bytes).contains("1"));
+
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/timeslots/preview",
+                school.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv_bytes)
+                        .file_name("timeslots.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let body: serde_json::Value = resp.json();
+        assert_eq!(body["summary"]["create"], 0);
+        assert_eq!(body["summary"]["update"], 0);
+        assert_eq!(body["summary"]["unchanged"], 2);
+        assert_eq!(body["summary"]["invalid"], 0);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn curriculum_export_then_reimport_is_unchanged() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-curr-rt").await;
+
+        // Seed prerequisites
+        let (_sy, term) = seed_term(&ctx, school.id).await;
+        let class_a = seed_class(&ctx, school.id, "CurrA", 5).await;
+        let class_b = seed_class(&ctx, school.id, "CurrB", 6).await;
+        let subj_math = seed_subject(&ctx, school.id, "Mathematics", "CMATH").await;
+        let subj_eng = seed_subject(&ctx, school.id, "English", "CENG").await;
+        seed_curriculum_entry(&ctx, school.id, term.id, class_a.id, subj_math.id, 4).await;
+        seed_curriculum_entry(&ctx, school.id, term.id, class_b.id, subj_eng.id, 3).await;
+
+        let mut req = server.get(&format!(
+            "/api/schools/{}/export/curriculum?term_id={}",
+            school.id, term.id
+        ));
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let csv_bytes = resp.as_bytes().to_vec();
+        assert!(String::from_utf8_lossy(&csv_bytes).contains("CurrA"));
+
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/curriculum/preview?term_id={}",
+                school.id, term.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv_bytes)
+                        .file_name("curriculum.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let body: serde_json::Value = resp.json();
+        assert_eq!(body["summary"]["create"], 0);
+        assert_eq!(body["summary"]["update"], 0);
+        assert_eq!(body["summary"]["unchanged"], 2);
+        assert_eq!(body["summary"]["invalid"], 0);
+    })
+    .await;
+}
