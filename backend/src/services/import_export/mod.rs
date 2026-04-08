@@ -7,6 +7,7 @@
 //! See `docs/superpowers/specs/2026-04-08-data-import-export-design.md`.
 
 pub mod csv_io;
+pub mod teachers;
 pub mod token_cache;
 
 use serde::{Deserialize, Serialize};
