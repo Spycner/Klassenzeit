@@ -15,6 +15,7 @@ import { useParams, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { MobileHeader } from "@/components/layout/mobile-header";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -156,7 +157,10 @@ export default function SchoolLayout({
           </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset>
+        <MobileHeader />
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 }
