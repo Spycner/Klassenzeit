@@ -181,6 +181,7 @@
     "description": "Den veröffentlichten Stundenplan ansehen",
     "noTimetable": "Es wurde noch kein Stundenplan veröffentlicht.",
     "goToSchedule": "Stundenplan erstellen",
+    "print": "Drucken",
     "viewMode": {
       "class": "Klasse",
       "teacher": "Lehrkraft",
@@ -202,6 +203,65 @@
       "patchError": "Stunde konnte nicht aktualisiert werden"
     }
   },
+  "importExport": {
+    "tab": {
+      "title": "Import / Export",
+      "description": "Daten als CSV-Datei importieren oder exportieren."
+    },
+    "import": "Importieren",
+    "export": "Exportieren",
+    "selectFile": "CSV-Datei auswählen",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "termRequired": "Bitte zuerst ein Halbjahr wählen.",
+    "entities": {
+      "teachers": {
+        "title": "Lehrkräfte",
+        "description": "first_name, last_name, abbreviation, email, max_hours_per_week, is_part_time"
+      },
+      "subjects": {
+        "title": "Fächer",
+        "description": "name, abbreviation, color, needs_special_room"
+      },
+      "rooms": {
+        "title": "Räume",
+        "description": "name, building, capacity, max_concurrent"
+      },
+      "classes": {
+        "title": "Klassen",
+        "description": "name, grade_level, student_count, class_teacher_abbreviation"
+      },
+      "timeslots": {
+        "title": "Zeitfenster",
+        "description": "day_of_week (1-7), period, start_time (HH:MM), end_time, is_break, label"
+      },
+      "curriculum": {
+        "title": "Stundentafel",
+        "description": "class_name, subject_abbr, teacher_abbreviation, hours_per_week (per term)"
+      }
+    },
+    "preview": {
+      "title": "Änderungen prüfen",
+      "summary": {
+        "create": "Anlegen",
+        "update": "Aktualisieren",
+        "unchanged": "Unverändert",
+        "invalid": "Ungültig"
+      },
+      "lineColumn": "Zeile",
+      "actionColumn": "Aktion",
+      "keyColumn": "Schlüssel",
+      "errorsColumn": "Fehler",
+      "invalidDisabled": "Fehler in der CSV beheben und neu hochladen.",
+      "fileWarnings": "Warnungen"
+    },
+    "toast": {
+      "importSuccess": "Import abgeschlossen.",
+      "exportFailed": "Export fehlgeschlagen.",
+      "previewExpired": "Vorschau abgelaufen. Bitte erneut hochladen.",
+      "commitFailed": "Import fehlgeschlagen."
+    }
+  },
   "settings": {
     "title": "Einstellungen",
     "subtitle": "Stammdaten der Schule verwalten",
@@ -213,7 +273,8 @@
       "teachers": "Lehrkräfte",
       "rooms": "Räume",
       "timeslots": "Zeitraster",
-      "scheduler": "Planung"
+      "scheduler": "Planung",
+      "importExport": "Import / Export"
     },
     "terms": {
       "addTitle": "Halbjahr hinzufügen",
