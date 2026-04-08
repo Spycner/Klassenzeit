@@ -33,6 +33,7 @@ interface ViewModeSelectorProps {
 interface PersistedView {
   viewMode: TimetableViewMode;
   selectedEntityId: string | null;
+  mobileDay?: number;
 }
 
 function storageKey(schoolId: string) {
@@ -51,11 +52,28 @@ export function loadPersistedView(schoolId: string): PersistedView | null {
       (typeof parsed.selectedEntityId === "string" ||
         parsed.selectedEntityId === null)
     ) {
+      // mobileDay is optional and validated by the consumer
       return parsed;
     }
     return null;
   } catch {
     return null;
+  }
+}
+
+export function persistMobileDay(schoolId: string, day: number) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(storageKey(schoolId));
+    const prev = raw ? (JSON.parse(raw) as PersistedView) : null;
+    const next: PersistedView = {
+      viewMode: prev?.viewMode ?? "class",
+      selectedEntityId: prev?.selectedEntityId ?? null,
+      mobileDay: day,
+    };
+    localStorage.setItem(storageKey(schoolId), JSON.stringify(next));
+  } catch {
+    // ignore
   }
 }
 
@@ -72,9 +90,17 @@ export function ViewModeSelector({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    let mobileDay: number | undefined;
+    try {
+      const raw = localStorage.getItem(storageKey(schoolId));
+      if (raw) {
+        const prev = JSON.parse(raw) as PersistedView;
+        mobileDay = prev.mobileDay;
+      }
+    } catch {}
     localStorage.setItem(
       storageKey(schoolId),
-      JSON.stringify({ viewMode, selectedEntityId }),
+      JSON.stringify({ viewMode, selectedEntityId, mobileDay }),
     );
   }, [schoolId, viewMode, selectedEntityId]);
 
@@ -89,9 +115,23 @@ export function ViewModeSelector({
     }
   }
 
-  function persist(next: PersistedView) {
+  function persist(next: {
+    viewMode: TimetableViewMode;
+    selectedEntityId: string | null;
+  }) {
     if (typeof window === "undefined") return;
-    localStorage.setItem(storageKey(schoolId), JSON.stringify(next));
+    let mobileDay: number | undefined;
+    try {
+      const raw = localStorage.getItem(storageKey(schoolId));
+      if (raw) {
+        const prev = JSON.parse(raw) as PersistedView;
+        mobileDay = prev.mobileDay;
+      }
+    } catch {}
+    localStorage.setItem(
+      storageKey(schoolId),
+      JSON.stringify({ ...next, mobileDay }),
+    );
   }
 
   function handleModeChange(mode: TimetableViewMode) {
@@ -117,7 +157,7 @@ export function ViewModeSelector({
         : rooms.map((r) => ({ id: r.id, label: r.name }));
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex w-full flex-wrap items-center gap-3">
       <div className="inline-flex rounded-md border p-0.5">
         {(["class", "teacher", "room"] as TimetableViewMode[]).map((mode) => (
           <Button
@@ -137,7 +177,7 @@ export function ViewModeSelector({
           value={selectedEntityId ?? ""}
           onValueChange={handleEntityChange}
         >
-          <SelectTrigger className="w-56">
+          <SelectTrigger className="w-full md:w-56">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
