@@ -180,26 +180,26 @@ export default function CurriculumPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <p className="text-muted-foreground">{tc("loading")}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
           {terms.length > 0 && (
             <Select
               value={selectedTermId ?? ""}
               onValueChange={setSelectedTermId}
             >
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full md:w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -227,54 +227,100 @@ export default function CurriculumPage() {
       {entriesLoading ? (
         <p className="text-muted-foreground">{tc("loading")}</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("class")}</TableHead>
-              <TableHead>{t("subject")}</TableHead>
-              <TableHead>{t("teacher")}</TableHead>
-              <TableHead>{t("hoursPerWeek")}</TableHead>
-              <TableHead className="w-12" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("class")}</TableHead>
+                  <TableHead>{t("subject")}</TableHead>
+                  <TableHead>{t("teacher")}</TableHead>
+                  <TableHead>{t("hoursPerWeek")}</TableHead>
+                  <TableHead className="w-12" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {entries.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell className="font-medium">
+                      {className(entry.school_class_id)}
+                    </TableCell>
+                    <TableCell>{subjectName(entry.subject_id)}</TableCell>
+                    <TableCell>{teacherName(entry.teacher_id)}</TableCell>
+                    <TableCell>{entry.hours_per_week}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(entry.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {entries.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="py-8 text-center text-muted-foreground"
+                    >
+                      {t("noEntries")}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile card list */}
+          <div className="space-y-2 md:hidden">
             {entries.map((entry) => (
-              <TableRow key={entry.id}>
-                <TableCell className="font-medium">
-                  {className(entry.school_class_id)}
-                </TableCell>
-                <TableCell>{subjectName(entry.subject_id)}</TableCell>
-                <TableCell>{teacherName(entry.teacher_id)}</TableCell>
-                <TableCell>{entry.hours_per_week}</TableCell>
-                <TableCell>
+              <div
+                key={`card-${entry.id}`}
+                className="rounded-md border bg-card p-3"
+              >
+                <p className="font-medium">
+                  {className(entry.school_class_id)} ·{" "}
+                  {subjectName(entry.subject_id)}
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                  <span className="text-xs text-muted-foreground">
+                    {t("teacher")}
+                  </span>
+                  <span>{teacherName(entry.teacher_id)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {t("hoursPerWeek")}
+                  </span>
+                  <span>{entry.hours_per_week}</span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-destructive hover:text-destructive"
                     onClick={() => handleDelete(entry.id)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="mr-1 h-4 w-4" />
+                    {tc("remove")}
                   </Button>
-                </TableCell>
-              </TableRow>
+                </div>
+              </div>
             ))}
             {entries.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="py-8 text-center text-muted-foreground"
-                >
-                  {t("noEntries")}
-                </TableCell>
-              </TableRow>
+              <p className="py-8 text-center text-muted-foreground">
+                {t("noEntries")}
+              </p>
             )}
-          </TableBody>
-        </Table>
+          </div>
+        </>
       )}
 
       {/* Add Entry Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{t("addClass")}</DialogTitle>
           </DialogHeader>
