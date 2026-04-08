@@ -10,6 +10,7 @@ import { TimetableGrid } from "@/components/timetable/timetable-grid";
 import { UndoToolbar } from "@/components/timetable/undo-toolbar";
 import {
   loadPersistedView,
+  persistMobileDay,
   ViewModeSelector,
 } from "@/components/timetable/view-mode-selector";
 import {
@@ -25,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useApiClient } from "@/hooks/use-api-client";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type {
   LessonResponse,
   ListLessonsResponse,
@@ -86,6 +88,15 @@ export default function TimetablePage() {
 
   const isAdmin = school?.role === "admin";
 
+  const isMobile = useIsMobile();
+
+  const initialMobileDay = (() => {
+    const today = new Date().getDay(); // 0 Sun .. 6 Sat
+    const mapped = today === 0 || today === 6 ? 0 : today - 1;
+    return mapped;
+  })();
+  const [mobileDay, setMobileDay] = useState<number>(initialMobileDay);
+
   const highlightedCells = (() => {
     if (!highlighted) return undefined;
     const set = new Set<string>();
@@ -135,6 +146,15 @@ export default function TimetablePage() {
           setSelectedEntityId(persisted.selectedEntityId ?? rms[0]?.id ?? null);
         } else if (cls.length > 0) {
           setSelectedEntityId(cls[0].id);
+        }
+
+        if (
+          persisted &&
+          typeof persisted.mobileDay === "number" &&
+          persisted.mobileDay >= 0 &&
+          persisted.mobileDay <= 4
+        ) {
+          setMobileDay(persisted.mobileDay);
         }
       })
       .catch(() => {
@@ -414,9 +434,11 @@ export default function TimetablePage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("description")}</p>
+          <p className="hidden text-sm text-muted-foreground md:block">
+            {t("description")}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
           {isAdmin && (
             <UndoToolbar canUndo={undoStack.length > 0} onUndo={handleUndo} />
           )}
@@ -425,7 +447,7 @@ export default function TimetablePage() {
               value={selectedTermId}
               onValueChange={(val) => setSelectedTermId(val)}
             >
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full md:w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -437,7 +459,12 @@ export default function TimetablePage() {
               </SelectContent>
             </Select>
           )}
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden md:inline-flex"
+            onClick={() => window.print()}
+          >
             <Printer className="mr-2 h-4 w-4" />
             {t("print")}
           </Button>
@@ -483,6 +510,11 @@ export default function TimetablePage() {
               "room_too_small",
             ]);
             const ref = v.lesson_refs[0];
+            const ts = timeslots.find((slot) => slot.id === ref?.timeslot_id);
+            if (ts && typeof ts.day_of_week === "number") {
+              setMobileDay(ts.day_of_week);
+              persistMobileDay(schoolId, ts.day_of_week);
+            }
             if (teacherKinds.has(v.kind) && ref) {
               setViewMode("teacher");
               setSelectedEntityId(ref.teacher_id);
@@ -512,25 +544,53 @@ export default function TimetablePage() {
             <p className="text-muted-foreground">{t("noTimetable")}</p>
           </div>
         ) : (
-          <TimetableGrid
-            lessons={lessons}
-            viewMode={viewMode}
-            selectedEntityId={selectedEntityId}
-            timeslots={timeslots}
-            subjects={subjects}
-            teachers={teachers}
-            rooms={rooms}
-            classes={classes}
-            locale={locale}
-            highlightedCells={highlightedCells}
-            highlightTone={
-              highlighted?.v.severity === "soft" ? "warn" : "error"
-            }
-            editable={isAdmin}
-            onLessonMove={handleMove}
-            onLessonSwap={handleSwap}
-            onLessonEdit={handleEdit}
-          />
+          <>
+            {isMobile && (
+              <div className="mb-3 grid grid-cols-5 gap-1 rounded-md border p-1">
+                {(locale === "de"
+                  ? ["Mo", "Di", "Mi", "Do", "Fr"]
+                  : ["Mon", "Tue", "Wed", "Thu", "Fri"]
+                ).map((label, idx) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => {
+                      setMobileDay(idx);
+                      persistMobileDay(schoolId, idx);
+                    }}
+                    className={`rounded px-2 py-1.5 text-sm font-medium transition-colors ${
+                      mobileDay === idx
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"
+                    }`}
+                    aria-pressed={mobileDay === idx}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <TimetableGrid
+              lessons={lessons}
+              viewMode={viewMode}
+              selectedEntityId={selectedEntityId}
+              timeslots={timeslots}
+              subjects={subjects}
+              teachers={teachers}
+              rooms={rooms}
+              classes={classes}
+              locale={locale}
+              highlightedCells={highlightedCells}
+              highlightTone={
+                highlighted?.v.severity === "soft" ? "warn" : "error"
+              }
+              editable={isAdmin && !isMobile}
+              visibleDays={isMobile ? [mobileDay] : undefined}
+              onLessonMove={handleMove}
+              onLessonSwap={handleSwap}
+              onLessonEdit={handleEdit}
+            />
+          </>
         )}
       </div>
 
