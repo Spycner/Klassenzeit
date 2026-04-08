@@ -46,3 +46,64 @@ impl EntityKind {
         }
     }
 }
+
+use serde_json::Value;
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum RowAction {
+    Create,
+    Update,
+    Unchanged,
+    Invalid,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PreviewRow {
+    pub line: usize,
+    pub action: RowAction,
+    pub natural_key: String,
+    /// Normalized data ready for commit. Empty for `Invalid` rows.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<Value>,
+    /// Field-level diff for `Update` rows: { field: [old, new] }.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diff: Option<Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct PreviewSummary {
+    pub create: usize,
+    pub update: usize,
+    pub unchanged: usize,
+    pub invalid: usize,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PreviewResponse {
+    pub token: uuid::Uuid,
+    pub entity: EntityKind,
+    pub summary: PreviewSummary,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub file_warnings: Vec<String>,
+    pub rows: Vec<PreviewRow>,
+}
+
+impl PreviewSummary {
+    pub fn from_rows(rows: &[PreviewRow]) -> Self {
+        let mut s = Self::default();
+        for r in rows {
+            match r.action {
+                RowAction::Create => s.create += 1,
+                RowAction::Update => s.update += 1,
+                RowAction::Unchanged => s.unchanged += 1,
+                RowAction::Invalid => s.invalid += 1,
+            }
+        }
+        s
+    }
+}
