@@ -6,6 +6,8 @@
 //!
 //! See `docs/superpowers/specs/2026-04-08-data-import-export-design.md`.
 
+pub mod token_cache;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
