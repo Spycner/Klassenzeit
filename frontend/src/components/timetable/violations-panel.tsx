@@ -199,7 +199,7 @@ export function ViolationsPanel({
                             <Badge
                               key={`${id}-r-${r.type}-${r.id}-${idx}`}
                               variant="outline"
-                              className="text-xs"
+                              className="break-words text-xs"
                             >
                               {resolveResourceLabel(r, refs)}
                             </Badge>

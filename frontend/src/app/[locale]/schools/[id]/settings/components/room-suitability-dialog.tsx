@@ -104,7 +104,7 @@ export function RoomSuitabilityDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("dialog_title", { name: room.name })}</DialogTitle>
         </DialogHeader>
