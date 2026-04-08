@@ -36,6 +36,7 @@ interface TimetableGridProps {
   highlightedCells?: Set<string>;
   highlightTone?: "error" | "warn";
   editable?: boolean;
+  visibleDays?: number[];
   onLessonMove?: (lessonId: string, targetTimeslotId: string) => void;
   onLessonSwap?: (lessonAId: string, lessonBId: string) => void;
   onLessonEdit?: (lessonId: string) => void;
@@ -111,6 +112,7 @@ export function TimetableGrid({
   onLessonMove,
   onLessonSwap,
   onLessonEdit,
+  visibleDays,
 }: TimetableGridProps) {
   const dayLabels = locale === "de" ? DAY_LABELS_DE : DAY_LABELS_EN;
 
@@ -123,6 +125,8 @@ export function TimetableGrid({
   const periods = [
     ...new Set(timeslots.filter((ts) => !ts.is_break).map((ts) => ts.period)),
   ].sort((a, b) => a - b);
+
+  const activeDays = visibleDays ?? [0, 1, 2, 3, 4];
 
   // Pointer activation distance prevents accidental drags during clicks on the kebab.
   const sensors = useSensors(
@@ -232,9 +236,9 @@ export function TimetableGrid({
         <thead>
           <tr className="border-b bg-muted/50">
             <th className="p-2 text-left font-medium" />
-            {dayLabels.map((day) => (
-              <th key={day} className="p-2 text-center font-medium">
-                {day}
+            {activeDays.map((day) => (
+              <th key={`day-${day}`} className="p-2 text-center font-medium">
+                {dayLabels[day]}
               </th>
             ))}
           </tr>
@@ -245,7 +249,7 @@ export function TimetableGrid({
               <td className="p-2 text-center font-medium text-muted-foreground">
                 {period}
               </td>
-              {[0, 1, 2, 3, 4].map((day) => {
+              {activeDays.map((day) => {
                 const lesson = getLessonForCell(day, period);
                 const cellKey = `${day}-${period}`;
                 const isHighlighted = highlightedCells?.has(cellKey) ?? false;

@@ -95,12 +95,12 @@ describe("SubjectsTab", () => {
     expect(screen.getByText("Loading...")).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText("Mathematics")).toBeInTheDocument();
+      expect(screen.getAllByText("Mathematics")[0]).toBeInTheDocument();
     });
-    expect(screen.getByText("Music")).toBeInTheDocument();
-    expect(screen.getByText("MA")).toBeInTheDocument();
-    expect(screen.getByText("MU")).toBeInTheDocument();
-    expect(screen.getByText("Special room")).toBeInTheDocument();
+    expect(screen.getAllByText("Music")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("MA")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("MU")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Special room")[0]).toBeInTheDocument();
   });
 
   it("shows empty state when no subjects exist", async () => {
@@ -108,7 +108,7 @@ describe("SubjectsTab", () => {
     render(<SubjectsTab />);
 
     await waitFor(() => {
-      expect(screen.getByText("No subjects yet")).toBeInTheDocument();
+      expect(screen.getAllByText("No subjects yet")[0]).toBeInTheDocument();
     });
   });
 
@@ -118,7 +118,7 @@ describe("SubjectsTab", () => {
 
     render(<SubjectsTab />);
     await waitFor(() => {
-      expect(screen.getByText("Mathematics")).toBeInTheDocument();
+      expect(screen.getAllByText("Mathematics")[0]).toBeInTheDocument();
     });
 
     await user.click(screen.getByText("Add Subject"));

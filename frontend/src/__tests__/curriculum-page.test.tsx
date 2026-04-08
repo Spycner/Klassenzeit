@@ -152,11 +152,11 @@ describe("CurriculumPage", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("1a")).toBeInTheDocument();
+      expect(screen.getAllByText("1a")[0]).toBeInTheDocument();
     });
-    expect(screen.getByText("Mathematics")).toBeInTheDocument();
-    expect(screen.getByText("Anna Schmidt")).toBeInTheDocument();
-    expect(screen.getByText("5")).toBeInTheDocument();
+    expect(screen.getAllByText("Mathematics")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Anna Schmidt")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("5")[0]).toBeInTheDocument();
   });
 
   it("shows empty state when no entries exist", async () => {
@@ -164,7 +164,9 @@ describe("CurriculumPage", () => {
     render(<CurriculumPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("No curriculum entries")).toBeInTheDocument();
+      expect(
+        screen.getAllByText("No curriculum entries")[0],
+      ).toBeInTheDocument();
     });
   });
 
@@ -173,7 +175,7 @@ describe("CurriculumPage", () => {
     render(<CurriculumPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Auto-assign")).toBeInTheDocument();
+      expect(screen.getAllByText("Auto-assign")[0]).toBeInTheDocument();
     });
   });
 });

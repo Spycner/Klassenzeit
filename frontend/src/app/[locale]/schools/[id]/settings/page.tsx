@@ -61,7 +61,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <p className="text-muted-foreground">{tc("loading")}</p>
       </div>
     );
@@ -69,26 +69,26 @@ export default function SettingsPage() {
 
   if (school?.role !== "admin") {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <p className="text-muted-foreground">{t("accessDenied")}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
       <div>
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <div className="flex gap-1 border-b">
+      <div className="-mx-4 flex gap-1 overflow-x-auto border-b px-4 md:mx-0 md:px-0">
         {TABS.map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab
                 ? "border-b-2 border-primary text-primary"
                 : "text-muted-foreground hover:text-foreground"

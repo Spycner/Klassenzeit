@@ -156,6 +156,17 @@
 - New `<LessonEditDialog>` (diff-only submit) and `<UndoToolbar>`. In-memory undo stack capped at 10, cleared on term change. Undo issues inverse PATCH; swap pushes both snapshots so two undos fully revert.
 - `/timetable` page is now editable for admins (role from existing `GET /api/schools/{id}` pattern), with `<ViolationsPanel>` mounted and fed fresh violations after every edit. Edits that introduce hard violations are allowed — surfaced, not refused.
 
+### Responsive / Mobile Layout (2f)
+- Spec: `superpowers/specs/2026-04-08-responsive-mobile-design.md`
+- Plan: `superpowers/plans/2026-04-08-responsive-mobile.md`
+- New `<MobileHeader>` mounted inside `<SidebarInset>` (md:hidden) with `<SidebarTrigger>` + route-derived title — closes the "phone users have no nav" gap.
+- Timetable single-day view on mobile: new `visibleDays?: number[]` prop on `<TimetableGrid>`, day-tab strip persisted to `localStorage` (`mobileDay` field added to view-mode storage), `editable=false` on mobile (drag-and-drop disabled). Violation pivot now also switches the active day.
+- Mobile card-list rendering for every reference-data tab (rooms, teachers, subjects, classes, terms, timeslots), members, and curriculum. Pattern: existing `<Table>` wrapped `hidden md:block`, sibling `space-y-2 md:hidden` cards with `flex-1` outline action buttons.
+- Settings tab strip becomes horizontally scrollable with negative-margin bleed; outer page padding `p-4 md:p-6`.
+- Viewport-aware widths on every dialog (`max-h-[90vh] max-w-[95vw] overflow-y-auto`) plus `break-words` on violation resource badges.
+- No new translation keys; reuses `common.edit`, `common.remove`, and existing per-tab namespaces.
+- Tests: new `visibleDays` and `MobileHeader` tests; existing tests updated to `getAllByText(...)[0]` where the dual desktop/mobile rendering caused matches; new `matchMedia` jsdom shim in test setup. 73 frontend Vitest tests pass.
+
 ### Data Import/Export (2e)
 - Spec: `superpowers/specs/2026-04-08-data-import-export-design.md`
 - Plan: `superpowers/plans/2026-04-08-data-import-export.md`
@@ -169,10 +180,11 @@
 
 ## Next Up
 
-Tier 2 (UX polish) continues — make the app usable for real schools before pushing to prod.
+Tier 2 (UX polish) is complete. Next priorities:
 
-- **2f: Responsive / mobile layout** — timetable grid on small screens
-- **3a: Production deployment** — staging works, prod is just a release away (do last; ship polished UX first)
+- **4e: Teacher/student dashboard** — non-admin views (`/timetable` for teachers showing only their schedule)
+- **3b: E2E tests** — Playwright coverage for critical flows
+- **3a: Production deployment** — staging works, prod is just a release away
 
 ## Notes from Reviews
 

@@ -189,96 +189,176 @@ export function TeachersTab() {
         </Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("abbreviation")}</TableHead>
-            <TableHead>{t("firstName")}</TableHead>
-            <TableHead>{t("lastName")}</TableHead>
-            <TableHead>{t("email")}</TableHead>
-            <TableHead>{t("maxHours")}</TableHead>
-            <TableHead className="w-24" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow
-              key={item.id}
-              ref={(el) => {
-                if (el) rowRefs.current.set(item.id, el);
-                else rowRefs.current.delete(item.id);
-              }}
-            >
-              <TableCell className="font-medium">{item.abbreviation}</TableCell>
-              <TableCell>{item.first_name}</TableCell>
-              <TableCell>{item.last_name}</TableCell>
-              <TableCell className="text-muted-foreground">
-                {item.email ?? "\u2014"}
-              </TableCell>
-              <TableCell>
-                {item.max_hours_per_week}
-                {item.is_part_time && (
-                  <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">
-                    {t("partTimeBadge")}
-                  </span>
-                )}
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setAvailabilityTeacher(item)}
-                    aria-label={tAvailability("button_label")}
-                    title={tAvailability("button_tooltip")}
-                  >
-                    <Calendar className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openEditDialog(item)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => {
-                      setItemToDelete(item);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-          {items.length === 0 && (
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell
-                colSpan={6}
-                className="py-8 text-center text-muted-foreground"
-              >
-                {t("empty")}
-              </TableCell>
+              <TableHead>{t("abbreviation")}</TableHead>
+              <TableHead>{t("firstName")}</TableHead>
+              <TableHead>{t("lastName")}</TableHead>
+              <TableHead>{t("email")}</TableHead>
+              <TableHead>{t("maxHours")}</TableHead>
+              <TableHead className="w-24" />
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow
+                key={item.id}
+                ref={(el) => {
+                  if (el) rowRefs.current.set(item.id, el);
+                  else rowRefs.current.delete(item.id);
+                }}
+              >
+                <TableCell className="font-medium">
+                  {item.abbreviation}
+                </TableCell>
+                <TableCell>{item.first_name}</TableCell>
+                <TableCell>{item.last_name}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {item.email ?? "\u2014"}
+                </TableCell>
+                <TableCell>
+                  {item.max_hours_per_week}
+                  {item.is_part_time && (
+                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">
+                      {t("partTimeBadge")}
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setAvailabilityTeacher(item)}
+                      aria-label={tAvailability("button_label")}
+                      title={tAvailability("button_tooltip")}
+                    >
+                      <Calendar className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEditDialog(item)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => {
+                        setItemToDelete(item);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {items.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="py-8 text-center text-muted-foreground"
+                >
+                  {t("empty")}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="space-y-2 md:hidden">
+        {items.map((item) => (
+          <div
+            key={`card-${item.id}`}
+            className="rounded-md border bg-card p-3"
+          >
+            <div className="font-medium">
+              {item.first_name} {item.last_name}
+              {item.abbreviation && (
+                <span className="ml-1 text-muted-foreground">
+                  ({item.abbreviation})
+                </span>
+              )}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <div className="text-xs text-muted-foreground">
+                  {t("email")}
+                </div>
+                <div>{item.email ?? "\u2014"}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">
+                  {t("maxHours")}
+                </div>
+                <div>
+                  {item.max_hours_per_week}
+                  {item.is_part_time && (
+                    <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-xs">
+                      {t("partTimeBadge")}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => setAvailabilityTeacher(item)}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                {tAvailability("button_label")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => openEditDialog(item)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                {tc("edit")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-destructive hover:text-destructive"
+                onClick={() => {
+                  setItemToDelete(item);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {tc("remove")}
+              </Button>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="rounded-md border bg-card py-8 text-center text-muted-foreground">
+            {t("empty")}
+          </div>
+        )}
+      </div>
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editingItem ? t("editTitle") : t("addTitle")}
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="grid gap-2">
                 <Label>{t("firstName")}</Label>
                 <Input
@@ -298,7 +378,7 @@ export function TeachersTab() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="grid gap-2">
                 <Label>{t("abbreviation")}</Label>
                 <Input
@@ -320,7 +400,7 @@ export function TeachersTab() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="grid gap-2">
                 <Label>{t("maxHours")}</Label>
                 <Input
@@ -370,7 +450,7 @@ export function TeachersTab() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{ta("deleteTitle")}</DialogTitle>
             <DialogDescription>
