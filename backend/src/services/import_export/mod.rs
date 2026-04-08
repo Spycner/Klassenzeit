@@ -6,8 +6,13 @@
 //!
 //! See `docs/superpowers/specs/2026-04-08-data-import-export-design.md`.
 
+pub mod classes;
 pub mod csv_io;
+pub mod curriculum;
+pub mod rooms;
+pub mod subjects;
 pub mod teachers;
+pub mod timeslots;
 pub mod token_cache;
 
 use serde::{Deserialize, Serialize};
