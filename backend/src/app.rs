@@ -46,6 +46,8 @@ impl Hooks for App {
     async fn after_context(ctx: AppContext) -> Result<AppContext> {
         ctx.shared_store
             .insert(scheduler_service::new_scheduler_state());
+        ctx.shared_store
+            .insert(crate::services::import_export::token_cache::PreviewTokenCache::new());
         Ok(ctx)
     }
 
