@@ -6,6 +6,7 @@ export interface ApiClient {
   put<T>(path: string, body?: unknown): Promise<T>;
   patch<T>(path: string, body?: unknown): Promise<T>;
   delete<T>(path: string): Promise<T>;
+  postForm<T>(path: string, form: FormData): Promise<T>;
 }
 
 export function createApiClient(
@@ -73,6 +74,10 @@ export function createApiClient(
     },
     delete<T>(path: string): Promise<T> {
       return request(path, { method: "DELETE" });
+    },
+    postForm<T>(path: string, form: FormData): Promise<T> {
+      // Do NOT set Content-Type — browser sets multipart/form-data with boundary
+      return request(path, { method: "POST", body: form });
     },
   };
 }
