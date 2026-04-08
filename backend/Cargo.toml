@@ -27,6 +27,7 @@ sea-orm = { version = "1.1", features = [
   "macros",
 ] }
 chrono = { version = "0.4" }
+csv = "1"
 validator = { version = "0.20" }
 uuid = { version = "1.6", features = ["v4"] }
 include_dir = { version = "0.7" }
