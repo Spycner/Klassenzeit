@@ -167,71 +167,132 @@ export function ClassesTab() {
         </Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("name")}</TableHead>
-            <TableHead>{t("gradeLevel")}</TableHead>
-            <TableHead>{t("studentCount")}</TableHead>
-            <TableHead>{t("classTeacher")}</TableHead>
-            <TableHead className="w-24" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell className="font-medium">{item.name}</TableCell>
-              <TableCell>{item.grade_level}</TableCell>
-              <TableCell>{item.student_count ?? "\u2014"}</TableCell>
-              <TableCell className="text-muted-foreground">
-                {teacherName(item.class_teacher_id)}
-              </TableCell>
-              <TableCell>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openEditDialog(item)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => {
-                      setItemToDelete(item);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-          {items.length === 0 && (
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell
-                colSpan={5}
-                className="py-8 text-center text-muted-foreground"
-              >
-                {t("empty")}
-              </TableCell>
+              <TableHead>{t("name")}</TableHead>
+              <TableHead>{t("gradeLevel")}</TableHead>
+              <TableHead>{t("studentCount")}</TableHead>
+              <TableHead>{t("classTeacher")}</TableHead>
+              <TableHead className="w-24" />
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell>{item.grade_level}</TableCell>
+                <TableCell>{item.student_count ?? "\u2014"}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {teacherName(item.class_teacher_id)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEditDialog(item)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => {
+                        setItemToDelete(item);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {items.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={5}
+                  className="py-8 text-center text-muted-foreground"
+                >
+                  {t("empty")}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="space-y-2 md:hidden">
+        {items.map((item) => (
+          <div
+            key={`card-${item.id}`}
+            className="rounded-md border bg-card p-3"
+          >
+            <div className="font-medium">{item.name}</div>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <div className="text-xs text-muted-foreground">
+                  {t("gradeLevel")}
+                </div>
+                <div>{item.grade_level}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">
+                  {t("studentCount")}
+                </div>
+                <div>{item.student_count ?? "\u2014"}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">
+                  {t("classTeacher")}
+                </div>
+                <div>{teacherName(item.class_teacher_id)}</div>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => openEditDialog(item)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                {tc("edit")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-destructive hover:text-destructive"
+                onClick={() => {
+                  setItemToDelete(item);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {tc("remove")}
+              </Button>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="rounded-md border bg-card py-8 text-center text-muted-foreground">
+            {t("empty")}
+          </div>
+        )}
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editingItem ? t("editTitle") : t("addTitle")}
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="grid gap-2">
                 <Label>{t("name")}</Label>
                 <Input
@@ -253,7 +314,7 @@ export function ClassesTab() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="grid gap-2">
                 <Label>{t("studentCount")}</Label>
                 <Input
@@ -306,7 +367,7 @@ export function ClassesTab() {
       </Dialog>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{ta("deleteTitle")}</DialogTitle>
             <DialogDescription>
