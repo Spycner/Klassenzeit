@@ -75,6 +75,7 @@ impl Hooks for App {
             .add_route(controllers::room_suitabilities::routes())
             .add_route(controllers::room_timeslot_capacities::routes())
             .add_route(controllers::time_slots::routes())
+            .add_route(controllers::import_export::routes())
     }
 
     async fn connect_workers(ctx: &AppContext, queue: &Queue) -> Result<()> {
