@@ -250,3 +250,449 @@ async fn teachers_export_then_reimport_is_unchanged() {
     })
     .await;
 }
+
+// ========== Task 15: Error paths and tenant isolation ==========
+
+#[tokio::test]
+#[serial]
+async fn preview_then_commit_creates_rows() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-commit-create").await;
+
+        let csv = b"first_name,last_name,abbreviation\nJohn,Doe,JD3\nJane,Smith,JD4\n";
+
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/preview",
+                school.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv.to_vec())
+                        .file_name("teachers.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let body: serde_json::Value = resp.json();
+        assert_eq!(body["summary"]["create"], 2, "expected 2 create rows");
+        let token_val = body["token"].as_str().unwrap().to_string();
+
+        // Commit
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/commit",
+                school.id
+            ))
+            .json(&serde_json::json!({ "token": token_val }));
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        assert_eq!(
+            resp.status_code(),
+            StatusCode::NO_CONTENT,
+            "commit should return 204"
+        );
+
+        // Verify rows exist in DB
+        let count = teachers::Entity::find()
+            .filter(teachers_entity::Column::SchoolId.eq(school.id))
+            .filter(teachers_entity::Column::IsActive.eq(true))
+            .all(&ctx.db)
+            .await
+            .unwrap()
+            .len();
+        assert_eq!(count, 2, "should have 2 teachers after commit");
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn commit_with_invalid_token_returns_410() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-invalid-tok").await;
+
+        let random_token = Uuid::new_v4();
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/commit",
+                school.id
+            ))
+            .json(&serde_json::json!({ "token": random_token }));
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        assert_eq!(resp.status_code(), StatusCode::GONE);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn commit_refuses_when_preview_had_invalid_rows() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-invalid-rows").await;
+
+        // One valid row, one missing last_name (invalid)
+        let csv = b"first_name,last_name,abbreviation\nJohn,Doe,JD1\nJane,,JD2\n";
+
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/preview",
+                school.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv.to_vec())
+                        .file_name("teachers.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let body: serde_json::Value = resp.json();
+        assert_eq!(body["summary"]["invalid"], 1, "should have 1 invalid row");
+        let preview_token = body["token"].as_str().unwrap().to_string();
+
+        // Commit should be rejected
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/commit",
+                school.id
+            ))
+            .json(&serde_json::json!({ "token": preview_token }));
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        assert_eq!(resp.status_code(), StatusCode::UNPROCESSABLE_ENTITY);
+
+        // No rows should be in DB
+        let count = teachers::Entity::find()
+            .filter(teachers_entity::Column::SchoolId.eq(school.id))
+            .all(&ctx.db)
+            .await
+            .unwrap()
+            .len();
+        assert_eq!(count, 0, "no rows should have been inserted");
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn preview_with_missing_required_column_returns_400() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-missing-col").await;
+
+        // Missing 'abbreviation' column
+        let csv = b"first_name,last_name\nJohn,Doe\n";
+
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/preview",
+                school.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv.to_vec())
+                        .file_name("teachers.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        assert_eq!(resp.status_code(), StatusCode::BAD_REQUEST);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn commit_token_for_other_school_returns_410() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school_a, token_a) = setup_admin(&ctx, &kp, "ie-tenant-a").await;
+        let (school_b, token_b) = setup_admin(&ctx, &kp, "ie-tenant-b").await;
+
+        let csv = b"first_name,last_name,abbreviation\nJohn,Doe,JD1\n";
+
+        // Preview against school A
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/preview",
+                school_a.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv.to_vec())
+                        .file_name("teachers.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token_a, school_a.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let body: serde_json::Value = resp.json();
+        let preview_token = body["token"].as_str().unwrap().to_string();
+
+        // Try to commit with school B's credentials
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/commit",
+                school_b.id
+            ))
+            .json(&serde_json::json!({ "token": preview_token }));
+        for (k, v) in auth_headers(&token_b, school_b.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        assert_eq!(
+            resp.status_code(),
+            StatusCode::GONE,
+            "cross-school commit should return 410"
+        );
+
+        // Verify school A's DB unchanged
+        let count = teachers::Entity::find()
+            .filter(teachers_entity::Column::SchoolId.eq(school_a.id))
+            .all(&ctx.db)
+            .await
+            .unwrap()
+            .len();
+        assert_eq!(count, 0, "school A should have no teachers");
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn commit_token_for_other_entity_returns_410() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-wrong-entity").await;
+
+        let csv = b"first_name,last_name,abbreviation\nJohn,Doe,JD1\n";
+
+        // Preview against teachers
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/preview",
+                school.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv.to_vec())
+                        .file_name("teachers.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let body: serde_json::Value = resp.json();
+        let preview_token = body["token"].as_str().unwrap().to_string();
+
+        // Try to commit against rooms endpoint
+        let mut req = server
+            .post(&format!("/api/schools/{}/import/rooms/commit", school.id))
+            .json(&serde_json::json!({ "token": preview_token }));
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        assert_eq!(
+            resp.status_code(),
+            StatusCode::GONE,
+            "wrong-entity commit should return 410"
+        );
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn preview_as_non_admin_returns_403() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_teacher_user(&ctx, &kp, "ie-non-admin").await;
+
+        let csv = b"first_name,last_name,abbreviation\nJohn,Doe,JD1\n";
+
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/preview",
+                school.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv.to_vec())
+                        .file_name("teachers.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        assert_eq!(resp.status_code(), StatusCode::FORBIDDEN);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn commit_atomicity_rollback_on_db_error() {
+    request::<App, _, _>(|server, ctx| async move {
+        let kp = TestKeyPair::generate();
+        ctx.shared_store
+            .get_ref::<AuthState>()
+            .unwrap()
+            .jwks
+            .set_keys(kp.jwk_set.clone())
+            .await;
+        let (school, token) = setup_admin(&ctx, &kp, "ie-atomicity").await;
+
+        // Seed an existing teacher with abbreviation JD1
+        seed_teacher(&ctx, school.id, "JD1").await;
+
+        // CSV with two new rows for the same abbreviation NEWDUP.
+        // Preview will see both as Create (no existing entry in DB).
+        // On commit, the first insert succeeds; the second violates the
+        // unique index on (school_id, abbreviation) → DB error → rollback.
+        let csv = b"first_name,last_name,abbreviation\nAlice,A,NEWDUP\nBob,B,NEWDUP\n";
+
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/preview",
+                school.id
+            ))
+            .multipart(
+                axum_test::multipart::MultipartForm::new().add_part(
+                    "file",
+                    axum_test::multipart::Part::bytes(csv.to_vec())
+                        .file_name("teachers.csv")
+                        .mime_type("text/csv"),
+                ),
+            );
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        resp.assert_status(StatusCode::OK);
+        let body: serde_json::Value = resp.json();
+        assert_eq!(
+            body["summary"]["create"], 2,
+            "both NEWDUP rows should be Create"
+        );
+        let preview_token = body["token"].as_str().unwrap().to_string();
+
+        // Commit — should fail with 422 due to unique constraint violation
+        let mut req = server
+            .post(&format!(
+                "/api/schools/{}/import/teachers/commit",
+                school.id
+            ))
+            .json(&serde_json::json!({ "token": preview_token }));
+        for (k, v) in auth_headers(&token, school.id) {
+            req = req.add_header(k, v);
+        }
+        let resp = req.await;
+        assert_eq!(
+            resp.status_code(),
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "commit should fail with 422 on DB constraint error"
+        );
+
+        // Verify atomicity: NEWDUP should NOT be in the DB (rollback happened)
+        let newdup_rows = teachers::Entity::find()
+            .filter(teachers_entity::Column::SchoolId.eq(school.id))
+            .filter(teachers_entity::Column::Abbreviation.eq("NEWDUP"))
+            .all(&ctx.db)
+            .await
+            .unwrap();
+        assert_eq!(
+            newdup_rows.len(),
+            0,
+            "NEWDUP should not exist after rollback"
+        );
+
+        // Original JD1 should still be there
+        let jd1_rows = teachers::Entity::find()
+            .filter(teachers_entity::Column::SchoolId.eq(school.id))
+            .filter(teachers_entity::Column::Abbreviation.eq("JD1"))
+            .all(&ctx.db)
+            .await
+            .unwrap();
+        assert_eq!(jd1_rows.len(), 1, "original JD1 should still exist");
+    })
+    .await;
+}
