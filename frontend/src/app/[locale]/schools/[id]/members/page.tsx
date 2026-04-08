@@ -156,7 +156,7 @@ export default function MembersPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <p className="text-muted-foreground">{tc("loading")}</p>
       </div>
     );
@@ -164,14 +164,14 @@ export default function MembersPage() {
 
   if (error) {
     return (
-      <div className="flex flex-1 flex-col gap-4 p-6">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <p className="text-sm text-destructive">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
@@ -196,7 +196,7 @@ export default function MembersPage() {
                 {t("add")}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] max-w-[95vw] overflow-y-auto sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>{t("addTitle")}</DialogTitle>
                 <DialogDescription>{t("addDescription")}</DialogDescription>
@@ -253,86 +253,151 @@ export default function MembersPage() {
         )}
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("nameHeader")}</TableHead>
-            <TableHead>{t("emailHeader")}</TableHead>
-            <TableHead>{t("roleHeader")}</TableHead>
-            <TableHead>{t("joinedHeader")}</TableHead>
-            {isAdmin && <TableHead className="w-12" />}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.map((member) => (
-            <TableRow key={member.user_id}>
-              <TableCell className="font-medium">
-                {member.display_name}
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {member.email}
-              </TableCell>
-              <TableCell>
-                {isAdmin ? (
-                  <Select
-                    value={member.role}
-                    onValueChange={(value) =>
-                      handleChangeRole(member, value as Role)
-                    }
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          <span className="capitalize">{role}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <span className="capitalize">{member.role}</span>
-                )}
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {new Date(member.joined_at).toLocaleDateString(locale)}
-              </TableCell>
-              {isAdmin && (
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => {
-                      setMemberToRemove(member);
-                      setRemoveError(null);
-                      setRemoveDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">{t("removeLabel")}</span>
-                  </Button>
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
-          {members.length === 0 && (
+      {/* Desktop table */}
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell
-                colSpan={isAdmin ? 5 : 4}
-                className="py-8 text-center text-muted-foreground"
-              >
-                {t("empty")}
-              </TableCell>
+              <TableHead>{t("nameHeader")}</TableHead>
+              <TableHead>{t("emailHeader")}</TableHead>
+              <TableHead>{t("roleHeader")}</TableHead>
+              <TableHead>{t("joinedHeader")}</TableHead>
+              {isAdmin && <TableHead className="w-12" />}
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {members.map((member) => (
+              <TableRow key={member.user_id}>
+                <TableCell className="font-medium">
+                  {member.display_name}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {member.email}
+                </TableCell>
+                <TableCell>
+                  {isAdmin ? (
+                    <Select
+                      value={member.role}
+                      onValueChange={(value) =>
+                        handleChangeRole(member, value as Role)
+                      }
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            <span className="capitalize">{role}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span className="capitalize">{member.role}</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {new Date(member.joined_at).toLocaleDateString(locale)}
+                </TableCell>
+                {isAdmin && (
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => {
+                        setMemberToRemove(member);
+                        setRemoveError(null);
+                        setRemoveDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">{t("removeLabel")}</span>
+                    </Button>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+            {members.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={isAdmin ? 5 : 4}
+                  className="py-8 text-center text-muted-foreground"
+                >
+                  {t("empty")}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mobile card list */}
+      <div className="space-y-2 md:hidden">
+        {members.map((member) => (
+          <div
+            key={`card-${member.user_id}`}
+            className="rounded-md border bg-card p-3"
+          >
+            <p className="font-medium">{member.display_name}</p>
+            <p className="text-sm text-muted-foreground">{member.email}</p>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+              <span className="text-xs text-muted-foreground">
+                {t("roleHeader")}
+              </span>
+              <span className="capitalize">{member.role}</span>
+              <span className="text-xs text-muted-foreground">
+                {t("joinedHeader")}
+              </span>
+              <span className="text-muted-foreground">
+                {new Date(member.joined_at).toLocaleDateString(locale)}
+              </span>
+            </div>
+            {isAdmin && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Select
+                  value={member.role}
+                  onValueChange={(value) =>
+                    handleChangeRole(member, value as Role)
+                  }
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        <span className="capitalize">{role}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => {
+                    setMemberToRemove(member);
+                    setRemoveError(null);
+                    setRemoveDialogOpen(true);
+                  }}
+                >
+                  <Trash2 className="mr-1 h-4 w-4" />
+                  {tc("remove")}
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+        {members.length === 0 && (
+          <p className="py-8 text-center text-muted-foreground">{t("empty")}</p>
+        )}
+      </div>
 
       {/* Remove confirmation dialog */}
       <Dialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("removeTitle")}</DialogTitle>
             <DialogDescription>
