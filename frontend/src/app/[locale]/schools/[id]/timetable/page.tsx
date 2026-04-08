@@ -90,12 +90,10 @@ export default function TimetablePage() {
 
   const isMobile = useIsMobile();
 
-  const initialMobileDay = (() => {
+  const [mobileDay, setMobileDay] = useState<number>(() => {
     const today = new Date().getDay(); // 0 Sun .. 6 Sat
-    const mapped = today === 0 || today === 6 ? 0 : today - 1;
-    return mapped;
-  })();
-  const [mobileDay, setMobileDay] = useState<number>(initialMobileDay);
+    return today === 0 || today === 6 ? 0 : today - 1;
+  });
 
   const highlightedCells = (() => {
     if (!highlighted) return undefined;
