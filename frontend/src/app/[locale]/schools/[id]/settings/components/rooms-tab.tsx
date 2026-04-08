@@ -293,9 +293,6 @@ export function RoomsTab() {
         {items.map((item) => (
           <div
             key={`card-${item.id}`}
-            ref={(el) => {
-              if (el) rowRefs.current.set(item.id, el);
-            }}
             className="rounded-md border bg-card p-3"
           >
             <div className="font-medium">{item.name}</div>
