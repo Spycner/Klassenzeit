@@ -84,7 +84,7 @@ members = ["solver/solver-core", "solver/solver-py"]
 
 [workspace.package]
 edition = "2021"
-rust-version = "1.82"
+rust-version = "1.85"
 
 [workspace.dependencies]
 # shared deps pinned here, referenced via { workspace = true } in members
@@ -182,7 +182,7 @@ Single file at the repo root. Pins every tool a contributor needs and defines ev
 # mise.toml
 
 [tools]
-rust    = "1.82"
+rust    = "1.93"
 python  = "3.13"
 uv      = "latest"
 "cargo:cocogitto"            = "latest"

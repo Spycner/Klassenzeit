@@ -4,9 +4,9 @@
 
 **Goal:** Scaffold the Klassenzeit monorepo: Python backend (uv workspace) + Rust solver (Cargo workspace with `solver-core` and `solver-py` PyO3 bindings) + mise-managed toolchain + full lint/test/coverage/audit tasks. Frontend, DB layer, and license are explicitly deferred.
 
-**Architecture:** Two workspace roots at the repo top — `Cargo.toml` for Rust, `pyproject.toml` for uv. `solver/solver-py/` is a member of both workspaces so uv+maturin can install it editably into the shared `.venv/`. `solver-core` is a pure-Rust rlib with no PyO3 — `solver-py` is a thin `cdylib` wrapper over it. mise pins Rust 1.82, Python 3.13, uv, cocogitto, lefthook, cargo-nextest, cargo-llvm-cov, cargo-machete, cargo-deny.
+**Architecture:** Two workspace roots at the repo top — `Cargo.toml` for Rust, `pyproject.toml` for uv. `solver/solver-py/` is a member of both workspaces so uv+maturin can install it editably into the shared `.venv/`. `solver-core` is a pure-Rust rlib with no PyO3 — `solver-py` is a thin `cdylib` wrapper over it. mise pins Rust 1.93, Python 3.13, uv, cocogitto, lefthook, cargo-nextest, cargo-llvm-cov, cargo-machete, cargo-deny.
 
-**Tech Stack:** Rust 1.82 + Cargo workspaces, PyO3 0.22 + maturin 1.7, Python 3.13 + uv workspaces, FastAPI + httpx (via `fastapi[standard]`), ruff + ty + vulture + pytest/pytest-asyncio/pytest-cov, proptest (Rust), cargo-nextest (runner), cargo-llvm-cov (Rust coverage), cargo-deny + pip-audit (supply chain), mise (toolchain + tasks), lefthook (git hooks), cocogitto (commit message enforcement).
+**Tech Stack:** Rust 1.93 + Cargo workspaces, PyO3 0.22 + maturin 1.7, Python 3.13 + uv workspaces, FastAPI + httpx (via `fastapi[standard]`), ruff + ty + vulture + pytest/pytest-asyncio/pytest-cov, proptest (Rust), cargo-nextest (runner), cargo-llvm-cov (Rust coverage), cargo-deny + pip-audit (supply chain), mise (toolchain + tasks), lefthook (git hooks), cocogitto (commit message enforcement).
 
 **Spec:** [`docs/superpowers/specs/2026-04-11-project-scaffolding-design.md`](../specs/2026-04-11-project-scaffolding-design.md)
 
@@ -50,7 +50,7 @@ target/
 # mise.toml — toolchain pins and task definitions
 
 [tools]
-rust    = "1.82"
+rust    = "1.93"
 python  = "3.13"
 uv      = "latest"
 "cargo:cocogitto"            = "latest"
@@ -150,12 +150,12 @@ run = [
 - [ ] **Step 3: Install toolchain via mise**
 
 Run: `mise install`
-Expected: mise downloads and installs Rust 1.82, Python 3.13, uv, cocogitto, lefthook, cargo-nextest, cargo-llvm-cov, cargo-machete, cargo-deny. First run takes several minutes (Cargo installs compile from source).
+Expected: mise downloads and installs Rust 1.93, Python 3.13, uv, cocogitto, lefthook, cargo-nextest, cargo-llvm-cov, cargo-machete, cargo-deny. First run takes several minutes (Cargo installs compile from source).
 
 - [ ] **Step 4: Verify versions**
 
 Run: `mise exec -- rustc --version && mise exec -- python --version && mise exec -- uv --version`
-Expected: `rustc 1.82.x`, `Python 3.13.x`, `uv 0.x.x` (or newer).
+Expected: `rustc 1.93.x`, `Python 3.13.x`, `uv 0.x.x` (or newer).
 
 - [ ] **Step 5: Commit**
 
@@ -180,7 +180,7 @@ members = ["solver/solver-core"]
 
 [workspace.package]
 edition      = "2021"
-rust-version = "1.82"
+rust-version = "1.85"
 
 [workspace.dependencies]
 proptest = "1"

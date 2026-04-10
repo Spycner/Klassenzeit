@@ -4,7 +4,7 @@ members = ["solver/solver-core", "solver/solver-py"]
 
 [workspace.package]
 edition      = "2021"
-rust-version = "1.82"
+rust-version = "1.85"
 
 [workspace.dependencies]
 proptest = "1"
