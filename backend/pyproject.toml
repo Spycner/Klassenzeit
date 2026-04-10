@@ -7,8 +7,14 @@ authors = [
     { name = "Spycner", email = "pascal98kraus@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi[standard]>=0.135.3",
+    "klassenzeit-solver",
+]
 
 [build-system]
 requires = ["uv_build>=0.11.6,<0.12.0"]
 build-backend = "uv_build"
+
+[tool.uv.sources]
+klassenzeit-solver = { workspace = true }
