@@ -1,0 +1,4 @@
+commit-msg:
+  commands:
+    cog:
+      run: cog verify --file {1} --ignore-merge-commits --ignore-fixup-commits
