@@ -6,7 +6,7 @@
 
 **Architecture:** Two workspace roots at the repo top — `Cargo.toml` for Rust, `pyproject.toml` for uv. `solver/solver-py/` is a member of both workspaces so uv+maturin can install it editably into the shared `.venv/`. `solver-core` is a pure-Rust rlib with no PyO3 — `solver-py` is a thin `cdylib` wrapper over it. mise pins Rust 1.93, Python 3.13, uv, cocogitto, lefthook, cargo-nextest, cargo-llvm-cov, cargo-machete, cargo-deny.
 
-**Tech Stack:** Rust 1.93 + Cargo workspaces, PyO3 0.22 + maturin 1.7, Python 3.13 + uv workspaces, FastAPI + httpx (via `fastapi[standard]`), ruff + ty + vulture + pytest/pytest-asyncio/pytest-cov, proptest (Rust), cargo-nextest (runner), cargo-llvm-cov (Rust coverage), cargo-deny + pip-audit (supply chain), mise (toolchain + tasks), lefthook (git hooks), cocogitto (commit message enforcement).
+**Tech Stack:** Rust 1.93 + Cargo workspaces, PyO3 0.25 + maturin 1.7, Python 3.13 + uv workspaces, FastAPI + httpx (via `fastapi[standard]`), ruff + ty + vulture + pytest/pytest-asyncio/pytest-cov, proptest (Rust), cargo-nextest (runner), cargo-llvm-cov (Rust coverage), cargo-deny + pip-audit (supply chain), mise (toolchain + tasks), lefthook (git hooks), cocogitto (commit message enforcement).
 
 **Spec:** [`docs/superpowers/specs/2026-04-11-project-scaffolding-design.md`](../specs/2026-04-11-project-scaffolding-design.md)
 
@@ -369,8 +369,8 @@ name       = "klassenzeit_solver"
 crate-type = ["cdylib"]
 
 [dependencies]
-solver-core = { path = "../solver-core" }
-pyo3        = { version = "0.22", features = ["extension-module"] }
+solver-core = { path = "../solver-core", version = "0.1.0" }
+pyo3        = { version = "0.25", features = ["extension-module"] }
 ```
 
 - [ ] **Step 2: Write the PyO3 module**

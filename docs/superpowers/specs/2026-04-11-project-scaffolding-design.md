@@ -138,7 +138,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 solver-core = { path = "../solver-core" }
-pyo3 = { version = "0.22", features = ["extension-module"] }
+pyo3 = { version = "0.25", features = ["extension-module"] }
 ```
 
 ### `solver/solver-py/pyproject.toml`
