@@ -176,7 +176,7 @@ git commit -m "chore: pin toolchain via mise and add .gitignore"
 ```toml
 [workspace]
 resolver = "2"
-members = ["solver/solver-core", "solver/solver-py"]
+members = ["solver/solver-core"]
 
 [workspace.package]
 edition      = "2021"
@@ -186,10 +186,12 @@ rust-version = "1.82"
 proptest = "1"
 ```
 
+Only `solver-core` is listed initially. `solver-py` is added to the members list in Task 4 when the crate itself is created, so that `cargo` commands in Task 3 can parse the workspace without stumbling on a non-existent member.
+
 - [ ] **Step 2: Verify workspace is parseable**
 
 Run: `cargo metadata --format-version 1 > /dev/null`
-Expected: fails with an error about missing member manifests (`solver/solver-core/Cargo.toml` does not exist). This is expected — the workspace declaration is valid, the members just don't exist yet.
+Expected: fails with an error about `solver/solver-core/Cargo.toml` not existing. This is expected — the workspace declaration is valid, the member just doesn't exist yet.
 
 - [ ] **Step 3: Commit**
 
@@ -333,6 +335,7 @@ git commit -m "feat(solver-core): scaffold crate with reverse_chars and proptest
 ## Task 4: Scaffold `solver-py` (Rust-side PyO3 wrapper)
 
 **Files:**
+- Modify: root `Cargo.toml` — add `solver/solver-py` to `[workspace] members`
 - Create: `solver/solver-py/Cargo.toml`
 - Create: `solver/solver-py/pyproject.toml`
 - Create: `solver/solver-py/src/lib.rs`
@@ -340,6 +343,16 @@ git commit -m "feat(solver-core): scaffold crate with reverse_chars and proptest
 - [ ] **Step 0: Create the crate directories**
 
 Run: `mkdir -p solver/solver-py/src solver/solver-py/tests`
+
+- [ ] **Step 0b: Extend workspace members**
+
+Edit the root `Cargo.toml` so `[workspace] members` becomes:
+
+```toml
+members = ["solver/solver-core", "solver/solver-py"]
+```
+
+(Task 2 left `solver-py` out because the crate didn't exist yet; now it does.)
 
 - [ ] **Step 1: Write the Cargo manifest**
 
@@ -408,7 +421,7 @@ Expected: compiles cleanly (may download pyo3 crate on first run).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add solver/solver-py
+git add solver/solver-py Cargo.toml
 git commit -m "feat(solver-py): scaffold PyO3 wrapper exposing reverse_chars"
 ```
 
