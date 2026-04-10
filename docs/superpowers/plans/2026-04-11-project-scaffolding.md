@@ -35,6 +35,9 @@ __pycache__/
 # Rust
 target/
 
+# Git worktrees (project-local)
+.worktrees/
+
 # Editors / OS
 .DS_Store
 .idea/
