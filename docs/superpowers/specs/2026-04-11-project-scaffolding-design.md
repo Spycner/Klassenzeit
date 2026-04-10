@@ -300,8 +300,11 @@ Root `pyproject.toml` declares pytest discovery and async mode:
 ```toml
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["backend/tests", "solver/solver-py/tests"]
+testpaths    = ["backend/tests", "solver/solver-py/tests"]
+addopts      = ["--import-mode=importlib"]
 ```
+
+`--import-mode=importlib` is required because both `backend/tests/` and `solver/solver-py/tests/` carry their own `__init__.py`; pytest's default `prepend` mode would see two competing top-level `tests` packages and fail collection.
 
 ## Testing strategy
 
