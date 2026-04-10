@@ -1,8 +1,7 @@
 """FastAPI entry point for the Klassenzeit backend."""
 
 from fastapi import FastAPI
-
-from klassenzeit_solver import reverse_chars
+from klassenzeit_solver import reverse_chars  # ty: ignore[unresolved-import]
 
 app = FastAPI(title="Klassenzeit")
 

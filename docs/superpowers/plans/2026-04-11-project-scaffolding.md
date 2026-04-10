@@ -622,7 +622,7 @@ These tests assert the binding contract (types, values, error propagation),
 not solver logic. Solver logic is tested in Rust via solver-core.
 """
 
-from klassenzeit_solver import reverse_chars
+from klassenzeit_solver import reverse_chars  # ty: ignore[unresolved-import]
 
 
 def test_reverse_chars_basic() -> None:
@@ -676,7 +676,6 @@ the klassenzeit_solver PyO3 binding. The solver is not mocked.
 """
 
 from httpx import ASGITransport, AsyncClient
-
 from klassenzeit_backend.main import app
 
 
@@ -703,8 +702,7 @@ Create `backend/src/klassenzeit_backend/main.py`:
 """FastAPI entry point for the Klassenzeit backend."""
 
 from fastapi import FastAPI
-
-from klassenzeit_solver import reverse_chars
+from klassenzeit_solver import reverse_chars  # ty: ignore[unresolved-import]
 
 app = FastAPI(title="Klassenzeit")
 
@@ -713,6 +711,8 @@ app = FastAPI(title="Klassenzeit")
 async def health() -> dict[str, str]:
     return {"status": "ok", "solver_check": reverse_chars("ok")}
 ```
+
+The `# ty: ignore[unresolved-import]` pragma tells Astral's ty type checker to stop complaining that it can't introspect `klassenzeit_solver`. The module is a PyO3 `.so` without type stubs — ty has no way to know `reverse_chars` exists from pure Python analysis. Stubs (a `.pyi` file shipped alongside the extension) are the proper long-term fix; see `docs/superpowers/OPEN_THINGS.md`.
 
 - [ ] **Step 4: Run the test to verify it passes**
 

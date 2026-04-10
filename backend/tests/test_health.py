@@ -5,7 +5,6 @@ the klassenzeit_solver PyO3 binding. The solver is not mocked.
 """
 
 from httpx import ASGITransport, AsyncClient
-
 from klassenzeit_backend.main import app
 
 

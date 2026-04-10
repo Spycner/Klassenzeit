@@ -4,7 +4,7 @@ These tests assert the binding contract (types, values, error propagation),
 not solver logic. Solver logic is tested in Rust via solver-core.
 """
 
-from klassenzeit_solver import reverse_chars
+from klassenzeit_solver import reverse_chars  # ty: ignore[unresolved-import]
 
 
 def test_reverse_chars_basic() -> None:
