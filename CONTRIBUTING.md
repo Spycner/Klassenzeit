@@ -2,29 +2,16 @@
 
 ## Prerequisites
 
-Rust is a hard prerequisite — it's needed both for the PyO3 bindings and for the dev tools below.
-
-- **[Rust toolchain](https://rustup.rs)** (`cargo`, `rustc`, `rustfmt`, `clippy`)
-- **[Lefthook](https://github.com/evilmartians/lefthook)** — Git hook runner
-- **[Cocogitto](https://docs.cocogitto.io)** (`cog`) — Conventional Commits enforcer
-
-### Installing the dev tools
-
-Once `cargo` is on your `PATH`:
-
-```bash
-cargo install cocogitto
-```
-
-Install lefthook via any method listed in its [installation docs](https://github.com/evilmartians/lefthook/blob/master/docs/install.md), as long as the binary ends up on your `PATH`.
+The only thing you install by hand is [mise](https://mise.jdx.dev/). mise provides every other tool (Rust, Python, uv, cocogitto, lefthook, cargo-nextest, cargo-llvm-cov, cargo-machete, cargo-deny) at the pinned versions defined in `mise.toml`.
 
 ## First-time setup
 
 ```bash
-lefthook install
+mise install         # installs the pinned toolchain
+mise run install     # installs git hooks and syncs deps (builds the solver via maturin)
 ```
 
-This writes the git hook shims into `.git/hooks/`. Lefthook auto-discovers the hook config at `.config/lefthook.yaml`.
+After this, `mise run test`, `mise run lint`, and `mise run dev` all work. See [`README.md`](README.md) for the full task table.
 
 ## Commit messages
 
