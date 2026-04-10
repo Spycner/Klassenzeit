@@ -2,3 +2,13 @@ commit-msg:
   commands:
     cog:
       run: cog verify --file {1} --ignore-merge-commits --ignore-fixup-commits
+
+pre-commit:
+  commands:
+    lint:
+      run: mise run lint
+
+pre-push:
+  commands:
+    test:
+      run: mise run test
