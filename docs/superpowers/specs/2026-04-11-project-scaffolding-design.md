@@ -15,8 +15,11 @@
 ## Non-goals
 
 - **Frontend scaffolding.** Framework choice (React, Svelte, Vue, …) is unresolved. `frontend/` will be scaffolded in a separate spec once the framework is chosen; this design does not reserve any config or paths for it beyond leaving the directory name available.
-- **Authentication, database schema, API surface.** This spec covers structural scaffolding only; product-level concerns come later.
+- **Authentication, API surface.** This spec covers structural scaffolding only; product-level concerns come later.
+- **Database layer and migrations.** ORM/migration choice (SQLAlchemy 2.0 + Alembic vs SQLModel vs something async-native) is a real architectural decision and out of scope here. No `db/` directory in the initial scaffold; it gets its own spec once the stack is chosen.
 - **Production deployment.** Docker, reverse proxy, secrets management are out of scope.
+- **Licensing.** Deferred. The root `Cargo.toml` does not declare a license; no `LICENSE` file is created. Revisit when the project's distribution model is clearer.
+- **CI configuration.** No GitHub Actions / pipeline config in this spec. `mise run audit` exists as a task so CI can invoke it later, but wiring lives in a separate spec.
 
 ## Architecture
 
@@ -40,7 +43,6 @@ klassenzeit/
 │   │   ├── main.py         # FastAPI entry
 │   │   ├── api/            # routers
 │   │   ├── core/           # settings, logging
-│   │   ├── db/             # models, migrations
 │   │   └── services/       # wraps klassenzeit_solver calls
 │   └── tests/
 │
@@ -83,10 +85,10 @@ members = ["solver/solver-core", "solver/solver-py"]
 [workspace.package]
 edition = "2021"
 rust-version = "1.82"
-license = "MIT"
 
 [workspace.dependencies]
 # shared deps pinned here, referenced via { workspace = true } in members
+proptest = "1"
 ```
 
 ### Root `pyproject.toml`
@@ -103,7 +105,7 @@ The root itself is not a publishable package — it only defines the workspace. 
 
 ### `solver/solver-core/Cargo.toml`
 
-Plain rlib, no PyO3:
+Plain rlib, no PyO3. Property-testing via `proptest` as a dev-dep.
 
 ```toml
 [package]
@@ -114,6 +116,9 @@ rust-version.workspace = true
 
 [lib]
 # default rlib
+
+[dev-dependencies]
+proptest = { workspace = true }
 ```
 
 ### `solver/solver-py/Cargo.toml`
@@ -165,7 +170,7 @@ Populated by `uv init --package backend` and `uv add` commands (see "Scaffold co
 2. `mise run install` — runs `lefthook install` and `uv sync`. On first run, `uv sync` invokes maturin to compile `solver-py` and install it editably into `.venv/`.
 3. Edit Rust in `solver/solver-core/` or `solver/solver-py/` → `uv sync` (or `uv run --reinstall-package klassenzeit-solver ...`) rebuilds the native module. Incremental, fast after the first build.
 4. Backend imports with `from klassenzeit_solver import ...` like any other dep.
-5. Pure-Rust work on `solver-core` stays in the native Rust loop: `cargo test -p solver-core`, `cargo bench -p solver-core`. No Python in that loop.
+5. Pure-Rust work on `solver-core` stays in the native Rust loop: `cargo nextest run -p solver-core`, `cargo bench -p solver-core`. No Python in that loop.
 
 **Known friction:** uv's maturin-backend rebuilds are not automatic on file change. Rust edits require re-running `uv sync`. If this becomes a significant annoyance in practice, `maturin develop --uv` is the escape hatch — but start with `uv sync` and only reach for the alternative if needed.
 
@@ -182,6 +187,10 @@ python  = "3.13"
 uv      = "latest"
 "cargo:cocogitto"            = "latest"
 "ubi:evilmartians/lefthook"  = "latest"
+"cargo:cargo-nextest"        = "latest"
+"cargo:cargo-llvm-cov"       = "latest"
+"cargo:cargo-machete"        = "latest"
+"cargo:cargo-deny"           = "latest"
 
 [env]
 # Populate as needed (e.g. RUST_BACKTRACE = "1")
@@ -208,8 +217,8 @@ description = "Run all tests (Rust + Python)"
 depends = ["test:rust", "test:py"]
 
 [tasks."test:rust"]
-description = "Run Rust workspace tests"
-run = "cargo test --workspace"
+description = "Run Rust workspace tests (via nextest)"
+run = "cargo nextest run --workspace"
 
 [tasks."test:py"]
 description = "Run Python tests (backend + solver-py bindings)"
@@ -218,6 +227,27 @@ run = "uv run pytest"
 [tasks.bench]
 description = "Run solver-core benches"
 run = "cargo bench -p solver-core"
+
+# ─── Coverage (separate from `test` — slower, for reports not TDD) ──────────
+
+[tasks.cov]
+description = "Run coverage for Rust and Python"
+depends = ["cov:rust", "cov:py"]
+
+[tasks."cov:rust"]
+run = "cargo llvm-cov --workspace --lcov --output-path target/lcov.info"
+
+[tasks."cov:py"]
+run = "uv run pytest --cov=klassenzeit_backend --cov=klassenzeit_solver"
+
+# ─── Supply-chain audits (run in CI, not pre-push) ──────────────────────────
+
+[tasks.audit]
+description = "Supply-chain audits — license, advisory, unused deps"
+run = [
+  "cargo deny check",
+  "uvx pip-audit",
+]
 
 # ─── Lint & format ──────────────────────────────────────────────────────────
 
@@ -229,6 +259,7 @@ depends = ["lint:rust", "lint:py"]
 run = [
   "cargo fmt --check",
   "cargo clippy --workspace --all-targets -- -D warnings",
+  "cargo machete",
 ]
 
 [tasks."lint:py"]
@@ -237,7 +268,7 @@ run = [
   "uv run ruff check",
   "uv run ruff format --check",
   "uv run ty check",
-  "uv run vulture src",
+  "uv run vulture backend/src",
 ]
 
 [tasks.fmt]
@@ -256,24 +287,38 @@ All Python dev tools live in uv dev dependencies, not as mise system tools. Adde
 
 - **ruff** — linter and formatter. Canonical Astral choice.
 - **ty** — Astral's type checker, currently in preview. Chosen to keep the Python tool stack Astral-consistent (ruff + uv + ty). Preview status is a known tradeoff; revisit if it proves unstable in practice.
-- **vulture** — dead-code detector. De facto standard, tunable via whitelist file for false positives. Runs across `src/`.
+- **vulture** — dead-code detector. De facto standard, tunable via whitelist file for false positives. Runs across `backend/src`.
 - **pytest** — test runner for both backend and solver-py binding tests.
+- **pytest-asyncio** — async test support. Required for FastAPI route tests that use `httpx.AsyncClient`. Configured with `asyncio_mode = "auto"` in `[tool.pytest.ini_options]` so tests don't need per-function decorators.
+- **pytest-cov** — coverage plugin. Invoked only by `mise run cov`, not by `mise run test`, to keep the TDD loop fast.
 - **httpx** — comes along for free from `fastapi[standard]`; used as the FastAPI test client.
+
+### Pytest configuration
+
+Root `pyproject.toml` declares pytest discovery and async mode:
+
+```toml
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["backend/tests", "solver/solver-py/tests"]
+```
 
 ## Testing strategy
 
 Three domains, three native runners:
 
-1. **`solver-core` (pure Rust).** `cargo test -p solver-core` and `cargo bench -p solver-core`. This is where most solver logic is tested: unit tests, property tests, criterion benches. Fast, no Python interpreter. TDD happens here.
+1. **`solver-core` (pure Rust).** `cargo nextest run -p solver-core` and `cargo bench -p solver-core`. This is where most solver logic is tested: unit tests, **property tests via `proptest`**, criterion benches. Fast, no Python interpreter. TDD happens here.
 
 2. **`solver-py` (PyO3 binding layer).** Thin by design, so it gets thin tests: a handful of pytest smoke tests in `solver/solver-py/tests/` that import `klassenzeit_solver`, call each exposed function, and assert the binding contract (types marshalled correctly, errors surface as Python exceptions). Invoked by `mise run test:py`.
 
-3. **`backend` (Python).** `mise run test:py` runs pytest across `backend/tests/`. Uses `httpx.AsyncClient` / `TestClient` for route tests. The solver is a real dependency in backend tests — not mocked. This is intentional: the solver is fast enough that mocking would only hide binding or integration bugs, and it's consistent with the project rule that integration tests hit real dependencies.
+3. **`backend` (Python).** `mise run test:py` runs pytest across `backend/tests/`. Uses `httpx.AsyncClient` for async route tests (via `pytest-asyncio`). The solver is a real dependency in backend tests — not mocked. This is intentional: the solver is fast enough that mocking would only hide binding or integration bugs, and it's consistent with the project rule that integration tests hit real dependencies.
 
 **TDD cadence:**
-- Red/green/refactor in `solver-core` with `cargo test -p solver-core` — sub-second feedback.
+- Red/green/refactor in `solver-core` with `cargo nextest run -p solver-core` — sub-second feedback.
 - Red/green/refactor in `backend` with `uv run pytest backend/tests -k <name>` — sub-second feedback.
 - `solver-py` rarely needs TDD; its tests act as a binding-contract regression suite.
+
+**Coverage is separate.** `mise run test` runs uninstrumented (fast, TDD-friendly). `mise run cov` runs both `cargo llvm-cov` and `pytest --cov` for report generation — invoked manually or from CI, never in the inner dev loop.
 
 ## Lefthook wiring
 
@@ -316,7 +361,7 @@ uv add --package klassenzeit-backend "fastapi[standard]"
 uv add --package klassenzeit-backend klassenzeit-solver
 
 # 6. Workspace-wide dev dependencies (run at repo root)
-uv add --dev pytest ruff ty vulture
+uv add --dev pytest pytest-asyncio pytest-cov ruff ty vulture
 
 # 7. First sync — invokes maturin to build solver-py into the shared .venv/
 uv sync
@@ -358,7 +403,10 @@ The Conventional Commits section is unchanged.
 - **uv workspace location** — Repo root, with `backend/` and `solver/solver-py/` as members.
 - **Top-level task runner** — `mise` (also replaces manual toolchain install).
 - **Python version** — 3.13.
-- **Python dev tools** — ruff, ty, vulture.
-- **Dependency management** — Always via `uv add`, never hand-edited.
+- **Python dev tools** — ruff, ty, vulture, pytest-asyncio, pytest-cov.
+- **Rust dev tools** — proptest (property tests), cargo-nextest (runner), cargo-llvm-cov (coverage), cargo-machete (unused deps), cargo-deny (supply chain).
+- **Dependency management** — Python deps always via `uv add`, never hand-edited.
 - **ASGI server** — uvicorn, pulled in via `fastapi[standard]`.
 - **Frontend** — deferred.
+- **License** — deferred; no `license` field in `Cargo.toml`, no `LICENSE` file.
+- **Database layer** — deferred; no `db/` directory, no ORM/migration tool pinned.
