@@ -10,6 +10,25 @@ Layered fixture design:
 Pytest is invoked from the repo root (see ``[tool.pytest.ini_options]
 testpaths`` in the root ``pyproject.toml``), so every file path is
 resolved relative to ``__file__``, not cwd.
+
+Implementation notes:
+
+- ``apply_migrations`` is a **synchronous** fixture even though the rest of
+  the harness is async.  Alembic's ``command.downgrade/upgrade`` internally
+  calls ``asyncio.run()`` (via ``env.py``'s ``run_migrations_online``).
+  ``asyncio.run()`` cannot be called from inside a running event loop, so
+  ``apply_migrations`` must not be async.  A sync session-scoped fixture runs
+  once per pytest session, before any async fixtures are initialised, and has
+  no event loop conflict.
+
+- ``apply_migrations`` depends on ``settings`` (sync, session-scoped) rather
+  than ``engine`` (async) so that the fixture ordering is clean and no async
+  context manager is needed.
+
+- ``db_session``'s savepoint-restart event listener accesses
+  ``transaction._parent.nested`` (private SQLAlchemy attribute).  This is the
+  canonical pattern from the SQLAlchemy docs.  Do not rewrite it to avoid the
+  private access — that breaks the fixture.
 """
 
 from collections.abc import AsyncIterator
@@ -58,10 +77,18 @@ async def engine(settings: Settings) -> AsyncIterator[AsyncEngine]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-async def apply_migrations(engine: AsyncEngine) -> None:
+def apply_migrations(settings: Settings) -> None:
+    """Run downgrade → upgrade once per pytest session.
+
+    This fixture is **synchronous** deliberately: alembic's
+    ``command.downgrade/upgrade`` calls ``asyncio.run()`` internally (via
+    ``env.py``), and ``asyncio.run()`` raises ``RuntimeError`` when called from
+    inside a running event loop.  A sync fixture has no event loop, so the
+    call is safe.
+    """
     cfg = Config(str(ALEMBIC_INI))
     cfg.set_main_option("script_location", str(ALEMBIC_DIR))
-    cfg.set_main_option("sqlalchemy.url", str(engine.url))
+    cfg.set_main_option("sqlalchemy.url", str(settings.database_url))
     command.downgrade(cfg, "base")  # clean slate each session
     command.upgrade(cfg, "head")
 

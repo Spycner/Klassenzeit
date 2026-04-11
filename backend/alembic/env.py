@@ -24,8 +24,11 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Inject the settings-resolved URL into the Alembic config.
-config.set_main_option("sqlalchemy.url", str(get_settings().database_url))
+# Inject the settings-resolved URL into the Alembic config, but only if the
+# caller has not already set it explicitly (e.g. the pytest conftest sets it
+# to the test DB URL before invoking alembic.command.upgrade/downgrade).
+if not config.get_main_option("sqlalchemy.url"):
+    config.set_main_option("sqlalchemy.url", str(get_settings().database_url))
 
 target_metadata = Base.metadata
 
