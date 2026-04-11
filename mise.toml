@@ -17,9 +17,10 @@ uv      = "latest"
 # ─── Bootstrap ──────────────────────────────────────────────────────────────
 
 [tasks.install]
-description = "Bootstrap dev environment (hooks + deps)"
+description = "Bootstrap dev environment (hooks + deps + rust components)"
 run = [
   "lefthook install",
+  "rustup component add rustfmt clippy",
   "uv sync",
 ]
 
