@@ -144,7 +144,7 @@ Contents of `backend/.env.example`:
 
 ```bash
 # Dev DB — matches compose.yaml service
-KZ_DATABASE_URL=postgresql+asyncpg://klassenzeit:klassenzeit@localhost:5432/klassenzeit_dev
+KZ_DATABASE_URL=postgresql+asyncpg://klassenzeit:klassenzeit@localhost:5433/klassenzeit_dev
 KZ_DB_POOL_SIZE=5
 KZ_DB_MAX_OVERFLOW=10
 KZ_DB_ECHO=false
@@ -153,7 +153,7 @@ KZ_DB_ECHO=false
 Contents of `backend/.env.test`:
 
 ```bash
-KZ_DATABASE_URL=postgresql+asyncpg://klassenzeit:klassenzeit@localhost:5432/klassenzeit_test
+KZ_DATABASE_URL=postgresql+asyncpg://klassenzeit:klassenzeit@localhost:5433/klassenzeit_test
 KZ_DB_ECHO=false
 ```
 
@@ -291,7 +291,10 @@ services:
       POSTGRES_USER: klassenzeit
       POSTGRES_PASSWORD: klassenzeit
       POSTGRES_DB: klassenzeit_dev
-    ports: ["5432:5432"]
+    # Host port 5433 (not 5432) because the dev host already runs a
+    # klassenzeit-postgres-dev staging container on 5432. Container
+    # internal port stays 5432.
+    ports: ["5433:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./scripts/db-init.sh:/docker-entrypoint-initdb.d/10-create-test-db.sh:ro
