@@ -7,8 +7,12 @@ The only thing you install by hand is [mise](https://mise.jdx.dev/). mise provid
 ## First-time setup
 
 ```bash
-mise install         # installs the pinned toolchain
-mise run install     # installs git hooks and syncs deps (builds the solver via maturin)
+mise install              # install the pinned toolchain
+mise run install          # install git hooks and sync deps (builds the solver via maturin)
+mise run db:up            # start the dev Postgres (podman compose)
+cp backend/.env.example backend/.env
+mise run db:migrate       # apply database migrations
+mise run test             # confirm everything works
 ```
 
 After this, `mise run test`, `mise run lint`, and `mise run dev` all work. See [`README.md`](README.md) for the full task table.
@@ -61,3 +65,24 @@ refactor!: replace sync HTTP client with async
 - `cog check` validates a range of existing commits — useful in CI for PRs.
 - `cog changelog` generates `CHANGELOG.md` from the commit history.
 - `cog bump` performs semver version bumps based on commit types.
+
+## Database
+
+The DB layer lives under `backend/src/klassenzeit_backend/db/`. For
+the contributor-facing reference — how to add a model, how to write
+a migration, how tests are isolated — see
+[`docs/architecture/database.md`](docs/architecture/database.md).
+
+A few invariants you must not break:
+
+- **Never edit a merged migration.** Write a corrective migration
+  instead.
+- **Every model must be re-exported from
+  `db/models/__init__.py`.** Models not re-exported are invisible
+  to Alembic autogenerate.
+- **Never remove the `MetaData` naming convention on `Base`.**
+  It is load-bearing for stable autogenerate diffs.
+- **No module-level engine or session.** The engine is built in the
+  FastAPI `lifespan` and lives on `app.state`.
+- **Integration tests hit a real Postgres** (via the `klassenzeit_test`
+  database). They never mock the DB.
