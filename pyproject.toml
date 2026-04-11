@@ -58,6 +58,21 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["klassenzeit_backend", "klassenzeit_solver"]
 
+[tool.ty.environment]
+python-version  = "3.13"
+python-platform = "linux"
+root            = ["."]
+
+[tool.ty.src]
+respect-ignore-files = true
+
+[tool.ty.rules]
+# The PyO3 .so has no .pyi stubs yet (see OPEN_THINGS.md). Keep the rule
+# enabled but at warn so a real broken import in pure-Python code still
+# fires. The two existing `# ty: ignore[unresolved-import]` annotations
+# remain — they suppress the warning at the call sites.
+unresolved-import = "warn"
+
 [tool.vulture]
 min_confidence = 80
 paths          = ["backend/src"]
