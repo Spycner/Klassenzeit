@@ -1,0 +1,38 @@
+name: Audit
+
+on:
+  schedule:
+    # Mondays 06:17 UTC. The :17 minute is deliberate — :00 hits
+    # GitHub's hourly cron stampede and gets queued.
+    - cron: '17 6 * * 1'
+  pull_request:
+    paths:
+      - 'Cargo.lock'
+      - 'uv.lock'
+      - 'deny.toml'
+      - 'pyproject.toml'
+      - '**/pyproject.toml'
+  push:
+    branches: [master]
+    paths:
+      - 'Cargo.lock'
+      - 'uv.lock'
+      - 'deny.toml'
+  workflow_dispatch:
+
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Supply-chain audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-mise
+      - name: Run mise audit pipeline
+        run: mise run audit
