@@ -27,8 +27,28 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    services:
+      # Mirrors compose.yaml: postgres 17, klassenzeit/klassenzeit, host
+      # port 5433 so backend/.env.test resolves without overrides.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: klassenzeit
+          POSTGRES_PASSWORD: klassenzeit
+          POSTGRES_DB: klassenzeit_dev
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U klassenzeit -d klassenzeit_dev"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-mise
+      - name: Create klassenzeit_test database
+        env:
+          PGPASSWORD: klassenzeit
+        run: psql -h localhost -p 5433 -U klassenzeit -d klassenzeit_dev -c 'CREATE DATABASE klassenzeit_test OWNER klassenzeit;'
       - name: Run mise test pipeline
         run: mise run test
