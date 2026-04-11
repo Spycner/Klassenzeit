@@ -9,5 +9,6 @@ requires-python = ">=3.13"
 description     = "PyO3 bindings for the Klassenzeit solver"
 
 [tool.maturin]
-module-name = "klassenzeit_solver"
-features    = ["pyo3/extension-module"]
+module-name   = "klassenzeit_solver._rust"
+python-source = "python"
+features      = ["pyo3/extension-module"]

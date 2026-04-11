@@ -8,7 +8,7 @@ fn reverse_chars(s: &str) -> String {
 }
 
 #[pymodule]
-fn klassenzeit_solver(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(reverse_chars, m)?)?;
     Ok(())
 }

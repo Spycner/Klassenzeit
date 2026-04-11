@@ -6,7 +6,7 @@ edition.workspace      = true
 rust-version.workspace = true
 
 [lib]
-name       = "klassenzeit_solver"
+name       = "_rust"
 crate-type = ["cdylib"]
 
 [dependencies]

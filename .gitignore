@@ -7,6 +7,12 @@ __pycache__/
 .ruff_cache/
 .ty_cache/
 
+# Maturin develop build artifacts — dropped next to the Python source by
+# `mise run solver:rebuild`; the real wheel goes through uv sync.
+solver/solver-py/python/**/*.so
+solver/solver-py/python/**/*.pyd
+solver/solver-py/python/**/*.dylib
+
 # Rust
 target/
 
