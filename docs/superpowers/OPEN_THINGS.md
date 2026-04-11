@@ -24,6 +24,7 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 ## Toolchain & build friction
 
 - **`ty` preview status.** Astral's type checker is pre-1.0; spec uses it anyway to keep the Python toolchain Astral-consistent. Revisit if it proves unstable.
+- **logging** all loggers should output json and otherwise follow sensible setups. JSON should be default so claude code can easily parse and and analyze it
 
 ## Project metadata
 
