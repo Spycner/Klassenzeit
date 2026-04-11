@@ -26,6 +26,7 @@ def test_ping_has_expected_columns() -> None:
     assert isinstance(created_col.type, DateTime)
     assert created_col.type.timezone is True
     assert created_col.server_default is not None
+    assert created_col.nullable is False
 
 
 def test_ping_is_importable_from_models_package() -> None:
