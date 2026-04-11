@@ -1,0 +1,45 @@
+# cargo-deny policy for the Klassenzeit workspace.
+#
+# Keep this deliberately conservative. Bias toward allow-listing specific
+# licenses that are compatible with both permissive and commercial use;
+# reject copyleft unless we have a deliberate reason to vend it.
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked  = "warn"
+# No advisory ignores — we want every RUSTSEC advisory to fail audit until
+# explicitly suppressed with a comment.
+ignore = []
+
+[licenses]
+version = 2
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Unicode-3.0",
+  "CC0-1.0",
+]
+confidence-threshold = 0.9
+
+# Our own workspace crates (solver-core, solver-py) deliberately have no
+# `license` field — the project's distribution model is deferred. Treat
+# workspace members as private so cargo-deny doesn't reject them.
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+wildcards         = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git      = "deny"
+allow-registry   = ["https://github.com/rust-lang/crates.io-index"]
+allow-git        = []

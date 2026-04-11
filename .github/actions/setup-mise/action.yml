@@ -1,0 +1,37 @@
+name: Setup mise toolchain and caches
+description: >
+  Bootstraps mise (Rust + Python + cargo bins) and primes cargo/uv
+  caches. Assumes the repo has already been checked out by the caller.
+
+runs:
+  using: composite
+  steps:
+    - uses: jdx/mise-action@v2
+      with:
+        install: true
+        cache: true
+
+    - name: Cache cargo registry, git, and target
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+        restore-keys: |
+          cargo-${{ runner.os }}-
+
+    - name: Cache uv
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+
+    - name: Bootstrap deps (lefthook + uv sync)
+      shell: bash
+      run: |
+        mise install
+        mise run install

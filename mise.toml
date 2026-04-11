@@ -1,0 +1,99 @@
+# mise.toml — toolchain pins and task definitions
+
+[tools]
+rust    = "1.93"
+python  = "3.13"
+uv      = "latest"
+"cargo:cocogitto"            = "latest"
+"ubi:evilmartians/lefthook"  = "latest"
+"cargo:cargo-nextest"        = "latest"
+"cargo:cargo-llvm-cov"       = "latest"
+"cargo:cargo-machete"        = "latest"
+"cargo:cargo-deny"           = "latest"
+
+[env]
+# Populate as needed (e.g. RUST_BACKTRACE = "1")
+
+# ─── Bootstrap ──────────────────────────────────────────────────────────────
+
+[tasks.install]
+description = "Bootstrap dev environment (hooks + deps + rust components)"
+run = [
+  "lefthook install",
+  "rustup component add rustfmt clippy",
+  "uv sync",
+]
+
+# ─── Dev loop ───────────────────────────────────────────────────────────────
+
+[tasks.dev]
+description = "Run the backend with auto-reload"
+run = "uv run uvicorn klassenzeit_backend.main:app --reload"
+
+# ─── Testing ────────────────────────────────────────────────────────────────
+
+[tasks.test]
+description = "Run all tests (Rust + Python)"
+depends = ["test:rust", "test:py"]
+
+[tasks."test:rust"]
+description = "Run Rust workspace tests (via nextest)"
+run = "cargo nextest run --workspace"
+
+[tasks."test:py"]
+description = "Run Python tests (backend + solver-py bindings)"
+run = "uv run pytest"
+
+[tasks.bench]
+description = "Run solver-core benches"
+run = "cargo bench -p solver-core"
+
+# ─── Coverage (separate from `test` — slower, for reports not TDD) ──────────
+
+[tasks.cov]
+description = "Run coverage for Rust and Python"
+depends = ["cov:rust", "cov:py"]
+
+[tasks."cov:rust"]
+run = "cargo llvm-cov --workspace --lcov --output-path target/lcov.info"
+
+[tasks."cov:py"]
+run = "uv run pytest --cov=klassenzeit_backend --cov=klassenzeit_solver"
+
+# ─── Supply-chain audits (run in CI, not pre-push) ──────────────────────────
+
+[tasks.audit]
+description = "Supply-chain audits — license, advisory, unused deps"
+run = [
+  "cargo deny check",
+  "uvx pip-audit",
+]
+
+# ─── Lint & format ──────────────────────────────────────────────────────────
+
+[tasks.lint]
+description = "Run all linters"
+depends = ["lint:rust", "lint:py"]
+
+[tasks."lint:rust"]
+run = [
+  "cargo fmt --check",
+  "cargo clippy --workspace --all-targets -- -D warnings",
+  "cargo machete",
+]
+
+[tasks."lint:py"]
+description = "Lint, format-check, type-check, and dead-code scan Python"
+run = [
+  "uv run ruff check",
+  "uv run ruff format --check",
+  "uv run ty check",
+  "uv run vulture backend/src",
+]
+
+[tasks.fmt]
+description = "Auto-format everything"
+run = [
+  "cargo fmt",
+  "uv run ruff format",
+]

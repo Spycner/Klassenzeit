@@ -1,0 +1,91 @@
+# Root pyproject.toml — declares the uv workspace and shared tool config.
+# This is NOT a publishable package; it has no [project] section.
+
+[tool.uv.workspace]
+members = ["backend", "solver/solver-py"]
+
+[tool.uv.sources]
+klassenzeit-solver = { workspace = true }
+
+# ─── Shared Python tool config ──────────────────────────────────────────────
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths    = ["backend/tests", "solver/solver-py/tests"]
+# `importlib` avoids the classic pytest trap where two test dirs that both
+# contain `__init__.py` collide under the same `tests` package name.
+addopts      = ["--import-mode=importlib"]
+
+[tool.ruff]
+target-version = "py313"
+line-length    = 100
+extend-exclude = ["target"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "C4",       # comprehensions
+    "UP",       # pyupgrade
+    "SIM",      # simplify
+    "RUF",      # ruff-specific
+    "N",        # pep8-naming
+    "PTH",      # pathlib over os.path
+    "PIE",      # misc anti-patterns
+    "RET",      # return statement hygiene
+    "TID",      # tidy imports
+    "TC",       # type-checking import grouping
+    "S",        # bandit (security)
+    "ASYNC",    # async best practices
+    "ERA",      # eradicate commented-out code
+    "PL",       # pylint subset
+]
+ignore = [
+    "PLR0913",  # too many arguments — common in FastAPI handlers / DI
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = [
+    "S101",     # assert is the point of a test
+    "PLR2004",  # magic values are fine in test fixtures
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["klassenzeit_backend", "klassenzeit_solver"]
+
+[tool.ty.environment]
+python-version  = "3.13"
+python-platform = "linux"
+root            = ["."]
+
+[tool.ty.src]
+respect-ignore-files = true
+
+[tool.ty.rules]
+# The PyO3 .so has no .pyi stubs yet (see OPEN_THINGS.md). Keep the rule
+# enabled but at warn so a real broken import in pure-Python code still
+# fires. The two existing `# ty: ignore[unresolved-import]` annotations
+# remain — they suppress the warning at the call sites.
+unresolved-import = "warn"
+
+[tool.vulture]
+min_confidence = 80
+paths          = ["backend/src"]
+
+[tool.coverage.run]
+source = ["backend/src", "solver/solver-py"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.10",
+    "ty>=0.0.29",
+    "vulture>=2.16",
+]
