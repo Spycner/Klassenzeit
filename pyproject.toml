@@ -19,7 +19,7 @@ addopts      = ["--import-mode=importlib"]
 [tool.ruff]
 target-version = "py313"
 line-length    = 100
-extend-exclude = ["target"]
+extend-exclude = ["target", "backend/alembic/script.py.mako"]
 
 [tool.ruff.format]
 docstring-code-format = true
