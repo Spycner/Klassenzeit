@@ -46,7 +46,7 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 - **`pytest-postgresql` or `testcontainers-python` as an alternative
   to compose-based test infra.** Revisit if onboarding friction
   emerges.
-- **logging** all loggers should output json and otherwise follow sensible setups. JSON should be default so claude code can easily parse and and analyze it
+- **Structured logging.** Every logger should emit JSON by default so downstream tooling (log aggregators, CLI viewers, debug agents) can parse and analyze output without regex. Choose the library, pick a schema, wire it into the FastAPI app and the backend's test output. Covers the backend for now; solver-py logging is a later concern.
 
 ## Production readiness
 
