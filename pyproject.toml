@@ -47,7 +47,6 @@ select = [
 ]
 ignore = [
     "PLR0913",  # too many arguments — common in FastAPI handlers / DI
-    "PLR2004",  # global magic-value rule (re-allowed selectively in tests below)
 ]
 
 [tool.ruff.lint.per-file-ignores]
