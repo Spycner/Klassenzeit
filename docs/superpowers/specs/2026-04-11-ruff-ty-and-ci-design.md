@@ -22,7 +22,7 @@ These remain deferred (still tracked in `OPEN_THINGS.md`):
 - Container image builds.
 - Dependabot for the Python/uv ecosystem (waiting on first-class `uv.lock` support).
 - Auto-fix-on-PR bots.
-- Branch protection rules — those are configured in GitHub UI/API, not in-repo.
+- Auto-issue creation when the weekly audit cron fails (tracked separately).
 
 ## Part 1 — Ruff configuration
 
@@ -152,9 +152,9 @@ This is done in the CI workflow file, not in mise, because it's CI-specific beha
 
 ## Part 3 — GitHub Actions
 
-Three files, all under `.github/`.
+Four files, all under `.github/`. CI is split into a **per-PR fast loop** (`ci.yml`) and a **scheduled supply-chain monitor** (`audit.yml`). The split reflects that linting and testing react to *our* code changes (PR cadence is correct), while audit advisories react to *upstream* changes (cron cadence is correct).
 
-### 3.1 `.github/workflows/ci.yml`
+### 3.1 `.github/workflows/ci.yml` — fast per-PR loop
 
 **Triggers:** `pull_request` against any branch, `push` to `master`.
 
@@ -166,13 +166,19 @@ concurrency:
   cancel-in-progress: true
 ```
 
-**Jobs (parallel, fail-fast off):**
+**Jobs (parallel):**
 
 1. **`lint`** — `mise run lint`
 2. **`test`** — `mise run test`
-3. **`audit`** — `mise run audit`. **Required** (not `continue-on-error`). Per design decision: cargo-deny advisories that break CI force same-day triage rather than rotting in a ticket queue.
 
-All three jobs share the same setup steps:
+These two jobs are designed to be the **required status checks** in branch protection (see §3.5). They are deliberately scoped tight: lint + test cover everything that changes when the diff changes, and nothing that doesn't.
+
+**Audit is intentionally NOT in this workflow.** It lives in `audit.yml` (§3.2). Reasoning:
+- A typo fix doesn't change `Cargo.lock`, so re-running `cargo deny check` against unchanged dependency state on every PR is pure waste.
+- Conversely, advisories on dependencies we already ship are published *between* PRs, on upstream's schedule, not ours.
+- Keeping audit out of the per-PR critical path also means a Friday-afternoon RUSTSEC publication doesn't block an unrelated bugfix merge.
+
+Both jobs share the same setup steps:
 
 ```yaml
 - uses: actions/checkout@v5
@@ -197,9 +203,9 @@ All three jobs share the same setup steps:
 - run: mise run install   # `uv sync` etc.
 ```
 
-**Why three jobs not one:**
+**Why two parallel jobs not one combined step:**
 - Parallel wall-clock wins — cargo build for `test` won't block ruff/ty for `lint`.
-- A failing audit doesn't hide failing tests in the same log.
+- A failing test doesn't bury a lint failure (or vice versa) in the same log.
 - Each job can have its own caching strategy if it diverges later.
 
 **Why drive everything through `mise run …`:**
@@ -207,11 +213,52 @@ All three jobs share the same setup steps:
 - Adding a new linter is a one-line `mise.toml` edit; no CI yaml change.
 
 **Ty CI invocation override:**
-The `lint` job runs `mise run lint` as-is. To get GitHub annotations and `--error-on-warning` from ty without hard-coding CI behavior into `mise.toml`, the CI step uses an env var pattern: a separate `ty-strict` step runs `uv run ty check --output-format github --error-on-warning` *after* `mise run lint` succeeds. This is duplicated work (~1s) but keeps `mise.toml` CI-agnostic.
+The `lint` job runs `mise run lint` as-is. To get GitHub annotations and `--error-on-warning` from ty without hard-coding CI behavior into `mise.toml`, a separate `ty-strict` step runs `uv run ty check --output-format github --error-on-warning` *after* `mise run lint` succeeds. This is duplicated work (~1s) but keeps `mise.toml` CI-agnostic.
 
 *Alternative considered and rejected:* gate the ty flags behind `${CI:+--error-on-warning}` inside `mise.toml`. Rejected because it's clever-magic and the duplication is cheap.
 
-### 3.2 `.github/workflows/pr-title.yml`
+### 3.2 `.github/workflows/audit.yml` — supply-chain monitor
+
+**Triggers** (three separate paths into the same job):
+
+```yaml
+on:
+  schedule:
+    - cron: '17 6 * * 1'   # Mondays 06:17 UTC — off the hour to dodge GitHub's cron stampede
+  pull_request:
+    paths:
+      - 'Cargo.lock'
+      - 'uv.lock'
+      - 'deny.toml'
+      - 'pyproject.toml'
+      - '**/pyproject.toml'
+  push:
+    branches: [master]
+    paths:
+      - 'Cargo.lock'
+      - 'uv.lock'
+      - 'deny.toml'
+  workflow_dispatch:
+```
+
+**Job:** `audit` runs `mise run audit` (which in turn runs `cargo deny check` + `uvx pip-audit`). Same mise/cache setup as `ci.yml`.
+
+**Why four triggers:**
+
+| Trigger | Catches |
+|---|---|
+| `schedule` weekly cron | New advisories published against deps we already ship — the dominant case |
+| `pull_request` with path filter | A PR that *adds* a vulnerable dependency, caught at review time before merge |
+| `push: master` with path filter | Belt-and-suspenders for the post-merge view (and historical runs visible on `master`) |
+| `workflow_dispatch` | Manual escape hatch for "did this CVE land yet?" |
+
+**Why not a required status check:**
+GitHub branch protection's required-checks list is *static*. If we marked `audit` as required, the `ci.yml`-only PRs (no lockfile change) would never trigger `audit` and would sit in "Expected — Waiting for status to be reported" forever. The known workarounds (always-true skip jobs, conditional matrices) are uglier than the alternative: leave `audit` unrequired, let reviewers see the red X on lockfile-touching PRs, and accept that the cron is the real backstop.
+
+**Failure visibility for the cron run:**
+A failing scheduled run shows up in the Actions tab and on GitHub's notification settings, but nothing actively pages anyone. This is acceptable for now (project is pre-product, audience is one developer). The followup — auto-create a GitHub Issue on cron failure — is in `OPEN_THINGS.md`, not built here. Standard pattern uses `JasonEtco/create-an-issue@v2` with a templated body.
+
+### 3.3 `.github/workflows/pr-title.yml`
 
 ```yaml
 on:
@@ -243,7 +290,9 @@ jobs:
 
 The type list mirrors `CONTRIBUTING.md`. Scope is optional (matches local cog behavior).
 
-### 3.3 `.github/dependabot.yml`
+The `lint-pr-title` job is also a **required status check** in branch protection (see §3.5).
+
+### 3.4 `.github/dependabot.yml`
 
 ```yaml
 version: 2
@@ -271,31 +320,69 @@ updates:
 
 **Python deps deliberately not configured.** Dependabot's `pip` ecosystem doesn't understand `uv.lock`; running it would either no-op or desync the lockfile. Both violate the "uv add only" rule in `CLAUDE.md`. Tracked in `OPEN_THINGS.md` for revisit.
 
+### 3.5 Branch protection (GitHub-side config — documented, not committed)
+
+Branch protection rules live in GitHub settings (UI or `gh api`), not in the repo. They are **the actual enforcement layer** — without them, the workflows above produce status checks that nothing requires. This section documents the recommended settings so they can be applied (and re-applied if the repo is recreated) without re-deriving them.
+
+**On `master`:**
+
+| Setting | Value | Why |
+|---|---|---|
+| Require a pull request before merging | ✅ | Gates everything else |
+| Require approvals | 0 | Solo project; revisit when contributors arrive |
+| Dismiss stale approvals on new commits | ✅ | Cheap correctness |
+| Require status checks to pass before merging | ✅ | The whole point |
+| Require branches to be up to date before merging | ✅ | Prevents the "green-on-old-base, red-on-merge" race |
+| Required status checks | `lint`, `test`, `lint-pr-title` | Three checks, all from §3.1 / §3.3 |
+| Require linear history | ✅ | Matches `cog`'s assumption that history is a sequence of conventional commits, not a merge tangle |
+| Restrict who can push to matching branches | Allow only PRs (no direct push) | The merge button is the only way in |
+| Allow force pushes | ❌ | Never on `master` |
+| Allow deletions | ❌ | Never on `master` |
+
+**Explicitly NOT required:** the `audit` job. See §3.2 for the path-filter footgun reasoning.
+
+**How to apply:**
+
+```bash
+gh api -X PUT repos/:owner/:repo/branches/master/protection \
+  --input docs/superpowers/branch-protection.json
+```
+
+The implementation plan (next step) will produce `docs/superpowers/branch-protection.json` as a checked-in record of the desired state, so applying it is reproducible. The plan will also include a verification step that reads the current protection back via `gh api` and diffs against the JSON.
+
 ## Risks & mitigations
 
 | Risk | Mitigation |
 |---|---|
 | New ruff rules surface lint failures in scaffold code | Fix in same commit; surface area is ~5 Python files |
-| CI cache key thrash (uv.lock churn) | `restore-keys` fallback so partial cache hits still help |
-| `audit` job blocks merges on upstream advisories outside our control | Explicitly accepted: forces same-day triage. `deny.toml` exemptions are the escape hatch. |
+| CI cache key thrash (`uv.lock` churn) | `restore-keys` fallback so partial cache hits still help |
+| Weekly audit failure sits unnoticed in the Actions tab | Accepted for now (solo project, low audience). Followup: auto-create a GitHub Issue on cron failure — see `OPEN_THINGS.md` |
+| Path-filtered audit on PRs makes branch protection awkward | `audit` is intentionally NOT a required check — reviewer enforcement only. Documented in §3.2 + §3.5 |
 | Mise install in CI is slow on cold cache | `jdx/mise-action@v2` caches the install dir; cargo bins (nextest, llvm-cov, deny, machete) survive between runs |
 | `pr-title` action drifts from `cog verify` rules | Type list copy-pasted from `CONTRIBUTING.md`; if `CONTRIBUTING.md` changes, both must update — noted as a future tech debt for a single source of truth |
+| Branch protection JSON in `docs/` drifts from actual GitHub settings | Verification step in the plan diffs `gh api` output against the checked-in JSON; failing diff is a CI follow-up, not a hard gate |
 
 ## Verification
 
 After implementation:
 
 1. Locally on `feature/scaffolding`: `mise run lint && mise run test && mise run audit` — all green.
-2. Push branch; observe three GitHub Actions jobs (`lint`, `test`, `audit`) + `lint-pr-title` complete successfully.
-3. Force a deliberate violation (e.g. an unused import, caught by `F401`) on a throwaway branch to confirm CI fails. Revert.
-4. Check that `mise run lint` and CI's `lint` job execute the *same command set* — diff `mise.toml` against the workflow file.
-5. Open `OPEN_THINGS.md`: remove the "CI configuration" entry; add the "Dependabot for uv ecosystem" entry; keep the PyO3 type stubs entry.
+2. Push branch; observe per-PR jobs (`lint`, `test`, `lint-pr-title`) complete successfully. The `audit` workflow should *not* trigger on this PR (no lockfile change in the impl PR — ruff/ty config + workflow files only).
+3. Touch `Cargo.lock` or `uv.lock` on a throwaway branch to confirm `audit` does trigger and runs to completion.
+4. Manually run `audit.yml` via `workflow_dispatch` from the Actions tab to confirm the cron-style invocation works.
+5. Force a deliberate violation (e.g. an unused import, caught by `F401`) on a throwaway branch to confirm `lint` fails CI. Revert.
+6. Check that `mise run lint` and CI's `lint` job execute the *same command set* — diff `mise.toml` against the workflow file.
+7. Apply branch protection from `docs/superpowers/branch-protection.json` via `gh api`. Read it back and confirm `lint`, `test`, `lint-pr-title` are all in the required-checks list and `audit` is not.
+8. Open a no-op PR; confirm the merge button is blocked until all three required checks report green.
+9. Open `OPEN_THINGS.md`: remove the "CI configuration" entry; add entries for "Dependabot for uv ecosystem", "Auto-issue creation on weekly audit failure", and "PR-title type list duplicates `CONTRIBUTING.md`"; keep the PyO3 type stubs entry.
 
 ## File touch list
 
 - `pyproject.toml` (root) — ruff + ty config blocks
-- `.github/workflows/ci.yml` — new
+- `.github/workflows/ci.yml` — new (lint + test)
+- `.github/workflows/audit.yml` — new (cargo-deny + pip-audit, cron + lockfile-paths + dispatch)
 - `.github/workflows/pr-title.yml` — new
 - `.github/dependabot.yml` — new
-- `docs/superpowers/OPEN_THINGS.md` — strike CI item, add uv-dependabot item
+- `docs/superpowers/branch-protection.json` — new (recommended GitHub branch protection settings, applied out-of-band)
+- `docs/superpowers/OPEN_THINGS.md` — strike CI item, add uv-dependabot + audit-issue + pr-title-duplication items
 - Possibly: scaffold Python files if any new ruff rule fires (expected to be small)
