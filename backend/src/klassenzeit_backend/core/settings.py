@@ -1,0 +1,45 @@
+"""Application settings, loaded from environment variables.
+
+All env vars consumed by the backend share the ``KZ_`` prefix so they
+can be distinguished from third-party vars in shared shells and CI.
+
+The default ``.env`` path is resolved *relative to this file*, not
+relative to cwd. ``uvicorn``, ``pytest``, and ``alembic`` all have
+different default working directories; a relative ``env_file=".env"``
+would silently resolve to the wrong file (or to nothing) depending on
+which tool loaded Settings first.
+"""
+
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic import PostgresDsn
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Resolve parents[3] of this file to reach the backend/ root:
+# settings.py → core/ → klassenzeit_backend/ → src/ → backend/
+_BACKEND_ROOT = Path(__file__).resolve().parents[3]
+_DEFAULT_ENV_FILE = _BACKEND_ROOT / ".env"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=str(_DEFAULT_ENV_FILE),
+        env_prefix="KZ_",
+        extra="ignore",
+    )
+
+    database_url: PostgresDsn
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
+    db_echo: bool = False
+
+
+@lru_cache
+def get_settings() -> Settings:
+    """Return the process-wide Settings singleton.
+
+    Cached so dependency-override patterns can swap the cached value in
+    tests via ``get_settings.cache_clear()`` when needed.
+    """
+    return Settings()  # ty: ignore[missing-argument]
