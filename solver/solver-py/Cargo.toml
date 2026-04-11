@@ -11,4 +11,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 solver-core = { path = "../solver-core", version = "0.1.0" }
-pyo3        = { version = "0.25", features = ["extension-module"] }
+pyo3        = { version = "0.28", features = ["extension-module"] }
