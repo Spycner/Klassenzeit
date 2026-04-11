@@ -75,13 +75,12 @@ select = [
 ]
 ignore = [
     "PLR0913",  # too many arguments — common in FastAPI handlers / DI
-    "PLR2004",  # global magic-value rule (re-allowed selectively in tests below)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = [
     "S101",     # assert is the point of a test
-    "PLR2004",  # magic values are fine in test fixtures
+    "PLR2004",  # magic values are fine in test fixtures (enforced in prod)
 ]
 
 [tool.ruff.lint.isort]
