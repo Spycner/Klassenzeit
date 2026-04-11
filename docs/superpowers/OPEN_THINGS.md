@@ -8,14 +8,25 @@ All current items come from the [project scaffolding design](specs/2026-04-11-pr
 
 Ordered roughly in the sequence they need to land: data first, then access control, then the product surface, then the UI on top, then the path to production.
 
-- **Database layer.** ORM/migration tool (SQLAlchemy 2.0 + Alembic vs SQLModel vs async-native) is unresolved. No `db/` directory, no migration tool pinned. Gets its own spec.
 - **Authentication.** No auth layer in the initial scaffold. Separate spec.
 - **API surface.** Product-level routes, DTOs, and request/response schemas are out of scope for scaffolding.
 - **Frontend scaffolding.** Framework choice (React, Svelte, Vue, …) is unresolved. `frontend/` is not scaffolded in the initial spec; gets its own spec once the framework is chosen.
 - **Production deployment.** Docker, reverse proxy, secrets management.
+- **Repository / unit-of-work layer.** Routes currently take
+  `AsyncSession` directly. A repository layer earns its place only
+  once queries get duplicated across endpoints. Add when it hurts.
+- **Data migrations / seed data framework.** Schema migrations only
+  for now. Add when there's real data to seed.
 
 ## CI / repo automation
 
+- **CI Postgres service.** The GitHub Actions workflow runs
+  `mise run lint` and `mise run test` but has no DB service. The
+  DB-layer spec's integration tests will fail in CI until the
+  workflow provisions a Postgres service, creates `klassenzeit_test`,
+  exports `KZ_DATABASE_URL`, and runs `alembic upgrade head` before
+  the test job. High priority — this blocks the DB-layer PR from
+  going green in CI.
 - **Branch and repo settings need a wrapper script.** `docs/superpowers/branch-protection.json` covers branch-scoped settings; `docs/superpowers/repo-settings.json` covers repo-scoped settings (merge strategies, delete-on-merge, squash commit formatting). They must be applied in the correct order on a fresh repo — the repo-settings PATCH must run first so `allow_squash_merge: true` / `allow_merge_commit: false` are in place before the branch-protection PUT with `required_linear_history: true`, which otherwise fails with HTTP 422. Currently you'd run two `gh api` commands by hand in order. Fold them into a wrapper script (`scripts/apply-github-settings.sh` or similar) so the order is encoded once.
 - **PR-title type list duplicates `CONTRIBUTING.md`.** `.github/workflows/pr-title.yml` carries its own copy of the conventional-commit type list. If `CONTRIBUTING.md` adds a type, the workflow must update too. Single source of truth needed (e.g. generate the workflow from a templated config).
 - **Auto-issue creation on weekly audit failure.** The `audit.yml` cron run is informational only — failures show up in the Actions tab but nothing pages anyone. Standard pattern uses `JasonEtco/create-an-issue@v2` with a templated body. Wire this in once the audit produces enough signal to be worth the noise.
@@ -28,7 +39,20 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 ## Toolchain & build friction
 
 - **`ty` preview status.** Astral's type checker is pre-1.0; spec uses it anyway to keep the Python toolchain Astral-consistent. Revisit if it proves unstable.
+- **`pytest-xdist` parallelization for DB tests.** Sub-millisecond
+  rollback teardown makes sequential runs fine at current suite
+  size. Worker-ID-keyed test databases become worthwhile once the
+  suite is big enough to matter.
+- **`pytest-postgresql` or `testcontainers-python` as an alternative
+  to compose-based test infra.** Revisit if onboarding friction
+  emerges.
 - **logging** all loggers should output json and otherwise follow sensible setups. JSON should be default so claude code can easily parse and and analyze it
+
+## Production readiness
+
+- **Production DB configuration.** Connection pooling at scale, read
+  replicas, `statement_timeout`, `pg_stat_statements`. All prod
+  concerns, out of scope until the deployment spec.
 
 ## Project metadata
 
