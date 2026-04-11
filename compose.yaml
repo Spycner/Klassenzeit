@@ -1,0 +1,25 @@
+# compose.yaml — root-level compose file for Klassenzeit local services.
+# Currently hosts only the dev Postgres; frontend and backend services
+# will be added here by future specs. Use `podman compose` to invoke.
+
+services:
+  db:
+    image: docker.io/library/postgres:17
+    environment:
+      POSTGRES_USER: klassenzeit
+      POSTGRES_PASSWORD: klassenzeit
+      POSTGRES_DB: klassenzeit_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/db-init.sh:/docker-entrypoint-initdb.d/10-create-test-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U klassenzeit -d klassenzeit_dev"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+volumes:
+  pgdata:
+    name: klassenzeit_pgdata
