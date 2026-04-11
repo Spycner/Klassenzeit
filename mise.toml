@@ -70,7 +70,10 @@ run = "podman compose stop db"
 description = "Destroy dev DB volume and start fresh (DANGEROUS)"
 run = [
   "podman compose rm -sf db",
-  "podman volume rm klassenzeit_pgdata",
+  # `|| true` — `volume rm` exits non-zero if the volume does not exist,
+  # which happens on fresh clones or after a manual volume prune. Swallow
+  # that failure so `db:reset` is idempotent.
+  "podman volume rm klassenzeit_pgdata || true",
   "podman compose up -d db",
 ]
 
