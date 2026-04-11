@@ -48,6 +48,14 @@ run = "uv run pytest"
 description = "Run solver-core benches"
 run = "cargo bench -p solver-core"
 
+# ─── Solver rebuild ─────────────────────────────────────────────────────────
+# Escape hatch for the maturin rebuild step. Plain `uv sync` picks up Rust
+# edits to solver-py, but `maturin develop` is faster on the inner loop.
+
+[tasks."solver:rebuild"]
+description = "Rebuild the solver-py extension in place (fast inner-loop alternative to `uv sync`)"
+run         = "uvx maturin develop --uv -m solver/solver-py/Cargo.toml"
+
 # ─── Coverage (separate from `test` — slower, for reports not TDD) ──────────
 
 [tasks.cov]
