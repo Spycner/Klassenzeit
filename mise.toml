@@ -56,6 +56,42 @@ run = "cargo bench -p solver-core"
 description = "Rebuild the solver-py extension in place (fast inner-loop alternative to `uv sync`)"
 run         = "uvx maturin develop --uv -m solver/solver-py/Cargo.toml"
 
+# ─── Database ───────────────────────────────────────────────────────────────
+
+[tasks."db:up"]
+description = "Start the dev Postgres"
+run = "podman compose up -d db"
+
+[tasks."db:stop"]
+description = "Stop the dev DB (keeps volume)"
+run = "podman compose stop db"
+
+[tasks."db:reset"]
+description = "Destroy dev DB volume and start fresh (DANGEROUS)"
+run = [
+  "podman compose rm -sf db",
+  # `|| true` — `volume rm` exits non-zero if the volume does not exist,
+  # which happens on fresh clones or after a manual volume prune. Swallow
+  # that failure so `db:reset` is idempotent.
+  "podman volume rm klassenzeit_pgdata || true",
+  "podman compose up -d db",
+]
+
+[tasks."db:migrate"]
+description = "Apply migrations to the dev DB"
+dir = "{{config_root}}/backend"
+run = "uv run alembic upgrade head"
+
+[tasks."db:revision"]
+description = "Autogenerate a new migration (usage: mise run db:revision -- -m 'message')"
+dir = "{{config_root}}/backend"
+run = "uv run alembic revision --autogenerate"
+
+[tasks."db:downgrade"]
+description = "Roll back the last migration"
+dir = "{{config_root}}/backend"
+run = "uv run alembic downgrade -1"
+
 # ─── Coverage (separate from `test` — slower, for reports not TDD) ──────────
 
 [tasks.cov]
