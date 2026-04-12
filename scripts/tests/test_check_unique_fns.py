@@ -8,6 +8,7 @@ from scripts.check_unique_fns import (
     extract_js_ts_names,
     extract_python_names,
     extract_rust_names,
+    find_duplicates,
 )
 
 
@@ -159,3 +160,31 @@ def test_extract_js_skips_anonymous():
     ]
     results = extract_js_ts_names(lines, "util.ts")
     assert results == []
+
+
+def test_find_duplicates_no_dupes():
+    """Verify no duplicates returns empty dict."""
+    locations = [Location("foo", "a.py", 1), Location("bar", "b.py", 2)]
+    assert find_duplicates(locations) == {}
+
+
+def test_find_duplicates_cross_language():
+    """Verify duplicates across languages are detected."""
+    locations = [
+        Location("get_session", "db/session.py", 19),
+        Location("get_session", "api/session.ts", 12),
+    ]
+    result = find_duplicates(locations)
+    assert "get_session" in result
+    assert len(result["get_session"]) == 2
+
+
+def test_find_duplicates_three_locations():
+    """Verify a name appearing three times is reported with all locations."""
+    locations = [
+        Location("validate", "a.py", 1),
+        Location("validate", "b.rs", 5),
+        Location("validate", "c.ts", 10),
+    ]
+    result = find_duplicates(locations)
+    assert len(result["validate"]) == 3
