@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Klassenzeit HTTP backend (FastAPI) wrapping the Rust solver"
 readme = "README.md"
 authors = [
-    { name = "Spycner", email = "pascal98kraus@gmail.com" }
+    { name = "pgoell", email = "pascal98kraus@gmail.com" }
 ]
 requires-python = ">=3.13"
 dependencies = [
