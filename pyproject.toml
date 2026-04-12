@@ -17,7 +17,7 @@ asyncio_mode = "auto"
 # loop-mismatch errors when using asyncpg.
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope   = "session"
-testpaths    = ["backend/tests", "solver/solver-py/tests"]
+testpaths    = ["backend/tests", "solver/solver-py/tests", "scripts/tests"]
 # `importlib` avoids the classic pytest trap where two test dirs that both
 # contain `__init__.py` collide under the same `tests` package name.
 addopts      = ["--import-mode=importlib", "--cov-fail-under=80"]

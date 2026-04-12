@@ -155,6 +155,7 @@ run = [
   "uv run ruff format --check",
   "uv run ty check",
   "uv run vulture backend/src",
+  "uv run python scripts/check_unique_fns.py",
 ]
 
 [tasks.fmt]
