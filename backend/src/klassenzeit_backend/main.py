@@ -20,7 +20,7 @@ from klassenzeit_solver import reverse_chars
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Initialize engine, session factory, settings, and rate limiter on app startup."""
+    """Manage app lifecycle: initialize shared state on startup, dispose engine on shutdown."""
     settings = get_settings()
     engine = build_engine()
     app.state.settings = settings
