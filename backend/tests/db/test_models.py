@@ -1,35 +1,82 @@
-"""Tests for the model re-export surface.
+"""Tests for the model re-export surface and model metadata."""
 
-Alembic autogenerate only sees models whose module has been imported
-before ``env.py`` builds ``target_metadata``. ``db/models/__init__.py``
-is the single import point that populates ``Base.metadata``.
-"""
-
-from sqlalchemy import DateTime, Integer
+from sqlalchemy import Boolean, DateTime, String
 
 from klassenzeit_backend.db.base import Base
-from klassenzeit_backend.db.models import Ping
+from klassenzeit_backend.db.models import User, UserSession
 
 
-def test_ping_model_is_registered_on_metadata() -> None:
-    assert "ping" in Base.metadata.tables
+def test_user_model_is_registered_on_metadata() -> None:
+    assert "users" in Base.metadata.tables
 
 
-def test_ping_has_expected_columns() -> None:
-    table = Base.metadata.tables["ping"]
+def test_user_has_expected_columns() -> None:
+    table = Base.metadata.tables["users"]
+
     id_col = table.c["id"]
-    created_col = table.c["created_at"]
-
     assert id_col.primary_key
-    assert isinstance(id_col.type, Integer)
 
+    email_col = table.c["email"]
+    assert email_col.unique
+    assert isinstance(email_col.type, String)
+    assert email_col.type.length == 320
+
+    hash_col = table.c["password_hash"]
+    assert isinstance(hash_col.type, String)
+    assert hash_col.type.length == 256
+
+    role_col = table.c["role"]
+    assert isinstance(role_col.type, String)
+
+    active_col = table.c["is_active"]
+    assert isinstance(active_col.type, Boolean)
+
+    force_col = table.c["force_password_change"]
+    assert isinstance(force_col.type, Boolean)
+
+    login_col = table.c["last_login_at"]
+    assert isinstance(login_col.type, DateTime)
+    assert login_col.type.timezone is True
+    assert login_col.nullable is True
+
+    created_col = table.c["created_at"]
     assert isinstance(created_col.type, DateTime)
     assert created_col.type.timezone is True
     assert created_col.server_default is not None
-    assert created_col.nullable is False
+
+    updated_col = table.c["updated_at"]
+    assert isinstance(updated_col.type, DateTime)
+    assert updated_col.type.timezone is True
+    assert updated_col.server_default is not None
 
 
-def test_ping_is_importable_from_models_package() -> None:
-    # Sanity check: the re-export pattern works — a consumer can import
-    # Ping from the package root, not just from the private _ping module.
-    assert Ping.__tablename__ == "ping"
+def test_user_is_importable_from_models_package() -> None:
+    assert User.__tablename__ == "users"
+
+
+def test_user_session_model_is_registered_on_metadata() -> None:
+    assert "sessions" in Base.metadata.tables
+
+
+def test_user_session_has_expected_columns() -> None:
+    table = Base.metadata.tables["sessions"]
+
+    id_col = table.c["id"]
+    assert id_col.primary_key
+
+    user_id_col = table.c["user_id"]
+    assert user_id_col.nullable is False
+    fk_names = [fk.target_fullname for fk in user_id_col.foreign_keys]
+    assert "users.id" in fk_names
+
+    created_col = table.c["created_at"]
+    assert isinstance(created_col.type, DateTime)
+    assert created_col.type.timezone is True
+
+    expires_col = table.c["expires_at"]
+    assert isinstance(expires_col.type, DateTime)
+    assert expires_col.type.timezone is True
+
+
+def test_user_session_is_importable_from_models_package() -> None:
+    assert UserSession.__tablename__ == "sessions"

@@ -8,7 +8,6 @@ All current items come from the [project scaffolding design](specs/2026-04-11-pr
 
 Ordered roughly in the sequence they need to land: data first, then access control, then the product surface, then the UI on top, then the path to production.
 
-- **Authentication.** No auth layer in the initial scaffold. Separate spec.
 - **API surface.** Product-level routes, DTOs, and request/response schemas are out of scope for scaffolding.
 - **Frontend scaffolding.** Framework choice (React, Svelte, Vue, …) is unresolved. `frontend/` is not scaffolded in the initial spec; gets its own spec once the framework is chosen.
 - **Production deployment.** Docker, reverse proxy, secrets management.
@@ -17,6 +16,10 @@ Ordered roughly in the sequence they need to land: data first, then access contr
   once queries get duplicated across endpoints. Add when it hurts.
 - **Data migrations / seed data framework.** Schema migrations only
   for now. Add when there's real data to seed.
+- **MFA / TOTP / passkeys.** Not needed for current threat model. Add if user base or sensitivity grows.
+- **Email-based password reset.** Requires email sending infrastructure. Add when email is needed for other features.
+- **OAuth / OIDC / social login.** Not needed for closed system.
+- **Self-service registration.** Not needed for closed system.
 
 ## CI / repo automation
 
@@ -47,6 +50,13 @@ Ordered roughly in the sequence they need to land: data first, then access contr
   to compose-based test infra.** Revisit if onboarding friction
   emerges.
 - **Structured logging.** Every logger should emit JSON by default so downstream tooling (log aggregators, CLI viewers, debug agents) can parse and analyze output without regex. Choose the library, pick a schema, wire it into the FastAPI app and the backend's test output. Covers the backend for now; solver-py logging is a later concern.
+
+## Auth maintenance
+
+- **Session cleanup cron.** `mise run auth:cleanup-sessions` exists as manual task. Automate via cron or background scheduler when session volume justifies it.
+- **Per-IP rate limiting.** Defer to reverse proxy (Caddy) or external service. Current limiter is per-email only.
+- **Password breach check (HIBP).** Offline blocklist is the baseline. Online k-anonymity check against HIBP API is a nice-to-have.
+- **Audit log.** `last_login_at` is the only tracking. Full audit trail is a separate concern.
 
 ## Production readiness
 

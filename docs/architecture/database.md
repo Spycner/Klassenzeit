@@ -187,8 +187,34 @@ suites)". It keeps teardown sub-millisecond and avoids the cost of
   or `engine` fixture inside a test. Avoid unless you genuinely need
   a raw `Connection`.
 
+## Models
+
+### `users`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `UUID` | PK, `gen_random_uuid()` |
+| `email` | `VARCHAR(320)` | Unique, lowercased |
+| `password_hash` | `VARCHAR(256)` | Argon2id |
+| `role` | `VARCHAR(16)` | `'admin'` or `'user'` |
+| `is_active` | `BOOLEAN` | Soft-delete flag |
+| `force_password_change` | `BOOLEAN` | Set by admin reset |
+| `last_login_at` | `TIMESTAMPTZ` | Nullable |
+| `created_at` | `TIMESTAMPTZ` | Server default |
+| `updated_at` | `TIMESTAMPTZ` | Auto-updated |
+
+### `sessions`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `UUID` | PK, session token |
+| `user_id` | `UUID` | FK → `users.id` |
+| `created_at` | `TIMESTAMPTZ` | Server default |
+| `expires_at` | `TIMESTAMPTZ` | Absolute expiry |
+
 ## Related ADRs
 
 - [`0003-postgres-everywhere`](../adr/0003-postgres-everywhere.md)
 - [`0004-sqlalchemy-async-alembic`](../adr/0004-sqlalchemy-async-alembic.md)
 - [`0005-transaction-rollback-tests`](../adr/0005-transaction-rollback-tests.md)
+- [`0006-self-rolled-cookie-session-auth`](../adr/0006-self-rolled-cookie-session-auth.md)

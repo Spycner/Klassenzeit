@@ -34,6 +34,14 @@ class Settings(BaseSettings):
     db_max_overflow: int = 10
     db_echo: bool = False
 
+    # Auth
+    cookie_secure: bool = True
+    cookie_domain: str | None = None
+    session_ttl_days: int = 14
+    password_min_length: int = 12
+    login_max_attempts: int = 5
+    login_lockout_minutes: int = 15
+
 
 @lru_cache
 def get_settings() -> Settings:
