@@ -3,7 +3,7 @@
 from sqlalchemy import Boolean, DateTime, String
 
 from klassenzeit_backend.db.base import Base
-from klassenzeit_backend.db.models import User
+from klassenzeit_backend.db.models import User, UserSession
 
 
 def test_user_model_is_registered_on_metadata() -> None:
@@ -52,3 +52,31 @@ def test_user_has_expected_columns() -> None:
 
 def test_user_is_importable_from_models_package() -> None:
     assert User.__tablename__ == "users"
+
+
+def test_user_session_model_is_registered_on_metadata() -> None:
+    assert "sessions" in Base.metadata.tables
+
+
+def test_user_session_has_expected_columns() -> None:
+    table = Base.metadata.tables["sessions"]
+
+    id_col = table.c["id"]
+    assert id_col.primary_key
+
+    user_id_col = table.c["user_id"]
+    assert user_id_col.nullable is False
+    fk_names = [fk.target_fullname for fk in user_id_col.foreign_keys]
+    assert "users.id" in fk_names
+
+    created_col = table.c["created_at"]
+    assert isinstance(created_col.type, DateTime)
+    assert created_col.type.timezone is True
+
+    expires_col = table.c["expires_at"]
+    assert isinstance(expires_col.type, DateTime)
+    assert expires_col.type.timezone is True
+
+
+def test_user_session_is_importable_from_models_package() -> None:
+    assert UserSession.__tablename__ == "sessions"
