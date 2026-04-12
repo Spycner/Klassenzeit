@@ -8,7 +8,6 @@ All current items come from the [project scaffolding design](specs/2026-04-11-pr
 
 Ordered roughly in the sequence they need to land: data first, then access control, then the product surface, then the UI on top, then the path to production.
 
-- **API surface.** Product-level routes, DTOs, and request/response schemas are out of scope for scaffolding.
 - **Frontend scaffolding.** Framework choice (React, Svelte, Vue, …) is unresolved. `frontend/` is not scaffolded in the initial spec; gets its own spec once the framework is chosen.
 - **Production deployment.** Docker, reverse proxy, secrets management.
 - **Repository / unit-of-work layer.** Routes currently take
@@ -20,6 +19,9 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 - **Email-based password reset.** Requires email sending infrastructure. Add when email is needed for other features.
 - **OAuth / OIDC / social login.** Not needed for closed system.
 - **Self-service registration.** Not needed for closed system.
+- **Bulk import/export.** CSV or JSON import for teachers, rooms, subjects. Useful but not needed for MVP.
+- **Stundentafel cloning.** Copy a Stundentafel to create a variant. Convenience feature, defer.
+- **Cross-entity validation.** E.g., lesson's teacher must be qualified for the lesson's subject. Currently not enforced at API level — solver catches it.
 
 ## CI / repo automation
 
