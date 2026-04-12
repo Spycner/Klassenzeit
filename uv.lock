@@ -581,6 +581,7 @@ dependencies = [
     { name = "klassenzeit-solver" },
     { name = "pydantic-settings" },
     { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "typer" },
 ]
 
 [package.metadata]
@@ -592,6 +593,7 @@ requires-dist = [
     { name = "klassenzeit-solver", editable = "solver/solver-py" },
     { name = "pydantic-settings", specifier = ">=2.7" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.35" },
+    { name = "typer", specifier = ">=0.24.1" },
 ]
 
 [[package]]

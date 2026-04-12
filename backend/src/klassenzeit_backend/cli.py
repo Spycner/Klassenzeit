@@ -1,0 +1,94 @@
+"""CLI entry point for the Klassenzeit backend.
+
+Currently provides the ``create-admin`` command for bootstrapping
+the first admin user.
+"""
+
+import asyncio
+
+import typer
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from klassenzeit_backend.auth.passwords import (
+    PasswordValidationError,
+    hash_password,
+    validate_password,
+)
+from klassenzeit_backend.core.settings import get_settings
+from klassenzeit_backend.db.models.user import User
+
+cli = typer.Typer(no_args_is_help=True)
+
+
+async def create_admin_in_db(
+    db: AsyncSession,
+    email: str,
+    password: str,
+    *,
+    min_password_length: int = 12,
+) -> User:
+    """Create an admin user in the database.
+
+    Validates the password and checks for duplicate emails.
+    Does NOT commit — caller must commit or the test fixture rolls back.
+
+    Raises ``ValueError`` on validation failure or duplicate email.
+    """
+    try:
+        validate_password(password, min_length=min_password_length)
+    except PasswordValidationError as exc:
+        raise ValueError(str(exc)) from exc
+
+    email = email.lower()
+    result = await db.execute(select(User).where(User.email == email))
+    if result.scalar_one_or_none() is not None:
+        msg = f"User with email {email} already exists"
+        raise ValueError(msg)
+
+    user = User(
+        email=email,
+        password_hash=hash_password(password),
+        role="admin",
+    )
+    db.add(user)
+    await db.flush()
+    return user
+
+
+async def _run_create_admin(email: str, password: str) -> None:
+    settings = get_settings()
+    engine = create_async_engine(str(settings.database_url))
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    try:
+        async with factory() as session:
+            await create_admin_in_db(
+                session,
+                email,
+                password,
+                min_password_length=settings.password_min_length,
+            )
+            await session.commit()
+    finally:
+        await engine.dispose()
+
+
+@cli.command()
+def create_admin(
+    email: str = typer.Option(..., "--email", help="Admin email address"),
+) -> None:
+    """Create an admin user. Prompts for password on stdin."""
+    password = typer.prompt("Password", hide_input=True, confirmation_prompt=True)
+
+    try:
+        asyncio.run(_run_create_admin(email, password))
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Admin user created: {email}")
+
+
+def main() -> None:
+    cli()
