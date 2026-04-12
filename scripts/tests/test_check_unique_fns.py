@@ -3,7 +3,7 @@
 import ast
 import textwrap
 
-from scripts.check_unique_fns import Location, extract_python_names
+from scripts.check_unique_fns import Location, extract_python_names, extract_rust_names
 
 
 def test_extract_python_function():
@@ -69,3 +69,38 @@ def test_extract_python_nested_function():
     names = [loc.name for loc in results]
     assert "outer" in names
     assert "inner" in names
+
+
+def test_extract_rust_pub_fn():
+    """Verify public Rust functions are extracted."""
+    lines = ["pub fn reverse_chars(s: &str) -> String {"]
+    results = extract_rust_names(lines, "lib.rs")
+    assert results == [Location("reverse_chars", "lib.rs", 1)]
+
+
+def test_extract_rust_private_fn():
+    """Verify private Rust functions are extracted."""
+    lines = ["fn helper() -> bool {"]
+    results = extract_rust_names(lines, "lib.rs")
+    assert results == [Location("helper", "lib.rs", 1)]
+
+
+def test_extract_rust_skips_main():
+    """Verify Rust main() is skipped."""
+    lines = ["fn main() {"]
+    results = extract_rust_names(lines, "main.rs")
+    assert results == []
+
+
+def test_extract_rust_test_fn():
+    """Verify Rust test functions are extracted (not skipped)."""
+    lines = [
+        "#[cfg(test)]",
+        "mod tests {",
+        "    #[test]",
+        "    fn reverses_hello() {",
+        "    }",
+        "}",
+    ]
+    results = extract_rust_names(lines, "lib.rs")
+    assert results == [Location("reverses_hello", "lib.rs", 4)]
