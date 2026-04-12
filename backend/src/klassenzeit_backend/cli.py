@@ -1,7 +1,7 @@
 """CLI entry point for the Klassenzeit backend.
 
-Currently provides the ``create-admin`` command for bootstrapping
-the first admin user.
+Provides the ``create-admin`` command for bootstrapping the first admin user,
+and the ``cleanup-sessions`` command for removing expired sessions.
 """
 
 import asyncio
@@ -15,6 +15,7 @@ from klassenzeit_backend.auth.passwords import (
     hash_password,
     validate_password,
 )
+from klassenzeit_backend.auth.sessions import cleanup_expired_sessions
 from klassenzeit_backend.core.settings import get_settings
 from klassenzeit_backend.db.models.user import User
 
@@ -88,6 +89,26 @@ def create_admin(
         raise typer.Exit(code=1) from exc
 
     typer.echo(f"Admin user created: {email}")
+
+
+async def _run_cleanup_sessions() -> int:
+    settings = get_settings()
+    engine = create_async_engine(str(settings.database_url))
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with factory() as session:
+            count = await cleanup_expired_sessions(session)
+            await session.commit()
+            return count
+    finally:
+        await engine.dispose()
+
+
+@cli.command()
+def cleanup_sessions() -> None:
+    """Delete expired sessions from the database."""
+    count = asyncio.run(_run_cleanup_sessions())
+    typer.echo(f"Deleted {count} expired session(s)")
 
 
 def main() -> None:

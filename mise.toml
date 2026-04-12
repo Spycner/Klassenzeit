@@ -92,6 +92,18 @@ description = "Roll back the last migration"
 dir = "{{config_root}}/backend"
 run = "uv run alembic downgrade -1"
 
+# ─── Auth ───────────────────────────────────────────────────────────────────
+
+[tasks."auth:create-admin"]
+description = "Create an admin user (prompts for password)"
+dir = "{{config_root}}/backend"
+run = "uv run klassenzeit-backend create-admin"
+
+[tasks."auth:cleanup-sessions"]
+description = "Delete expired sessions from the database"
+dir = "{{config_root}}/backend"
+run = "uv run klassenzeit-backend cleanup-sessions"
+
 # ─── Coverage (separate from `test` — slower, for reports not TDD) ──────────
 
 [tasks.cov]
