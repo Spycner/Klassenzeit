@@ -39,6 +39,10 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 
 - **Session-scoped event loop may cause timing interference at scale.** The `asyncio_default_fixture_loop_scope = "session"` setting (introduced for the Chunk G DB fixtures) means all async tests and fixtures share a single event loop for the entire pytest session. This prevents asyncpg "Future attached to a different loop" errors with session-scoped fixtures but means one slow or stalled async test can delay all subsequent tests in the session. Not a problem with the current 16-test suite, but worth revisiting if the test suite grows large or if tests with long async timeouts are added.
 
+## Linting & code quality
+
+- **Unique function name enforcement.** The coding standard requires globally unique function names but there is no automated check. Add an AST-based Python script (stdlib only) that walks all `.py` source files and flags duplicate `def` names; pair with a grep-based pass for Rust `fn` names. Wire into `mise run lint` or a Lefthook pre-commit hook so violations are caught before they land.
+
 ## Toolchain & build friction
 
 - **`ty` preview status.** Astral's type checker is pre-1.0; spec uses it anyway to keep the Python toolchain Astral-consistent. Revisit if it proves unstable.
