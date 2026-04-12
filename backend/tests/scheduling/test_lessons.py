@@ -31,7 +31,7 @@ async def _create_subject(client: AsyncClient, name: str, short_name: str) -> st
     return resp.json()["id"]
 
 
-async def _create_week_scheme(client: AsyncClient, name: str) -> str:
+async def _setup_week_scheme_for_lessons(client: AsyncClient, name: str) -> str:
     """Create a WeekScheme via the API and return its ID.
 
     Args:
@@ -46,7 +46,9 @@ async def _create_week_scheme(client: AsyncClient, name: str) -> str:
     return resp.json()["id"]
 
 
-async def _create_stundentafel(client: AsyncClient, name: str, grade_level: int = 5) -> str:
+async def _setup_stundentafel_for_lessons(
+    client: AsyncClient, name: str, grade_level: int = 5
+) -> str:
     """Create a Stundentafel via the API and return its ID.
 
     Args:
@@ -137,8 +139,8 @@ async def test_create_lesson(
     await login_as("admin@les1.com", "testpassword123")
 
     subject_id = await _create_subject(client, "Mathematik", "Ma")
-    scheme_id = await _create_week_scheme(client, "Scheme L1")
-    tafel_id = await _create_stundentafel(client, "Tafel L1", 5)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L1")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L1", 5)
     class_id = await _create_school_class(client, "5a-L1", 5, tafel_id, scheme_id)
     teacher_id = await _create_teacher(client, "Hans", "Müller", "HMU1")
 
@@ -180,8 +182,8 @@ async def test_create_lesson_without_teacher(
     await login_as("admin@les2.com", "testpassword123")
 
     subject_id = await _create_subject(client, "Deutsch", "De")
-    scheme_id = await _create_week_scheme(client, "Scheme L2")
-    tafel_id = await _create_stundentafel(client, "Tafel L2", 5)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L2")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L2", 5)
     class_id = await _create_school_class(client, "5b-L2", 5, tafel_id, scheme_id)
 
     resp = await client.post(
@@ -214,8 +216,8 @@ async def test_create_lesson_duplicate_class_subject(
     await login_as("admin@les3.com", "testpassword123")
 
     subject_id = await _create_subject(client, "Englisch", "En")
-    scheme_id = await _create_week_scheme(client, "Scheme L3")
-    tafel_id = await _create_stundentafel(client, "Tafel L3", 6)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L3")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L3", 6)
     class_id = await _create_school_class(client, "6a-L3", 6, tafel_id, scheme_id)
 
     payload = {"school_class_id": class_id, "subject_id": subject_id, "hours_per_week": 3}
@@ -240,8 +242,8 @@ async def test_list_lessons(
     await login_as("admin@les4.com", "testpassword123")
 
     subject_id = await _create_subject(client, "Physik", "Ph")
-    scheme_id = await _create_week_scheme(client, "Scheme L4")
-    tafel_id = await _create_stundentafel(client, "Tafel L4", 7)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L4")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L4", 7)
     class_id = await _create_school_class(client, "7a-L4", 7, tafel_id, scheme_id)
 
     await client.post(
@@ -273,8 +275,8 @@ async def test_list_lessons_filter_by_class(
 
     subj1_id = await _create_subject(client, "Chemie", "Ch")
     subj2_id = await _create_subject(client, "Biologie", "Bio")
-    scheme_id = await _create_week_scheme(client, "Scheme L5")
-    tafel_id = await _create_stundentafel(client, "Tafel L5", 8)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L5")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L5", 8)
     class1_id = await _create_school_class(client, "8a-L5", 8, tafel_id, scheme_id)
     class2_id = await _create_school_class(client, "8b-L5", 8, tafel_id, scheme_id)
 
@@ -311,8 +313,8 @@ async def test_list_lessons_filter_by_teacher(
 
     subj1_id = await _create_subject(client, "Sport", "Sp")
     subj2_id = await _create_subject(client, "Musik", "Mu")
-    scheme_id = await _create_week_scheme(client, "Scheme L6")
-    tafel_id = await _create_stundentafel(client, "Tafel L6", 9)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L6")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L6", 9)
     class_id = await _create_school_class(client, "9a-L6", 9, tafel_id, scheme_id)
     teacher1_id = await _create_teacher(client, "Anna", "Schmidt", "ASC6")
     teacher2_id = await _create_teacher(client, "Bob", "Meier", "BME6")
@@ -359,8 +361,8 @@ async def test_get_lesson(
     await login_as("admin@les7.com", "testpassword123")
 
     subject_id = await _create_subject(client, "Geschichte", "Ge")
-    scheme_id = await _create_week_scheme(client, "Scheme L7")
-    tafel_id = await _create_stundentafel(client, "Tafel L7", 10)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L7")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L7", 10)
     class_id = await _create_school_class(client, "10a-L7", 10, tafel_id, scheme_id)
     teacher_id = await _create_teacher(client, "Clara", "Weber", "CWE7")
 
@@ -403,8 +405,8 @@ async def test_update_lesson_assign_teacher(
     await login_as("admin@les8.com", "testpassword123")
 
     subject_id = await _create_subject(client, "Latein", "La")
-    scheme_id = await _create_week_scheme(client, "Scheme L8")
-    tafel_id = await _create_stundentafel(client, "Tafel L8", 5)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L8")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L8", 5)
     class_id = await _create_school_class(client, "5c-L8", 5, tafel_id, scheme_id)
     teacher_id = await _create_teacher(client, "Dirk", "Fischer", "DFI8")
 
@@ -438,8 +440,8 @@ async def test_delete_lesson(
     await login_as("admin@les9.com", "testpassword123")
 
     subject_id = await _create_subject(client, "Informatik", "In")
-    scheme_id = await _create_week_scheme(client, "Scheme L9")
-    tafel_id = await _create_stundentafel(client, "Tafel L9", 6)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L9")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L9", 6)
     class_id = await _create_school_class(client, "6c-L9", 6, tafel_id, scheme_id)
 
     create_resp = await client.post(
@@ -472,8 +474,8 @@ async def test_generate_lessons_from_stundentafel(
 
     subj1_id = await _create_subject(client, "Erdkunde", "Ek")
     subj2_id = await _create_subject(client, "Wirtschaft", "Wi")
-    scheme_id = await _create_week_scheme(client, "Scheme L10")
-    tafel_id = await _create_stundentafel(client, "Tafel L10", 7)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L10")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L10", 7)
 
     await client.post(
         f"/stundentafeln/{tafel_id}/entries",
@@ -516,8 +518,8 @@ async def test_generate_lessons_skips_existing(
 
     subj1_id = await _create_subject(client, "Philosophie", "Phi")
     subj2_id = await _create_subject(client, "Religion", "Re")
-    scheme_id = await _create_week_scheme(client, "Scheme L11")
-    tafel_id = await _create_stundentafel(client, "Tafel L11", 8)
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme L11")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L11", 8)
 
     await client.post(
         f"/stundentafeln/{tafel_id}/entries",

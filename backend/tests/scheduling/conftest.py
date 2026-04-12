@@ -4,10 +4,8 @@ Each factory follows the ``_counter`` pattern for unique default names
 and flushes (but never commits) within the per-test transaction so that
 foreign-key constraints resolve before the next statement.
 
-Auth helper fixtures (``create_test_user``, ``login_as``) are duplicated
-here because pytest's ``--import-mode=importlib`` prevents cross-conftest
-imports; fixtures must live in a conftest.py that is a direct ancestor of
-the tests that use them.
+The ``create_test_user`` and ``login_as`` fixtures are provided by the root
+``backend/tests/conftest.py`` and are available here automatically.
 """
 
 import uuid
@@ -16,94 +14,14 @@ from datetime import time
 from itertools import count
 
 import pytest
-from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from klassenzeit_backend.auth.passwords import hash_password
 from klassenzeit_backend.db.models.room import Room
 from klassenzeit_backend.db.models.school_class import SchoolClass
 from klassenzeit_backend.db.models.stundentafel import Stundentafel, StundentafelEntry
 from klassenzeit_backend.db.models.subject import Subject
 from klassenzeit_backend.db.models.teacher import Teacher
-from klassenzeit_backend.db.models.user import User
 from klassenzeit_backend.db.models.week_scheme import TimeBlock, WeekScheme
-
-# Type aliases for auth factory callables
-type CreateUserFn = Callable[..., Awaitable[tuple[User, str]]]
-type LoginFn = Callable[[str, str], Awaitable[None]]
-
-
-@pytest.fixture
-def create_test_user(db_session: AsyncSession) -> CreateUserFn:
-    """Factory fixture: ``await create_test_user(email=..., password=...)``.
-
-    Args:
-        db_session: The per-test async DB session (injected by pytest).
-
-    Returns:
-        An async callable that inserts a User row and flushes.
-    """
-
-    async def _create(
-        *,
-        email: str = "user@test.com",
-        password: str = "testpassword123",  # noqa: S107
-        role: str = "user",
-        is_active: bool = True,
-        force_password_change: bool = False,
-    ) -> tuple[User, str]:
-        """Create and flush a User with the given credentials.
-
-        Args:
-            email: The user's email address.
-            password: Plain-text password (will be hashed).
-            role: Either ``"user"`` or ``"admin"``.
-            is_active: Whether the account is active.
-            force_password_change: Whether the user must change password on next login.
-
-        Returns:
-            A tuple of (User ORM instance, plain-text password).
-        """
-        user = User(
-            email=email.lower(),
-            password_hash=hash_password(password),
-            role=role,
-            is_active=is_active,
-            force_password_change=force_password_change,
-        )
-        db_session.add(user)
-        await db_session.flush()
-        return user, password
-
-    return _create
-
-
-@pytest.fixture
-def login_as(client: AsyncClient) -> LoginFn:
-    """Factory fixture: ``await login_as(email, password)``.
-
-    Args:
-        client: The async test HTTP client (injected by pytest).
-
-    Returns:
-        An async callable that POSTs to /auth/login and asserts 204.
-    """
-
-    async def _login(email: str, password: str) -> None:
-        """Authenticate the given user via /auth/login.
-
-        Args:
-            email: The user's email address.
-            password: Plain-text password.
-        """
-        response = await client.post(
-            "/auth/login",
-            json={"email": email, "password": password},
-        )
-        assert response.status_code == 204, response.text
-
-    return _login
-
 
 # Type aliases for the factory callables
 type CreateSubjectFn = Callable[..., Awaitable[Subject]]
@@ -134,7 +52,7 @@ def create_subject(db_session: AsyncSession) -> CreateSubjectFn:
         An async callable that inserts a Subject row and flushes.
     """
 
-    async def _create(
+    async def _make_subject(
         *,
         name: str | None = None,
         short_name: str | None = None,
@@ -157,7 +75,7 @@ def create_subject(db_session: AsyncSession) -> CreateSubjectFn:
         await db_session.flush()
         return subject
 
-    return _create
+    return _make_subject
 
 
 @pytest.fixture
@@ -171,7 +89,7 @@ def create_week_scheme(db_session: AsyncSession) -> CreateWeekSchemeFn:
         An async callable that inserts a WeekScheme row and flushes.
     """
 
-    async def _create(
+    async def _make_week_scheme(
         *,
         name: str | None = None,
         description: str | None = None,
@@ -194,7 +112,7 @@ def create_week_scheme(db_session: AsyncSession) -> CreateWeekSchemeFn:
         await db_session.flush()
         return scheme
 
-    return _create
+    return _make_week_scheme
 
 
 @pytest.fixture
@@ -208,7 +126,7 @@ def create_time_block(db_session: AsyncSession) -> CreateTimeBlockFn:
         An async callable that inserts a TimeBlock row and flushes.
     """
 
-    async def _create(
+    async def _make_time_block(
         *,
         week_scheme_id: uuid.UUID,
         day_of_week: int = 0,
@@ -239,7 +157,7 @@ def create_time_block(db_session: AsyncSession) -> CreateTimeBlockFn:
         await db_session.flush()
         return block
 
-    return _create
+    return _make_time_block
 
 
 @pytest.fixture
@@ -253,7 +171,7 @@ def create_room(db_session: AsyncSession) -> CreateRoomFn:
         An async callable that inserts a Room row and flushes.
     """
 
-    async def _create(
+    async def _make_room(
         *,
         name: str | None = None,
         short_name: str | None = None,
@@ -282,7 +200,7 @@ def create_room(db_session: AsyncSession) -> CreateRoomFn:
         await db_session.flush()
         return room
 
-    return _create
+    return _make_room
 
 
 @pytest.fixture
@@ -296,7 +214,7 @@ def create_teacher(db_session: AsyncSession) -> CreateTeacherFn:
         An async callable that inserts a Teacher row and flushes.
     """
 
-    async def _create(
+    async def _make_teacher(
         *,
         first_name: str = "Test",
         last_name: str | None = None,
@@ -325,7 +243,7 @@ def create_teacher(db_session: AsyncSession) -> CreateTeacherFn:
         await db_session.flush()
         return teacher
 
-    return _create
+    return _make_teacher
 
 
 @pytest.fixture
@@ -339,7 +257,7 @@ def create_stundentafel(db_session: AsyncSession) -> CreateStundentafelFn:
         An async callable that inserts a Stundentafel row and flushes.
     """
 
-    async def _create(
+    async def _make_stundentafel(
         *,
         name: str | None = None,
         grade_level: int = 5,
@@ -362,7 +280,7 @@ def create_stundentafel(db_session: AsyncSession) -> CreateStundentafelFn:
         await db_session.flush()
         return tafel
 
-    return _create
+    return _make_stundentafel
 
 
 @pytest.fixture
@@ -376,7 +294,7 @@ def create_stundentafel_entry(db_session: AsyncSession) -> CreateStundentafelEnt
         An async callable that inserts a StundentafelEntry row and flushes.
     """
 
-    async def _create(
+    async def _make_stundentafel_entry(
         *,
         stundentafel_id: uuid.UUID,
         subject_id: uuid.UUID,
@@ -404,7 +322,7 @@ def create_stundentafel_entry(db_session: AsyncSession) -> CreateStundentafelEnt
         await db_session.flush()
         return entry
 
-    return _create
+    return _make_stundentafel_entry
 
 
 @pytest.fixture
@@ -420,7 +338,7 @@ def create_school_class(db_session: AsyncSession) -> CreateSchoolClassFn:
         An async callable that inserts a SchoolClass row and flushes.
     """
 
-    async def _create(
+    async def _make_school_class(
         *,
         name: str | None = None,
         grade_level: int = 5,
@@ -449,4 +367,4 @@ def create_school_class(db_session: AsyncSession) -> CreateSchoolClassFn:
         await db_session.flush()
         return school_class
 
-    return _create
+    return _make_school_class

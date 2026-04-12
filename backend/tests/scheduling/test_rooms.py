@@ -255,7 +255,7 @@ async def test_replace_suitability(
     assert detail.json()["suitability_subjects"][0]["id"] == chem_id
 
 
-async def test_replace_availability(
+async def test_replace_room_availability(
     client: AsyncClient,
     create_test_user: CreateUserFn,
     login_as: LoginFn,

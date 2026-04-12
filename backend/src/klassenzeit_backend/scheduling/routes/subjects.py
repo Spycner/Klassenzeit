@@ -41,7 +41,7 @@ async def _get_subject(db: AsyncSession, subject_id: uuid.UUID) -> Subject:
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_subject(
+async def create_subject_route(
     body: SubjectCreate,
     _admin: Annotated[User, Depends(require_admin)],
     db: Annotated[AsyncSession, Depends(get_session)],

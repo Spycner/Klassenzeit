@@ -15,7 +15,9 @@ type CreateUserFn = Callable[..., Awaitable[tuple[User, str]]]
 type LoginFn = Callable[[str, str], Awaitable[None]]
 
 
-async def _create_stundentafel(client: AsyncClient, name: str, grade_level: int = 5) -> str:
+async def _setup_stundentafel_for_classes(
+    client: AsyncClient, name: str, grade_level: int = 5
+) -> str:
     """Create a Stundentafel via the API and return its ID.
 
     Args:
@@ -34,7 +36,7 @@ async def _create_stundentafel(client: AsyncClient, name: str, grade_level: int 
     return resp.json()["id"]
 
 
-async def _create_week_scheme(client: AsyncClient, name: str) -> str:
+async def _setup_week_scheme_for_classes(client: AsyncClient, name: str) -> str:
     """Create a WeekScheme via the API and return its ID.
 
     Args:
@@ -63,8 +65,8 @@ async def test_create_school_class(
     """
     await create_test_user(email="admin@sc1.com", role="admin")
     await login_as("admin@sc1.com", "testpassword123")
-    tafel_id = await _create_stundentafel(client, "Tafel SC1", 5)
-    scheme_id = await _create_week_scheme(client, "Scheme SC1")
+    tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC1", 5)
+    scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC1")
     response = await client.post(
         "/classes",
         json={
@@ -99,8 +101,8 @@ async def test_create_school_class_duplicate_name(
     """
     await create_test_user(email="admin@sc2.com", role="admin")
     await login_as("admin@sc2.com", "testpassword123")
-    tafel_id = await _create_stundentafel(client, "Tafel SC2", 6)
-    scheme_id = await _create_week_scheme(client, "Scheme SC2")
+    tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC2", 6)
+    scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC2")
     await client.post(
         "/classes",
         json={
@@ -136,8 +138,8 @@ async def test_list_school_classes(
     """
     await create_test_user(email="admin@sc3.com", role="admin")
     await login_as("admin@sc3.com", "testpassword123")
-    tafel_id = await _create_stundentafel(client, "Tafel SC3", 7)
-    scheme_id = await _create_week_scheme(client, "Scheme SC3")
+    tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC3", 7)
+    scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC3")
     await client.post(
         "/classes",
         json={
@@ -179,8 +181,8 @@ async def test_get_school_class(
     """
     await create_test_user(email="admin@sc4.com", role="admin")
     await login_as("admin@sc4.com", "testpassword123")
-    tafel_id = await _create_stundentafel(client, "Tafel SC4", 8)
-    scheme_id = await _create_week_scheme(client, "Scheme SC4")
+    tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC4", 8)
+    scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC4")
     create_resp = await client.post(
         "/classes",
         json={
@@ -213,8 +215,8 @@ async def test_update_school_class(
     """
     await create_test_user(email="admin@sc5.com", role="admin")
     await login_as("admin@sc5.com", "testpassword123")
-    tafel_id = await _create_stundentafel(client, "Tafel SC5", 9)
-    scheme_id = await _create_week_scheme(client, "Scheme SC5")
+    tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC5", 9)
+    scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC5")
     create_resp = await client.post(
         "/classes",
         json={
@@ -248,8 +250,8 @@ async def test_delete_school_class(
     """
     await create_test_user(email="admin@sc6.com", role="admin")
     await login_as("admin@sc6.com", "testpassword123")
-    tafel_id = await _create_stundentafel(client, "Tafel SC6", 10)
-    scheme_id = await _create_week_scheme(client, "Scheme SC6")
+    tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC6", 10)
+    scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC6")
     create_resp = await client.post(
         "/classes",
         json={

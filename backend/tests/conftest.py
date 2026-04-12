@@ -6,6 +6,7 @@ Layered fixture design:
 2. ``apply_migrations``               — session-scoped, autouse; resets schema once.
 3. ``db_session``                     — per-test, transaction-rollback isolated.
 4. ``client``                         — per-test; reuses ``db_session`` via dependency override.
+5. ``create_test_user`` / ``login_as`` — per-test auth helpers, available to all test packages.
 
 Pytest is invoked from the repo root (see ``[tool.pytest.ini_options]
 testpaths`` in the root ``pyproject.toml``), so every file path is
@@ -31,7 +32,7 @@ Implementation notes:
   private access — that breaks the fixture.
 """
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 
 import pytest
@@ -46,10 +47,16 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from klassenzeit_backend.auth.passwords import hash_password
 from klassenzeit_backend.auth.rate_limit import LoginRateLimiter
 from klassenzeit_backend.core.settings import Settings
+from klassenzeit_backend.db.models.user import User
 from klassenzeit_backend.db.session import get_session
 from klassenzeit_backend.main import app
+
+# Type aliases for the auth factory callables
+type CreateUserFn = Callable[..., Awaitable[tuple[User, str]]]
+type LoginFn = Callable[[str, str], Awaitable[None]]
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent  # repo/backend
 ENV_TEST = BACKEND_ROOT / ".env.test"
@@ -141,3 +148,60 @@ async def client(
             yield c
     finally:
         app.dependency_overrides.clear()
+
+
+# ─── Layer 5: auth helpers available to all test packages ──────────────────
+
+
+@pytest.fixture
+def create_test_user(db_session: AsyncSession) -> CreateUserFn:
+    """Factory fixture: ``await create_test_user(email=..., password=...)``.
+
+    Args:
+        db_session: The per-test async DB session (injected by pytest).
+
+    Returns:
+        An async callable that inserts a User row and flushes.
+    """
+
+    async def _make_test_user(
+        *,
+        email: str = "user@test.com",
+        password: str = "testpassword123",  # noqa: S107
+        role: str = "user",
+        is_active: bool = True,
+        force_password_change: bool = False,
+    ) -> tuple[User, str]:
+        user = User(
+            email=email.lower(),
+            password_hash=hash_password(password),
+            role=role,
+            is_active=is_active,
+            force_password_change=force_password_change,
+        )
+        db_session.add(user)
+        await db_session.flush()
+        return user, password
+
+    return _make_test_user
+
+
+@pytest.fixture
+def login_as(client: AsyncClient) -> LoginFn:
+    """Factory fixture: ``await login_as(email, password)``.
+
+    Args:
+        client: The async test HTTP client (injected by pytest).
+
+    Returns:
+        An async callable that POSTs to /auth/login and asserts 204.
+    """
+
+    async def _do_login(email: str, password: str) -> None:
+        response = await client.post(
+            "/auth/login",
+            json={"email": email, "password": password},
+        )
+        assert response.status_code == 204, response.text
+
+    return _do_login

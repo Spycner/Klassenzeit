@@ -370,7 +370,7 @@ async def test_replace_qualifications(
     assert detail.json()["qualifications"][0]["id"] == geo_id
 
 
-async def test_replace_availability(
+async def test_replace_teacher_availability(
     client: AsyncClient,
     create_test_user: CreateUserFn,
     login_as: LoginFn,
