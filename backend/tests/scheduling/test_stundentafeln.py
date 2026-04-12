@@ -318,6 +318,38 @@ async def test_delete_entry(
     assert entry_id not in entry_ids
 
 
+async def test_delete_stundentafel_referenced_by_class(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """DELETE /stundentafeln/{id} returns 409 when a class references it.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@st11.com", role="admin")
+    await login_as("admin@st11.com", "testpassword123")
+    scheme_resp = await client.post("/week-schemes", json={"name": "Test Scheme ST11"})
+    tafel_resp = await client.post(
+        "/stundentafeln", json={"name": "Test Tafel ST11", "grade_level": 5}
+    )
+    tafel_id = tafel_resp.json()["id"]
+    await client.post(
+        "/classes",
+        json={
+            "name": "5a",
+            "grade_level": 5,
+            "stundentafel_id": tafel_id,
+            "week_scheme_id": scheme_resp.json()["id"],
+        },
+    )
+    response = await client.delete(f"/stundentafeln/{tafel_id}")
+    assert response.status_code == 409
+
+
 async def test_stundentafel_requires_admin(client: AsyncClient) -> None:
     """GET /stundentafeln without authentication returns 401 Unauthorized.
 

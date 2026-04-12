@@ -185,6 +185,45 @@ async def test_delete_subject_not_found(
     assert response.status_code == 404
 
 
+async def test_delete_subject_referenced_by_lesson(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """DELETE /subjects/{id} returns 409 when a lesson references it.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@test.com", role="admin")
+    await login_as("admin@test.com", "testpassword123")
+    subj_resp = await client.post("/subjects", json={"name": "Mathematik", "short_name": "Ma"})
+    subject_id = subj_resp.json()["id"]
+    scheme_resp = await client.post("/week-schemes", json={"name": "Test Scheme"})
+    tafel_resp = await client.post("/stundentafeln", json={"name": "Test Tafel", "grade_level": 5})
+    class_resp = await client.post(
+        "/classes",
+        json={
+            "name": "5a",
+            "grade_level": 5,
+            "stundentafel_id": tafel_resp.json()["id"],
+            "week_scheme_id": scheme_resp.json()["id"],
+        },
+    )
+    await client.post(
+        "/lessons",
+        json={
+            "school_class_id": class_resp.json()["id"],
+            "subject_id": subject_id,
+            "hours_per_week": 4,
+        },
+    )
+    response = await client.delete(f"/subjects/{subject_id}")
+    assert response.status_code == 409
+
+
 async def test_subject_requires_admin(client: AsyncClient) -> None:
     """GET /subjects without authentication returns 401 Unauthorized.
 

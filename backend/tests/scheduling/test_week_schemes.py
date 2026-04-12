@@ -284,6 +284,37 @@ async def test_delete_time_block(
     assert block_id not in block_ids
 
 
+async def test_delete_week_scheme_referenced_by_class(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """DELETE /week-schemes/{id} returns 409 when a class references it.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@test.com", role="admin")
+    await login_as("admin@test.com", "testpassword123")
+    scheme_resp = await client.post("/week-schemes", json={"name": "Test Scheme"})
+    scheme_id = scheme_resp.json()["id"]
+    tafel_resp = await client.post("/stundentafeln", json={"name": "Test Tafel", "grade_level": 5})
+    tafel_id = tafel_resp.json()["id"]
+    await client.post(
+        "/classes",
+        json={
+            "name": "5a",
+            "grade_level": 5,
+            "stundentafel_id": tafel_id,
+            "week_scheme_id": scheme_id,
+        },
+    )
+    response = await client.delete(f"/week-schemes/{scheme_id}")
+    assert response.status_code == 409
+
+
 async def test_week_scheme_requires_admin(client: AsyncClient) -> None:
     """GET /week-schemes without authentication returns 401 Unauthorized.
 
