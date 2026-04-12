@@ -1,0 +1,556 @@
+"""Integration tests for the Lesson CRUD routes and generate-lessons endpoint."""
+
+import uuid
+from collections.abc import Awaitable, Callable
+
+import pytest
+from httpx import AsyncClient
+
+from klassenzeit_backend.db.models.user import User
+
+pytestmark = pytest.mark.anyio
+
+# Type aliases matching the factory fixtures defined in conftest.py
+type CreateUserFn = Callable[..., Awaitable[tuple[User, str]]]
+type LoginFn = Callable[[str, str], Awaitable[None]]
+
+
+async def _create_subject(client: AsyncClient, name: str, short_name: str) -> str:
+    """Create a Subject via the API and return its ID.
+
+    Args:
+        client: The async test HTTP client (must already be authenticated).
+        name: Unique name for the Subject.
+        short_name: Short abbreviation for the Subject.
+
+    Returns:
+        The UUID string of the created Subject.
+    """
+    resp = await client.post("/subjects", json={"name": name, "short_name": short_name})
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
+async def _create_week_scheme(client: AsyncClient, name: str) -> str:
+    """Create a WeekScheme via the API and return its ID.
+
+    Args:
+        client: The async test HTTP client (must already be authenticated).
+        name: Unique name for the WeekScheme.
+
+    Returns:
+        The UUID string of the created WeekScheme.
+    """
+    resp = await client.post("/week-schemes", json={"name": name})
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
+async def _create_stundentafel(client: AsyncClient, name: str, grade_level: int = 5) -> str:
+    """Create a Stundentafel via the API and return its ID.
+
+    Args:
+        client: The async test HTTP client (must already be authenticated).
+        name: Unique name for the Stundentafel.
+        grade_level: Grade level to assign (default 5).
+
+    Returns:
+        The UUID string of the created Stundentafel.
+    """
+    resp = await client.post("/stundentafeln", json={"name": name, "grade_level": grade_level})
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
+async def _create_school_class(
+    client: AsyncClient,
+    name: str,
+    grade_level: int,
+    stundentafel_id: str,
+    week_scheme_id: str,
+) -> str:
+    """Create a SchoolClass via the API and return its ID.
+
+    Args:
+        client: The async test HTTP client (must already be authenticated).
+        name: Unique name for the class.
+        grade_level: Grade level for the class.
+        stundentafel_id: UUID string of the associated Stundentafel.
+        week_scheme_id: UUID string of the associated WeekScheme.
+
+    Returns:
+        The UUID string of the created SchoolClass.
+    """
+    resp = await client.post(
+        "/classes",
+        json={
+            "name": name,
+            "grade_level": grade_level,
+            "stundentafel_id": stundentafel_id,
+            "week_scheme_id": week_scheme_id,
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
+async def _create_teacher(
+    client: AsyncClient, first_name: str, last_name: str, short_code: str
+) -> str:
+    """Create a Teacher via the API and return its ID.
+
+    Args:
+        client: The async test HTTP client (must already be authenticated).
+        first_name: Teacher's given name.
+        last_name: Teacher's family name.
+        short_code: Unique short abbreviation.
+
+    Returns:
+        The UUID string of the created Teacher.
+    """
+    resp = await client.post(
+        "/teachers",
+        json={
+            "first_name": first_name,
+            "last_name": last_name,
+            "short_code": short_code,
+            "max_hours_per_week": 24,
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
+async def test_create_lesson(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /lessons creates a new lesson and returns 201 with the full body.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les1.com", role="admin")
+    await login_as("admin@les1.com", "testpassword123")
+
+    subject_id = await _create_subject(client, "Mathematik", "Ma")
+    scheme_id = await _create_week_scheme(client, "Scheme L1")
+    tafel_id = await _create_stundentafel(client, "Tafel L1", 5)
+    class_id = await _create_school_class(client, "5a-L1", 5, tafel_id, scheme_id)
+    teacher_id = await _create_teacher(client, "Hans", "Müller", "HMU1")
+
+    resp = await client.post(
+        "/lessons",
+        json={
+            "school_class_id": class_id,
+            "subject_id": subject_id,
+            "teacher_id": teacher_id,
+            "hours_per_week": 4,
+            "preferred_block_size": 2,
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert "id" in body
+    assert body["hours_per_week"] == 4
+    assert body["preferred_block_size"] == 2
+    assert body["school_class"]["id"] == class_id
+    assert body["subject"]["id"] == subject_id
+    assert body["teacher"]["id"] == teacher_id
+    assert "created_at" in body
+    assert "updated_at" in body
+
+
+async def test_create_lesson_without_teacher(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /lessons with no teacher_id returns 201 and teacher is null in response.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les2.com", role="admin")
+    await login_as("admin@les2.com", "testpassword123")
+
+    subject_id = await _create_subject(client, "Deutsch", "De")
+    scheme_id = await _create_week_scheme(client, "Scheme L2")
+    tafel_id = await _create_stundentafel(client, "Tafel L2", 5)
+    class_id = await _create_school_class(client, "5b-L2", 5, tafel_id, scheme_id)
+
+    resp = await client.post(
+        "/lessons",
+        json={
+            "school_class_id": class_id,
+            "subject_id": subject_id,
+            "hours_per_week": 3,
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["teacher"] is None
+    assert body["hours_per_week"] == 3
+
+
+async def test_create_lesson_duplicate_class_subject(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /lessons with a duplicate class+subject pair returns 409 Conflict.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les3.com", role="admin")
+    await login_as("admin@les3.com", "testpassword123")
+
+    subject_id = await _create_subject(client, "Englisch", "En")
+    scheme_id = await _create_week_scheme(client, "Scheme L3")
+    tafel_id = await _create_stundentafel(client, "Tafel L3", 6)
+    class_id = await _create_school_class(client, "6a-L3", 6, tafel_id, scheme_id)
+
+    payload = {"school_class_id": class_id, "subject_id": subject_id, "hours_per_week": 3}
+    await client.post("/lessons", json=payload)
+    resp = await client.post("/lessons", json=payload)
+    assert resp.status_code == 409
+
+
+async def test_list_lessons(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """GET /lessons returns all lessons as a list with 200.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les4.com", role="admin")
+    await login_as("admin@les4.com", "testpassword123")
+
+    subject_id = await _create_subject(client, "Physik", "Ph")
+    scheme_id = await _create_week_scheme(client, "Scheme L4")
+    tafel_id = await _create_stundentafel(client, "Tafel L4", 7)
+    class_id = await _create_school_class(client, "7a-L4", 7, tafel_id, scheme_id)
+
+    await client.post(
+        "/lessons",
+        json={"school_class_id": class_id, "subject_id": subject_id, "hours_per_week": 2},
+    )
+
+    resp = await client.get("/lessons")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert isinstance(body, list)
+    assert len(body) >= 1
+
+
+async def test_list_lessons_filter_by_class(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """GET /lessons?class_id=... returns only lessons for the given class.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les5.com", role="admin")
+    await login_as("admin@les5.com", "testpassword123")
+
+    subj1_id = await _create_subject(client, "Chemie", "Ch")
+    subj2_id = await _create_subject(client, "Biologie", "Bio")
+    scheme_id = await _create_week_scheme(client, "Scheme L5")
+    tafel_id = await _create_stundentafel(client, "Tafel L5", 8)
+    class1_id = await _create_school_class(client, "8a-L5", 8, tafel_id, scheme_id)
+    class2_id = await _create_school_class(client, "8b-L5", 8, tafel_id, scheme_id)
+
+    await client.post(
+        "/lessons",
+        json={"school_class_id": class1_id, "subject_id": subj1_id, "hours_per_week": 2},
+    )
+    await client.post(
+        "/lessons",
+        json={"school_class_id": class2_id, "subject_id": subj2_id, "hours_per_week": 2},
+    )
+
+    resp = await client.get(f"/lessons?class_id={class1_id}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert all(lesson["school_class"]["id"] == class1_id for lesson in body)
+    assert len(body) == 1
+
+
+async def test_list_lessons_filter_by_teacher(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """GET /lessons?teacher_id=... returns only lessons assigned to that teacher.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les6.com", role="admin")
+    await login_as("admin@les6.com", "testpassword123")
+
+    subj1_id = await _create_subject(client, "Sport", "Sp")
+    subj2_id = await _create_subject(client, "Musik", "Mu")
+    scheme_id = await _create_week_scheme(client, "Scheme L6")
+    tafel_id = await _create_stundentafel(client, "Tafel L6", 9)
+    class_id = await _create_school_class(client, "9a-L6", 9, tafel_id, scheme_id)
+    teacher1_id = await _create_teacher(client, "Anna", "Schmidt", "ASC6")
+    teacher2_id = await _create_teacher(client, "Bob", "Meier", "BME6")
+
+    await client.post(
+        "/lessons",
+        json={
+            "school_class_id": class_id,
+            "subject_id": subj1_id,
+            "teacher_id": teacher1_id,
+            "hours_per_week": 2,
+        },
+    )
+    await client.post(
+        "/lessons",
+        json={
+            "school_class_id": class_id,
+            "subject_id": subj2_id,
+            "teacher_id": teacher2_id,
+            "hours_per_week": 2,
+        },
+    )
+
+    resp = await client.get(f"/lessons?teacher_id={teacher1_id}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert all(lesson["teacher"]["id"] == teacher1_id for lesson in body)
+    assert len(body) == 1
+
+
+async def test_get_lesson(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """GET /lessons/{id} returns the lesson with nested class, subject and teacher data.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les7.com", role="admin")
+    await login_as("admin@les7.com", "testpassword123")
+
+    subject_id = await _create_subject(client, "Geschichte", "Ge")
+    scheme_id = await _create_week_scheme(client, "Scheme L7")
+    tafel_id = await _create_stundentafel(client, "Tafel L7", 10)
+    class_id = await _create_school_class(client, "10a-L7", 10, tafel_id, scheme_id)
+    teacher_id = await _create_teacher(client, "Clara", "Weber", "CWE7")
+
+    create_resp = await client.post(
+        "/lessons",
+        json={
+            "school_class_id": class_id,
+            "subject_id": subject_id,
+            "teacher_id": teacher_id,
+            "hours_per_week": 2,
+        },
+    )
+    lesson_id = create_resp.json()["id"]
+
+    resp = await client.get(f"/lessons/{lesson_id}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["id"] == lesson_id
+    assert body["school_class"]["id"] == class_id
+    assert body["school_class"]["name"] == "10a-L7"
+    assert body["subject"]["id"] == subject_id
+    assert body["subject"]["short_name"] == "Ge"
+    assert body["teacher"]["id"] == teacher_id
+    assert body["teacher"]["short_code"] == "CWE7"
+
+
+async def test_update_lesson_assign_teacher(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """PATCH /lessons/{id} can assign a teacher to a lesson that had none.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les8.com", role="admin")
+    await login_as("admin@les8.com", "testpassword123")
+
+    subject_id = await _create_subject(client, "Latein", "La")
+    scheme_id = await _create_week_scheme(client, "Scheme L8")
+    tafel_id = await _create_stundentafel(client, "Tafel L8", 5)
+    class_id = await _create_school_class(client, "5c-L8", 5, tafel_id, scheme_id)
+    teacher_id = await _create_teacher(client, "Dirk", "Fischer", "DFI8")
+
+    create_resp = await client.post(
+        "/lessons",
+        json={"school_class_id": class_id, "subject_id": subject_id, "hours_per_week": 3},
+    )
+    lesson_id = create_resp.json()["id"]
+    assert create_resp.json()["teacher"] is None
+
+    patch_resp = await client.patch(f"/lessons/{lesson_id}", json={"teacher_id": teacher_id})
+    assert patch_resp.status_code == 200
+    body = patch_resp.json()
+    assert body["teacher"]["id"] == teacher_id
+    assert body["hours_per_week"] == 3
+
+
+async def test_delete_lesson(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """DELETE /lessons/{id} removes the lesson; subsequent GET returns 404.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les9.com", role="admin")
+    await login_as("admin@les9.com", "testpassword123")
+
+    subject_id = await _create_subject(client, "Informatik", "In")
+    scheme_id = await _create_week_scheme(client, "Scheme L9")
+    tafel_id = await _create_stundentafel(client, "Tafel L9", 6)
+    class_id = await _create_school_class(client, "6c-L9", 6, tafel_id, scheme_id)
+
+    create_resp = await client.post(
+        "/lessons",
+        json={"school_class_id": class_id, "subject_id": subject_id, "hours_per_week": 2},
+    )
+    lesson_id = create_resp.json()["id"]
+
+    delete_resp = await client.delete(f"/lessons/{lesson_id}")
+    assert delete_resp.status_code == 204
+
+    get_resp = await client.get(f"/lessons/{lesson_id}")
+    assert get_resp.status_code == 404
+
+
+async def test_generate_lessons_from_stundentafel(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /classes/{id}/generate-lessons creates lessons from the class's Stundentafel.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les10.com", role="admin")
+    await login_as("admin@les10.com", "testpassword123")
+
+    subj1_id = await _create_subject(client, "Erdkunde", "Ek")
+    subj2_id = await _create_subject(client, "Wirtschaft", "Wi")
+    scheme_id = await _create_week_scheme(client, "Scheme L10")
+    tafel_id = await _create_stundentafel(client, "Tafel L10", 7)
+
+    await client.post(
+        f"/stundentafeln/{tafel_id}/entries",
+        json={"subject_id": subj1_id, "hours_per_week": 2, "preferred_block_size": 1},
+    )
+    await client.post(
+        f"/stundentafeln/{tafel_id}/entries",
+        json={"subject_id": subj2_id, "hours_per_week": 3, "preferred_block_size": 2},
+    )
+
+    class_id = await _create_school_class(client, "7a-L10", 7, tafel_id, scheme_id)
+
+    resp = await client.post(f"/classes/{class_id}/generate-lessons")
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert len(body) == 2
+    subject_ids = {lesson["subject"]["id"] for lesson in body}
+    assert subj1_id in subject_ids
+    assert subj2_id in subject_ids
+
+    hours_by_subject = {lesson["subject"]["id"]: lesson["hours_per_week"] for lesson in body}
+    assert hours_by_subject[subj1_id] == 2
+    assert hours_by_subject[subj2_id] == 3
+
+
+async def test_generate_lessons_skips_existing(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /classes/{id}/generate-lessons skips subjects that already have a lesson.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les11.com", role="admin")
+    await login_as("admin@les11.com", "testpassword123")
+
+    subj1_id = await _create_subject(client, "Philosophie", "Phi")
+    subj2_id = await _create_subject(client, "Religion", "Re")
+    scheme_id = await _create_week_scheme(client, "Scheme L11")
+    tafel_id = await _create_stundentafel(client, "Tafel L11", 8)
+
+    await client.post(
+        f"/stundentafeln/{tafel_id}/entries",
+        json={"subject_id": subj1_id, "hours_per_week": 2},
+    )
+    await client.post(
+        f"/stundentafeln/{tafel_id}/entries",
+        json={"subject_id": subj2_id, "hours_per_week": 2},
+    )
+
+    class_id = await _create_school_class(client, "8a-L11", 8, tafel_id, scheme_id)
+
+    # Pre-create a lesson for subj1
+    await client.post(
+        "/lessons",
+        json={"school_class_id": class_id, "subject_id": subj1_id, "hours_per_week": 2},
+    )
+
+    resp = await client.post(f"/classes/{class_id}/generate-lessons")
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert len(body) == 1
+    assert body[0]["subject"]["id"] == subj2_id
+
+
+async def test_lesson_requires_admin(client: AsyncClient) -> None:
+    """GET /lessons without authentication returns 401 Unauthorized.
+
+    Args:
+        client: The async test HTTP client (no session cookie set).
+    """
+    resp = await client.get("/lessons")
+    assert resp.status_code == 401
+
+    resp = await client.post(f"/classes/{uuid.uuid4()}/generate-lessons")
+    assert resp.status_code == 401
