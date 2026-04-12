@@ -11,18 +11,16 @@ runs:
         install: true
         cache: true
 
-    - name: Cache cargo registry, git, target, and installed binaries
+    - name: Cache cargo registry, git, and target
       uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          ~/.cargo/bin
-          ~/.local/share/mise
           target
-        key: cargo-mise-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'mise.toml') }}
+        key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
         restore-keys: |
-          cargo-mise-${{ runner.os }}-
+          cargo-${{ runner.os }}-
 
     - name: Cache uv
       uses: actions/cache@v4
