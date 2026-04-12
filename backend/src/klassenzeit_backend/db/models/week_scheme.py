@@ -1,0 +1,46 @@
+"""WeekScheme and TimeBlock ORM models."""
+
+import uuid
+from datetime import datetime, time
+
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    SmallInteger,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from klassenzeit_backend.db.base import Base
+
+
+class WeekScheme(Base):
+    """An admin-defined weekly time grid."""
+
+    __tablename__ = "week_schemes"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, server_default=func.gen_random_uuid())
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class TimeBlock(Base):
+    """A single period within a WeekScheme (e.g. Monday period 1, 08:00-08:45)."""
+
+    __tablename__ = "time_blocks"
+    __table_args__ = (UniqueConstraint("week_scheme_id", "day_of_week", "position"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, server_default=func.gen_random_uuid())
+    week_scheme_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("week_schemes.id"), index=True)
+    day_of_week: Mapped[int] = mapped_column(SmallInteger)
+    position: Mapped[int] = mapped_column(SmallInteger)
+    start_time: Mapped[time] = mapped_column(Time)
+    end_time: Mapped[time] = mapped_column(Time)
