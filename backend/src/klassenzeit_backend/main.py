@@ -15,6 +15,7 @@ from klassenzeit_backend.auth.rate_limit import LoginRateLimiter
 from klassenzeit_backend.auth.routes import auth_router
 from klassenzeit_backend.core.settings import get_settings
 from klassenzeit_backend.db.engine import build_engine
+from klassenzeit_backend.scheduling.routes import scheduling_router
 from klassenzeit_solver import reverse_chars
 
 
@@ -41,6 +42,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Klassenzeit", lifespan=lifespan)
 app.include_router(auth_router)
+app.include_router(scheduling_router)
 
 
 @app.get("/health")
