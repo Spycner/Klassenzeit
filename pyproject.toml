@@ -73,7 +73,7 @@ known-first-party = ["klassenzeit_backend", "klassenzeit_solver"]
 convention = "google"
 
 [tool.ty.environment]
-python-version  = "3.13"
+python-version  = "3.14"
 python-platform = "linux"
 root            = ["."]
 
@@ -87,12 +87,6 @@ paths          = ["backend/src"]
 [tool.coverage.run]
 source = ["backend/src", "solver/solver-py"]
 omit = ["scripts/*"]
-
-[tool.coverage.report]
-exclude_also = [
-    '^\s*"""',   # opening docstrings
-    "^\\s*'''",  # opening docstrings (single-quote)
-]
 
 [dependency-groups]
 dev = [
