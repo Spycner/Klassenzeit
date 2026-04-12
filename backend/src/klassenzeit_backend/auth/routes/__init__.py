@@ -1,11 +1,8 @@
-"""Auth router — collects all auth sub-routers.
-
-Import sub-routers here as they are created. The ``auth_router`` is
-included in the FastAPI app by ``main.py``.
-"""
+"""Auth router — collects all auth sub-routers."""
 
 from fastapi import APIRouter
 
-auth_router = APIRouter()
+from klassenzeit_backend.auth.routes.login import router as login_router
 
-# Sub-routers will be included here as they are created
+auth_router = APIRouter()
+auth_router.include_router(login_router)
