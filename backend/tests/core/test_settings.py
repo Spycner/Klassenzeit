@@ -34,3 +34,40 @@ def test_settings_applies_defaults(monkeypatch) -> None:
     assert settings.db_pool_size == 5
     assert settings.db_max_overflow == 10
     assert settings.db_echo is False
+
+
+def test_auth_settings_defaults(monkeypatch) -> None:
+    monkeypatch.setenv(
+        "KZ_DATABASE_URL",
+        "postgresql+asyncpg://u:p@localhost:5432/kz",
+    )
+    settings = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+
+    assert settings.cookie_secure is True
+    assert settings.cookie_domain is None
+    assert settings.session_ttl_days == 14
+    assert settings.password_min_length == 12
+    assert settings.login_max_attempts == 5
+    assert settings.login_lockout_minutes == 15
+
+
+def test_auth_settings_from_env(monkeypatch) -> None:
+    monkeypatch.setenv(
+        "KZ_DATABASE_URL",
+        "postgresql+asyncpg://u:p@localhost:5432/kz",
+    )
+    monkeypatch.setenv("KZ_COOKIE_SECURE", "false")
+    monkeypatch.setenv("KZ_COOKIE_DOMAIN", "example.com")
+    monkeypatch.setenv("KZ_SESSION_TTL_DAYS", "7")
+    monkeypatch.setenv("KZ_PASSWORD_MIN_LENGTH", "16")
+    monkeypatch.setenv("KZ_LOGIN_MAX_ATTEMPTS", "3")
+    monkeypatch.setenv("KZ_LOGIN_LOCKOUT_MINUTES", "30")
+
+    settings = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+
+    assert settings.cookie_secure is False
+    assert settings.cookie_domain == "example.com"
+    assert settings.session_ttl_days == 7
+    assert settings.password_min_length == 16
+    assert settings.login_max_attempts == 3
+    assert settings.login_lockout_minutes == 30
