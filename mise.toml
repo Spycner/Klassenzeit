@@ -116,6 +116,16 @@ run = "cargo llvm-cov --workspace --lcov --output-path target/lcov.info"
 [tasks."cov:py"]
 run = "uv run pytest --cov=klassenzeit_backend --cov=klassenzeit_solver"
 
+[tasks."cov:update-baseline"]
+description = "Run Python coverage and update .coverage-baseline with the new total"
+run = """
+uv run pytest --cov=klassenzeit_backend --cov=klassenzeit_solver --cov-report=term 2>&1 \
+  | grep '^TOTAL' \
+  | awk '{print int($NF)}' \
+  > .coverage-baseline
+echo "Baseline updated to $(cat .coverage-baseline)%"
+"""
+
 # ─── Supply-chain audits (run in CI, not pre-push) ──────────────────────────
 
 [tasks.audit]
