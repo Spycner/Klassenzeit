@@ -3,7 +3,12 @@
 import ast
 import textwrap
 
-from scripts.check_unique_fns import Location, extract_python_names, extract_rust_names
+from scripts.check_unique_fns import (
+    Location,
+    extract_js_ts_names,
+    extract_python_names,
+    extract_rust_names,
+)
 
 
 def test_extract_python_function():
@@ -104,3 +109,53 @@ def test_extract_rust_test_fn():
     ]
     results = extract_rust_names(lines, "lib.rs")
     assert results == [Location("reverses_hello", "lib.rs", 4)]
+
+
+def test_extract_js_function_declaration():
+    """Verify JS function declarations are extracted."""
+    lines = ["function fetchData() {"]
+    results = extract_js_ts_names(lines, "api.ts")
+    assert results == [Location("fetchData", "api.ts", 1)]
+
+
+def test_extract_js_export_function():
+    """Verify exported function declarations are extracted."""
+    lines = ["export function handleSubmit(event) {"]
+    results = extract_js_ts_names(lines, "form.ts")
+    assert results == [Location("handleSubmit", "form.ts", 1)]
+
+
+def test_extract_js_export_default_function():
+    """Verify export default function declarations are extracted."""
+    lines = ["export default function HomePage() {"]
+    results = extract_js_ts_names(lines, "page.tsx")
+    assert results == [Location("HomePage", "page.tsx", 1)]
+
+
+def test_extract_js_async_function():
+    """Verify async function declarations are extracted."""
+    lines = ["async function loadUser() {"]
+    results = extract_js_ts_names(lines, "user.ts")
+    assert results == [Location("loadUser", "user.ts", 1)]
+
+
+def test_extract_js_class_method():
+    """Verify class method definitions are extracted."""
+    lines = [
+        "class UserService {",
+        "  async getUserById(id) {",
+        "  }",
+        "}",
+    ]
+    results = extract_js_ts_names(lines, "service.ts")
+    assert results == [Location("getUserById", "service.ts", 2)]
+
+
+def test_extract_js_skips_anonymous():
+    """Verify anonymous/arrow functions are not extracted."""
+    lines = [
+        "const handler = () => {",
+        "const process = function() {",
+    ]
+    results = extract_js_ts_names(lines, "util.ts")
+    assert results == []
