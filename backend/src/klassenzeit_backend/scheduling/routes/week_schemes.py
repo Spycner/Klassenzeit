@@ -86,7 +86,7 @@ async def create_week_scheme_route(
     scheme = WeekScheme(name=body.name, description=body.description)
     db.add(scheme)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -202,7 +202,7 @@ async def update_week_scheme_route(
     if body.description is not None:
         scheme.description = body.description
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -238,7 +238,7 @@ async def delete_week_scheme_route(
     scheme = await _get_week_scheme(db, scheme_id)
     await db.delete(scheme)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -278,7 +278,7 @@ async def create_time_block_route(
     )
     db.add(block)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -328,7 +328,7 @@ async def update_time_block_route(
     if body.end_time is not None:
         block.end_time = body.end_time
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -366,7 +366,7 @@ async def delete_time_block_route(
     block = await _get_time_block(db, scheme_id, block_id)
     await db.delete(block)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

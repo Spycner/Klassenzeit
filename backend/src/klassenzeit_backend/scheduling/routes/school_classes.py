@@ -87,7 +87,7 @@ async def create_school_class_route(
     )
     db.add(school_class)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -173,7 +173,7 @@ async def update_school_class_route(
     if body.week_scheme_id is not None:
         school_class.week_scheme_id = body.week_scheme_id
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -206,7 +206,7 @@ async def delete_school_class_route(
     school_class = await _get_school_class(db, class_id)
     await db.delete(school_class)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

@@ -121,7 +121,7 @@ async def create_lesson(
     )
     db.add(lesson)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -214,7 +214,7 @@ async def update_lesson(
         lesson.hours_per_week = body.hours_per_week
     if body.preferred_block_size is not None:
         lesson.preferred_block_size = body.preferred_block_size
-    await db.flush()
+    await db.commit()
     await db.refresh(lesson)
     return await _build_lesson_response(db, lesson)
 
@@ -237,7 +237,7 @@ async def delete_lesson(
     """
     lesson = await _get_lesson(db, lesson_id)
     await db.delete(lesson)
-    await db.flush()
+    await db.commit()
 
 
 @generate_router.post("/classes/{class_id}/generate-lessons", status_code=status.HTTP_201_CREATED)

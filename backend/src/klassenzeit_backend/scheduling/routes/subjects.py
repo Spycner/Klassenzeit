@@ -62,7 +62,7 @@ async def create_subject(
     subject = Subject(name=body.name, short_name=body.short_name)
     db.add(subject)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -162,7 +162,7 @@ async def update_subject(
     if body.short_name is not None:
         subject.short_name = body.short_name
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -198,7 +198,7 @@ async def delete_subject(
     subject = await _get_subject(db, subject_id)
     await db.delete(subject)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

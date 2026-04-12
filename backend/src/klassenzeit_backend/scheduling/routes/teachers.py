@@ -27,8 +27,6 @@ from klassenzeit_backend.scheduling.schemas.teacher import (
 
 router = APIRouter(prefix="/teachers", tags=["teachers"])
 
-VALID_STATUSES = {"available", "preferred", "unavailable"}
-
 
 async def _get_teacher(db: AsyncSession, teacher_id: uuid.UUID) -> Teacher:
     """Load a Teacher by primary key or raise 404.
@@ -132,7 +130,7 @@ async def create_teacher_route(
     )
     db.add(teacher)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -242,7 +240,7 @@ async def update_teacher_route(
     if body.max_hours_per_week is not None:
         teacher.max_hours_per_week = body.max_hours_per_week
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -281,7 +279,7 @@ async def delete_teacher_route(
     """
     teacher = await _get_teacher(db, teacher_id)
     teacher.is_active = False
-    await db.flush()
+    await db.commit()
 
 
 @router.put("/{teacher_id}/qualifications")
@@ -316,7 +314,7 @@ async def replace_teacher_qualifications(
     for subject_id in body.subject_ids:
         db.add(TeacherQualification(teacher_id=teacher_id, subject_id=subject_id))
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -337,7 +335,7 @@ async def replace_teacher_availability(
     """Replace the entire availability list for a teacher.
 
     Deletes all existing TeacherAvailability rows for the teacher and inserts
-    new ones from the supplied entries list. Each entry must have a valid status.
+    new ones from the supplied entries list.
 
     Args:
         teacher_id: UUID path parameter identifying the teacher.
@@ -350,17 +348,9 @@ async def replace_teacher_availability(
 
     Raises:
         HTTPException: 404 if no teacher with that ID exists.
-        HTTPException: 422 if any entry has an invalid status value.
         HTTPException: 409 if any time_block_id is invalid (FK violation).
     """
     teacher = await _get_teacher(db, teacher_id)
-
-    for entry in body.entries:
-        if entry.status not in VALID_STATUSES:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Invalid status: {entry.status}",
-            )
 
     await db.execute(
         delete(TeacherAvailability).where(TeacherAvailability.teacher_id == teacher_id)
@@ -374,7 +364,7 @@ async def replace_teacher_availability(
             )
         )
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

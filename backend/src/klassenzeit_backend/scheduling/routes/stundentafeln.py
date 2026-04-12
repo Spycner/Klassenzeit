@@ -90,7 +90,7 @@ async def create_stundentafel_route(
     tafel = Stundentafel(name=body.name, grade_level=body.grade_level)
     db.add(tafel)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -205,7 +205,7 @@ async def update_stundentafel_route(
     if body.grade_level is not None:
         tafel.grade_level = body.grade_level
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -241,7 +241,7 @@ async def delete_stundentafel_route(
     tafel = await _get_stundentafel(db, tafel_id)
     await db.delete(tafel)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -280,7 +280,7 @@ async def create_stundentafel_entry_route(
     )
     db.add(entry)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -326,7 +326,7 @@ async def update_stundentafel_entry(
         entry.hours_per_week = body.hours_per_week
     if body.preferred_block_size is not None:
         entry.preferred_block_size = body.preferred_block_size
-    await db.flush()
+    await db.commit()
     await db.refresh(entry)
     subj = await db.get(Subject, entry.subject_id)
     if subj is None:
@@ -359,4 +359,4 @@ async def delete_stundentafel_entry(
     """
     entry = await _get_entry(db, tafel_id, entry_id)
     await db.delete(entry)
-    await db.flush()
+    await db.commit()

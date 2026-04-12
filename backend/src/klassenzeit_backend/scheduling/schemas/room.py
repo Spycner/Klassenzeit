@@ -2,8 +2,9 @@
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RoomCreate(BaseModel):
@@ -11,8 +12,8 @@ class RoomCreate(BaseModel):
 
     name: str
     short_name: str
-    capacity: int | None = None
-    suitability_mode: str = "general"
+    capacity: int | None = Field(default=None, ge=1)
+    suitability_mode: Literal["general", "specialized"] = "general"
 
 
 class RoomUpdate(BaseModel):
@@ -20,8 +21,8 @@ class RoomUpdate(BaseModel):
 
     name: str | None = None
     short_name: str | None = None
-    capacity: int | None = None
-    suitability_mode: str | None = None
+    capacity: int | None = Field(default=None, ge=1)
+    suitability_mode: Literal["general", "specialized"] | None = None
 
 
 class SuitabilitySubjectResponse(BaseModel):

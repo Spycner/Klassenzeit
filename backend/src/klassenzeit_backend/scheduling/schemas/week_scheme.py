@@ -3,14 +3,14 @@
 import uuid
 from datetime import datetime, time
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TimeBlockCreate(BaseModel):
     """Request body for creating a time block."""
 
-    day_of_week: int
-    position: int
+    day_of_week: int = Field(ge=0, le=4)
+    position: int = Field(ge=1)
     start_time: time
     end_time: time
 
@@ -18,8 +18,8 @@ class TimeBlockCreate(BaseModel):
 class TimeBlockUpdate(BaseModel):
     """Request body for patching a time block."""
 
-    day_of_week: int | None = None
-    position: int | None = None
+    day_of_week: int | None = Field(default=None, ge=0, le=4)
+    position: int | None = Field(default=None, ge=1)
     start_time: time | None = None
     end_time: time | None = None
 

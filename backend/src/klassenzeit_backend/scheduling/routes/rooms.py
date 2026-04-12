@@ -47,6 +47,55 @@ async def _get_room(db: AsyncSession, room_id: uuid.UUID) -> Room:
     return room
 
 
+async def _build_room_detail(db: AsyncSession, room: Room) -> RoomDetailResponse:
+    """Build a RoomDetailResponse by loading suitability subjects and availability time blocks.
+
+    Args:
+        db: Active async database session.
+        room: The Room ORM instance to build the response for.
+
+    Returns:
+        A fully populated RoomDetailResponse.
+    """
+    suit_result = await db.execute(
+        select(Subject)
+        .join(RoomSubjectSuitability, RoomSubjectSuitability.subject_id == Subject.id)
+        .where(RoomSubjectSuitability.room_id == room.id)
+        .order_by(Subject.name)
+    )
+    suitability_subjects = [
+        SuitabilitySubjectResponse(id=s.id, name=s.name, short_name=s.short_name)
+        for s in suit_result.scalars()
+    ]
+
+    avail_result = await db.execute(
+        select(RoomAvailability.time_block_id, TimeBlock.day_of_week, TimeBlock.position)
+        .join(TimeBlock, RoomAvailability.time_block_id == TimeBlock.id)
+        .where(RoomAvailability.room_id == room.id)
+        .order_by(TimeBlock.day_of_week, TimeBlock.position)
+    )
+    availability = [
+        AvailabilityResponse(
+            time_block_id=row.time_block_id,
+            day_of_week=row.day_of_week,
+            position=row.position,
+        )
+        for row in avail_result
+    ]
+
+    return RoomDetailResponse(
+        id=room.id,
+        name=room.name,
+        short_name=room.short_name,
+        capacity=room.capacity,
+        suitability_mode=room.suitability_mode,
+        suitability_subjects=suitability_subjects,
+        availability=availability,
+        created_at=room.created_at,
+        updated_at=room.updated_at,
+    )
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_room_route(
     body: RoomCreate,
@@ -74,7 +123,7 @@ async def create_room_route(
     )
     db.add(room)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -141,44 +190,7 @@ async def get_room(
         HTTPException: 404 if no room with that ID exists.
     """
     room = await _get_room(db, room_id)
-
-    suit_result = await db.execute(
-        select(Subject)
-        .join(RoomSubjectSuitability, RoomSubjectSuitability.subject_id == Subject.id)
-        .where(RoomSubjectSuitability.room_id == room.id)
-        .order_by(Subject.name)
-    )
-    suitability_subjects = [
-        SuitabilitySubjectResponse(id=s.id, name=s.name, short_name=s.short_name)
-        for s in suit_result.scalars()
-    ]
-
-    avail_result = await db.execute(
-        select(RoomAvailability.time_block_id, TimeBlock.day_of_week, TimeBlock.position)
-        .join(TimeBlock, RoomAvailability.time_block_id == TimeBlock.id)
-        .where(RoomAvailability.room_id == room.id)
-        .order_by(TimeBlock.day_of_week, TimeBlock.position)
-    )
-    availability = [
-        AvailabilityResponse(
-            time_block_id=row.time_block_id,
-            day_of_week=row.day_of_week,
-            position=row.position,
-        )
-        for row in avail_result
-    ]
-
-    return RoomDetailResponse(
-        id=room.id,
-        name=room.name,
-        short_name=room.short_name,
-        capacity=room.capacity,
-        suitability_mode=room.suitability_mode,
-        suitability_subjects=suitability_subjects,
-        availability=availability,
-        created_at=room.created_at,
-        updated_at=room.updated_at,
-    )
+    return await _build_room_detail(db, room)
 
 
 @router.patch("/{room_id}")
@@ -213,7 +225,7 @@ async def update_room_route(
     if body.suitability_mode is not None:
         room.suitability_mode = body.suitability_mode
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -253,7 +265,7 @@ async def delete_room_route(
     room = await _get_room(db, room_id)
     await db.delete(room)
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -293,51 +305,15 @@ async def replace_room_suitability(
     for subject_id in body.subject_ids:
         db.add(RoomSubjectSuitability(room_id=room_id, subject_id=subject_id))
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="One or more subject IDs are invalid.",
         ) from exc
 
-    suit_result = await db.execute(
-        select(Subject)
-        .join(RoomSubjectSuitability, RoomSubjectSuitability.subject_id == Subject.id)
-        .where(RoomSubjectSuitability.room_id == room.id)
-        .order_by(Subject.name)
-    )
-    suitability_subjects = [
-        SuitabilitySubjectResponse(id=s.id, name=s.name, short_name=s.short_name)
-        for s in suit_result.scalars()
-    ]
-
-    avail_result = await db.execute(
-        select(RoomAvailability.time_block_id, TimeBlock.day_of_week, TimeBlock.position)
-        .join(TimeBlock, RoomAvailability.time_block_id == TimeBlock.id)
-        .where(RoomAvailability.room_id == room.id)
-        .order_by(TimeBlock.day_of_week, TimeBlock.position)
-    )
-    availability = [
-        AvailabilityResponse(
-            time_block_id=row.time_block_id,
-            day_of_week=row.day_of_week,
-            position=row.position,
-        )
-        for row in avail_result
-    ]
-
     await db.refresh(room)
-    return RoomDetailResponse(
-        id=room.id,
-        name=room.name,
-        short_name=room.short_name,
-        capacity=room.capacity,
-        suitability_mode=room.suitability_mode,
-        suitability_subjects=suitability_subjects,
-        availability=availability,
-        created_at=room.created_at,
-        updated_at=room.updated_at,
-    )
+    return await _build_room_detail(db, room)
 
 
 @router.put("/{room_id}/availability")
@@ -370,48 +346,12 @@ async def replace_room_availability(
     for time_block_id in body.time_block_ids:
         db.add(RoomAvailability(room_id=room_id, time_block_id=time_block_id))
     try:
-        await db.flush()
+        await db.commit()
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="One or more time block IDs are invalid.",
         ) from exc
 
-    suit_result = await db.execute(
-        select(Subject)
-        .join(RoomSubjectSuitability, RoomSubjectSuitability.subject_id == Subject.id)
-        .where(RoomSubjectSuitability.room_id == room.id)
-        .order_by(Subject.name)
-    )
-    suitability_subjects = [
-        SuitabilitySubjectResponse(id=s.id, name=s.name, short_name=s.short_name)
-        for s in suit_result.scalars()
-    ]
-
-    avail_result = await db.execute(
-        select(RoomAvailability.time_block_id, TimeBlock.day_of_week, TimeBlock.position)
-        .join(TimeBlock, RoomAvailability.time_block_id == TimeBlock.id)
-        .where(RoomAvailability.room_id == room.id)
-        .order_by(TimeBlock.day_of_week, TimeBlock.position)
-    )
-    availability = [
-        AvailabilityResponse(
-            time_block_id=row.time_block_id,
-            day_of_week=row.day_of_week,
-            position=row.position,
-        )
-        for row in avail_result
-    ]
-
     await db.refresh(room)
-    return RoomDetailResponse(
-        id=room.id,
-        name=room.name,
-        short_name=room.short_name,
-        capacity=room.capacity,
-        suitability_mode=room.suitability_mode,
-        suitability_subjects=suitability_subjects,
-        availability=availability,
-        created_at=room.created_at,
-        updated_at=room.updated_at,
-    )
+    return await _build_room_detail(db, room)

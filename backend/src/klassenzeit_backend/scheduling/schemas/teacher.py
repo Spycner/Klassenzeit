@@ -2,8 +2,9 @@
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TeacherCreate(BaseModel):
@@ -12,7 +13,7 @@ class TeacherCreate(BaseModel):
     first_name: str
     last_name: str
     short_code: str
-    max_hours_per_week: int
+    max_hours_per_week: int = Field(ge=1)
 
 
 class TeacherUpdate(BaseModel):
@@ -21,7 +22,7 @@ class TeacherUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     short_code: str | None = None
-    max_hours_per_week: int | None = None
+    max_hours_per_week: int | None = Field(default=None, ge=1)
 
 
 class QualificationResponse(BaseModel):
@@ -79,7 +80,7 @@ class AvailabilityEntryInput(BaseModel):
     """Single availability entry in request."""
 
     time_block_id: uuid.UUID
-    status: str
+    status: Literal["available", "preferred", "unavailable"]
 
 
 class AvailabilityReplaceRequest(BaseModel):
