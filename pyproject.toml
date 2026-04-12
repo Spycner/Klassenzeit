@@ -86,6 +86,7 @@ paths          = ["backend/src"]
 
 [tool.coverage.run]
 source = ["backend/src", "solver/solver-py"]
+omit = ["scripts/*"]
 
 [dependency-groups]
 dev = [
