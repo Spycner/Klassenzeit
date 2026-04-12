@@ -1,5 +1,8 @@
 //! solver-core — pure Rust solver logic. No Python, no PyO3.
 
+#![deny(missing_docs)]
+
+/// Reverse the characters in a string.
 pub fn reverse_chars(s: &str) -> String {
     s.chars().rev().collect()
 }

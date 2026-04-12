@@ -2,7 +2,7 @@
 
 [tools]
 rust    = "1.93"
-python  = "3.13"
+python  = "3.14"
 uv      = "latest"
 "cargo:cocogitto"            = "latest"
 "ubi:evilmartians/lefthook"  = "latest"
@@ -116,6 +116,16 @@ run = "cargo llvm-cov --workspace --lcov --output-path target/lcov.info"
 [tasks."cov:py"]
 run = "uv run pytest --cov=klassenzeit_backend --cov=klassenzeit_solver"
 
+[tasks."cov:update-baseline"]
+description = "Run Python coverage and update .coverage-baseline with the new total"
+run = """
+uv run pytest --cov=klassenzeit_backend --cov=klassenzeit_solver --cov-report=term 2>&1 \
+  | grep '^TOTAL' \
+  | awk '{print int($NF)}' \
+  > .coverage-baseline
+echo "Baseline updated to $(cat .coverage-baseline)%"
+"""
+
 # ─── Supply-chain audits (run in CI, not pre-push) ──────────────────────────
 
 [tasks.audit]
@@ -145,6 +155,7 @@ run = [
   "uv run ruff format --check",
   "uv run ty check",
   "uv run vulture backend/src",
+  "uv run python scripts/check_unique_fns.py",
 ]
 
 [tasks.fmt]

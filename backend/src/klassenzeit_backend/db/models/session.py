@@ -14,6 +14,8 @@ from klassenzeit_backend.db.base import Base
 
 
 class UserSession(Base):
+    """Cookie-based login session tied to a user with an expiry timestamp."""
+
     __tablename__ = "sessions"
 
     id: Mapped[uuid.UUID] = mapped_column(

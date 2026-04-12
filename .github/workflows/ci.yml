@@ -50,5 +50,25 @@ jobs:
         env:
           PGPASSWORD: klassenzeit
         run: psql -h localhost -p 5433 -U klassenzeit -d klassenzeit_dev -c 'CREATE DATABASE klassenzeit_test OWNER klassenzeit;'
-      - name: Run mise test pipeline
-        run: mise run test
+      - name: Run Rust tests
+        run: mise run test:rust
+      - name: Run Python tests with coverage
+        run: |
+          uv run pytest --cov=klassenzeit_backend --cov=klassenzeit_solver --cov-report=term | tee /tmp/pytest-cov.txt
+      - name: Check Python coverage ratchet
+        run: |
+          ACTUAL=$(grep '^TOTAL' /tmp/pytest-cov.txt | awk '{print int($NF)}')
+          BASELINE=$(cat .coverage-baseline)
+          if [ -z "$ACTUAL" ]; then
+            echo "::error::Could not extract coverage percentage from pytest output"
+            exit 1
+          fi
+          echo "Coverage: ${ACTUAL}% (baseline: ${BASELINE}%, floor: 80%)"
+          if [ "$ACTUAL" -lt 80 ]; then
+            echo "::error::Coverage ${ACTUAL}% is below the absolute floor of 80%"
+            exit 1
+          fi
+          if [ "$ACTUAL" -lt "$BASELINE" ]; then
+            echo "::error::Coverage ${ACTUAL}% is below the ratchet baseline of ${BASELINE}%. Run 'mise run cov:update-baseline' if this drop is intentional."
+            exit 1
+          fi

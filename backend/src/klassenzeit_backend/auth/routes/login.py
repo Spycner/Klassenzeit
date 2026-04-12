@@ -23,6 +23,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class LoginRequest(BaseModel):
+    """Request body for email/password login."""
+
     email: EmailStr
     password: str
 
@@ -34,6 +36,7 @@ async def login(
     response: Response,
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
+    """Authenticate with email/password and set a session cookie."""
     settings: Settings = request.app.state.settings
     rate_limiter: LoginRateLimiter = request.app.state.rate_limiter
     email = body.email.lower()
@@ -82,6 +85,7 @@ async def logout(
     _user: Annotated[User, Depends(get_current_user)],
     kz_session: Annotated[str | None, Cookie()] = None,
 ) -> None:
+    """Delete the current session and clear the session cookie."""
     settings: Settings = request.app.state.settings
 
     if kz_session:

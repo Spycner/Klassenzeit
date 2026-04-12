@@ -23,6 +23,8 @@ _DEFAULT_ENV_FILE = _BACKEND_ROOT / ".env"
 
 
 class Settings(BaseSettings):
+    """Backend configuration loaded from environment variables with ``KZ_`` prefix."""
+
     model_config = SettingsConfigDict(
         env_file=str(_DEFAULT_ENV_FILE),
         env_prefix="KZ_",

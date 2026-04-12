@@ -20,6 +20,7 @@ from klassenzeit_solver import reverse_chars
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Manage app lifecycle: initialize shared state on startup, dispose engine on shutdown."""
     settings = get_settings()
     engine = build_engine()
     app.state.settings = settings
@@ -44,4 +45,5 @@ app.include_router(auth_router)
 
 @app.get("/health")
 async def health() -> dict[str, str]:
+    """Return a simple health-check response with a solver smoke test."""
     return {"status": "ok", "solver_check": reverse_chars("ok")}
