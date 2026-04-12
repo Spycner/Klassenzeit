@@ -46,6 +46,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from klassenzeit_backend.auth.rate_limit import LoginRateLimiter
 from klassenzeit_backend.core.settings import Settings
 from klassenzeit_backend.db.session import get_session
 from klassenzeit_backend.main import app
@@ -119,10 +120,18 @@ async def db_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
 
 
 @pytest.fixture
-async def client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
+async def client(
+    db_session: AsyncSession,
+    settings: Settings,
+) -> AsyncIterator[AsyncClient]:
     async def override_get_session() -> AsyncIterator[AsyncSession]:
         yield db_session
 
+    app.state.settings = settings
+    app.state.rate_limiter = LoginRateLimiter(
+        max_attempts=settings.login_max_attempts,
+        lockout_minutes=settings.login_lockout_minutes,
+    )
     app.dependency_overrides[get_session] = override_get_session
     try:
         async with AsyncClient(

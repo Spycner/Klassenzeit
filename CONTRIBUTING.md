@@ -66,6 +66,10 @@ refactor!: replace sync HTTP client with async
 - `cog changelog` generates `CHANGELOG.md` from the commit history.
 - `cog bump` performs semver version bumps based on commit types.
 
+## Authentication
+
+For how the session/cookie auth works, how to protect a route, and how to bootstrap the first admin, see [`docs/architecture/authentication.md`](docs/architecture/authentication.md).
+
 ## Database
 
 The DB layer lives under `backend/src/klassenzeit_backend/db/`. For
