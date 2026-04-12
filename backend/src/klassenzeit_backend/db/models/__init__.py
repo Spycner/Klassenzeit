@@ -6,6 +6,6 @@ imports this package so ``Base.metadata`` is populated before
 autogenerate.
 """
 
-from klassenzeit_backend.db.models._ping import Ping
+from klassenzeit_backend.db.models.user import User
 
-__all__ = ["Ping"]
+__all__ = ["User"]

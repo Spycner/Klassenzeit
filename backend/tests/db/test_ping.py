@@ -10,7 +10,7 @@ from httpx import AsyncClient
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from klassenzeit_backend.db.models import Ping
+from klassenzeit_backend.db.models._ping import Ping
 
 
 async def test_migrations_create_ping_table(db_session: AsyncSession) -> None:
