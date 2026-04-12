@@ -25,6 +25,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class MeResponse(BaseModel):
+    """Response body for the current user profile."""
+
     id: uuid.UUID
     email: str
     role: str
@@ -32,6 +34,8 @@ class MeResponse(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
+    """Request body for changing the current user's password."""
+
     current_password: str
     new_password: str
 
@@ -40,6 +44,7 @@ class ChangePasswordRequest(BaseModel):
 async def auth_me(
     user: Annotated[User, Depends(get_current_user)],
 ) -> MeResponse:
+    """Return the current authenticated user's profile."""
     return MeResponse(
         id=user.id,
         email=user.email,
@@ -56,6 +61,7 @@ async def change_password(
     db: Annotated[AsyncSession, Depends(get_session)],
     kz_session: Annotated[str | None, Cookie()] = None,
 ) -> None:
+    """Change the current user's password and invalidate other sessions."""
     if not verify_password(body.current_password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 

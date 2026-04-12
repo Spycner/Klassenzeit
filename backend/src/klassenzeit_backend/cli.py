@@ -112,4 +112,5 @@ def cleanup_sessions() -> None:
 
 
 def main() -> None:
+    """Entry point for the ``klassenzeit-backend`` CLI."""
     cli()

@@ -26,18 +26,24 @@ router = APIRouter(prefix="/auth/admin", tags=["auth-admin"])
 
 
 class CreateUserRequest(BaseModel):
+    """Request body for admin user creation."""
+
     email: EmailStr
     password: str
     role: str = "user"
 
 
 class UserResponse(BaseModel):
+    """Response body after creating a user."""
+
     id: uuid.UUID
     email: str
     role: str
 
 
 class UserListItem(BaseModel):
+    """Single entry in the admin user listing."""
+
     id: uuid.UUID
     email: str
     role: str
@@ -46,6 +52,8 @@ class UserListItem(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
+    """Request body for admin password reset."""
+
     new_password: str
 
 
@@ -56,6 +64,7 @@ async def admin_create_user(
     _admin: Annotated[User, Depends(require_admin)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> UserResponse:
+    """Create a new user account. Requires admin role."""
     settings: Settings = request.app.state.settings
     email = body.email.lower()
 
@@ -91,6 +100,7 @@ async def admin_list_users(
     db: Annotated[AsyncSession, Depends(get_session)],
     active: bool | None = None,
 ) -> list[UserListItem]:
+    """List all users, optionally filtered by active status."""
     stmt = select(User)
     if active is not None:
         stmt = stmt.where(User.is_active == active)
@@ -108,6 +118,7 @@ async def admin_list_users(
 
 
 async def _get_target_user(db: AsyncSession, user_id: uuid.UUID) -> User:
+    """Load a user by ID or raise 404."""
     user = await db.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -122,6 +133,7 @@ async def admin_reset_password(
     _admin: Annotated[User, Depends(require_admin)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
+    """Reset a user's password and force a password change on next login."""
     settings: Settings = request.app.state.settings
     try:
         validate_password(body.new_password, min_length=settings.password_min_length)
@@ -144,6 +156,7 @@ async def admin_deactivate_user(
     _admin: Annotated[User, Depends(require_admin)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
+    """Deactivate a user and invalidate all their sessions."""
     user = await _get_target_user(db, user_id)
     user.is_active = False
     await delete_user_sessions(db, user.id)
@@ -156,6 +169,7 @@ async def admin_activate_user(
     _admin: Annotated[User, Depends(require_admin)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
+    """Re-activate a deactivated user account."""
     user = await _get_target_user(db, user_id)
     user.is_active = True
     await db.commit()

@@ -11,6 +11,7 @@ from klassenzeit_backend.core.settings import get_settings
 
 
 def build_engine() -> AsyncEngine:
+    """Build and return a configured async SQLAlchemy engine."""
     settings = get_settings()
     return create_async_engine(
         str(settings.database_url),

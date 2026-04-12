@@ -50,6 +50,7 @@ select = [
     "ASYNC",    # async best practices
     "ERA",      # eradicate commented-out code
     "PL",       # pylint subset
+    "D",        # pydocstyle (docstring enforcement)
 ]
 ignore = [
     "PLR0913",  # too many arguments — common in FastAPI handlers / DI
@@ -59,10 +60,17 @@ ignore = [
 "**/tests/**" = [
     "S101",     # assert is the point of a test
     "PLR2004",  # magic values are fine in test fixtures
+    "D",        # docstrings not required in test files
+]
+"**/alembic/**" = [
+    "D",        # docstrings not required in generated migration files
 ]
 
 [tool.ruff.lint.isort]
 known-first-party = ["klassenzeit_backend", "klassenzeit_solver"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ty.environment]
 python-version  = "3.13"

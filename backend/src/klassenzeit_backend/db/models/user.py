@@ -10,6 +10,8 @@ from klassenzeit_backend.db.base import Base
 
 
 class User(Base):
+    """Application user with email/password credentials and role-based access."""
+
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(
