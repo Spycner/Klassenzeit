@@ -41,6 +41,8 @@ EXCLUDE_DIRS = frozenset(
     }
 )
 
+SKIP_NAMES = frozenset({"main"})
+
 
 def extract_python_names(tree: ast.AST, file_path: str) -> list[Location]:
     """Extract non-dunder function and method names from a Python AST."""
@@ -49,6 +51,8 @@ def extract_python_names(tree: ast.AST, file_path: str) -> list[Location]:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             name = node.name
             if name.startswith("__") and name.endswith("__"):
+                continue
+            if name in SKIP_NAMES:
                 continue
             results.append(Location(name, file_path, node.lineno))
     return results
@@ -64,7 +68,7 @@ def extract_rust_names(lines: list[str], file_path: str) -> list[Location]:
         match = _RUST_FN_RE.match(line)
         if match:
             name = match.group(1)
-            if name == "main":
+            if name in SKIP_NAMES:
                 continue
             results.append(Location(name, file_path, lineno))
     return results
@@ -106,12 +110,14 @@ def extract_js_ts_names(lines: list[str], file_path: str) -> list[Location]:
     for lineno, line in enumerate(lines, start=1):
         match = _JS_FUNCTION_RE.match(line)
         if match:
-            results.append(Location(match.group(1), file_path, lineno))
+            name = match.group(1)
+            if name not in SKIP_NAMES:
+                results.append(Location(name, file_path, lineno))
             continue
         match = _JS_METHOD_RE.match(line)
         if match:
             name = match.group(1)
-            if name not in _JS_SKIP_KEYWORDS:
+            if name not in _JS_SKIP_KEYWORDS and name not in SKIP_NAMES:
                 results.append(Location(name, file_path, lineno))
     return results
 

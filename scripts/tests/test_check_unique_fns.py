@@ -91,8 +91,19 @@ def test_extract_rust_private_fn():
     assert results == [Location("helper", "lib.rs", 1)]
 
 
+def test_extract_python_skips_main():
+    """Verify main() is skipped as a conventional entry point."""
+    source = textwrap.dedent("""\
+        def main():
+            pass
+    """)
+    tree = ast.parse(source)
+    results = extract_python_names(tree, "cli.py")
+    assert results == []
+
+
 def test_extract_rust_skips_main():
-    """Verify Rust main() is skipped."""
+    """Verify Rust main() is skipped as a conventional entry point."""
     lines = ["fn main() {"]
     results = extract_rust_names(lines, "main.rs")
     assert results == []
