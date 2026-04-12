@@ -88,6 +88,12 @@ paths          = ["backend/src"]
 source = ["backend/src", "solver/solver-py"]
 omit = ["scripts/*"]
 
+[tool.coverage.report]
+exclude_also = [
+    '^\s*"""',   # opening docstrings
+    "^\\s*'''",  # opening docstrings (single-quote)
+]
+
 [dependency-groups]
 dev = [
     "asgi-lifespan>=2.1",
