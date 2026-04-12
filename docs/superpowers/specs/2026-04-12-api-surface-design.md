@@ -486,25 +486,34 @@ Error body follows FastAPI convention: `{"detail": "Human-readable message"}`.
 
 ## Code organisation
 
-New files follow the existing backend structure:
+Pydantic request/response schemas live in dedicated `schemas/` subdirectories, separate from route handlers. This keeps route files focused on request handling and makes schemas reusable across routes.
+
+As a prerequisite, the existing auth schemas (currently inline in route files) are refactored into `auth/schemas/` to establish the pattern project-wide.
 
 ```
 backend/src/klassenzeit_backend/
+├── auth/
+│   ├── schemas/                    # Refactored from inline definitions
+│   │   ├── __init__.py
+│   │   ├── login.py               # LoginRequest
+│   │   ├── me.py                  # MeResponse, ChangePasswordRequest
+│   │   └── admin.py               # CreateUserRequest, UserResponse, UserListItem, ResetPasswordRequest
+│   └── routes/                    # (existing, schemas removed from here)
 ├── db/
 │   └── models/
-│       ├── week_scheme.py      # WeekScheme, TimeBlock
-│       ├── subject.py          # Subject
-│       ├── room.py             # Room, RoomSubjectSuitability, RoomAvailability
-│       ├── teacher.py          # Teacher, TeacherQualification, TeacherAvailability
-│       ├── stundentafel.py     # Stundentafel, StundentafelEntry
-│       ├── school_class.py     # SchoolClass
-│       ├── lesson.py           # Lesson
-│       └── class_group.py      # ClassGroup (model only, no routes)
+│       ├── week_scheme.py         # WeekScheme, TimeBlock
+│       ├── subject.py             # Subject
+│       ├── room.py                # Room, RoomSubjectSuitability, RoomAvailability
+│       ├── teacher.py             # Teacher, TeacherQualification, TeacherAvailability
+│       ├── stundentafel.py        # Stundentafel, StundentafelEntry
+│       ├── school_class.py        # SchoolClass
+│       ├── lesson.py              # Lesson
+│       └── class_group.py         # ClassGroup (model only, no routes)
 ├── scheduling/
 │   ├── __init__.py
 │   ├── schemas/
 │   │   ├── __init__.py
-│   │   ├── week_scheme.py      # Request/response Pydantic models
+│   │   ├── week_scheme.py         # Request/response Pydantic models
 │   │   ├── subject.py
 │   │   ├── room.py
 │   │   ├── teacher.py
@@ -513,7 +522,7 @@ backend/src/klassenzeit_backend/
 │   │   └── lesson.py
 │   └── routes/
 │       ├── __init__.py
-│       ├── week_schemes.py     # WeekScheme + TimeBlock routes
+│       ├── week_schemes.py        # WeekScheme + TimeBlock routes
 │       ├── subjects.py
 │       ├── rooms.py
 │       ├── teachers.py
