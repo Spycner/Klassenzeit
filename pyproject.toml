@@ -20,7 +20,7 @@ asyncio_default_test_loop_scope   = "session"
 testpaths    = ["backend/tests", "solver/solver-py/tests"]
 # `importlib` avoids the classic pytest trap where two test dirs that both
 # contain `__init__.py` collide under the same `tests` package name.
-addopts      = ["--import-mode=importlib"]
+addopts      = ["--import-mode=importlib", "--cov-fail-under=80"]
 
 [tool.ruff]
 target-version = "py313"
