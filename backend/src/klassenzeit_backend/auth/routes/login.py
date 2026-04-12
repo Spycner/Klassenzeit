@@ -74,14 +74,6 @@ async def login(
     )
 
 
-@router.get("/me", status_code=status.HTTP_200_OK)
-async def me(
-    current_user: Annotated[User, Depends(get_current_user)],
-) -> dict[str, str]:
-    """Return basic info about the authenticated user."""
-    return {"id": str(current_user.id), "email": current_user.email}
-
-
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     request: Request,
