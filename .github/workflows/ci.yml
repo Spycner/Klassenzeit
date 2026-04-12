@@ -52,3 +52,17 @@ jobs:
         run: psql -h localhost -p 5433 -U klassenzeit -d klassenzeit_dev -c 'CREATE DATABASE klassenzeit_test OWNER klassenzeit;'
       - name: Run mise test pipeline
         run: mise run test
+      - name: Check Python coverage ratchet
+        run: |
+          COVERAGE_OUTPUT=$(uv run pytest --cov=klassenzeit_backend --cov=klassenzeit_solver --cov-report=term -q 2>&1)
+          ACTUAL=$(echo "$COVERAGE_OUTPUT" | grep '^TOTAL' | awk '{print int($NF)}')
+          BASELINE=$(cat .coverage-baseline)
+          echo "Coverage: ${ACTUAL}% (baseline: ${BASELINE}%, floor: 80%)"
+          if [ "$ACTUAL" -lt 80 ]; then
+            echo "::error::Coverage ${ACTUAL}% is below the absolute floor of 80%"
+            exit 1
+          fi
+          if [ "$ACTUAL" -lt "$BASELINE" ]; then
+            echo "::error::Coverage ${ACTUAL}% is below the ratchet baseline of ${BASELINE}%. Run 'mise run cov:update-baseline' if this drop is intentional."
+            exit 1
+          fi
