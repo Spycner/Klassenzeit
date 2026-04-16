@@ -14,12 +14,12 @@ klassenzeit-solver = { workspace = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-# All async fixtures and tests share one event loop for the whole session.
-# Required for session-scoped async fixtures (engine, apply_migrations) to be
-# usable from function-scoped fixtures (db_session) and tests without
-# loop-mismatch errors when using asyncpg.
-asyncio_default_fixture_loop_scope = "session"
-asyncio_default_test_loop_scope   = "session"
+# Use function-scoped event loops (pytest-asyncio default). The engine
+# fixture is also function-scoped (see backend/tests/conftest.py), which
+# keeps all asyncpg connections bound to the current test's event loop and
+# avoids "Future attached to a different loop" errors.
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope   = "function"
 testpaths    = ["backend/tests", "solver/solver-py/tests", "scripts/tests"]
 # `importlib` avoids the classic pytest trap where two test dirs that both
 # contain `__init__.py` collide under the same `tests` package name.
