@@ -4,7 +4,6 @@ import uuid
 from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, status
-from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.auth.dependencies import get_current_user
@@ -14,6 +13,7 @@ from klassenzeit_backend.auth.passwords import (
     validate_password,
     verify_password,
 )
+from klassenzeit_backend.auth.schemas.me import ChangePasswordRequest, MeResponse
 from klassenzeit_backend.auth.sessions import delete_user_sessions
 from klassenzeit_backend.db.models.user import User
 from klassenzeit_backend.db.session import get_session
@@ -22,22 +22,6 @@ if TYPE_CHECKING:
     from klassenzeit_backend.core.settings import Settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-class MeResponse(BaseModel):
-    """Response body for the current user profile."""
-
-    id: uuid.UUID
-    email: str
-    role: str
-    force_password_change: bool
-
-
-class ChangePasswordRequest(BaseModel):
-    """Request body for changing the current user's password."""
-
-    current_password: str
-    new_password: str
 
 
 @router.get("/me")

@@ -6,7 +6,7 @@ from klassenzeit_backend.core.settings import Settings
 def test_settings_reads_kz_prefixed_env(monkeypatch) -> None:
     monkeypatch.setenv(
         "KZ_DATABASE_URL",
-        "postgresql+asyncpg://u:p@localhost:5432/kz",
+        "postgresql+psycopg://u:p@localhost:5432/kz",
     )
     monkeypatch.setenv("KZ_DB_POOL_SIZE", "7")
     monkeypatch.setenv("KZ_DB_MAX_OVERFLOW", "14")
@@ -14,7 +14,7 @@ def test_settings_reads_kz_prefixed_env(monkeypatch) -> None:
 
     settings = Settings()  # ty: ignore[missing-argument]
 
-    assert str(settings.database_url).startswith("postgresql+asyncpg://")
+    assert str(settings.database_url).startswith("postgresql+psycopg://")
     assert settings.db_pool_size == 7
     assert settings.db_max_overflow == 14
     assert settings.db_echo is True
@@ -23,7 +23,7 @@ def test_settings_reads_kz_prefixed_env(monkeypatch) -> None:
 def test_settings_applies_defaults(monkeypatch) -> None:
     monkeypatch.setenv(
         "KZ_DATABASE_URL",
-        "postgresql+asyncpg://u:p@localhost:5432/kz",
+        "postgresql+psycopg://u:p@localhost:5432/kz",
     )
     monkeypatch.delenv("KZ_DB_POOL_SIZE", raising=False)
     monkeypatch.delenv("KZ_DB_MAX_OVERFLOW", raising=False)
@@ -39,7 +39,7 @@ def test_settings_applies_defaults(monkeypatch) -> None:
 def test_auth_settings_defaults(monkeypatch) -> None:
     monkeypatch.setenv(
         "KZ_DATABASE_URL",
-        "postgresql+asyncpg://u:p@localhost:5432/kz",
+        "postgresql+psycopg://u:p@localhost:5432/kz",
     )
     settings = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
 
@@ -54,7 +54,7 @@ def test_auth_settings_defaults(monkeypatch) -> None:
 def test_auth_settings_from_env(monkeypatch) -> None:
     monkeypatch.setenv(
         "KZ_DATABASE_URL",
-        "postgresql+asyncpg://u:p@localhost:5432/kz",
+        "postgresql+psycopg://u:p@localhost:5432/kz",
     )
     monkeypatch.setenv("KZ_COOKIE_SECURE", "false")
     monkeypatch.setenv("KZ_COOKIE_DOMAIN", "example.com")

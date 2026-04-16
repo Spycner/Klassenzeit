@@ -5,12 +5,12 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
-from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.auth.dependencies import get_current_user
 from klassenzeit_backend.auth.passwords import verify_password
+from klassenzeit_backend.auth.schemas.login import LoginRequest
 from klassenzeit_backend.auth.sessions import create_session, delete_session
 from klassenzeit_backend.db.models.user import User
 from klassenzeit_backend.db.session import get_session
@@ -20,13 +20,6 @@ if TYPE_CHECKING:
     from klassenzeit_backend.core.settings import Settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-class LoginRequest(BaseModel):
-    """Request body for email/password login."""
-
-    email: EmailStr
-    password: str
 
 
 @router.post("/login", status_code=status.HTTP_204_NO_CONTENT)

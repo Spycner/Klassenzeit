@@ -10,5 +10,16 @@ pre-commit:
 
 pre-push:
   commands:
-    test:
-      run: mise run test
+    test-rust:
+      run: mise run test:rust
+    test-py-with-coverage:
+      run: |
+        OUTPUT=$(uv run pytest --cov=klassenzeit_backend --cov=klassenzeit_solver --cov-report=term 2>&1)
+        PYTEST_EXIT=$?
+        echo "$OUTPUT"
+        if [ $PYTEST_EXIT -ne 0 ]; then exit $PYTEST_EXIT; fi
+        ACTUAL=$(echo "$OUTPUT" | grep '^TOTAL' | awk '{print int($NF)}')
+        BASELINE=$(cat .coverage-baseline)
+        echo "Coverage: ${ACTUAL}% (baseline: ${BASELINE}%, floor: 80%)"
+        if [ "$ACTUAL" -lt 80 ]; then echo "Coverage ${ACTUAL}% below 80% floor"; exit 1; fi
+        if [ "$ACTUAL" -lt "$BASELINE" ]; then echo "Coverage ${ACTUAL}% below ${BASELINE}% baseline"; exit 1; fi
