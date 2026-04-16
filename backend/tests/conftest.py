@@ -32,12 +32,13 @@ Implementation notes:
   private access — that breaks the fixture.
 """
 
+import os
+import subprocess
+import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 
 import pytest
-from alembic import command
-from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
@@ -61,8 +62,6 @@ type LoginFn = Callable[[str, str], Awaitable[None]]
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent  # repo/backend
 ENV_TEST = BACKEND_ROOT / ".env.test"
-ALEMBIC_INI = BACKEND_ROOT / "alembic.ini"
-ALEMBIC_DIR = BACKEND_ROOT / "alembic"
 
 
 # ─── Layer 1: engine ────────────────────────────────────────────────────────
@@ -92,19 +91,24 @@ async def engine(settings: Settings) -> AsyncIterator[AsyncEngine]:
 
 @pytest.fixture(scope="session", autouse=True)
 def apply_migrations(settings: Settings) -> None:
-    """Run downgrade → upgrade once per pytest session.
+    """Run downgrade → upgrade once per pytest session in a subprocess.
 
-    This fixture is **synchronous** deliberately: alembic's
-    ``command.downgrade/upgrade`` calls ``asyncio.run()`` internally (via
-    ``env.py``), and ``asyncio.run()`` raises ``RuntimeError`` when called from
-    inside a running event loop.  A sync fixture has no event loop, so the
-    call is safe.
+    The migration is executed in a subprocess so the ``asyncio.run()`` call
+    inside alembic's ``env.py`` does not leave stale asyncpg / event-loop
+    state that can poison subsequent tests.  Observed in CI on Python 3.14
+    as spurious "Future attached to a different loop" errors after many
+    tests had run.
     """
-    cfg = Config(str(ALEMBIC_INI))
-    cfg.set_main_option("script_location", str(ALEMBIC_DIR))
-    cfg.set_main_option("sqlalchemy.url", str(settings.database_url))
-    command.downgrade(cfg, "base")  # clean slate each session
-    command.upgrade(cfg, "head")
+    env = os.environ.copy()
+    env["KZ_DATABASE_URL"] = str(settings.database_url)
+    # Downgrade, then upgrade, each in a separate subprocess for clean state.
+    for args in (["downgrade", "base"], ["upgrade", "head"]):
+        subprocess.run(  # noqa: S603
+            [sys.executable, "-m", "alembic", *args],
+            check=True,
+            cwd=str(BACKEND_ROOT),
+            env=env,
+        )
 
 
 # ─── Layer 3: per-test session with savepoint restart ──────────────────────
