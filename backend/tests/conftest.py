@@ -46,6 +46,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from klassenzeit_backend.auth.passwords import hash_password
 from klassenzeit_backend.auth.rate_limit import LoginRateLimiter
@@ -74,7 +75,12 @@ def settings() -> Settings:
 
 @pytest.fixture(scope="session")
 async def engine(settings: Settings) -> AsyncIterator[AsyncEngine]:
-    eng = create_async_engine(str(settings.database_url), pool_pre_ping=True)
+    # NullPool: every checkout opens a fresh asyncpg connection. Without this,
+    # the pool holds connections bound to the event loop that first created
+    # them; subsequent tests may observe "Future attached to a different loop"
+    # errors when their per-test fixtures run in a slightly different asyncio
+    # context (observed in CI on Python 3.14).
+    eng = create_async_engine(str(settings.database_url), poolclass=NullPool)
     try:
         yield eng
     finally:
