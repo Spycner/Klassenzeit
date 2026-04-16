@@ -73,13 +73,13 @@ def settings() -> Settings:
     return Settings(_env_file=str(ENV_TEST))  # ty: ignore[missing-argument, unknown-argument]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def engine(settings: Settings) -> AsyncIterator[AsyncEngine]:
-    # NullPool: every checkout opens a fresh asyncpg connection. Without this,
-    # the pool holds connections bound to the event loop that first created
-    # them; subsequent tests may observe "Future attached to a different loop"
-    # errors when their per-test fixtures run in a slightly different asyncio
-    # context (observed in CI on Python 3.14).
+    # Function-scoped with NullPool: each test gets a fresh engine bound to
+    # the current event loop. pytest-asyncio 1.3.0 on Python 3.14 sometimes
+    # fails to honor the session-scoped event loop for per-test fixtures,
+    # leading to "Future attached to a different loop" errors when a
+    # session-scoped engine's connection is checked out in a different loop.
     eng = create_async_engine(str(settings.database_url), poolclass=NullPool)
     try:
         yield eng
