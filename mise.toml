@@ -4,6 +4,8 @@
 rust    = "1.93"
 python  = "3.14.2"
 uv      = "latest"
+node    = "22"
+"aqua:pnpm/pnpm"             = "latest"
 "cargo:cocogitto"            = "latest"
 "ubi:evilmartians/lefthook"  = "latest"
 "cargo:cargo-nextest"        = "latest"
@@ -18,6 +20,7 @@ uv      = "latest"
 
 [tasks.install]
 description = "Bootstrap dev environment (hooks + deps + rust components)"
+depends = ["fe:install"]
 run = [
   "lefthook install",
   "rustup component add rustfmt clippy",
@@ -33,8 +36,8 @@ run = "uv run uvicorn klassenzeit_backend.main:app --reload"
 # ─── Testing ────────────────────────────────────────────────────────────────
 
 [tasks.test]
-description = "Run all tests (Rust + Python)"
-depends = ["test:rust", "test:py"]
+description = "Run all tests (Rust + Python + Frontend)"
+depends = ["test:rust", "test:py", "fe:test"]
 
 [tasks."test:rust"]
 description = "Run Rust workspace tests (via nextest)"
@@ -139,7 +142,7 @@ run = [
 
 [tasks.lint]
 description = "Run all linters"
-depends = ["lint:rust", "lint:py"]
+depends = ["lint:rust", "lint:py", "fe:lint"]
 
 [tasks."lint:rust"]
 run = [
@@ -160,7 +163,45 @@ run = [
 
 [tasks.fmt]
 description = "Auto-format everything"
+depends = ["fe:fmt"]
 run = [
   "cargo fmt",
   "uv run ruff format",
 ]
+
+# ─── Frontend ───────────────────────────────────────────────────────────────
+
+# Frontend tasks are wrapped in an existence check so root-level aggregates
+# (`install`, `lint`, `test`, `fmt`) keep working on fresh clones before the
+# frontend is installed. Once `frontend/package.json` exists, each task delegates
+# to pnpm as normal.
+
+[tasks."fe:install"]
+description = "Install frontend dependencies"
+run = "if [ -f frontend/package.json ]; then pnpm -C frontend install; fi"
+
+[tasks."fe:dev"]
+description = "Run the frontend dev server"
+dir = "{{config_root}}/frontend"
+run = "pnpm dev"
+
+[tasks."fe:build"]
+description = "Build the frontend for production"
+dir = "{{config_root}}/frontend"
+run = "pnpm build"
+
+[tasks."fe:test"]
+description = "Run frontend tests"
+run = "if [ -f frontend/package.json ]; then pnpm -C frontend test; else echo 'frontend not installed, skipping'; fi"
+
+[tasks."fe:lint"]
+description = "Lint the frontend (Biome)"
+run = "if [ -f frontend/package.json ]; then pnpm -C frontend lint; else echo 'frontend not installed, skipping'; fi"
+
+[tasks."fe:fmt"]
+description = "Format the frontend (Biome)"
+run = "if [ -f frontend/package.json ]; then pnpm -C frontend fmt; else echo 'frontend not installed, skipping'; fi"
+
+[tasks."fe:types"]
+description = "Regenerate OpenAPI types for the frontend"
+run = "bash scripts/gen_frontend_types.sh"
