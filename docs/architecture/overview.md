@@ -15,8 +15,9 @@ klassenzeit/
 │   │                 # PyO3-free; unit- and property-tested with proptest.
 │   └── solver-py/    # PyO3 bindings. Thin wrapper exposing solver-core
 │                     # to Python via `klassenzeit_solver`.
-├── frontend/         # Reserved for the eventual frontend (not yet
-│                     # scaffolded; framework undecided).
+├── frontend/         # React 19 + Vite SPA. Admin UI for the scheduling
+│                     # domain. Built with shadcn/ui, Tailwind v4, TanStack
+│                     # Router + Query. See ADR 0007.
 ├── compose.yaml      # Root-level podman compose file. Hosts the dev
 │                     # Postgres today; frontend and backend services
 │                     # will be added here later.
@@ -52,7 +53,14 @@ klassenzeit/
   FastAPI app. Currently only `/health` exists.
 - **Solver** — see `solver/solver-core/` for the Rust crate and its
   benches; `solver/solver-py/` for the PyO3 binding layer.
-- **Authentication** — not yet implemented. Design spec pending.
+- **Authentication** — self-rolled cookie-session auth in
+  `backend/src/klassenzeit_backend/auth/`. See
+  [`authentication.md`](authentication.md) and ADR 0006.
+- **Frontend** (`frontend/`) — React 19 + Vite SPA with shadcn/ui,
+  TanStack Router + Query, and `openapi-fetch` against the backend's
+  OpenAPI schema. `mise run fe:dev` runs the dev server on port 5173;
+  it proxies API prefixes to the backend for same-origin cookies. See
+  ADR 0007.
 
 ## Decisions
 

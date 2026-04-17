@@ -29,3 +29,5 @@ sections, and add the new entry to the index below.
 | 0003 | [Postgres everywhere](0003-postgres-everywhere.md) | Accepted |
 | 0004 | [SQLAlchemy 2.0 async plus Alembic](0004-sqlalchemy-async-alembic.md) | Accepted |
 | 0005 | [Transaction-rollback test isolation](0005-transaction-rollback-tests.md) | Accepted |
+| 0006 | [Self-rolled cookie-session auth](0006-self-rolled-cookie-session-auth.md) | Accepted |
+| 0007 | [React + Vite SPA for the frontend](0007-react-vite-spa-frontend.md) | Accepted |

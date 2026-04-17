@@ -1,0 +1,45 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "scripts/dump_openapi.py"
+      - "scripts/gen_frontend_types.sh"
+      - ".github/workflows/frontend-ci.yml"
+      - "mise.toml"
+      - "backend/src/**"
+  push:
+    branches: [master]
+    paths:
+      - "frontend/**"
+      - "scripts/dump_openapi.py"
+      - "scripts/gen_frontend_types.sh"
+      - ".github/workflows/frontend-ci.yml"
+      - "mise.toml"
+      - "backend/src/**"
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Lint + test + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-mise
+      - name: Regenerate OpenAPI types
+        run: mise run fe:types
+      - name: Biome lint
+        run: mise run fe:lint
+      - name: TypeScript typecheck
+        run: mise exec -- pnpm -C frontend exec tsc --noEmit
+      - name: Vitest
+        run: mise run fe:test
+      - name: Vite build
+        run: mise run fe:build
