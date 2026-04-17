@@ -2,18 +2,19 @@
 
 Running log of items deferred or noted as tech debt during spec/plan work. Each entry points back to the spec that introduced it. Within each section, items are ordered by importance.
 
-All current items come from the [project scaffolding design](specs/2026-04-11-project-scaffolding-design.md).
+Items trace back to the specs that introduced them: the [project scaffolding design](specs/2026-04-11-project-scaffolding-design.md) and the [frontend theming / i18n / ratchet design](specs/2026-04-17-frontend-theming-i18n-design.md).
 
 ## Product capabilities (blocks user-facing functionality)
 
 Ordered roughly in the sequence they need to land: data first, then access control, then the product surface, then the UI on top, then the path to production.
 
 - **Remaining entity CRUD pages.** Subjects CRUD landed with the scaffold; WeekScheme, Room, Teacher, Stundentafel, SchoolClass, and Lesson still need UI pages.
-- **Frontend dark mode toggle.** shadcn/ui tokens are in place; a `prefers-color-scheme` toggle plus dark-variant CSS vars is a small follow-up.
-- **Frontend i18n / de-DE.** Klassenzeit targets German schools; localization should land before user-facing rollout.
+- **Translate Zod validation errors beyond login.** `LoginSchema` reads message keys via `i18n.t()` at module load (so the text is whatever language was detected on first load and does not update on locale switch). Ship a full translated Zod global error map once a second form lands.
+- **Raise the frontend coverage floor.** Ratchet currently floors at 50% with baseline 61%. Bump the floor to 70% once baseline clears 75% organically, then 80% to match Python.
 - **Parallel `mise run dev` for backend + frontend.** Currently needs two terminals. A `concurrently`-style task or a `mise run dev:all` task would be convenient.
 - **Frontend `/api` prefix + CORS.** Vite proxy currently lists backend prefixes explicitly. When the backend adopts a uniform `/api` prefix, the proxy collapses to a single rule and CORS-for-dev becomes unnecessary.
-- **Frontend coverage ratchet parity.** Python has an 80% floor + baseline ratchet. Frontend should grow the same once enough tests exist to make the gate non-flaky.
+- **Chart and sidebar tokens.** Deferred from the theming spec until a component actually needs them.
+- **Untranslated-string lint rule.** Review discipline is the only line of defence against hardcoded English or German sneaking into JSX. Add a Biome plugin or parallel ESLint rule if violations happen in practice.
 - **Production deployment.** Docker, reverse proxy, secrets management.
 - **Repository / unit-of-work layer.** Routes currently take
   `AsyncSession` directly. A repository layer earns its place only
