@@ -36,8 +36,25 @@ const throwOnError: Middleware = {
   },
 };
 
+/**
+ * Base URL for API calls.
+ *
+ * In the browser (dev + prod) we resolve against `window.location.origin` so
+ * Vite's proxy and same-origin cookies work. In non-browser contexts (SSR,
+ * jsdom tests without a set URL), we fall back to a deterministic placeholder
+ * that MSW handlers can match.
+ */
+const baseUrl =
+  typeof window !== "undefined" && window.location
+    ? `${window.location.origin}/`
+    : "http://localhost/";
+
 export const client = createClient<paths>({
-  baseUrl: "/",
+  baseUrl,
   credentials: "include",
+  // Resolve `globalThis.fetch` at call time. Without this, openapi-fetch
+  // captures the fetch reference at createClient() time, which breaks MSW
+  // interception in tests (MSW patches globalThis.fetch later, inside `beforeAll`).
+  fetch: (request: Request, init?: RequestInit) => globalThis.fetch(request, init),
 });
 client.use(throwOnError);
