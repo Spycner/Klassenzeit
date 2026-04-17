@@ -8,7 +8,12 @@ All current items come from the [project scaffolding design](specs/2026-04-11-pr
 
 Ordered roughly in the sequence they need to land: data first, then access control, then the product surface, then the UI on top, then the path to production.
 
-- **Frontend scaffolding.** Framework choice (React, Svelte, Vue, …) is unresolved. `frontend/` is not scaffolded in the initial spec; gets its own spec once the framework is chosen.
+- **Remaining entity CRUD pages.** Subjects CRUD landed with the scaffold; WeekScheme, Room, Teacher, Stundentafel, SchoolClass, and Lesson still need UI pages.
+- **Frontend dark mode toggle.** shadcn/ui tokens are in place; a `prefers-color-scheme` toggle plus dark-variant CSS vars is a small follow-up.
+- **Frontend i18n / de-DE.** Klassenzeit targets German schools; localization should land before user-facing rollout.
+- **Parallel `mise run dev` for backend + frontend.** Currently needs two terminals. A `concurrently`-style task or a `mise run dev:all` task would be convenient.
+- **Frontend `/api` prefix + CORS.** Vite proxy currently lists backend prefixes explicitly. When the backend adopts a uniform `/api` prefix, the proxy collapses to a single rule and CORS-for-dev becomes unnecessary.
+- **Frontend coverage ratchet parity.** Python has an 80% floor + baseline ratchet. Frontend should grow the same once enough tests exist to make the gate non-flaky.
 - **Production deployment.** Docker, reverse proxy, secrets management.
 - **Repository / unit-of-work layer.** Routes currently take
   `AsyncSession` directly. A repository layer earns its place only

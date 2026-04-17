@@ -75,50 +75,34 @@ def extract_rust_names(lines: list[str], file_path: str) -> list[Location]:
 
 
 _JS_FUNCTION_RE = re.compile(r"^\s*(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+(\w+)")
-_JS_METHOD_RE = re.compile(r"^\s+(?:async\s+)?(\w+)\s*\(")
-_JS_SKIP_KEYWORDS = frozenset(
-    {
-        "if",
-        "for",
-        "while",
-        "switch",
-        "catch",
-        "return",
-        "throw",
-        "new",
-        "await",
-        "typeof",
-        "instanceof",
-        "delete",
-        "void",
-        "class",
-        "const",
-        "let",
-        "var",
-        "import",
-        "export",
-        "from",
-        "super",
-        "this",
-    }
+# Matches top-level const/let/var arrow-fn or function-expression bindings, e.g.
+# `export const fetchMe = async () => { ... }` or `const handle = function () {}`.
+# Deliberately restricted to column-0 declarations so indented calls, destructures,
+# and type-annotation object literals are not treated as declarations.
+_JS_ARROW_RE = re.compile(
+    r"^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*(?::[^=]+)?=\s*(?:async\s+)?(?:\([^)]*\)|\w+)\s*=>"
+)
+_JS_EXPR_FN_RE = re.compile(
+    r"^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*(?::[^=]+)?=\s*(?:async\s+)?function\b"
 )
 
 
 def extract_js_ts_names(lines: list[str], file_path: str) -> list[Location]:
-    """Extract function and method names from JS/TS source lines via regex."""
+    """Extract top-level function declarations and arrow bindings from JS/TS.
+
+    Regex-based so class/object methods are intentionally not detected.
+    That is an acceptable tradeoff: the rule targets grep-friendly names at
+    the module level, and React code rarely uses class methods.
+    """
     results: list[Location] = []
     for lineno, line in enumerate(lines, start=1):
-        match = _JS_FUNCTION_RE.match(line)
-        if match:
-            name = match.group(1)
-            if name not in SKIP_NAMES:
-                results.append(Location(name, file_path, lineno))
-            continue
-        match = _JS_METHOD_RE.match(line)
-        if match:
-            name = match.group(1)
-            if name not in _JS_SKIP_KEYWORDS and name not in SKIP_NAMES:
-                results.append(Location(name, file_path, lineno))
+        for pattern in (_JS_FUNCTION_RE, _JS_ARROW_RE, _JS_EXPR_FN_RE):
+            match = pattern.match(line)
+            if match:
+                name = match.group(1)
+                if name not in SKIP_NAMES:
+                    results.append(Location(name, file_path, lineno))
+                break
     return results
 
 
