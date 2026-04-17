@@ -57,6 +57,9 @@ The generated `frontend/src/lib/api-types.ts` and `frontend/src/routeTree.gen.ts
 - **No dynamic imports.** All imports must be static/top-of-file so the dependency graph is statically analyzable. No `import()` expressions, no `importlib.import_module` in hot paths.
 - **Unique function names globally.** Function names must be unique across the entire codebase, even across classes and files. Makes grep-based navigation and refactoring reliable.
 - **TypeScript: `erasableSyntaxOnly` only.** Configure `tsconfig.json` with `erasableSyntaxOnly: true` — no enums, no parameter properties, no namespaces, no `import =`. Types must be fully erasable so the output is plain JS.
+- **TanStack Router: build before typecheck.** Adding a new `src/routes/*.tsx` file makes `tsc --noEmit` fail with `"/path" is not assignable to keyof FileRoutesByPath` until the Router Vite plugin regenerates `src/routeTree.gen.ts`. Run `mise exec -- pnpm -C frontend build` (or start `fe:dev`) before typechecking locally. CI already runs `fe:build` before `tsc`.
+- **Keep Zod schemas flat for RHF forms.** `@hookform/resolvers` v5 + `react-hook-form` v7 + `zod` v4 fail to type-check when a field uses `z.coerce`, `z.union`, `.transform(...)`, or `.default(...)` because the Resolver's input and output types diverge. Keep schemas plain (`z.number().int().min(1).optional()`), and do coercion or empty-string handling in the form `onChange` and submit handlers.
+- **Frontend tests must register MSW handlers for every endpoint they hit.** `tests/setup.ts` starts `setupServer(...defaultHandlers)` with `onUnhandledRequest: "error"`. Adding a page that calls a new endpoint requires an entry in `tests/msw-handlers.ts` (seed data + GET/POST/PATCH/DELETE stubs) before the test can pass.
 
 ## Commit messages
 
