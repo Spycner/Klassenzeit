@@ -151,25 +151,39 @@ def test_extract_js_async_function():
     assert results == [Location("loadUser", "user.ts", 1)]
 
 
-def test_extract_js_class_method():
-    """Verify class method definitions are extracted."""
+def test_extract_js_top_level_arrow_function():
+    """Verify top-level arrow-function bindings are extracted."""
     lines = [
-        "class UserService {",
-        "  async getUserById(id) {",
-        "  }",
-        "}",
-    ]
-    results = extract_js_ts_names(lines, "service.ts")
-    assert results == [Location("getUserById", "service.ts", 2)]
-
-
-def test_extract_js_skips_anonymous():
-    """Verify anonymous/arrow functions are not extracted."""
-    lines = [
-        "const handler = () => {",
-        "const process = function() {",
+        "export const fetchMe = async () => {",
+        "const processItem = (item: Item) => item.id;",
     ]
     results = extract_js_ts_names(lines, "util.ts")
+    assert results == [
+        Location("fetchMe", "util.ts", 1),
+        Location("processItem", "util.ts", 2),
+    ]
+
+
+def test_extract_js_top_level_function_expression():
+    """Verify top-level `const x = function` bindings are extracted."""
+    lines = ["const handler = function(ev) {"]
+    results = extract_js_ts_names(lines, "util.ts")
+    assert results == [Location("handler", "util.ts", 1)]
+
+
+def test_extract_js_skips_indented_calls():
+    """Verify indented identifiers followed by `(` are not extracted.
+
+    Method bodies, function calls, and destructured callbacks all match the
+    'indent + identifier + paren' pattern. Matching them would flood the
+    duplicate report with false positives, so the check deliberately skips
+    them at the cost of missing class-method definitions.
+    """
+    lines = [
+        "    navigate({ to: '/login' });",
+        "    handleSubmit((values) => mutate(values));",
+    ]
+    results = extract_js_ts_names(lines, "component.tsx")
     assert results == []
 
 
