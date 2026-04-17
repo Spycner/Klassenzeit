@@ -59,5 +59,30 @@
       "deleteTitle": "Fach löschen",
       "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
     }
+  },
+  "rooms": {
+    "title": "Räume",
+    "new": "Neuer Raum",
+    "columns": {
+      "name": "Name",
+      "shortName": "Kürzel",
+      "capacity": "Kapazität",
+      "mode": "Eignung",
+      "actions": "Aktionen"
+    },
+    "empty": "Noch keine Räume. Lege einen an, um zu starten.",
+    "loadError": "Räume konnten nicht geladen werden.",
+    "suitabilityModes": {
+      "general": "Allgemein",
+      "specialized": "Fachraum"
+    },
+    "dialog": {
+      "createTitle": "Neuer Raum",
+      "createDescription": "Einen neuen Raum anlegen.",
+      "editTitle": "Raum bearbeiten",
+      "editDescription": "{{name}} aktualisieren.",
+      "deleteTitle": "Raum löschen",
+      "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    }
   }
 }

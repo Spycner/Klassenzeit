@@ -59,5 +59,30 @@
       "deleteTitle": "Delete subject",
       "deleteDescription": "This will permanently delete \"{{name}}\"."
     }
+  },
+  "rooms": {
+    "title": "Rooms",
+    "new": "New room",
+    "columns": {
+      "name": "Name",
+      "shortName": "Short name",
+      "capacity": "Capacity",
+      "mode": "Mode",
+      "actions": "Actions"
+    },
+    "empty": "No rooms yet. Create one to get started.",
+    "loadError": "Could not load rooms.",
+    "suitabilityModes": {
+      "general": "General",
+      "specialized": "Specialized"
+    },
+    "dialog": {
+      "createTitle": "New room",
+      "createDescription": "Create a new room.",
+      "editTitle": "Edit room",
+      "editDescription": "Update {{name}}.",
+      "deleteTitle": "Delete room",
+      "deleteDescription": "This will permanently delete \"{{name}}\"."
+    }
   }
 }
