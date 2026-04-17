@@ -45,6 +45,19 @@
       "trailingCommas": "all"
     }
   },
+  "css": {
+    "parser": {
+      "cssModules": true,
+      "tailwindDirectives": true
+    },
+    "formatter": { "enabled": false }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.css"],
+      "linter": { "enabled": false }
+    }
+  ],
   "assist": {
     "enabled": true,
     "actions": {
