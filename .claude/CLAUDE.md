@@ -1,14 +1,16 @@
-# Klassenzeit — Project Instructions
+# Klassenzeit: Project Instructions
 
 ## Development Workflow
 
-Use superpowers skill if relevant. Always use TDD with red green refactor. Development should always end in PRs after documentation was extensively reviewed and updated.
+**Skills are not optional when a workflow names them.** Slash commands (notably `/autopilot`) and the superpowers skill set call out specific skills by name. "Invoke the skill" means call the `Skill` tool and let it return, then follow what it says. Synthesizing a skill's output freehand, even when it looks right, is skipping the skill and counts as a process violation. If a workflow step names a skill, calling `Skill` is the first action of that step, and the end-of-turn summary must note any listed skill that was unavailable and therefore skipped.
 
-Before creating a PR, also run claude-md-management if session has relevant information. If you ran it, also run claude-md-improver.
+Always use TDD with red-green-refactor, driven by `superpowers:test-driven-development`. Development always ends in PRs after documentation was extensively reviewed and updated.
 
-Keep things that are out of scope for a step, or things you notice as tech debts / todos etc in docs/superpowers/OPEN_THINGS.md order by importance. and dont add duplicates.
+Before opening a PR, run `claude-md-management:revise-claude-md` if the session produced learnings worth persisting, and if you ran that, run `claude-md-management:claude-md-improver` right after. Both via the `Skill` tool.
 
-**`/autopilot <topic>`** runs the full flow end-to-end (brainstorm → spec → plan → impl → PR → green CI) without checking in at each step. See `.claude/commands/autopilot.md` for the exact sequence and invariants. Use it whenever the user describes a feature or chore they'd otherwise expect you to walk through step-by-step.
+Keep things that are out of scope for a step, or that you notice as tech debt or todos, in `docs/superpowers/OPEN_THINGS.md`, ordered by importance. Don't add duplicates.
+
+**`/autopilot <topic>`** runs the full flow end-to-end (brainstorm, spec, plan, implementation, PR, green CI) without checking in at each step. See `.claude/commands/autopilot.md` for the exact sequence, its required-skill-invocations table, and the skill audit that runs before the PR opens. Use it whenever the user describes a feature or chore they'd otherwise expect you to walk through step-by-step.
 
 ## Tooling
 

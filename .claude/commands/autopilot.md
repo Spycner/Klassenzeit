@@ -1,9 +1,9 @@
 ---
-description: Run the full brainstorm → spec → plan → implement → PR → green-CI flow autonomously for a topic.
+description: Run the full brainstorm, spec, plan, implement, PR, green-CI flow autonomously for a topic.
 argument-hint: <topic description>
 ---
 
-# /autopilot — autonomous feature flow
+# /autopilot: autonomous feature flow
 
 You are executing the Klassenzeit autopilot workflow for: **$ARGUMENTS**
 
@@ -15,19 +15,45 @@ This command runs end-to-end without checking in at every step. The user has opt
 - **Never skip hooks** (`--no-verify`, `--no-gpg-sign`, `LEFTHOOK=0`). If a hook fails, investigate and fix the underlying issue.
 - **Never add AI attribution** to commits, PRs, or code. No "Generated with", no "Co-Authored-By: Claude".
 - **Every commit must be Conventional Commits compliant** (`feat`, `fix`, `docs`, `build`, `ci`, `chore`, `test`, `refactor`, `perf`, `style`, `revert`). `cog` enforces this.
-- **No em-dashes / en-dashes** in prose (per user global preference). Rewrite with commas, periods, colons, semicolons, parentheses.
+- **No em-dashes or en-dashes** in prose (per user global preference). Rewrite with commas, periods, colons, semicolons, parentheses.
+- **Never synthesize a skill's output freehand.** If this command names a skill, calling the `Skill` tool (and letting it return) is mandatory before producing that step's artifact. Freehand output that looks like a skill ran is a process violation and the work must be redone after invoking the skill. At the end of each turn, double-check that the skills required by the steps you just executed actually appear in your tool-call history.
+
+## Required skill invocations
+
+Every `/autopilot` run must call the `Skill` tool, not read a skill file, not reimplement, for each entry at the step that names it. Before you push in step 7, stop at the **Skill audit** and verify each row: if any skill is missing from the session's `Skill` tool calls, invoke it now, let it reshape the artifact it governs, and commit the correction before continuing.
+
+| Step | Skill | Purpose |
+|---|---|---|
+| 0 | `superpowers:using-superpowers` | Establish skill discipline for the session |
+| 2 | `superpowers:brainstorming` | Structure the self-answered Q&A and the spec template |
+| 4 | `superpowers:writing-plans` | Structure the implementation plan |
+| 5 | `superpowers:test-driven-development` | Enforce red-green-refactor per chunk |
+| 5 | `superpowers:subagent-driven-development` | Only when the plan has independent chunks, otherwise skip |
+| 6 | `claude-md-management:revise-claude-md` | Capture session learnings into CLAUDE.md files |
+| 6 | `claude-md-management:claude-md-improver` | Audit the CLAUDE.md files after revision |
+| 10 | `claude-md-management:revise-claude-md` | Capture post-CI learnings that step 6 couldn't see |
+| 10 | `claude-md-management:claude-md-improver` | Second audit pass |
+| 10 | `less-permission-prompts` | Scan the transcript, tighten `.claude/settings.json` |
+
+If a listed skill is unavailable in the current environment, say so explicitly in the end-of-turn summary and skip only that entry. Never silently drop a row.
 
 ## Steps
+
+### 0. Establish skill discipline
+
+**First action:** invoke `superpowers:using-superpowers` via the `Skill` tool. Nothing else in this command happens until the skill has returned.
 
 ### 1. Prepare the workspace
 
 - `git checkout master && git pull origin master` to get latest.
-- If the local branch diverges from origin (e.g. after a squash merge), `git reset --hard origin/master` — check with the user first if there are unpushed local commits.
+- If the local branch diverges from origin (e.g. after a squash merge), `git reset --hard origin/master`. Check with the user first if there are unpushed local commits.
 - Create a new branch: `git checkout -b <type>/<short-topic-slug>` (e.g. `feat/frontend-scaffolding`, `fix/cookie-refresh-bug`).
 
 ### 2. Brainstorm (self-answered)
 
-Invoke the `superpowers:brainstorming` skill if available, but override its "ask questions one at a time" default: the user wants autonomous flow. Instead:
+**First action:** invoke `superpowers:brainstorming` via the `Skill` tool. Override its "ask questions one at a time" default: the user wants autonomous flow.
+
+Then, guided by what the skill returned:
 
 - Write every question you would have asked the user.
 - Answer each yourself with your reasoning (options considered, decision, why).
@@ -36,36 +62,47 @@ Invoke the `superpowers:brainstorming` skill if available, but override its "ask
 
 ### 3. Write the spec
 
-- Use the `superpowers:brainstorming` skill's spec template.
+- Use the spec template that `superpowers:brainstorming` surfaced in step 2. Do not hand-roll a spec layout from memory.
 - Path: `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` (today's date, short topic slug).
 - Run the spec self-review: placeholders, internal consistency, scope, ambiguity. Fix inline.
 - Commit: `docs: add <topic> design spec`.
 
 ### 4. Write the implementation plan
 
-- Invoke `superpowers:writing-plans` for structure.
+**First action:** invoke `superpowers:writing-plans` via the `Skill` tool.
+
+Then:
+
 - Path: `docs/superpowers/plans/YYYY-MM-DD-<topic>.md`.
 - Use checkbox syntax (`- [ ]`) per task step so progress is trackable.
 - Commit: `docs: add <topic> implementation plan`.
 
 ### 5. Execute the plan
 
-- Prefer `superpowers:subagent-driven-development` when tasks are independent.
-- Serial execution in the main session is fine for tightly-coupled plans.
+**First action:** invoke `superpowers:test-driven-development` via the `Skill` tool; it governs every implementation chunk. If the plan has two or more independent chunks, also invoke `superpowers:subagent-driven-development` before dispatching.
+
+Then:
+
 - Commit in logical chunks with Conventional Commits scopes matching the module (e.g. `feat(frontend): ...`, `build(mise): ...`, `test(scripts): ...`).
 - Run `mise run lint` and relevant `mise run test:*` before each commit. The pre-commit hook also enforces lint.
 - If you discover repo-level issues that block progress (broken hooks, wrong default-branch assumptions, flaky scripts), fix them in the same branch with their own typed commit (`build`, `ci`, `fix(scripts)`, etc.). Don't paper over with skips.
 
 ### 6. Finalize docs
 
+**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`. Both via the `Skill` tool. The revisions those passes produce are the canonical CLAUDE.md changes for this run; do not hand-edit CLAUDE.md instead of running them.
+
+Then:
+
 - Update `docs/architecture/overview.md` if subsystems changed.
 - Add an ADR at `docs/adr/NNNN-<short-title>.md` for load-bearing decisions (new dep, new subsystem, new toolchain). Index in `docs/adr/README.md`.
 - Update `README.md` commands table if new `mise run` tasks landed.
-- Invoke `claude-md-management:revise-claude-md` to capture any learnings from this session into `.claude/CLAUDE.md` (project) and `~/.claude/CLAUDE.md` (user) as appropriate.
-- Invoke `claude-md-management:claude-md-improver` right after to audit the CLAUDE.md files and tighten anything the first pass left rough.
-- Update `docs/superpowers/OPEN_THINGS.md`: remove resolved items; add follow-ups ordered by importance.
+- Update `docs/superpowers/OPEN_THINGS.md`: remove resolved items, add follow-ups ordered by importance.
 
-### 7. Open the PR
+### 7. Skill audit, then open the PR
+
+**Skill audit (blocking).** Before the push, re-read the "Required skill invocations" table above. For each row whose step number is 0 through 6, confirm you actually called the `Skill` tool for that entry this session. Walk the list one by one; do not skim. If any row is missing, invoke it now, let it reshape the artifact it governs, commit the correction, and only then proceed.
+
+Only after the audit passes:
 
 - `mise exec -- git push -u origin <branch>` (use `mise exec --` so the pinned lefthook runs, not whatever's on `PATH`).
 - `gh pr create --base master --head <branch> --title "<Conventional-Commits title>" --body "<body>"`.
@@ -77,9 +114,9 @@ Invoke the `superpowers:brainstorming` skill if available, but override its "ask
 - Poll `gh pr checks <pr>` with `Monitor` (or `run_in_background` + polling) until every check resolves.
 - If a check fails: open the failed job log with `gh run view <run-id> --log-failed | tail -200`, diagnose, commit the fix, push. Repeat until green.
 - Common early failures to expect:
-  - Generated files missing in CI (route trees, generated types) — build or codegen must run before the check that needs them.
-  - Tool-version drift between local and CI — verify the pinned versions in `mise.toml` resolve the same in `jdx/mise-action`.
-  - Hook/script false positives on new file types — tighten the script, don't relax the rule.
+  - Generated files missing in CI (route trees, generated types). Build or codegen must run before the check that needs them.
+  - Tool-version drift between local and CI. Verify the pinned versions in `mise.toml` resolve the same in `jdx/mise-action`.
+  - Hook/script false positives on new file types. Tighten the script, don't relax the rule.
 
 ### 9. DO NOT MERGE
 
@@ -88,18 +125,19 @@ Invoke the `superpowers:brainstorming` skill if available, but override its "ask
 
 ### 10. Self-review + improvement pass
 
-After the PR is green, reflect:
+**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`, then `less-permission-prompts`. All three via the `Skill` tool. Let each skill do its own work; do not pre-synthesize what they would say.
 
-- **What decisions got made that weren't captured anywhere?** Re-run `claude-md-management:revise-claude-md` + `claude-md-management:claude-md-improver` for anything that emerged during the CI loop (those passes in step 6 ran before CI taught you anything).
-- **What workflow improvements emerged?** Edit this file (`.claude/commands/autopilot.md`) to bake them in. Commit as `docs(autopilot): note <lesson>` in a follow-up PR — do not push to the branch the user is about to merge.
+After that, reflect:
+
+- **What decisions got made that weren't captured anywhere?** The CLAUDE.md skills above are responsible for this; don't duplicate their work freehand.
+- **What workflow improvements emerged?** Edit this file (`.claude/commands/autopilot.md`) to bake them in. Commit as `docs(autopilot): note <lesson>` in a follow-up PR; do not push to the branch the user is about to merge.
 - **What auto-memory is stale?** Update `/home/pascal/.claude/projects/-home-pascal-Code-Klassenzeit/memory/` entries (roadmap status, feedback, references).
-- **Were any OPEN_THINGS resolved?** Already handled in step 6; double-check.
-- **Which repetitive permission prompts slowed the session down?** Invoke `less-permission-prompts` to scan this transcript for read-only Bash and MCP calls that prompted, and add a scoped allowlist to `.claude/settings.json` so the next `/autopilot` run hits fewer interruptions.
+- **Were any OPEN_THINGS resolved?** Already handled in step 6, double-check.
 
 Keep self-review short: one sentence per learning, only record non-obvious ones (code-derivable facts don't belong in memory or CLAUDE.md).
 
 ## Tone and reporting
 
 - Terse between tool calls. The user sees a diff on the PR; they don't need narration.
-- End-of-turn summary: PR URL, one sentence on what changed, next step (usually "review when ready").
-- If you hit an unexpected fork in the road that truly needs the user (not a routine choice), stop and ask. But bias strongly toward deciding yourself — that's the point of this command.
+- End-of-turn summary: PR URL, one sentence on what changed, next step (usually "review when ready"). Also list any required skill that was unavailable and therefore skipped.
+- If you hit an unexpected fork in the road that truly needs the user (not a routine choice), stop and ask. But bias strongly toward deciding yourself, that is the point of this command.
