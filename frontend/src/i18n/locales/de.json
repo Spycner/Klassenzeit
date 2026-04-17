@@ -105,5 +105,24 @@
       "deleteTitle": "Lehrkraft löschen",
       "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
     }
+  },
+  "weekSchemes": {
+    "title": "Wochenschemata",
+    "new": "Neues Wochenschema",
+    "columns": {
+      "name": "Name",
+      "description": "Beschreibung",
+      "actions": "Aktionen"
+    },
+    "empty": "Noch keine Wochenschemata. Lege eines an, um zu starten.",
+    "loadError": "Wochenschemata konnten nicht geladen werden.",
+    "dialog": {
+      "createTitle": "Neues Wochenschema",
+      "createDescription": "Ein neues Wochenschema anlegen.",
+      "editTitle": "Wochenschema bearbeiten",
+      "editDescription": "{{name}} aktualisieren.",
+      "deleteTitle": "Wochenschema löschen",
+      "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    }
   }
 }

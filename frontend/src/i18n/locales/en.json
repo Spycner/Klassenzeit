@@ -105,5 +105,24 @@
       "deleteTitle": "Delete teacher",
       "deleteDescription": "This will permanently delete \"{{name}}\"."
     }
+  },
+  "weekSchemes": {
+    "title": "Week schemes",
+    "new": "New week scheme",
+    "columns": {
+      "name": "Name",
+      "description": "Description",
+      "actions": "Actions"
+    },
+    "empty": "No week schemes yet. Create one to get started.",
+    "loadError": "Could not load week schemes.",
+    "dialog": {
+      "createTitle": "New week scheme",
+      "createDescription": "Create a new week scheme.",
+      "editTitle": "Edit week scheme",
+      "editDescription": "Update {{name}}.",
+      "deleteTitle": "Delete week scheme",
+      "deleteDescription": "This will permanently delete \"{{name}}\"."
+    }
   }
 }
