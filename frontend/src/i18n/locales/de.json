@@ -12,6 +12,9 @@
   "nav": {
     "dashboard": "Übersicht",
     "subjects": "Fächer",
+    "rooms": "Räume",
+    "teachers": "Lehrkräfte",
+    "weekSchemes": "Wochenschemata",
     "logOut": "Abmelden"
   },
   "theme": {

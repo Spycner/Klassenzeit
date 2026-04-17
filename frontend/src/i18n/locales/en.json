@@ -12,6 +12,9 @@
   "nav": {
     "dashboard": "Dashboard",
     "subjects": "Subjects",
+    "rooms": "Rooms",
+    "teachers": "Teachers",
+    "weekSchemes": "Week schemes",
     "logOut": "Log out"
   },
   "theme": {

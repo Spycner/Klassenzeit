@@ -1,5 +1,12 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { CalendarClock, LayoutDashboard, LogOut } from "lucide-react";
+import {
+  BookOpen,
+  CalendarDays,
+  DoorOpen,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -14,7 +21,10 @@ interface AppShellProps {
 
 const navItems = [
   { to: "/", labelKey: "nav.dashboard", icon: LayoutDashboard },
-  { to: "/subjects", labelKey: "nav.subjects", icon: CalendarClock },
+  { to: "/subjects", labelKey: "nav.subjects", icon: BookOpen },
+  { to: "/rooms", labelKey: "nav.rooms", icon: DoorOpen },
+  { to: "/teachers", labelKey: "nav.teachers", icon: GraduationCap },
+  { to: "/week-schemes", labelKey: "nav.weekSchemes", icon: CalendarDays },
 ] as const;
 
 export function AppShell({ children }: AppShellProps) {
