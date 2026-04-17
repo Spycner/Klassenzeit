@@ -25,7 +25,6 @@ This spec covers the first batch of those pages: the three flat-scalar entities 
 - No FK dropdowns, so no SchoolClass or Lesson pages in this PR.
 - No Stundentafel page (nested-row editor).
 - No refactor of the Subjects page, its Zod messages, or its `useQuery` mocking pattern.
-- No MSW adoption. The new tests use the same module-mock pattern as `subjects-page.test.tsx`.
 - No new shadcn primitives beyond what is already generated. If a primitive is missing (e.g. `Select`, `Textarea`), add it via the shadcn CLI with no styling changes.
 - No Zod `t()` or `errorMap` work. Error literals stay in English for consistency with Subjects.
 - No dependency additions. The stack is already complete for this work.
@@ -105,11 +104,11 @@ Add `nav.rooms`, `nav.teachers`, `nav.weekSchemes` entries.
 
 Each `frontend/tests/<entity>-page.test.tsx`:
 
-- Renders the page inside a QueryClientProvider + MemoryRouter + I18nextProvider, matching `subjects-page.test.tsx`.
-- Module-mocks `./hooks` to stub `useX`/`useCreateX`/`useUpdateX`/`useDeleteX` as simple resolved-promise objects.
-- Asserts: (a) two seed rows render, (b) clicking "New <entity>" opens the dialog and clicking Create calls the create mutation once with the expected body, (c) clicking Delete and confirming calls the delete mutation once with the row id.
+- Renders the page through `renderWithProviders` from `tests/render-helpers.tsx` (TanStack Router + QueryClient harness).
+- Extends MSW handlers in `tests/msw-handlers.ts` with seed data and GET/POST/PATCH/DELETE stubs for the entity. The global `setupServer` listens in `setup.ts` with `onUnhandledRequest: "error"`, so every endpoint the page touches must have a handler.
+- Asserts: (a) seed rows render, (b) clicking "New <entity>" opens the dialog, typing valid values and submitting closes the dialog (which proves the POST handler was hit because the mutation only settles on success).
 
-The test pattern is explicitly the same as Subjects today. The MSW migration is promoted to an OPEN_THINGS follow-up.
+The test pattern matches the existing `subjects-page.test.tsx` which is already MSW-driven.
 
 ### OpenAPI types
 
@@ -120,7 +119,7 @@ Run `mise run fe:types` once before implementing the hooks. The generated `front
 - **Copy the Subjects pattern per entity, no shared `<CrudListPage>`.** Three files is not enough duplication to justify generics (Q3).
 - **Raw English literals in Zod schemas.** Match Subjects; cross-feature i18n of Zod is its own PR (Q5).
 - **Flat routes at `/rooms`, `/teachers`, `/week-schemes`.** No `/admin/*` namespace until the UX actually bifurcates (Q6).
-- **Match the Subjects test pattern (module-mock hooks), file an OPEN_THINGS item for MSW.** Partial migration would leave the codebase in a worse state than uniform tech-debt (Q11).
+- **Tests use MSW (already configured globally).** Each new page adds seed data and handlers to `tests/msw-handlers.ts`. No module-mocking of hooks (Q11 revised: MSW is already present; earlier assumption in the brainstorm was wrong).
 - **`Select` for the enum field, `Textarea` for the long-form field, `type="number"` for integer fields.** shadcn primitives are the right tool each time (Q4, Q8, Q9).
 
 ## Acceptance criteria
@@ -147,5 +146,5 @@ Revert the feature branch commits. The only shared edits are `app-shell.tsx` and
 
 ## Open questions (deferred)
 
-- Tracked in OPEN_THINGS updates (see brainstorm Q13).
-- Sub-resource editors, SchoolClass / Lesson / Stundentafel pages, Zod i18n, MSW adoption, deletion pre-flight: each gets its own spec later.
+- Tracked in OPEN_THINGS updates (see brainstorm Q13, minus the MSW migration item that is moot).
+- Sub-resource editors, SchoolClass / Lesson / Stundentafel pages, Zod i18n, deletion pre-flight: each gets its own spec later.
