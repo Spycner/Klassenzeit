@@ -1,10 +1,15 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { SubjectsPage } from "@/features/subjects/subjects-page";
+import i18n from "@/i18n/init";
 import { renderWithProviders } from "./render-helpers";
 
 describe("SubjectsPage", () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage("de");
+  });
+
   it("renders subjects fetched from the API", async () => {
     renderWithProviders(<SubjectsPage />);
     expect(await screen.findByText("Mathematik")).toBeInTheDocument();
@@ -16,12 +21,12 @@ describe("SubjectsPage", () => {
     renderWithProviders(<SubjectsPage />);
 
     await screen.findByText("Mathematik");
-    await user.click(screen.getByRole("button", { name: /new subject/i }));
+    await user.click(screen.getByRole("button", { name: /neues fach/i }));
 
     const dialog = await screen.findByRole("dialog");
     await user.type(within(dialog).getByLabelText(/^name$/i), "Deutsch");
-    await user.type(within(dialog).getByLabelText(/short name/i), "DE");
-    await user.click(within(dialog).getByRole("button", { name: /^create$/i }));
+    await user.type(within(dialog).getByLabelText(/kürzel/i), "DE");
+    await user.click(within(dialog).getByRole("button", { name: /^anlegen$/i }));
 
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

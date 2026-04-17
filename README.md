@@ -31,6 +31,8 @@ A school timetabling system with a FastAPI backend, a Rust solver exposed to Pyt
 | `mise run lint`     | Lint Rust (fmt, clippy, machete), Python (ruff, ty, vulture), and frontend (Biome). |
 | `mise run fmt`      | Auto-format Rust, Python, and frontend. |
 | `mise run cov`      | Produce Rust and Python coverage reports. |
+| `mise run fe:test:cov` | Run frontend tests with coverage (writes `frontend/coverage/`). |
+| `mise run fe:cov:update-baseline` | Rebaseline `.coverage-baseline-frontend` after intentional coverage drops. |
 | `mise run audit`    | Supply-chain audit (`cargo deny`, `pip-audit`). |
 | `mise run bench`    | Run solver-core benches. |
 | `mise run fe:build` | Production build of the frontend into `frontend/dist/`. |

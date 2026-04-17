@@ -7,6 +7,7 @@ on:
       - "scripts/dump_openapi.py"
       - "scripts/gen_frontend_types.sh"
       - ".github/workflows/frontend-ci.yml"
+      - ".coverage-baseline-frontend"
       - "mise.toml"
       - "backend/src/**"
   push:
@@ -16,6 +17,7 @@ on:
       - "scripts/dump_openapi.py"
       - "scripts/gen_frontend_types.sh"
       - ".github/workflows/frontend-ci.yml"
+      - ".coverage-baseline-frontend"
       - "mise.toml"
       - "backend/src/**"
 
@@ -43,5 +45,17 @@ jobs:
         run: mise run fe:build
       - name: TypeScript typecheck
         run: mise exec -- pnpm -C frontend exec tsc --noEmit
-      - name: Vitest
-        run: mise run fe:test
+      - name: Vitest + coverage ratchet
+        run: |
+          mise run fe:test:cov
+          ACTUAL=$(node -e "console.log(Math.floor(require('./frontend/coverage/coverage-summary.json').total.lines.pct))")
+          BASELINE=$(cat .coverage-baseline-frontend)
+          echo "Frontend coverage: ${ACTUAL}% (baseline: ${BASELINE}%, floor: 50%)"
+          if [ "$ACTUAL" -lt 50 ]; then
+            echo "::error::Frontend coverage ${ACTUAL}% is below the absolute floor of 50%"
+            exit 1
+          fi
+          if [ "$ACTUAL" -lt "$BASELINE" ]; then
+            echo "::error::Frontend coverage ${ACTUAL}% is below the ratchet baseline of ${BASELINE}%. Run 'mise run fe:cov:update-baseline' if this drop is intentional."
+            exit 1
+          fi

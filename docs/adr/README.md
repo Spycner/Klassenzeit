@@ -31,3 +31,4 @@ sections, and add the new entry to the index below.
 | 0005 | [Transaction-rollback test isolation](0005-transaction-rollback-tests.md) | Accepted |
 | 0006 | [Self-rolled cookie-session auth](0006-self-rolled-cookie-session-auth.md) | Accepted |
 | 0007 | [React + Vite SPA for the frontend](0007-react-vite-spa-frontend.md) | Accepted |
+| 0008 | [Frontend theming, i18n, and coverage ratchet](0008-frontend-theming-i18n-ratchet.md) | Accepted |

@@ -1,0 +1,63 @@
+{
+  "common": {
+    "loading": "Lädt…",
+    "saving": "Speichert…",
+    "deleting": "Löscht…",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "create": "Anlegen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten"
+  },
+  "nav": {
+    "dashboard": "Übersicht",
+    "subjects": "Fächer",
+    "logOut": "Abmelden"
+  },
+  "theme": {
+    "toggle": "Farbschema umschalten"
+  },
+  "language": {
+    "switchTo": "Zu {{locale}} wechseln"
+  },
+  "auth": {
+    "login": {
+      "title": "Klassenzeit",
+      "subtitle": "Anmelden, um fortzufahren",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "submit": "Anmelden",
+      "submitPending": "Meldet an…",
+      "errors": {
+        "invalidEmail": "Bitte eine gültige E-Mail-Adresse eingeben",
+        "passwordRequired": "Passwort ist erforderlich",
+        "invalidCredentials": "E-Mail oder Passwort ungültig",
+        "generic": "Anmeldung fehlgeschlagen"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Übersicht",
+    "welcome": "Willkommen. Wähle links einen Bereich zum Verwalten.",
+    "welcomeEmail": "Willkommen, {{email}}. Wähle links einen Bereich zum Verwalten."
+  },
+  "subjects": {
+    "title": "Fächer",
+    "new": "Neues Fach",
+    "columns": {
+      "name": "Name",
+      "shortName": "Kürzel",
+      "actions": "Aktionen"
+    },
+    "empty": "Noch keine Fächer. Lege eines an, um zu starten.",
+    "loadError": "Fächer konnten nicht geladen werden.",
+    "dialog": {
+      "createTitle": "Neues Fach",
+      "createDescription": "Ein neues Fach anlegen.",
+      "editTitle": "Fach bearbeiten",
+      "editDescription": "{{name}} aktualisieren.",
+      "deleteTitle": "Fach löschen",
+      "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    }
+  }
+}

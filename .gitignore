@@ -19,6 +19,9 @@ target/
 # Git worktrees (project-local)
 .worktrees/
 
+# Superpowers skill scratchpad (per-session brainstorm artifacts)
+.superpowers/
+
 # Local env files (backend)
 backend/.env
 backend/.env.local

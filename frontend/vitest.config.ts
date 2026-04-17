@@ -14,5 +14,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     css: false,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary"],
+      reportsDirectory: "./coverage",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/routeTree.gen.ts", "src/lib/api-types.ts", "src/**/*.d.ts", "src/main.tsx"],
+    },
   },
 });

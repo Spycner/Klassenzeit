@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +38,7 @@ import {
 import { SubjectFormSchema, type SubjectFormValues } from "./schema";
 
 export function SubjectsPage() {
+  const { t } = useTranslation();
   const subjects = useSubjects();
   const [editing, setEditing] = useState<Subject | null>(null);
   const [creating, setCreating] = useState(false);
@@ -45,22 +47,22 @@ export function SubjectsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Subjects</h1>
-        <Button onClick={() => setCreating(true)}>New subject</Button>
+        <h1 className="text-2xl font-semibold">{t("subjects.title")}</h1>
+        <Button onClick={() => setCreating(true)}>{t("subjects.new")}</Button>
       </div>
 
       {subjects.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       ) : subjects.isError ? (
-        <p className="text-sm text-destructive">Could not load subjects.</p>
+        <p className="text-sm text-destructive">{t("subjects.loadError")}</p>
       ) : subjects.data && subjects.data.length > 0 ? (
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Short name</TableHead>
-                <TableHead className="w-40 text-right">Actions</TableHead>
+                <TableHead>{t("subjects.columns.name")}</TableHead>
+                <TableHead>{t("subjects.columns.shortName")}</TableHead>
+                <TableHead className="w-40 text-right">{t("subjects.columns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -70,14 +72,14 @@ export function SubjectsPage() {
                   <TableCell>{subject.short_name}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button size="sm" variant="outline" onClick={() => setEditing(subject)}>
-                      Edit
+                      {t("common.edit")}
                     </Button>
                     <Button
                       size="sm"
                       variant="destructive"
                       onClick={() => setConfirmDelete(subject)}
                     >
-                      Delete
+                      {t("common.delete")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -86,15 +88,15 @@ export function SubjectsPage() {
           </Table>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">No subjects yet. Create one to get started.</p>
+        <p className="text-sm text-muted-foreground">{t("subjects.empty")}</p>
       )}
 
       <SubjectFormDialog
         open={creating}
         onOpenChange={setCreating}
-        title="New subject"
-        description="Create a new subject."
-        submitLabel="Create"
+        title={t("subjects.dialog.createTitle")}
+        description={t("subjects.dialog.createDescription")}
+        submitLabel={t("common.create")}
       />
 
       {editing ? (
@@ -103,9 +105,9 @@ export function SubjectsPage() {
           onOpenChange={(open) => {
             if (!open) setEditing(null);
           }}
-          title="Edit subject"
-          description={`Update ${editing.name}.`}
-          submitLabel="Save"
+          title={t("subjects.dialog.editTitle")}
+          description={t("subjects.dialog.editDescription", { name: editing.name })}
+          submitLabel={t("common.save")}
           subject={editing}
         />
       ) : null}
@@ -134,6 +136,7 @@ function SubjectFormDialog({
   submitLabel,
   subject,
 }: SubjectFormDialogProps) {
+  const { t } = useTranslation();
   const form = useForm<SubjectFormValues>({
     resolver: zodResolver(SubjectFormSchema),
     defaultValues: {
@@ -175,7 +178,7 @@ function SubjectFormDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t("subjects.columns.name")}</FormLabel>
                   <FormControl>
                     <Input autoFocus {...field} />
                   </FormControl>
@@ -188,7 +191,7 @@ function SubjectFormDialog({
               name="short_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Short name</FormLabel>
+                  <FormLabel>{t("subjects.columns.shortName")}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -198,7 +201,7 @@ function SubjectFormDialog({
             />
             <DialogFooter>
               <Button type="submit" disabled={submitting}>
-                {submitting ? "Saving…" : submitLabel}
+                {submitting ? t("common.saving") : submitLabel}
               </Button>
             </DialogFooter>
           </form>
@@ -214,6 +217,7 @@ interface DeleteSubjectDialogProps {
 }
 
 function DeleteSubjectDialog({ subject, onClose }: DeleteSubjectDialogProps) {
+  const { t } = useTranslation();
   const mutation = useDeleteSubject();
   async function confirm() {
     await mutation.mutateAsync(subject.id);
@@ -223,17 +227,17 @@ function DeleteSubjectDialog({ subject, onClose }: DeleteSubjectDialogProps) {
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete subject</DialogTitle>
+          <DialogTitle>{t("subjects.dialog.deleteTitle")}</DialogTitle>
           <DialogDescription>
-            This will permanently delete &ldquo;{subject.name}&rdquo;.
+            {t("subjects.dialog.deleteDescription", { name: subject.name })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button variant="destructive" onClick={confirm} disabled={mutation.isPending}>
-            {mutation.isPending ? "Deleting…" : "Delete"}
+            {mutation.isPending ? t("common.deleting") : t("common.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -194,6 +194,20 @@ run = "pnpm build"
 description = "Run frontend tests"
 run = "if [ -f frontend/package.json ]; then pnpm -C frontend test; else echo 'frontend not installed, skipping'; fi"
 
+[tasks."fe:test:cov"]
+description = "Run frontend tests with coverage (produces frontend/coverage/coverage-summary.json)"
+dir = "{{config_root}}/frontend"
+run = "pnpm exec vitest run --coverage"
+
+[tasks."fe:cov:update-baseline"]
+description = "Update .coverage-baseline-frontend with the current frontend line-coverage total"
+run = """
+mise run fe:test:cov
+ACTUAL=$(node -e "console.log(Math.floor(require('./frontend/coverage/coverage-summary.json').total.lines.pct))")
+echo "$ACTUAL" > .coverage-baseline-frontend
+echo "Frontend baseline updated to ${ACTUAL}%"
+"""
+
 [tasks."fe:lint"]
 description = "Lint the frontend (Biome)"
 run = "if [ -f frontend/package.json ]; then pnpm -C frontend lint; else echo 'frontend not installed, skipping'; fi"
