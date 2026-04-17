@@ -61,7 +61,8 @@ Invoke the `superpowers:brainstorming` skill if available, but override its "ask
 - Update `docs/architecture/overview.md` if subsystems changed.
 - Add an ADR at `docs/adr/NNNN-<short-title>.md` for load-bearing decisions (new dep, new subsystem, new toolchain). Index in `docs/adr/README.md`.
 - Update `README.md` commands table if new `mise run` tasks landed.
-- Update `.claude/CLAUDE.md` with project-wide standards or commands the team should know about.
+- Invoke `claude-md-management:revise-claude-md` to capture any learnings from this session into `.claude/CLAUDE.md` (project) and `~/.claude/CLAUDE.md` (user) as appropriate.
+- Invoke `claude-md-management:claude-md-improver` right after to audit the CLAUDE.md files and tighten anything the first pass left rough.
 - Update `docs/superpowers/OPEN_THINGS.md`: remove resolved items; add follow-ups ordered by importance.
 
 ### 7. Open the PR
@@ -89,7 +90,7 @@ Invoke the `superpowers:brainstorming` skill if available, but override its "ask
 
 After the PR is green, reflect:
 
-- **What decisions got made that weren't captured anywhere?** Update `.claude/CLAUDE.md` or the relevant project doc with any new standard (e.g. "frontend uses shadcn/ui, no raw inputs", "api-client must use late-resolved fetch for MSW compat").
+- **What decisions got made that weren't captured anywhere?** Re-run `claude-md-management:revise-claude-md` + `claude-md-management:claude-md-improver` for anything that emerged during the CI loop (those passes in step 6 ran before CI taught you anything).
 - **What workflow improvements emerged?** Edit this file (`.claude/commands/autopilot.md`) to bake them in. Commit as `docs(autopilot): note <lesson>` in a follow-up PR — do not push to the branch the user is about to merge.
 - **What auto-memory is stale?** Update `/home/pascal/.claude/projects/-home-pascal-Code-Klassenzeit/memory/` entries (roadmap status, feedback, references).
 - **Were any OPEN_THINGS resolved?** Already handled in step 6; double-check.
