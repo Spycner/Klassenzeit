@@ -37,9 +37,11 @@ jobs:
         run: mise run fe:types
       - name: Biome lint
         run: mise run fe:lint
+      # Build first so the TanStack Router plugin emits `routeTree.gen.ts`
+      # (gitignored) before `tsc` walks the dependency graph.
+      - name: Vite build
+        run: mise run fe:build
       - name: TypeScript typecheck
         run: mise exec -- pnpm -C frontend exec tsc --noEmit
       - name: Vitest
         run: mise run fe:test
-      - name: Vite build
-        run: mise run fe:build
