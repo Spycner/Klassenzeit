@@ -8,6 +8,8 @@ Before creating a PR, also run claude-md-management if session has relevant info
 
 Keep things that are out of scope for a step, or things you notice as tech debts / todos etc in docs/superpowers/OPEN_THINGS.md order by importance. and dont add duplicates.
 
+**`/autopilot <topic>`** runs the full flow end-to-end (brainstorm → spec → plan → impl → PR → green CI) without checking in at each step. See `.claude/commands/autopilot.md` for the exact sequence and invariants. Use it whenever the user describes a feature or chore they'd otherwise expect you to walk through step-by-step.
+
 ## Tooling
 
 ### Commands
