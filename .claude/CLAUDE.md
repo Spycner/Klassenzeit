@@ -74,6 +74,8 @@ This repo enforces [Conventional Commits](https://www.conventionalcommits.org/).
 
 **Format:** `<type>(<optional scope>): <description>`
 
+**PR titles** must also satisfy `subjectPattern: ^[a-z].+$` (checked by `amannn/action-semantic-pull-request`). Start the subject with a lowercase letter even when the first word is an acronym: `feat(frontend): crud pages ...`, not `feat(frontend): CRUD pages ...`.
+
 **Common types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. Append `!` for breaking changes, or add a `BREAKING CHANGE:` footer.
 
 When creating commits, always produce a Conventional Commits-compliant message. See `CONTRIBUTING.md` for the full type table and examples.
