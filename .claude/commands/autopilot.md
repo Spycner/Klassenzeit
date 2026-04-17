@@ -94,6 +94,7 @@ After the PR is green, reflect:
 - **What workflow improvements emerged?** Edit this file (`.claude/commands/autopilot.md`) to bake them in. Commit as `docs(autopilot): note <lesson>` in a follow-up PR — do not push to the branch the user is about to merge.
 - **What auto-memory is stale?** Update `/home/pascal/.claude/projects/-home-pascal-Code-Klassenzeit/memory/` entries (roadmap status, feedback, references).
 - **Were any OPEN_THINGS resolved?** Already handled in step 6; double-check.
+- **Which repetitive permission prompts slowed the session down?** Invoke `less-permission-prompts` to scan this transcript for read-only Bash and MCP calls that prompted, and add a scoped allowlist to `.claude/settings.json` so the next `/autopilot` run hits fewer interruptions.
 
 Keep self-review short: one sentence per learning, only record non-obvious ones (code-derivable facts don't belong in memory or CLAUDE.md).
 
