@@ -12,6 +12,9 @@
   "nav": {
     "dashboard": "Dashboard",
     "subjects": "Subjects",
+    "rooms": "Rooms",
+    "teachers": "Teachers",
+    "weekSchemes": "Week schemes",
     "logOut": "Log out"
   },
   "theme": {
@@ -57,6 +60,71 @@
       "editTitle": "Edit subject",
       "editDescription": "Update {{name}}.",
       "deleteTitle": "Delete subject",
+      "deleteDescription": "This will permanently delete \"{{name}}\"."
+    }
+  },
+  "rooms": {
+    "title": "Rooms",
+    "new": "New room",
+    "columns": {
+      "name": "Name",
+      "shortName": "Short name",
+      "capacity": "Capacity",
+      "mode": "Mode",
+      "actions": "Actions"
+    },
+    "empty": "No rooms yet. Create one to get started.",
+    "loadError": "Could not load rooms.",
+    "suitabilityModes": {
+      "general": "General",
+      "specialized": "Specialized"
+    },
+    "dialog": {
+      "createTitle": "New room",
+      "createDescription": "Create a new room.",
+      "editTitle": "Edit room",
+      "editDescription": "Update {{name}}.",
+      "deleteTitle": "Delete room",
+      "deleteDescription": "This will permanently delete \"{{name}}\"."
+    }
+  },
+  "teachers": {
+    "title": "Teachers",
+    "new": "New teacher",
+    "columns": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "shortCode": "Short code",
+      "maxHoursPerWeek": "Max hours / week",
+      "actions": "Actions"
+    },
+    "empty": "No teachers yet. Create one to get started.",
+    "loadError": "Could not load teachers.",
+    "dialog": {
+      "createTitle": "New teacher",
+      "createDescription": "Create a new teacher.",
+      "editTitle": "Edit teacher",
+      "editDescription": "Update {{name}}.",
+      "deleteTitle": "Delete teacher",
+      "deleteDescription": "This will permanently delete \"{{name}}\"."
+    }
+  },
+  "weekSchemes": {
+    "title": "Week schemes",
+    "new": "New week scheme",
+    "columns": {
+      "name": "Name",
+      "description": "Description",
+      "actions": "Actions"
+    },
+    "empty": "No week schemes yet. Create one to get started.",
+    "loadError": "Could not load week schemes.",
+    "dialog": {
+      "createTitle": "New week scheme",
+      "createDescription": "Create a new week scheme.",
+      "editTitle": "Edit week scheme",
+      "editDescription": "Update {{name}}.",
+      "deleteTitle": "Delete week scheme",
       "deleteDescription": "This will permanently delete \"{{name}}\"."
     }
   }

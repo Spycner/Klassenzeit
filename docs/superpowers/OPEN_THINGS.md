@@ -2,14 +2,16 @@
 
 Running log of items deferred or noted as tech debt during spec/plan work. Each entry points back to the spec that introduced it. Within each section, items are ordered by importance.
 
-Items trace back to the specs that introduced them: the [project scaffolding design](specs/2026-04-11-project-scaffolding-design.md) and the [frontend theming / i18n / ratchet design](specs/2026-04-17-frontend-theming-i18n-design.md).
+Items trace back to the specs that introduced them: the [project scaffolding design](specs/2026-04-11-project-scaffolding-design.md), the [frontend theming / i18n / ratchet design](specs/2026-04-17-frontend-theming-i18n-design.md), and the [entity CRUD pages batch 1 design](specs/2026-04-17-frontend-entity-crud-pages-design.md).
 
 ## Product capabilities (blocks user-facing functionality)
 
 Ordered roughly in the sequence they need to land: data first, then access control, then the product surface, then the UI on top, then the path to production.
 
-- **Remaining entity CRUD pages.** Subjects CRUD landed with the scaffold; WeekScheme, Room, Teacher, Stundentafel, SchoolClass, and Lesson still need UI pages.
-- **Translate Zod validation errors beyond login.** `LoginSchema` reads message keys via `i18n.t()` at module load (so the text is whatever language was detected on first load and does not update on locale switch). Ship a full translated Zod global error map once a second form lands.
+- **Remaining entity CRUD pages.** Subjects, Rooms, Teachers, and WeekSchemes have UI pages. Stundentafel, SchoolClass, and Lesson still need UI pages; SchoolClass and Lesson want FK dropdowns, and Stundentafel wants a nested-row editor, so each deserves its own spec.
+- **Sub-resource editors for base entities.** Room availability and suitability, Teacher availability and qualifications, WeekScheme time blocks, and Stundentafel entries all need their own UI. Treat them as one variant of "manage related rows" and do them in a single spec rather than one spec per entity.
+- **Typed deletion errors for in-use entities.** Deleting a Room or Teacher that a Lesson references surfaces the backend 409 as a generic `ApiError` toast. A typed 409 handler, or a pre-flight "is-used" check before opening the delete dialog, should land as one cross-entity pass rather than per-entity duplication.
+- **Translate Zod validation errors beyond login.** `LoginSchema` reads message keys via `i18n.t()` at module load (so the text is whatever language was detected on first load and does not update on locale switch). Subjects, Rooms, Teachers, and WeekSchemes schemas all ship with raw English literals. Ship a translated Zod global error map once a second non-login form surfaces them.
 - **Raise the frontend coverage floor.** Ratchet currently floors at 50% with baseline 61%. Bump the floor to 70% once baseline clears 75% organically, then 80% to match Python.
 - **Parallel `mise run dev` for backend + frontend.** Currently needs two terminals. A `concurrently`-style task or a `mise run dev:all` task would be convenient.
 - **Frontend `/api` prefix + CORS.** Vite proxy currently lists backend prefixes explicitly. When the backend adopts a uniform `/api` prefix, the proxy collapses to a single rule and CORS-for-dev becomes unnecessary.

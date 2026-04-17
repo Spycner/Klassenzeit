@@ -12,6 +12,9 @@
   "nav": {
     "dashboard": "Übersicht",
     "subjects": "Fächer",
+    "rooms": "Räume",
+    "teachers": "Lehrkräfte",
+    "weekSchemes": "Wochenschemata",
     "logOut": "Abmelden"
   },
   "theme": {
@@ -57,6 +60,71 @@
       "editTitle": "Fach bearbeiten",
       "editDescription": "{{name}} aktualisieren.",
       "deleteTitle": "Fach löschen",
+      "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    }
+  },
+  "rooms": {
+    "title": "Räume",
+    "new": "Neuer Raum",
+    "columns": {
+      "name": "Name",
+      "shortName": "Kürzel",
+      "capacity": "Kapazität",
+      "mode": "Eignung",
+      "actions": "Aktionen"
+    },
+    "empty": "Noch keine Räume. Lege einen an, um zu starten.",
+    "loadError": "Räume konnten nicht geladen werden.",
+    "suitabilityModes": {
+      "general": "Allgemein",
+      "specialized": "Fachraum"
+    },
+    "dialog": {
+      "createTitle": "Neuer Raum",
+      "createDescription": "Einen neuen Raum anlegen.",
+      "editTitle": "Raum bearbeiten",
+      "editDescription": "{{name}} aktualisieren.",
+      "deleteTitle": "Raum löschen",
+      "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    }
+  },
+  "teachers": {
+    "title": "Lehrkräfte",
+    "new": "Neue Lehrkraft",
+    "columns": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "shortCode": "Kürzel",
+      "maxHoursPerWeek": "Max. Stunden / Woche",
+      "actions": "Aktionen"
+    },
+    "empty": "Noch keine Lehrkräfte. Lege eine an, um zu starten.",
+    "loadError": "Lehrkräfte konnten nicht geladen werden.",
+    "dialog": {
+      "createTitle": "Neue Lehrkraft",
+      "createDescription": "Eine neue Lehrkraft anlegen.",
+      "editTitle": "Lehrkraft bearbeiten",
+      "editDescription": "{{name}} aktualisieren.",
+      "deleteTitle": "Lehrkraft löschen",
+      "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    }
+  },
+  "weekSchemes": {
+    "title": "Wochenschemata",
+    "new": "Neues Wochenschema",
+    "columns": {
+      "name": "Name",
+      "description": "Beschreibung",
+      "actions": "Aktionen"
+    },
+    "empty": "Noch keine Wochenschemata. Lege eines an, um zu starten.",
+    "loadError": "Wochenschemata konnten nicht geladen werden.",
+    "dialog": {
+      "createTitle": "Neues Wochenschema",
+      "createDescription": "Ein neues Wochenschema anlegen.",
+      "editTitle": "Wochenschema bearbeiten",
+      "editDescription": "{{name}} aktualisieren.",
+      "deleteTitle": "Wochenschema löschen",
       "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
     }
   }
