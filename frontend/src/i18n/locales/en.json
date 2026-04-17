@@ -1,0 +1,63 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "deleting": "Deleting…",
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create",
+    "delete": "Delete",
+    "edit": "Edit"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "subjects": "Subjects",
+    "logOut": "Log out"
+  },
+  "theme": {
+    "toggle": "Toggle theme"
+  },
+  "language": {
+    "switchTo": "Switch to {{locale}}"
+  },
+  "auth": {
+    "login": {
+      "title": "Klassenzeit",
+      "subtitle": "Log in to continue",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Log in",
+      "submitPending": "Logging in…",
+      "errors": {
+        "invalidEmail": "Enter a valid email address",
+        "passwordRequired": "Password is required",
+        "invalidCredentials": "Invalid email or password",
+        "generic": "Login failed"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome. Choose an entity from the sidebar to manage.",
+    "welcomeEmail": "Welcome, {{email}}. Choose an entity from the sidebar to manage."
+  },
+  "subjects": {
+    "title": "Subjects",
+    "new": "New subject",
+    "columns": {
+      "name": "Name",
+      "shortName": "Short name",
+      "actions": "Actions"
+    },
+    "empty": "No subjects yet. Create one to get started.",
+    "loadError": "Could not load subjects.",
+    "dialog": {
+      "createTitle": "New subject",
+      "createDescription": "Create a new subject.",
+      "editTitle": "Edit subject",
+      "editDescription": "Update {{name}}.",
+      "deleteTitle": "Delete subject",
+      "deleteDescription": "This will permanently delete \"{{name}}\"."
+    }
+  }
+}
