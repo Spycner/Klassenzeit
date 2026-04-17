@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mise run lint)",
+      "Bash(mise run test)",
+      "Bash(mise run fe:test)",
+      "Bash(mise run fe:test:cov)",
+      "Bash(mise run fe:lint)",
+      "Bash(mise run fe:types)",
+      "Bash(mise run fe:build)",
+      "Bash(mise run test:py)",
+      "Bash(mise run test:rust)",
+      "Bash(cargo metadata *)"
+    ]
+  }
+}
