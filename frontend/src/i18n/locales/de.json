@@ -84,5 +84,26 @@
       "deleteTitle": "Raum löschen",
       "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
     }
+  },
+  "teachers": {
+    "title": "Lehrkräfte",
+    "new": "Neue Lehrkraft",
+    "columns": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "shortCode": "Kürzel",
+      "maxHoursPerWeek": "Max. Stunden / Woche",
+      "actions": "Aktionen"
+    },
+    "empty": "Noch keine Lehrkräfte. Lege eine an, um zu starten.",
+    "loadError": "Lehrkräfte konnten nicht geladen werden.",
+    "dialog": {
+      "createTitle": "Neue Lehrkraft",
+      "createDescription": "Eine neue Lehrkraft anlegen.",
+      "editTitle": "Lehrkraft bearbeiten",
+      "editDescription": "{{name}} aktualisieren.",
+      "deleteTitle": "Lehrkraft löschen",
+      "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    }
   }
 }

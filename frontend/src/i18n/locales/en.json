@@ -84,5 +84,26 @@
       "deleteTitle": "Delete room",
       "deleteDescription": "This will permanently delete \"{{name}}\"."
     }
+  },
+  "teachers": {
+    "title": "Teachers",
+    "new": "New teacher",
+    "columns": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "shortCode": "Short code",
+      "maxHoursPerWeek": "Max hours / week",
+      "actions": "Actions"
+    },
+    "empty": "No teachers yet. Create one to get started.",
+    "loadError": "Could not load teachers.",
+    "dialog": {
+      "createTitle": "New teacher",
+      "createDescription": "Create a new teacher.",
+      "editTitle": "Edit teacher",
+      "editDescription": "Update {{name}}.",
+      "deleteTitle": "Delete teacher",
+      "deleteDescription": "This will permanently delete \"{{name}}\"."
+    }
   }
 }
