@@ -1,27 +1,34 @@
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
 import { type Locale, locales } from "@/i18n/config";
-
-function otherLocale(current: string): Locale {
-  const currentBase = current.split("-")[0] as Locale;
-  return locales.find((l) => l !== currentBase) ?? locales[0];
-}
+import { cn } from "@/lib/utils";
 
 export function LanguageSwitcher() {
-  const { i18n, t } = useTranslation();
-  const next = otherLocale(i18n.language);
-  const code = next.toUpperCase();
+  const { i18n } = useTranslation();
+  const current = (i18n.language.split("-")[0] as Locale) ?? locales[0];
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      aria-label={t("language.switchTo", { locale: code })}
-      onClick={() => {
-        void i18n.changeLanguage(next);
-      }}
-    >
-      <span className="text-xs font-semibold">{code}</span>
-    </Button>
+    <div className="inline-flex rounded-md border bg-muted p-0.5">
+      {locales.map((loc) => {
+        const active = loc === current;
+        return (
+          <button
+            key={loc}
+            type="button"
+            onClick={() => {
+              if (!active) void i18n.changeLanguage(loc);
+            }}
+            aria-pressed={active}
+            className={cn(
+              "rounded-sm px-2 py-0.5 font-mono text-[11px] font-semibold uppercase",
+              active
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {loc}
+          </button>
+        );
+      })}
+    </div>
   );
 }

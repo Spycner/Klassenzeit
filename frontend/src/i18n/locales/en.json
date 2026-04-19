@@ -7,7 +7,12 @@
     "save": "Save",
     "create": "Create",
     "delete": "Delete",
-    "edit": "Edit"
+    "edit": "Edit",
+    "new": "New",
+    "import": "Import",
+    "search": "Search",
+    "noResults": "No matches. Try a different search.",
+    "open": "Open"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -16,6 +21,15 @@
     "teachers": "Teachers",
     "weekSchemes": "Week schemes",
     "logOut": "Log out"
+  },
+  "sidebar": {
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "main": "Main",
+    "data": "Scheduling data",
+    "schoolClasses": "School classes",
+    "lessons": "Lessons",
+    "comingSoon": "Coming soon"
   },
   "theme": {
     "toggle": "Toggle theme"

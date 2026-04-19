@@ -7,7 +7,12 @@
     "save": "Speichern",
     "create": "Anlegen",
     "delete": "Löschen",
-    "edit": "Bearbeiten"
+    "edit": "Bearbeiten",
+    "new": "Neu",
+    "import": "Importieren",
+    "search": "Suchen",
+    "noResults": "Keine Treffer. Andere Suche versuchen.",
+    "open": "Öffnen"
   },
   "nav": {
     "dashboard": "Übersicht",
@@ -16,6 +21,15 @@
     "teachers": "Lehrkräfte",
     "weekSchemes": "Wochenschemata",
     "logOut": "Abmelden"
+  },
+  "sidebar": {
+    "collapse": "Seitenleiste einklappen",
+    "expand": "Seitenleiste ausklappen",
+    "main": "Allgemein",
+    "data": "Stammdaten",
+    "schoolClasses": "Klassen",
+    "lessons": "Unterricht",
+    "comingSoon": "Bald verfügbar"
   },
   "theme": {
     "toggle": "Farbschema umschalten"
