@@ -20,15 +20,17 @@ Pre-requisites already in place on the VPS and not repeated here:
 - Cloudflare DNS A record for `klassenzeit-staging` pointing at the VPS.
 - The shared Postgres container is named `postgres` on the `web` network.
 
-1. **Copy deploy assets to the VPS.** From your laptop:
+1. **Seed the env file on the VPS.** Only `.env.staging` needs to land by
+   hand; `compose.yaml` is dropped into the deploy dir by the self-hosted
+   runner on every deploy. From your laptop:
 
    ```bash
    ssh pascal@<VPS> 'mkdir -p /home/pascal/kz-deploy'
-   scp deploy/compose.yaml pascal@<VPS>:/home/pascal/kz-deploy/compose.yaml
    scp deploy/.env.staging.example pascal@<VPS>:/home/pascal/kz-deploy/.env.staging
    ```
 
-   Or use the ttyd shell at https://term.pascalkraus.com to `cat >` each file.
+   Or use the ttyd shell at https://term.pascalkraus.com to `cat >` the
+   env file.
 
 2. **Bootstrap the Postgres role and database.** On the VPS, read the
    superuser credentials from `/home/pascal/Code/server-infra/.env.local`,
