@@ -7,7 +7,9 @@ test.describe("Subjects CRUD", () => {
     // Subjects nav link. Direct goto("/subjects") hits the Vite proxy which
     // forwards that path to the backend API instead of the SPA.
     await page.goto(URLS.dashboard);
-    await page.getByRole("link", { name: "Subjects" }).click();
+    // The dashboard also has a "New Subjects" quick-add card that partially
+    // matches "Subjects", so scope the sidebar click with exact: true.
+    await page.getByRole("link", { name: "Subjects", exact: true }).click();
 
     // Create
     await page.getByRole("button", { name: "New subject" }).click();
