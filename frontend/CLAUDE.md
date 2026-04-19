@@ -31,7 +31,7 @@ Run from repo root unless noted.
 - **No `useState` for data you can recompute** from other state, props, or route search params.
 - **No defensive `useMemo`/`useCallback`.** Add only when profiling shows wasted work, or when reference stability is required by a dep array or memoized child.
 - **No `forwardRef` in new components.** React 19 treats `ref` as a plain prop. When touching shadcn primitives (e.g. `button.tsx`), clean up in passing.
-- **No array index as `key`** in lists that reorder, paginate, filter, or allow deletion. Use a stable id.
+- **No array index as `key`.** Biome's `noArrayIndexKey` rule rejects `list.map((_, i) => <X key={i}/>)` even for static fixed-size arrays. For fixed slots (period numbers, day-of-week labels, etc.) define a module-level `const SLOTS = ["P1", "P2", …]` and key by the string.
 - **`useEffect` mount gate** is acceptable only for third-party sync (e.g. `next-themes`); flag it in review for anything else.
 
 ## Server state and routing
@@ -39,6 +39,7 @@ Run from repo root unless noted.
 - **No fetching in `useEffect` + `useState`.** Use TanStack Query (`useQuery`, `useMutation`). Use the typed `client` from `@/lib/api-client`.
 - **No local state for filter / sort / page / selection** that a user would want to share or refresh. Put it in TanStack Router search params via `useSearch` with a Zod `validateSearch`.
 - **No `useNavigate` for in-app links.** Use `<Link>` so keyboard and middle-click work.
+- **Page components that consume search params should use `useSearch({ strict: false })`** with a typed cast, not `useSearch({ from: "/_authed/foo" })`. The test harness (`renderWithProviders`) mounts components at `/` with no route tree for the real path; strict matching throws at render.
 
 ## Forms (RHF + Zod)
 
@@ -59,6 +60,8 @@ Run from repo root unless noted.
 - **No hardcoded plurals.** Use i18next's `_one` / `_other` keys.
 - **No hardcoded user-visible English or German.** Every JSX text node, `aria-label`, placeholder, toast, and error string goes through `t("…")` with entries in both `en.json` and `de.json`.
 - **No date or number formatting with `toString()`.** Use `Intl.DateTimeFormat` / `Intl.NumberFormat` seeded from `i18n.language`.
+- **`t()` keys are typed against `en.json`** (via `src/i18n/types.d.ts`). Changing a key's shape (string → object, or renaming) breaks every call site at type-check time. Migrate call sites in one pass.
+- **No template-literal keys.** `` t(`prefix.${var}`) `` does not typecheck. Build an array of `{ key, label }` objects where `label` is resolved with a literal key: `t("prefix.foo")`, then render from `label`.
 
 ## Accessibility
 
