@@ -4,22 +4,26 @@ on:
   pull_request:
     paths:
       - "frontend/**"
+      - "backend/**"
       - "scripts/dump_openapi.py"
       - "scripts/gen_frontend_types.sh"
+      - "scripts/db-init.sh"
+      - "compose.yaml"
       - ".github/workflows/frontend-ci.yml"
       - ".coverage-baseline-frontend"
       - "mise.toml"
-      - "backend/src/**"
   push:
     branches: [master]
     paths:
       - "frontend/**"
+      - "backend/**"
       - "scripts/dump_openapi.py"
       - "scripts/gen_frontend_types.sh"
+      - "scripts/db-init.sh"
+      - "compose.yaml"
       - ".github/workflows/frontend-ci.yml"
       - ".coverage-baseline-frontend"
       - "mise.toml"
-      - "backend/src/**"
 
 concurrency:
   group: frontend-ci-${{ github.ref }}
@@ -59,3 +63,59 @@ jobs:
             echo "::error::Frontend coverage ${ACTUAL}% is below the ratchet baseline of ${BASELINE}%. Run 'mise run fe:cov:update-baseline' if this drop is intentional."
             exit 1
           fi
+
+  e2e:
+    name: Playwright e2e
+    runs-on: ubuntu-latest
+    needs: build
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: klassenzeit
+          POSTGRES_PASSWORD: klassenzeit
+          POSTGRES_DB: klassenzeit_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U klassenzeit -d klassenzeit_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      KZ_ENV: test
+      KZ_DATABASE_URL: postgresql+psycopg://klassenzeit:klassenzeit@localhost:5433/klassenzeit_test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-mise
+      - name: Install frontend deps
+        run: mise exec -- pnpm -C frontend install --frozen-lockfile
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+      - name: Install Chromium
+        run: mise exec -- pnpm -C frontend exec playwright install --with-deps chromium
+      - name: Run migrations
+        run: mise exec -- uv --project backend run alembic upgrade head
+      - name: Seed e2e admin
+        run: mise exec -- uv --project backend run klassenzeit-backend seed-e2e-admin
+      - name: Build frontend
+        run: mise run fe:build
+      - name: Run Playwright
+        run: mise exec -- pnpm -C frontend exec playwright test --config e2e/playwright.config.ts
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 14
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: frontend/test-results/
+          retention-days: 14
