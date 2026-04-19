@@ -28,7 +28,7 @@ Every `/autopilot` run must call the `Skill` tool, not read a skill file, not re
 | 2 | `superpowers:brainstorming` | Structure the self-answered Q&A and the spec template |
 | 4 | `superpowers:writing-plans` | Structure the implementation plan |
 | 5 | `superpowers:test-driven-development` | Enforce red-green-refactor per chunk |
-| 5 | `superpowers:subagent-driven-development` | Only when the plan has independent chunks, otherwise skip |
+| 5 | `superpowers:subagent-driven-development` | Always. Dispatch every plan task to a fresh subagent (sequentially if they share state, in parallel when they don't), so the main session keeps context lean. |
 | 6 | `claude-md-management:revise-claude-md` | Capture session learnings into CLAUDE.md files |
 | 6 | `claude-md-management:claude-md-improver` | Audit the CLAUDE.md files after revision |
 | 10 | `claude-md-management:revise-claude-md` | Capture post-CI learnings that step 6 couldn't see |
@@ -79,7 +79,17 @@ Then:
 
 ### 5. Execute the plan
 
-**First action:** invoke `superpowers:test-driven-development` via the `Skill` tool; it governs every implementation chunk. If the plan has two or more independent chunks, also invoke `superpowers:subagent-driven-development` before dispatching.
+**First actions, in order:** invoke `superpowers:test-driven-development`, then `superpowers:subagent-driven-development`. Both via the `Skill` tool. TDD governs every implementation chunk; subagent-driven-development governs how you run those chunks.
+
+**Subagents are mandatory, not optional.** Every plan task runs in its own fresh `general-purpose` subagent via the `Agent` tool. The user prefers this whether or not tasks are independent: fresh agents save cost (no accumulated file contents in the prompt) and keep the main session's context lean for the later review / PR / docs steps.
+
+How to dispatch:
+
+- **Truly independent tasks (no shared files, no ordering dependency)**: send multiple `Agent` calls in a single message so they run in parallel. Typical cases: four entity-page redesigns that don't edit the same i18n catalog, per-package documentation updates.
+- **Tasks that share state (i18n JSON, the same `app.css`, the shared route tree, shared component files)**: dispatch one agent at a time, waiting for each to return before dispatching the next. Still one agent per task; they just queue instead of fan out. Batch edits to the shared file into a single prep task if that removes the sharing.
+- **Trivial polish (renaming one symbol, a one-line lint fix, a typo)**: still use a subagent when the work touches files the main session hasn't already loaded. Only skip the agent for edits the main session *just* made and still has in context, where spinning up an agent would be pure overhead.
+
+Each subagent prompt must include: the plan task it owns (paste the checkbox block), which files to touch, the relevant commits that preceded it, and the acceptance criteria (tests to run, lint to pass). The main session reviews the agent's diff and commits; the agent should not commit on its own.
 
 Then:
 
