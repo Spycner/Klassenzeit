@@ -98,9 +98,9 @@ jobs:
       - name: Install Chromium
         run: mise exec -- pnpm -C frontend exec playwright install --with-deps chromium
       - name: Run migrations
-        run: mise exec -- uv --project backend run alembic upgrade head
+        run: mise run db:migrate
       - name: Seed e2e admin
-        run: mise exec -- uv --project backend run klassenzeit-backend seed-e2e-admin
+        run: mise run auth:seed-e2e-admin
       - name: Regenerate OpenAPI types
         run: mise run fe:types
       - name: Build frontend
