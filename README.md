@@ -38,4 +38,11 @@ A school timetabling system with a FastAPI backend, a Rust solver exposed to Pyt
 | `mise run fe:build` | Production build of the frontend into `frontend/dist/`. |
 | `mise run fe:types` | Regenerate `frontend/src/lib/api-types.ts` from the backend's OpenAPI schema. |
 
+## Deployment
+
+Klassenzeit deploys to `klassenzeit-staging.pascalkraus.com` on a Hetzner
+VPS via container images published to GHCR on every push to `master`. The
+runbook lives in [`deploy/README.md`](deploy/README.md). Architecture
+decisions are captured in [ADR 0009](docs/adr/0009-deployment-topology.md).
+
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for commit message rules.

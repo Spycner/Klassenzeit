@@ -35,3 +35,7 @@ frontend/test-results/
 .DS_Store
 .idea/
 .vscode/
+
+# Deployment secrets, real .env.staging lives on the VPS, not in git.
+/deploy/.env.*
+!/deploy/.env.*.example
