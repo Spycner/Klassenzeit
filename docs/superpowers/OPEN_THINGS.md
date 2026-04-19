@@ -91,6 +91,7 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 - **Production DB configuration.** Connection pooling at scale, read
   replicas, `statement_timeout`, `pg_stat_statements`. All prod
   concerns, out of scope until the deployment spec.
+- **Move Postgres init-SQL source into server-infra.** `server-infra/docker-compose.yml` mounts `/home/pascal/Code/Klassenzeit/docker/postgres/init-databases.sql` via an absolute host path, coupling the two repos by path rather than by contract. Move the file into the server-infra tree and update the mount source. Priority: low (only affects cold VPS setups).
 
 ## Project metadata
 
