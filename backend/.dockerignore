@@ -1,0 +1,25 @@
+# backend/.dockerignore
+# Paths are relative to the repo-root build context (see
+# .github/workflows/deploy-images.yml: context=".", file=backend/Dockerfile).
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/.venv
+**/.env
+**/.env.*
+!**/.env.example
+
+# Workspace dirs the backend image does not need.
+frontend/
+node_modules/
+target/
+docs/
+e2e/
+coverage/
+.coverage-baseline*
+.git
+.github
+.claude
+.lefthook*
