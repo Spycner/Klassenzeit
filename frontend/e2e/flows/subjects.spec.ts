@@ -29,6 +29,8 @@ test.describe("Subjects CRUD", () => {
     await physicsRow.getByRole("button", { name: "Delete" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
 
-    await expect(page.getByText(/No subjects yet/)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /start with your subject catalogue/i }),
+    ).toBeVisible();
   });
 });
