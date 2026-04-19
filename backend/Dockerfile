@@ -24,7 +24,10 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Copy workspace manifests + sources required to resolve and build the
 # klassenzeit-backend package plus its workspace dependency klassenzeit-solver.
-COPY pyproject.toml uv.lock ./
+# The root Cargo.toml / Cargo.lock are required: solver-py inherits
+# `[workspace.package]` from it, and maturin resolves cargo metadata against
+# the workspace root, not the solver-py subdir.
+COPY pyproject.toml uv.lock Cargo.toml Cargo.lock ./
 COPY backend/pyproject.toml backend/pyproject.toml
 COPY solver/ solver/
 COPY backend/ backend/
