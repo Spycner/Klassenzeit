@@ -44,6 +44,10 @@ app = FastAPI(title="Klassenzeit", lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(scheduling_router)
 
+from klassenzeit_backend.testing.router import testing_router  # noqa: E402
+
+app.include_router(testing_router)
+
 
 @app.get("/health")
 async def health() -> dict[str, str]:
