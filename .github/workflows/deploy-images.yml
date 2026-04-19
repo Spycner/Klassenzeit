@@ -75,13 +75,22 @@ jobs:
     needs: [backend, frontend]
     runs-on: [self-hosted, Linux, X64]
     steps:
+      - uses: actions/checkout@v6
       - name: Pull new images and restart services
-        working-directory: /home/pascal/kz-deploy
         env:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_DIR: /home/pascal/kz-deploy
         run: |
+          set -euo pipefail
+          mkdir -p "$DEPLOY_DIR"
+          cp deploy/compose.yaml "$DEPLOY_DIR/compose.yaml"
+          if [ ! -f "$DEPLOY_DIR/.env.staging" ]; then
+            echo "::error::Missing $DEPLOY_DIR/.env.staging. Follow the first-time bootstrap in deploy/README.md."
+            exit 1
+          fi
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+          cd "$DEPLOY_DIR"
           docker compose pull
           docker compose up -d
           docker logout ghcr.io
