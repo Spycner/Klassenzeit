@@ -56,6 +56,9 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 - **Shell-exported `KZ_ENV=dev` defeats pytest router mounting.** The `os.environ.setdefault` in conftest no-ops if the shell already has `KZ_ENV` set. A shell-exported `KZ_ENV=dev` would silently skip mounting the testing router, and router tests would fail with 404. Add a warning in conftest or switch to `pytest-env` if this bites anyone.
 - **Direct navigation to `/subjects` (or other `API_PREFIXES` paths) collides with the Vite preview proxy.** E2E tests can't `page.goto(URLS.subjects)` because Vite forwards it to the backend. Current workaround: navigate to `/` first, then click the nav link. Once the backend adopts a uniform `/api` prefix (see existing `Product capabilities` item), this collision goes away.
 - **Admin email must not use `.local` TLD.** `email-validator` (used by `pydantic.EmailStr`) rejects reserved domains. The seed admin uses `admin@example.com`. Revisit if we ever want a more realistic test domain.
+- **Branch-protection required check and `e2e-gate` aggregator job.** The spec called for an `if: always()` aggregator that makes `e2e` a required check compatible with path-filtered skips. Not implemented; `e2e` currently runs only when paths match and is not listed in `docs/superpowers/branch-protection.json`. Add both once the suite proves stable enough to block merges.
+- **`TRUNCATE ... RESTART IDENTITY CASCADE` may reset sequences beyond the savepoint.** `RESTART IDENTITY` is DDL in some Postgres configurations and can bypass the per-test savepoint rollback. Not an issue at current suite size; revisit if tests begin relying on predictable sequence values.
+- **Pin Playwright locale explicitly.** Tests currently rely on Chromium defaulting to `en-US` and i18n falling back to `en`. Add `locale: "en-US"` to `use` in `playwright.config.ts` to make this intent explicit.
 
 ## Toolchain & build friction
 
