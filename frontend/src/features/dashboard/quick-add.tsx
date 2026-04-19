@@ -1,12 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { BookOpen, CalendarDays, DoorOpen, GraduationCap } from "lucide-react";
+import { BookOpen, CalendarDays, DoorOpen, GraduationCap, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface QuickAddItem {
-  to: "/subjects" | "/rooms" | "/teachers" | "/week-schemes";
+  to: "/subjects" | "/rooms" | "/teachers" | "/week-schemes" | "/school-classes";
   icon: LucideIcon;
-  labelKey: "nav.subjects" | "nav.rooms" | "nav.teachers" | "nav.weekSchemes";
+  labelKey:
+    | "nav.subjects"
+    | "nav.rooms"
+    | "nav.teachers"
+    | "nav.weekSchemes"
+    | "sidebar.schoolClasses";
 }
 
 const ITEMS: QuickAddItem[] = [
@@ -14,6 +19,7 @@ const ITEMS: QuickAddItem[] = [
   { to: "/rooms", icon: DoorOpen, labelKey: "nav.rooms" },
   { to: "/teachers", icon: GraduationCap, labelKey: "nav.teachers" },
   { to: "/week-schemes", icon: CalendarDays, labelKey: "nav.weekSchemes" },
+  { to: "/school-classes", icon: Users, labelKey: "sidebar.schoolClasses" },
 ];
 
 export function QuickAdd() {
