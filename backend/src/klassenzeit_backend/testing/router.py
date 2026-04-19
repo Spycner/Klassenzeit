@@ -17,9 +17,11 @@ from klassenzeit_backend.db.session import get_session
 
 testing_router = APIRouter(prefix="/__test__", tags=["testing"])
 
-# Tables that must survive a reset. ``alembic_version`` is managed outside
-# SQLAlchemy metadata; ``users`` and ``sessions`` stay so the Playwright
-# storageState cookie remains valid between tests.
+# Tables that must survive a reset. ``users`` and ``sessions`` stay so the
+# Playwright storageState cookie remains valid between tests.
+# ``alembic_version`` is managed outside ``Base.metadata`` and will never
+# appear in ``sorted_tables``; it is listed here as explicit documentation
+# of intent and as a guard should it ever be registered as a mapped table.
 PRESERVED_TABLES: frozenset[str] = frozenset({"users", "sessions", "alembic_version"})
 
 
@@ -31,7 +33,7 @@ async def testing_health() -> dict[str, str]:
 
 @testing_router.post("/reset", status_code=status.HTTP_204_NO_CONTENT)
 async def testing_reset(session: Annotated[AsyncSession, Depends(get_session)]) -> Response:
-    """Truncate all entity tables, preserving users and sessions.
+    """Truncate all entity tables, preserving users, sessions, and alembic_version.
 
     Returns 204 with no body.
     """
