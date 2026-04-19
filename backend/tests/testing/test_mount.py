@@ -3,16 +3,7 @@
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 
-from klassenzeit_backend.core.settings import Settings
 from klassenzeit_backend.testing.mount import include_testing_router_if_enabled
-
-
-def _fake_settings(env: str) -> Settings:
-    """Build a Settings instance with a fixed env value."""
-    return Settings(
-        env=env,  # ty: ignore[invalid-argument-type]  # type: ignore[arg-type]
-        database_url="postgresql+psycopg://u:p@localhost/x",  # ty: ignore[invalid-argument-type]  # type: ignore[arg-type]
-    )
 
 
 def _route_paths(app: FastAPI) -> set[str]:
@@ -22,7 +13,7 @@ def _route_paths(app: FastAPI) -> set[str]:
 
 def test_mounts_when_env_is_test() -> None:
     app = FastAPI()
-    include_testing_router_if_enabled(app, _fake_settings("test"))
+    include_testing_router_if_enabled(app, "test")
     paths = _route_paths(app)
     assert "/__test__/health" in paths
     assert "/__test__/reset" in paths
@@ -30,7 +21,7 @@ def test_mounts_when_env_is_test() -> None:
 
 def test_does_not_mount_when_env_is_dev() -> None:
     app = FastAPI()
-    include_testing_router_if_enabled(app, _fake_settings("dev"))
+    include_testing_router_if_enabled(app, "dev")
     paths = _route_paths(app)
     assert "/__test__/health" not in paths
     assert "/__test__/reset" not in paths
@@ -38,7 +29,15 @@ def test_does_not_mount_when_env_is_dev() -> None:
 
 def test_does_not_mount_when_env_is_prod() -> None:
     app = FastAPI()
-    include_testing_router_if_enabled(app, _fake_settings("prod"))
+    include_testing_router_if_enabled(app, "prod")
+    paths = _route_paths(app)
+    assert "/__test__/health" not in paths
+    assert "/__test__/reset" not in paths
+
+
+def test_does_not_mount_when_env_is_unset() -> None:
+    app = FastAPI()
+    include_testing_router_if_enabled(app, None)
     paths = _route_paths(app)
     assert "/__test__/health" not in paths
     assert "/__test__/reset" not in paths
