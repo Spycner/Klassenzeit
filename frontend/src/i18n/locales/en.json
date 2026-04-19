@@ -55,18 +55,55 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "welcome": "Welcome. Choose an entity from the sidebar to manage.",
-    "welcomeEmail": "Welcome, {{email}}. Choose an entity from the sidebar to manage."
+    "welcome": "Welcome back.",
+    "subtitle": "Here is the state of the scheduling data.",
+    "welcomeEmail": "Welcome, {{email}}. Choose an entity from the sidebar to manage.",
+    "stats": {
+      "classes": "School classes",
+      "teachers": "Teachers",
+      "rooms": "Rooms",
+      "subjects": "Subjects"
+    },
+    "readiness": "Scheduling readiness",
+    "readinessSub": "What the solver needs before it can run.",
+    "readinessItems": {
+      "subjectsCatalogue": "Subject catalogue started",
+      "roomsDefined": "At least one room defined",
+      "teachersDefined": "At least one teacher on staff",
+      "weekSchemeDefined": "At least one week scheme defined"
+    },
+    "nextSteps": "Next steps",
+    "nextStepsSub": "A few gaps to close before the solver can run.",
+    "quickAdd": "Quick add",
+    "recent": "Recently edited",
+    "recentPlaceholder": "Recently-edited list will appear once the backend exposes updated_at.",
+    "hint": {
+      "noTeachers": "No teachers on staff",
+      "noTeachersSub": "Add your teaching staff to start.",
+      "noSubjects": "No subjects yet",
+      "noSubjectsSub": "Start with the core curriculum subjects.",
+      "noRooms": "No rooms yet",
+      "noRoomsSub": "Add at least one room.",
+      "noWeekScheme": "No week scheme defined",
+      "noWeekSchemeSub": "Define the weekly time grid."
+    }
   },
   "subjects": {
     "title": "Subjects",
+    "subtitle": "The catalogue of subjects taught at the school.",
     "new": "New subject",
     "columns": {
       "name": "Name",
       "shortName": "Short name",
       "actions": "Actions"
     },
-    "empty": "No subjects yet. Create one to get started.",
+    "empty": {
+      "title": "Start with your subject catalogue",
+      "body": "Subjects are the foundation of the scheduling data. They feed curricula, lessons, and room suitability. Add the core subjects first.",
+      "step1": "Add a subject",
+      "step2": "Assign a colour",
+      "step3": "Use in a curriculum"
+    },
     "loadError": "Could not load subjects.",
     "dialog": {
       "createTitle": "New subject",
@@ -79,6 +116,7 @@
   },
   "rooms": {
     "title": "Rooms",
+    "subtitle": "Physical rooms and specialised facilities.",
     "new": "New room",
     "columns": {
       "name": "Name",
@@ -87,7 +125,13 @@
       "mode": "Mode",
       "actions": "Actions"
     },
-    "empty": "No rooms yet. Create one to get started.",
+    "empty": {
+      "title": "No rooms yet",
+      "body": "Create a room so the solver knows where lessons can take place. Add general classrooms first, then specialised rooms like the science lab.",
+      "step1": "Add a general room",
+      "step2": "Mark specialised rooms",
+      "step3": "Set availability"
+    },
     "loadError": "Could not load rooms.",
     "suitabilityModes": {
       "general": "General",
@@ -104,6 +148,7 @@
   },
   "teachers": {
     "title": "Teachers",
+    "subtitle": "Staff, workload caps, and qualifications.",
     "new": "New teacher",
     "columns": {
       "firstName": "First name",
@@ -112,7 +157,13 @@
       "maxHoursPerWeek": "Max hours / week",
       "actions": "Actions"
     },
-    "empty": "No teachers yet. Create one to get started.",
+    "empty": {
+      "title": "No teachers on staff",
+      "body": "Add your teaching staff with their weekly hour caps. The solver uses this to respect workload contracts.",
+      "step1": "Add a teacher",
+      "step2": "Set qualifications",
+      "step3": "Set availability"
+    },
     "loadError": "Could not load teachers.",
     "dialog": {
       "createTitle": "New teacher",
@@ -125,13 +176,20 @@
   },
   "weekSchemes": {
     "title": "Week schemes",
+    "subtitle": "The weekly time grid with periods, breaks, and days.",
     "new": "New week scheme",
     "columns": {
       "name": "Name",
       "description": "Description",
       "actions": "Actions"
     },
-    "empty": "No week schemes yet. Create one to get started.",
+    "empty": {
+      "title": "No week schemes yet",
+      "body": "A week scheme defines the periods and breaks of a school day. Most schools have one default scheme; create variants for special weeks.",
+      "step1": "Name the scheme",
+      "step2": "Add time blocks",
+      "step3": "Assign to classes"
+    },
     "loadError": "Could not load week schemes.",
     "dialog": {
       "createTitle": "New week scheme",

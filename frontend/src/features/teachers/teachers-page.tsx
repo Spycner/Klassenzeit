@@ -1,25 +1,10 @@
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useSearch } from "@tanstack/react-router";
+import { GraduationCap } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { EmptyState } from "@/components/empty-state";
+import { Toolbar } from "@/components/toolbar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -28,20 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  type Teacher,
-  useCreateTeacher,
-  useDeleteTeacher,
-  useTeachers,
-  useUpdateTeacher,
-} from "./hooks";
-import { TeacherFormSchema, type TeacherFormValues } from "./schema";
+import { type Teacher, useTeachers } from "./hooks";
+import { DeleteTeacherDialog, TeacherFormDialog } from "./teachers-dialogs";
 
 export function TeachersPage() {
   const { t, i18n } = useTranslation();
   const teachers = useTeachers();
+  const search = useSearch({ strict: false }) as { create?: string };
+
+  const [q, setQ] = useState("");
+  const [creating, setCreating] = useState(() => search.create === "1");
   const [editing, setEditing] = useState<Teacher | null>(null);
-  const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Teacher | null>(null);
 
   const sorted = useMemo(() => {
@@ -49,80 +31,110 @@ export function TeachersPage() {
     return [...list].sort((a, b) => a.last_name.localeCompare(b.last_name, i18n.language));
   }, [teachers.data, i18n.language]);
 
+  const rows = sorted.filter((row) =>
+    q
+      ? `${row.first_name} ${row.last_name} ${row.short_code}`
+          .toLowerCase()
+          .includes(q.toLowerCase())
+      : true,
+  );
+  const showEmpty = !teachers.isLoading && teachers.data && teachers.data.length === 0 && !q;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{t("teachers.title")}</h1>
-        <Button onClick={() => setCreating(true)}>{t("teachers.new")}</Button>
-      </div>
+      <TeachersPageHead
+        title={t("teachers.title")}
+        subtitle={t("teachers.subtitle")}
+        onCreate={() => setCreating(true)}
+        createLabel={t("teachers.new")}
+      />
 
       {teachers.isLoading ? (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       ) : teachers.isError ? (
         <p className="text-sm text-destructive">{t("teachers.loadError")}</p>
-      ) : sorted.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("teachers.columns.lastName")}</TableHead>
-                <TableHead>{t("teachers.columns.firstName")}</TableHead>
-                <TableHead>{t("teachers.columns.shortCode")}</TableHead>
-                <TableHead>{t("teachers.columns.maxHoursPerWeek")}</TableHead>
-                <TableHead className="w-40 text-right">{t("teachers.columns.actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sorted.map((teacher) => (
-                <TableRow key={teacher.id}>
-                  <TableCell className="font-medium">{teacher.last_name}</TableCell>
-                  <TableCell>{teacher.first_name}</TableCell>
-                  <TableCell>{teacher.short_code}</TableCell>
-                  <TableCell>{teacher.max_hours_per_week}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button size="sm" variant="outline" onClick={() => setEditing(teacher)}>
-                      {t("common.edit")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => setConfirmDelete(teacher)}
-                    >
-                      {t("common.delete")}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+      ) : showEmpty ? (
+        <EmptyState
+          icon={<GraduationCap className="h-7 w-7" />}
+          title={t("teachers.empty.title")}
+          body={t("teachers.empty.body")}
+          steps={[t("teachers.empty.step1"), t("teachers.empty.step2"), t("teachers.empty.step3")]}
+          onCreate={() => setCreating(true)}
+          createLabel={t("teachers.new")}
+        />
       ) : (
-        <p className="text-sm text-muted-foreground">{t("teachers.empty")}</p>
+        <>
+          <Toolbar
+            search={q}
+            onSearch={setQ}
+            placeholder={t("common.search")}
+            right={
+              <span className="font-mono text-xs text-muted-foreground">
+                {rows.length} {t("teachers.title").toLowerCase()}
+              </span>
+            }
+          />
+          <div className="rounded-xl border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-2">{t("teachers.columns.lastName")}</TableHead>
+                  <TableHead className="py-2">{t("teachers.columns.firstName")}</TableHead>
+                  <TableHead className="py-2">{t("teachers.columns.shortCode")}</TableHead>
+                  <TableHead className="py-2 text-right">
+                    {t("teachers.columns.maxHoursPerWeek")}
+                  </TableHead>
+                  <TableHead className="w-40 py-2 text-right">
+                    {t("teachers.columns.actions")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((teacher) => (
+                  <TableRow key={teacher.id}>
+                    <TableCell className="py-1.5 font-medium">{teacher.last_name}</TableCell>
+                    <TableCell className="py-1.5">{teacher.first_name}</TableCell>
+                    <TableCell className="py-1.5 font-mono text-[12.5px]">
+                      {teacher.short_code}
+                    </TableCell>
+                    <TableCell className="py-1.5 text-right font-mono text-[12.5px]">
+                      {teacher.max_hours_per_week}
+                    </TableCell>
+                    <TableCell className="space-x-2 py-1.5 text-right">
+                      <Button size="sm" variant="outline" onClick={() => setEditing(teacher)}>
+                        {t("common.edit")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setConfirmDelete(teacher)}
+                      >
+                        {t("common.delete")}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
 
       <TeacherFormDialog
         open={creating}
         onOpenChange={setCreating}
-        title={t("teachers.dialog.createTitle")}
-        description={t("teachers.dialog.createDescription")}
         submitLabel={t("common.create")}
       />
-
       {editing ? (
         <TeacherFormDialog
           open={true}
+          teacher={editing}
           onOpenChange={(open) => {
             if (!open) setEditing(null);
           }}
-          title={t("teachers.dialog.editTitle")}
-          description={t("teachers.dialog.editDescription", {
-            name: `${editing.first_name} ${editing.last_name}`,
-          })}
           submitLabel={t("common.save")}
-          teacher={editing}
         />
       ) : null}
-
       {confirmDelete ? (
         <DeleteTeacherDialog teacher={confirmDelete} onClose={() => setConfirmDelete(null)} />
       ) : null}
@@ -130,167 +142,30 @@ export function TeachersPage() {
   );
 }
 
-interface TeacherFormDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title: string;
-  description: string;
-  submitLabel: string;
-  teacher?: Teacher;
-}
-
-function TeacherFormDialog({
-  open,
-  onOpenChange,
+function TeachersPageHead({
   title,
-  description,
-  submitLabel,
-  teacher,
-}: TeacherFormDialogProps) {
+  subtitle,
+  onCreate,
+  createLabel,
+}: {
+  title: string;
+  subtitle: string;
+  onCreate: () => void;
+  createLabel: string;
+}) {
   const { t } = useTranslation();
-  const form = useForm<TeacherFormValues>({
-    resolver: zodResolver(TeacherFormSchema),
-    defaultValues: {
-      first_name: teacher?.first_name ?? "",
-      last_name: teacher?.last_name ?? "",
-      short_code: teacher?.short_code ?? "",
-      max_hours_per_week: teacher?.max_hours_per_week ?? 1,
-    },
-  });
-  const createMutation = useCreateTeacher();
-  const updateMutation = useUpdateTeacher();
-  const submitting = createMutation.isPending || updateMutation.isPending;
-
-  async function handleTeacherSubmit(values: TeacherFormValues) {
-    if (teacher) {
-      await updateMutation.mutateAsync({ id: teacher.id, body: values });
-    } else {
-      await createMutation.mutateAsync(values);
-    }
-    form.reset();
-    onOpenChange(false);
-  }
-
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) form.reset();
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(handleTeacherSubmit)}>
-            <FormField
-              control={form.control}
-              name="first_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("teachers.columns.firstName")}</FormLabel>
-                  <FormControl>
-                    <Input autoFocus {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="last_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("teachers.columns.lastName")}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="short_code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("teachers.columns.shortCode")}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="max_hours_per_week"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("teachers.columns.maxHoursPerWeek")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={field.value}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? t("common.saving") : submitLabel}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-interface DeleteTeacherDialogProps {
-  teacher: Teacher;
-  onClose: () => void;
-}
-
-function DeleteTeacherDialog({ teacher, onClose }: DeleteTeacherDialogProps) {
-  const { t } = useTranslation();
-  const mutation = useDeleteTeacher();
-  async function confirmTeacherDelete() {
-    await mutation.mutateAsync(teacher.id);
-    onClose();
-  }
-  return (
-    <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("teachers.dialog.deleteTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("teachers.dialog.deleteDescription", {
-              name: `${teacher.first_name} ${teacher.last_name}`,
-            })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={confirmTeacherDelete}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? t("common.deleting") : t("common.delete")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <div className="flex flex-wrap items-end justify-between gap-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" disabled title={t("sidebar.comingSoon")}>
+          {t("common.import")}
+        </Button>
+        <Button onClick={onCreate}>{createLabel}</Button>
+      </div>
+    </div>
   );
 }

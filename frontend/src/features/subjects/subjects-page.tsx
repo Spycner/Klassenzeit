@@ -1,25 +1,10 @@
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useSearch } from "@tanstack/react-router";
+import { BookOpen } from "lucide-react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { EmptyState } from "@/components/empty-state";
+import { Toolbar } from "@/components/toolbar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -28,90 +13,119 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  type Subject,
-  useCreateSubject,
-  useDeleteSubject,
-  useSubjects,
-  useUpdateSubject,
-} from "./hooks";
-import { SubjectFormSchema, type SubjectFormValues } from "./schema";
+import { type Subject, useSubjects } from "./hooks";
+import { DeleteSubjectDialog, SubjectFormDialog } from "./subjects-dialogs";
 
 export function SubjectsPage() {
   const { t } = useTranslation();
   const subjects = useSubjects();
+  const search = useSearch({ strict: false }) as { create?: string };
+
+  const [q, setQ] = useState("");
+  const [creating, setCreating] = useState(() => search.create === "1");
   const [editing, setEditing] = useState<Subject | null>(null);
-  const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Subject | null>(null);
+
+  const rows = (subjects.data ?? []).filter((row) =>
+    q ? `${row.name} ${row.short_name}`.toLowerCase().includes(q.toLowerCase()) : true,
+  );
+  const showEmpty = !subjects.isLoading && subjects.data && subjects.data.length === 0 && !q;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{t("subjects.title")}</h1>
-        <Button onClick={() => setCreating(true)}>{t("subjects.new")}</Button>
-      </div>
+      <SubjectsPageHead
+        title={t("subjects.title")}
+        subtitle={t("subjects.subtitle")}
+        onCreate={() => setCreating(true)}
+        createLabel={t("subjects.new")}
+      />
 
       {subjects.isLoading ? (
         <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
       ) : subjects.isError ? (
         <p className="text-sm text-destructive">{t("subjects.loadError")}</p>
-      ) : subjects.data && subjects.data.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("subjects.columns.name")}</TableHead>
-                <TableHead>{t("subjects.columns.shortName")}</TableHead>
-                <TableHead className="w-40 text-right">{t("subjects.columns.actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {subjects.data.map((subject) => (
-                <TableRow key={subject.id}>
-                  <TableCell className="font-medium">{subject.name}</TableCell>
-                  <TableCell>{subject.short_name}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button size="sm" variant="outline" onClick={() => setEditing(subject)}>
-                      {t("common.edit")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => setConfirmDelete(subject)}
-                    >
-                      {t("common.delete")}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+      ) : showEmpty ? (
+        <EmptyState
+          icon={<BookOpen className="h-7 w-7" />}
+          title={t("subjects.empty.title")}
+          body={t("subjects.empty.body")}
+          steps={[t("subjects.empty.step1"), t("subjects.empty.step2"), t("subjects.empty.step3")]}
+          onCreate={() => setCreating(true)}
+          createLabel={t("subjects.new")}
+        />
       ) : (
-        <p className="text-sm text-muted-foreground">{t("subjects.empty")}</p>
+        <>
+          <Toolbar
+            search={q}
+            onSearch={setQ}
+            placeholder={t("common.search")}
+            right={
+              <span className="font-mono text-xs text-muted-foreground">
+                {rows.length} {t("subjects.title").toLowerCase()}
+              </span>
+            }
+          />
+          <div className="rounded-xl border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-2">{t("subjects.columns.name")}</TableHead>
+                  <TableHead className="py-2">{t("subjects.columns.shortName")}</TableHead>
+                  <TableHead className="w-40 py-2 text-right">
+                    {t("subjects.columns.actions")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((subject) => (
+                  <TableRow key={subject.id}>
+                    <TableCell className="py-1.5 font-medium">
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className="kz-swatch"
+                          style={{ background: subjectColor(subject.id) }}
+                        />
+                        {subject.name}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-1.5 font-mono text-[12.5px]">
+                      {subject.short_name}
+                    </TableCell>
+                    <TableCell className="space-x-2 py-1.5 text-right">
+                      <Button size="sm" variant="outline" onClick={() => setEditing(subject)}>
+                        {t("common.edit")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setConfirmDelete(subject)}
+                      >
+                        {t("common.delete")}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
 
       <SubjectFormDialog
         open={creating}
         onOpenChange={setCreating}
-        title={t("subjects.dialog.createTitle")}
-        description={t("subjects.dialog.createDescription")}
         submitLabel={t("common.create")}
       />
-
       {editing ? (
         <SubjectFormDialog
           open={true}
+          subject={editing}
           onOpenChange={(open) => {
             if (!open) setEditing(null);
           }}
-          title={t("subjects.dialog.editTitle")}
-          description={t("subjects.dialog.editDescription", { name: editing.name })}
           submitLabel={t("common.save")}
-          subject={editing}
         />
       ) : null}
-
       {confirmDelete ? (
         <DeleteSubjectDialog subject={confirmDelete} onClose={() => setConfirmDelete(null)} />
       ) : null}
@@ -119,128 +133,37 @@ export function SubjectsPage() {
   );
 }
 
-interface SubjectFormDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title: string;
-  description: string;
-  submitLabel: string;
-  subject?: Subject;
-}
-
-function SubjectFormDialog({
-  open,
-  onOpenChange,
+function SubjectsPageHead({
   title,
-  description,
-  submitLabel,
-  subject,
-}: SubjectFormDialogProps) {
+  subtitle,
+  onCreate,
+  createLabel,
+}: {
+  title: string;
+  subtitle: string;
+  onCreate: () => void;
+  createLabel: string;
+}) {
   const { t } = useTranslation();
-  const form = useForm<SubjectFormValues>({
-    resolver: zodResolver(SubjectFormSchema),
-    defaultValues: {
-      name: subject?.name ?? "",
-      short_name: subject?.short_name ?? "",
-    },
-  });
-  const createMutation = useCreateSubject();
-  const updateMutation = useUpdateSubject();
-  const submitting = createMutation.isPending || updateMutation.isPending;
-
-  async function onSubmit(values: SubjectFormValues) {
-    if (subject) {
-      await updateMutation.mutateAsync({ id: subject.id, body: values });
-    } else {
-      await createMutation.mutateAsync(values);
-    }
-    form.reset();
-    onOpenChange(false);
-  }
-
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) form.reset();
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("subjects.columns.name")}</FormLabel>
-                  <FormControl>
-                    <Input autoFocus {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="short_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("subjects.columns.shortName")}</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? t("common.saving") : submitLabel}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+    <div className="flex flex-wrap items-end justify-between gap-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" disabled title={t("sidebar.comingSoon")}>
+          {t("common.import")}
+        </Button>
+        <Button onClick={onCreate}>{createLabel}</Button>
+      </div>
+    </div>
   );
 }
 
-interface DeleteSubjectDialogProps {
-  subject: Subject;
-  onClose: () => void;
-}
-
-function DeleteSubjectDialog({ subject, onClose }: DeleteSubjectDialogProps) {
-  const { t } = useTranslation();
-  const mutation = useDeleteSubject();
-  async function confirm() {
-    await mutation.mutateAsync(subject.id);
-    onClose();
-  }
-  return (
-    <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("subjects.dialog.deleteTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("subjects.dialog.deleteDescription", { name: subject.name })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button variant="destructive" onClick={confirm} disabled={mutation.isPending}>
-            {mutation.isPending ? t("common.deleting") : t("common.delete")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+function subjectColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  const idx = (Math.abs(hash) % 5) + 1;
+  return `var(--chart-${idx})`;
 }

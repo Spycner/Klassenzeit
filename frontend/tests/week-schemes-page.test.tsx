@@ -10,15 +10,18 @@ describe("WeekSchemesPage", () => {
     await i18n.changeLanguage("de");
   });
 
-  it("renders week schemes fetched from the API", async () => {
+  it("renders the seeded scheme as a list entry and as the active detail heading", async () => {
     renderWithProviders(<WeekSchemesPage />);
-    expect(await screen.findByText("Standardwoche")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /standardwoche/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /standardwoche/i })).toBeInTheDocument();
   });
 
   it("creates a week scheme via the dialog and closes on success", async () => {
     const user = userEvent.setup();
     renderWithProviders(<WeekSchemesPage />);
-    await screen.findByText("Standardwoche");
+    await screen.findByRole("heading", { level: 2, name: /standardwoche/i });
 
     await user.click(screen.getByRole("button", { name: /neues wochenschema/i }));
     const dialog = await screen.findByRole("dialog");
