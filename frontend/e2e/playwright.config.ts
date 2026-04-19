@@ -15,7 +15,6 @@ export default defineConfig({
   reporter: [["list"], ["html", { outputFolder: "../playwright-report", open: "never" }]],
   use: {
     baseURL: FRONTEND_URL,
-    storageState: "e2e/.auth/admin.json",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
   },
@@ -24,12 +23,11 @@ export default defineConfig({
       name: "admin-setup",
       testDir: "./fixtures",
       testMatch: /admin\.setup\.ts/,
-      use: { storageState: undefined },
     },
     {
       name: "chromium",
       dependencies: ["admin-setup"],
-      use: { ...devices["Desktop Chrome"] },
+      use: { ...devices["Desktop Chrome"], storageState: ".auth/admin.json" },
     },
   ],
   webServer: [
@@ -45,7 +43,7 @@ export default defineConfig({
       },
     },
     {
-      command: "pnpm exec vite preview --port 4173 --strictPort",
+      command: "pnpm -C .. exec vite preview --port 4173 --strictPort",
       url: FRONTEND_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

@@ -31,4 +31,9 @@ export default defineConfig({
       API_PREFIXES.map((prefix) => [prefix, { target: BACKEND, changeOrigin: true }]),
     ),
   },
+  preview: {
+    proxy: Object.fromEntries(
+      API_PREFIXES.map((prefix) => [prefix, { target: BACKEND, changeOrigin: true }]),
+    ),
+  },
 });

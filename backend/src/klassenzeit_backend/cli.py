@@ -21,7 +21,7 @@ from klassenzeit_backend.db.models.user import User
 
 cli = typer.Typer(no_args_is_help=True)
 
-E2E_ADMIN_EMAIL = "admin@test.local"
+E2E_ADMIN_EMAIL = "admin@example.com"
 E2E_ADMIN_PASSWORD = "test-password-12345"  # noqa: S105
 
 
