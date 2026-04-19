@@ -1,4 +1,7 @@
+import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+
+const STORAGE_STATE = path.join(import.meta.dirname, ".auth", "admin.json");
 
 const BACKEND_URL = "http://localhost:8000";
 const FRONTEND_URL = "http://localhost:4173";
@@ -27,7 +30,7 @@ export default defineConfig({
     {
       name: "chromium",
       dependencies: ["admin-setup"],
-      use: { ...devices["Desktop Chrome"], storageState: ".auth/admin.json" },
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
     },
   ],
   webServer: [

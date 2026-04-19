@@ -27,7 +27,6 @@ backend/.env
 backend/.env.local
 
 # Playwright (frontend e2e)
-frontend/.auth/
 frontend/e2e/.auth/
 frontend/playwright-report/
 frontend/test-results/

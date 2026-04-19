@@ -1,9 +1,10 @@
+import path from "node:path";
 import { test as setup } from "@playwright/test";
 import { URLS } from "../support/urls";
 
 const ADMIN_EMAIL = "admin@example.com";
 const ADMIN_PASSWORD = "test-password-12345";
-const STORAGE_STATE = ".auth/admin.json";
+const STORAGE_STATE = path.join(import.meta.dirname, "..", ".auth", "admin.json");
 
 setup("authenticate as admin", async ({ page }) => {
   await page.goto(URLS.login);
