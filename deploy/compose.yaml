@@ -1,0 +1,53 @@
+# deploy/compose.yaml
+# Copied to /home/pascal/kz-deploy/compose.yaml on the VPS and run against
+# the external `web` network declared by /home/pascal/Code/server-infra/docker-compose.yml.
+# The shared postgres + caddy services live in that external compose; this
+# file only declares the Klassenzeit app containers.
+
+services:
+  klassenzeit-migrate-staging:
+    image: ghcr.io/pgoell/klassenzeit-backend:${KZ_IMAGE_TAG:-latest}
+    container_name: klassenzeit-migrate-staging
+    command: ["alembic", "-c", "/app/backend/alembic.ini", "upgrade", "head"]
+    env_file:
+      - .env.staging
+    restart: "no"
+    networks:
+      - web
+
+  klassenzeit-backend-staging:
+    image: ghcr.io/pgoell/klassenzeit-backend:${KZ_IMAGE_TAG:-latest}
+    container_name: klassenzeit-backend-staging
+    env_file:
+      - .env.staging
+    depends_on:
+      klassenzeit-migrate-staging:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - web
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(\"http://127.0.0.1:3001/health\").status == 200 else 1)'"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  klassenzeit-frontend-staging:
+    image: ghcr.io/pgoell/klassenzeit-frontend:${KZ_IMAGE_TAG:-latest}
+    container_name: klassenzeit-frontend-staging
+    restart: unless-stopped
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+networks:
+  web:
+    external: true
+    name: web
