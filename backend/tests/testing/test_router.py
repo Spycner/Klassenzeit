@@ -30,7 +30,7 @@ async def test_reset_truncates_entity_tables(
     await db_session.flush()
 
     # Confirm the row is visible through the app.
-    pre_resp = await client.get("/subjects")
+    pre_resp = await client.get("/api/subjects")
     assert pre_resp.status_code == 200
     assert any(s["name"] == "Temp" for s in pre_resp.json())
 
@@ -40,7 +40,7 @@ async def test_reset_truncates_entity_tables(
     # After reset, expire the session cache so we see the actual DB state.
     db_session.expire_all()
 
-    post_resp = await client.get("/subjects")
+    post_resp = await client.get("/api/subjects")
     assert post_resp.status_code == 200
     assert post_resp.json() == []
 

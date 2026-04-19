@@ -216,7 +216,7 @@ def login_as(client: AsyncClient) -> LoginFn:
 
     async def _do_login(email: str, password: str) -> None:
         response = await client.post(
-            "/auth/login",
+            "/api/auth/login",
             json={"email": email, "password": password},
         )
         assert response.status_code == 204, response.text
