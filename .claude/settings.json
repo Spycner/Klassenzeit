@@ -10,7 +10,10 @@
       "Bash(mise run fe:build)",
       "Bash(mise run test:py)",
       "Bash(mise run test:rust)",
-      "Bash(cargo metadata *)"
+      "Bash(cargo metadata *)",
+      "Bash(cargo test:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo clippy:*)"
     ]
   }
 }

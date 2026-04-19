@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useRooms } from "@/features/rooms/hooks";
+import { useSchoolClasses } from "@/features/school-classes/hooks";
 import { useSubjects } from "@/features/subjects/hooks";
 import { useTeachers } from "@/features/teachers/hooks";
 import { useWeekSchemes } from "@/features/week-schemes/hooks";
@@ -10,9 +11,14 @@ export function StatGrid() {
   const teachers = useTeachers();
   const subjects = useSubjects();
   const weekSchemes = useWeekSchemes();
+  const schoolClasses = useSchoolClasses();
 
   const items = [
-    { label: t("dashboard.stats.classes"), value: "0", hint: t("sidebar.comingSoon") },
+    {
+      label: t("dashboard.stats.classes"),
+      value: formatCount(schoolClasses.data?.length),
+      hint: statHint(schoolClasses.data?.length, t("dashboard.hint.noClassesSub")),
+    },
     {
       label: t("dashboard.stats.teachers"),
       value: formatCount(teachers.data?.length),

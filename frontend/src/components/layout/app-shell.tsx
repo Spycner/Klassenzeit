@@ -49,5 +49,6 @@ function currentCrumbKey(pathname: string) {
   if (pathname.startsWith("/rooms")) return "nav.rooms";
   if (pathname.startsWith("/teachers")) return "nav.teachers";
   if (pathname.startsWith("/week-schemes")) return "nav.weekSchemes";
+  if (pathname.startsWith("/school-classes")) return "sidebar.schoolClasses";
   return "nav.dashboard";
 }

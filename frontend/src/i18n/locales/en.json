@@ -85,7 +85,9 @@
       "noRooms": "No rooms yet",
       "noRoomsSub": "Add at least one room.",
       "noWeekScheme": "No week scheme defined",
-      "noWeekSchemeSub": "Define the weekly time grid."
+      "noWeekSchemeSub": "Define the weekly time grid.",
+      "noClasses": "No school classes yet",
+      "noClassesSub": "Add cohorts so the solver knows who to plan for."
     }
   },
   "subjects": {
@@ -198,6 +200,44 @@
       "editDescription": "Update {{name}}.",
       "deleteTitle": "Delete week scheme",
       "deleteDescription": "This will permanently delete \"{{name}}\"."
+    }
+  },
+  "schoolClasses": {
+    "title": "School classes",
+    "subtitle": "Cohorts that share a curriculum and a weekly time grid.",
+    "new": "New school class",
+    "loadError": "Could not load school classes.",
+    "columns": {
+      "name": "Name",
+      "gradeLevel": "Grade",
+      "stundentafel": "Curriculum",
+      "weekScheme": "Week scheme",
+      "actions": "Actions"
+    },
+    "empty": {
+      "title": "No school classes yet",
+      "body": "Create the cohorts at your school. Each class needs a curriculum and a weekly time grid.",
+      "step1": "Add the curriculum",
+      "step2": "Add the week scheme",
+      "step3": "Create the class"
+    },
+    "fields": {
+      "gradeLevelLabel": "Grade",
+      "stundentafelLabel": "Curriculum",
+      "stundentafelPlaceholder": "Select a curriculum",
+      "weekSchemeLabel": "Week scheme",
+      "weekSchemePlaceholder": "Select a week scheme"
+    },
+    "dialog": {
+      "createTitle": "New school class",
+      "createDescription": "Create a new school class.",
+      "editTitle": "Edit school class",
+      "editDescription": "Update {{name}}.",
+      "deleteTitle": "Delete school class",
+      "deleteDescription": "This will permanently delete \"{{name}}\".",
+      "missingPrereqs": "Add at least one curriculum and one week scheme before creating a class.",
+      "addStundentafel": "Add a curriculum",
+      "addWeekScheme": "Add a week scheme"
     }
   }
 }

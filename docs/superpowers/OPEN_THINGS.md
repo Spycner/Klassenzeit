@@ -8,7 +8,7 @@ Items trace back to the specs that introduced them: the [project scaffolding des
 
 Ordered roughly in the sequence they need to land: data first, then access control, then the product surface, then the UI on top, then the path to production.
 
-- **Remaining entity CRUD pages.** Subjects, Rooms, Teachers, and WeekSchemes have UI pages. Stundentafel, SchoolClass, and Lesson still need UI pages; SchoolClass and Lesson want FK dropdowns, and Stundentafel wants a nested-row editor, so each deserves its own spec.
+- **Remaining entity CRUD pages.** Subjects, Rooms, Teachers, WeekSchemes, and SchoolClasses have UI pages. Stundentafel and Lesson still need UI pages; Lesson wants FK dropdowns (the SchoolClass spec established the `Select`-backed pattern), and Stundentafel wants a nested-row editor, so each deserves its own spec. SchoolClass also added a read-only `useStundentafeln` hook the future Stundentafel page can reuse.
 - **`updated_at` on list endpoints.** Dashboard "Recently edited" tile renders a placeholder until the backend surfaces `updated_at` on every list endpoint (subjects, rooms, teachers, week-schemes). Unblock the tile by returning `updated_at` and sorting the client query.
 - **Subject color as a real column.** Subject swatches are client-derived from `id` (stable hash over five chart tokens). Move to a persisted `color` column on `Subject` so renaming a subject doesn't churn its palette slot.
 - **`active` flag on WeekScheme.** Split-view detail pane is wired to render an "active" badge; currently never shows because the backend has no flag. Add the column (plus a "set active" mutation) before the badge earns its space.
@@ -51,7 +51,7 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 
 ### E2E (Playwright)
 
-- **Entity coverage beyond Subjects.** Each remaining entity CRUD spec (Rooms, Teachers, WeekSchemes, Stundentafel, SchoolClass, Lesson) should add its own Playwright flow when it lands.
+- **Entity coverage beyond Subjects.** Each remaining entity CRUD spec (Rooms, Teachers, WeekSchemes, SchoolClasses, Stundentafel, Lesson) should add its own Playwright flow when it lands.
 - **Cross-browser matrix.** Firefox and WebKit are disabled for now (Chromium only). Enable when external users appear.
 - **Accessibility audits inside Playwright.** `@axe-core/playwright` integration is deferred; track separately.
 - **Visual regression.** Percy / Chromatic / Playwright snapshot tooling. Defer until design churn slows.

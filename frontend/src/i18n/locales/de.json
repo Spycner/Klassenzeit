@@ -85,7 +85,9 @@
       "noRooms": "Noch keine Räume",
       "noRoomsSub": "Lege mindestens einen Raum an.",
       "noWeekScheme": "Noch kein Wochenraster",
-      "noWeekSchemeSub": "Definiere das wöchentliche Raster."
+      "noWeekSchemeSub": "Definiere das wöchentliche Raster.",
+      "noClasses": "Noch keine Klassen",
+      "noClassesSub": "Lege Lerngruppen an, damit der Solver weiß, wofür er plant."
     }
   },
   "subjects": {
@@ -198,6 +200,44 @@
       "editDescription": "{{name}} aktualisieren.",
       "deleteTitle": "Wochenschema löschen",
       "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    }
+  },
+  "schoolClasses": {
+    "title": "Klassen",
+    "subtitle": "Lerngruppen mit gemeinsamer Stundentafel und gemeinsamem Wochenraster.",
+    "new": "Neue Klasse",
+    "loadError": "Klassen konnten nicht geladen werden.",
+    "columns": {
+      "name": "Name",
+      "gradeLevel": "Jahrgang",
+      "stundentafel": "Stundentafel",
+      "weekScheme": "Wochenschema",
+      "actions": "Aktionen"
+    },
+    "empty": {
+      "title": "Noch keine Klassen",
+      "body": "Lege die Lerngruppen deiner Schule an. Jede Klasse braucht eine Stundentafel und ein Wochenraster.",
+      "step1": "Stundentafel anlegen",
+      "step2": "Wochenraster anlegen",
+      "step3": "Klasse anlegen"
+    },
+    "fields": {
+      "gradeLevelLabel": "Jahrgang",
+      "stundentafelLabel": "Stundentafel",
+      "stundentafelPlaceholder": "Stundentafel wählen",
+      "weekSchemeLabel": "Wochenschema",
+      "weekSchemePlaceholder": "Wochenschema wählen"
+    },
+    "dialog": {
+      "createTitle": "Neue Klasse",
+      "createDescription": "Eine neue Klasse anlegen.",
+      "editTitle": "Klasse bearbeiten",
+      "editDescription": "{{name}} aktualisieren.",
+      "deleteTitle": "Klasse löschen",
+      "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht.",
+      "missingPrereqs": "Lege mindestens eine Stundentafel und ein Wochenraster an, bevor du eine Klasse anlegst.",
+      "addStundentafel": "Stundentafel anlegen",
+      "addWeekScheme": "Wochenraster anlegen"
     }
   }
 }
