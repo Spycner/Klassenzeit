@@ -101,6 +101,8 @@ jobs:
         run: mise exec -- uv --project backend run alembic upgrade head
       - name: Seed e2e admin
         run: mise exec -- uv --project backend run klassenzeit-backend seed-e2e-admin
+      - name: Regenerate OpenAPI types
+        run: mise run fe:types
       - name: Build frontend
         run: mise run fe:build
       - name: Run Playwright
