@@ -5,7 +5,7 @@
 - `backend/` — FastAPI + SQLAlchemy async, served under `klassenzeit_backend`. State lives on `app.state` (set in `lifespan`).
 - `frontend/` — Vite 7 + React 19 SPA with TanStack Router/Query, shadcn/ui, react-i18next. Proxies API to `:8000` in dev.
 - `solver/` — Rust Cargo workspace with `solver-core` (pure) and `solver-py` (PyO3 bindings built via maturin).
-- `deploy/` — staging compose for the Hetzner VPS. Pulls `ghcr.io/pgoell/klassenzeit-{backend,frontend}` images published by `.github/workflows/deploy-images.yml`, joins the external `web` network run out of `~/Code/server-infra/`. Runbook: `deploy/README.md`. Decisions: `docs/adr/0009-deployment-topology.md`.
+- `deploy/` — staging compose for the Hetzner VPS. Pulls `ghcr.io/pgoell/klassenzeit-{backend,frontend}` images published by `.github/workflows/deploy-images.yml`, joins the external `web` network run out of `~/Code/server-infra/`. The same workflow's `deploy-staging` job runs on the repo's self-hosted runner (`iuno-klassenzeit`) and auto-redeploys every master push via `docker compose pull && up -d` in `/home/pascal/kz-deploy/`. Runbook: `deploy/README.md`. Decisions: `docs/adr/0009-deployment-topology.md`.
 - Dev loop runs via `mise` tasks; Postgres via `podman compose` from `compose.yaml` (root-level compose is local dev only, distinct from `deploy/compose.yaml`).
 
 ## Development Workflow

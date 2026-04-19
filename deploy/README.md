@@ -50,24 +50,18 @@ Pre-requisites already in place on the VPS and not repeated here:
    `/home/pascal/kz-deploy/.env.staging` by replacing `REPLACE_ME` in
    `KZ_DATABASE_URL`.
 
-3. **Make sure GHCR images are pullable.** On first deploy the images may
-   be private. Options:
-   - (a) On GitHub, open each package page
-     (`github.com/pgoell/Klassenzeit/pkgs/container/klassenzeit-backend`,
-     likewise for frontend) and change visibility to Public.
-   - (b) On the VPS, log docker in with a PAT that has `read:packages`:
-     `docker login ghcr.io -u pgoell -p <PAT>`.
+3. **GHCR image access.** The `deploy-staging` job logs docker in to GHCR
+   with the workflow `GITHUB_TOKEN`, so the images can stay private.
+   Nothing to configure here for the automated path. For a manual pull
+   (see below), either mark both packages public in the GitHub Packages UI
+   or run `docker login ghcr.io -u pgoell -p <PAT>` on the VPS once.
 
-4. **First pull + up.**
-
-   ```bash
-   cd /home/pascal/kz-deploy
-   docker compose pull
-   docker compose up -d
-   ```
-
-   The migrate container runs once and exits; backend and frontend come up
-   behind the existing Caddy. Verify:
+4. **First deploy.** Push to `master` (or trigger `workflow_dispatch` on
+   the `Deploy images` workflow). The workflow publishes both images and
+   then runs the `deploy-staging` job on the self-hosted runner, which
+   pulls the images and runs `docker compose up -d` in
+   `/home/pascal/kz-deploy/`. The migrate container runs once and exits;
+   backend and frontend come up behind the existing Caddy. Verify:
 
    ```bash
    curl -fsS https://klassenzeit-staging.pascalkraus.com/health
@@ -78,17 +72,21 @@ Pre-requisites already in place on the VPS and not repeated here:
 
 ## Per-deploy update
 
-After a master push triggers the `deploy-images.yml` workflow, SSH into
-the VPS (or open ttyd) and run:
+Automatic. `deploy-images.yml` publishes both images and then runs a
+`deploy-staging` job on the repo's self-hosted runner
+(`iuno-klassenzeit`), which logs docker in to GHCR with the workflow
+`GITHUB_TOKEN` and runs `docker compose pull && docker compose up -d` in
+`/home/pascal/kz-deploy/`. No VPS action required; watch the run at
+`https://github.com/pgoell/Klassenzeit/actions/workflows/deploy-images.yml`.
+
+If the runner is offline or you need to force a redeploy, SSH to the VPS
+(or open ttyd at `https://term.pascalkraus.com`) and run:
 
 ```bash
 cd /home/pascal/kz-deploy
 docker compose pull
 docker compose up -d
 ```
-
-`docker compose up -d` recreates only containers whose images changed.
-The migrate service runs again and exits before the backend restarts.
 
 ## Rollback
 

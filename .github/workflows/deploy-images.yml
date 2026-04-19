@@ -69,3 +69,19 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
+
+  deploy-staging:
+    name: Deploy to VPS (staging)
+    needs: [backend, frontend]
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - name: Pull new images and restart services
+        working-directory: /home/pascal/kz-deploy
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+          docker compose pull
+          docker compose up -d
+          docker logout ghcr.io
