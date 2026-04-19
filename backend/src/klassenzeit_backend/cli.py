@@ -25,6 +25,10 @@ E2E_ADMIN_EMAIL = "admin@test.local"
 E2E_ADMIN_PASSWORD = "test-password-12345"  # noqa: S105
 
 
+class DuplicateEmailError(ValueError):
+    """Raised when a user with the given email already exists."""
+
+
 async def create_admin_in_db(
     db: AsyncSession,
     email: str,
@@ -37,7 +41,8 @@ async def create_admin_in_db(
     Validates the password and checks for duplicate emails.
     Does NOT commit — caller must commit or the test fixture rolls back.
 
-    Raises ``ValueError`` on validation failure or duplicate email.
+    Raises ``DuplicateEmailError`` on duplicate email, ``ValueError`` on other
+    validation failures.
     """
     try:
         validate_password(password, min_length=min_password_length)
@@ -48,7 +53,7 @@ async def create_admin_in_db(
     result = await db.execute(select(User).where(User.email == email))
     if result.scalar_one_or_none() is not None:
         msg = f"User with email {email} already exists"
-        raise ValueError(msg)
+        raise DuplicateEmailError(msg)
 
     user = User(
         email=email,
@@ -123,10 +128,10 @@ def seed_e2e_admin() -> None:
     """
     try:
         asyncio.run(_run_create_admin(E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD))
+    except DuplicateEmailError:
+        typer.echo(f"Admin user already present: {E2E_ADMIN_EMAIL}")
+        return
     except ValueError as exc:
-        if "already exists" in str(exc):
-            typer.echo(f"Admin user already present: {E2E_ADMIN_EMAIL}")
-            return
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(f"Admin user created: {E2E_ADMIN_EMAIL}")

@@ -13,7 +13,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from typer.testing import CliRunner
 
-from klassenzeit_backend.cli import cli, create_admin_in_db
+from klassenzeit_backend.cli import DuplicateEmailError, cli, create_admin_in_db
 from klassenzeit_backend.core.settings import Settings
 from klassenzeit_backend.db.models.user import User
 
@@ -37,7 +37,7 @@ async def test_create_admin_in_db_duplicate_email(db_session: AsyncSession) -> N
         email="dupecli@test.com",
         password="a-secure-passphrase",  # noqa: S106
     )
-    with pytest.raises(ValueError, match="already exists"):
+    with pytest.raises(DuplicateEmailError):
         await create_admin_in_db(
             db_session,
             email="dupecli@test.com",
