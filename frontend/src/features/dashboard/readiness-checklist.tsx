@@ -14,10 +14,26 @@ export function ReadinessChecklist() {
   const weekSchemes = useWeekSchemes();
 
   const items = [
-    { key: "subjectsCatalogue", ok: (subjects.data?.length ?? 0) > 0 },
-    { key: "roomsDefined", ok: (rooms.data?.length ?? 0) > 0 },
-    { key: "teachersDefined", ok: (teachers.data?.length ?? 0) > 0 },
-    { key: "weekSchemeDefined", ok: (weekSchemes.data?.length ?? 0) > 0 },
+    {
+      key: "subjectsCatalogue" as const,
+      label: t("dashboard.readinessItems.subjectsCatalogue"),
+      ok: (subjects.data?.length ?? 0) > 0,
+    },
+    {
+      key: "roomsDefined" as const,
+      label: t("dashboard.readinessItems.roomsDefined"),
+      ok: (rooms.data?.length ?? 0) > 0,
+    },
+    {
+      key: "teachersDefined" as const,
+      label: t("dashboard.readinessItems.teachersDefined"),
+      ok: (teachers.data?.length ?? 0) > 0,
+    },
+    {
+      key: "weekSchemeDefined" as const,
+      label: t("dashboard.readinessItems.weekSchemeDefined"),
+      ok: (weekSchemes.data?.length ?? 0) > 0,
+    },
   ];
 
   const okCount = items.filter((item) => item.ok).length;
@@ -49,7 +65,7 @@ export function ReadinessChecklist() {
               {item.ok ? <Check className="h-3 w-3" /> : null}
             </span>
             <span className={cn(item.ok && "text-muted-foreground line-through")}>
-              {t(`dashboard.readinessItems.${item.key}` as const)}
+              {item.label}
             </span>
           </li>
         ))}

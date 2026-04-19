@@ -17,15 +17,26 @@ import { Button } from "@/components/ui/button";
 import { useLogout, useMe } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
+type NavLabelKey =
+  | "nav.dashboard"
+  | "nav.subjects"
+  | "nav.rooms"
+  | "nav.teachers"
+  | "nav.weekSchemes"
+  | "sidebar.schoolClasses"
+  | "sidebar.lessons";
+
+type GroupLabelKey = "sidebar.main" | "sidebar.data";
+
 interface NavItem {
   to: string;
-  labelKey: string;
+  labelKey: NavLabelKey;
   icon: LucideIcon;
   disabled?: boolean;
 }
 
 interface NavGroup {
-  labelKey: string;
+  labelKey: GroupLabelKey;
   items: NavItem[];
 }
 
