@@ -5,7 +5,8 @@
 - `backend/` — FastAPI + SQLAlchemy async, served under `klassenzeit_backend`. State lives on `app.state` (set in `lifespan`).
 - `frontend/` — Vite 7 + React 19 SPA with TanStack Router/Query, shadcn/ui, react-i18next. Proxies API to `:8000` in dev.
 - `solver/` — Rust Cargo workspace with `solver-core` (pure) and `solver-py` (PyO3 bindings built via maturin).
-- Dev loop runs via `mise` tasks; Postgres via `podman compose` from `compose.yaml`.
+- `deploy/` — staging compose for the Hetzner VPS. Pulls `ghcr.io/pgoell/klassenzeit-{backend,frontend}` images published by `.github/workflows/deploy-images.yml`, joins the external `web` network run out of `~/Code/server-infra/`. Runbook: `deploy/README.md`. Decisions: `docs/adr/0009-deployment-topology.md`.
+- Dev loop runs via `mise` tasks; Postgres via `podman compose` from `compose.yaml` (root-level compose is local dev only, distinct from `deploy/compose.yaml`).
 
 ## Development Workflow
 
@@ -67,6 +68,8 @@ The generated `frontend/src/lib/api-types.ts` and `frontend/src/routeTree.gen.ts
 - **TanStack Router: build before typecheck.** Adding a new `src/routes/*.tsx` file makes `tsc --noEmit` fail with `"/path" is not assignable to keyof FileRoutesByPath` until the Router Vite plugin regenerates `src/routeTree.gen.ts`. Run `mise exec -- pnpm -C frontend build` (or start `fe:dev`) before typechecking locally. CI already runs `fe:build` before `tsc`.
 - **Keep Zod schemas flat for RHF forms.** `@hookform/resolvers` v5 + `react-hook-form` v7 + `zod` v4 fail to type-check when a field uses `z.coerce`, `z.union`, `.transform(...)`, or `.default(...)` because the Resolver's input and output types diverge. Keep schemas plain (`z.number().int().min(1).optional()`), and do coercion or empty-string handling in the form `onChange` and submit handlers.
 - **Frontend tests must register MSW handlers for every endpoint they hit.** `tests/setup.ts` starts `setupServer(...defaultHandlers)` with `onUnhandledRequest: "error"`. Adding a page that calls a new endpoint requires an entry in `tests/msw-handlers.ts` (seed data + GET/POST/PATCH/DELETE stubs) before the test can pass.
+- **Dockerfile build context is the repo root.** `backend/Dockerfile` and `frontend/Dockerfile` are built from the repo root with `context: .` and `file: <subdir>/Dockerfile` (see `.github/workflows/deploy-images.yml`). Every `COPY` inside them is therefore written as `COPY backend/ backend/`, `COPY frontend/ ./`, etc. The matching `.dockerignore` lives next to each Dockerfile but its patterns are evaluated against the repo root.
+- **ADR titles skip the em-dash.** `docs/adr/template.md` renders `# NNNN — Title`, but the user's global preference forbids em- and en-dashes in new prose. Use a colon (`# NNNN: Title`) in new ADRs. Existing ADRs 0001-0008 stay as they are; ADRs are immutable per `docs/adr/README.md`.
 
 ## Commit messages
 
