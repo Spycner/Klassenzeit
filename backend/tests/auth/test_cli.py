@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from typer.testing import CliRunner
 
 from klassenzeit_backend.cli import DuplicateEmailError, cli, create_admin_in_db
-from klassenzeit_backend.core.settings import Settings
+from klassenzeit_backend.core.settings import Settings, get_settings
 from klassenzeit_backend.db.models.user import User
 
 
@@ -78,6 +78,21 @@ def cleanup_e2e_admin(settings: Settings) -> Generator:
             await engine.dispose()
 
     asyncio.run(_delete())
+
+
+def test_seed_e2e_admin_refuses_non_test_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """seed-e2e-admin exits 1 when KZ_ENV is not 'test'."""
+    monkeypatch.setenv("KZ_ENV", "dev")
+    get_settings.cache_clear()
+    try:
+        runner = CliRunner()
+        result = runner.invoke(cli, ["seed-e2e-admin"])
+        assert result.exit_code == 1
+        assert "KZ_ENV=test" in result.stderr
+    finally:
+        get_settings.cache_clear()
 
 
 def test_seed_e2e_admin_creates_admin(

@@ -125,7 +125,12 @@ def seed_e2e_admin() -> None:
 
     Intended to be called by ``mise run e2e`` before Playwright starts.
     No-op if the user already exists (by email).
+    Only runs when ``KZ_ENV=test``.
     """
+    settings = get_settings()
+    if settings.env != "test":
+        typer.echo("seed-e2e-admin is only allowed when KZ_ENV=test", err=True)
+        raise typer.Exit(code=1)
     try:
         asyncio.run(_run_create_admin(E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD))
     except DuplicateEmailError:
