@@ -66,11 +66,20 @@ Pre-requisites already in place on the VPS and not repeated here:
    backend and frontend come up behind the existing Caddy. Verify:
 
    ```bash
-   curl -fsS https://klassenzeit-staging.pascalkraus.com/health
+   curl -fsS https://klassenzeit-staging.pascalkraus.com/api/health
    # expected: {"status":"ok","solver_check":"ko"}
    curl -fsS https://klassenzeit-staging.pascalkraus.com/ | head -c 200
    # expected: HTML starting with <!doctype html>...
    ```
+
+### Coordinating with `server-infra`
+
+The shared Caddyfile in `~/Code/server-infra/Caddyfile` currently uses a
+temporary `path_regexp` matcher enumerating each top-level backend segment
+(`/auth/*`, `/subjects`, etc.). After this PR lands, that matcher can be
+reverted to the clean `handle /api/* { reverse_proxy klassenzeit-backend-staging:3001 }`
+pattern. The temporary matcher still routes `/api/*` correctly in the
+interim because it includes every path the backend now serves.
 
 ## Per-deploy update
 
