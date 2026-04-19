@@ -32,13 +32,21 @@ COPY backend/pyproject.toml backend/pyproject.toml
 COPY solver/ solver/
 COPY backend/ backend/
 
-RUN uv sync --frozen --no-dev --package klassenzeit-backend
+# --no-editable installs workspace packages (klassenzeit-backend, klassenzeit-solver)
+# as real wheels into the venv rather than as `.pth`-file editable installs. Editable
+# entries point at source paths (/app/backend/src, /app/solver/solver-py/python) that
+# do not exist in the runtime stage, so the backend would crash at import time with
+# `ModuleNotFoundError: No module named 'klassenzeit_solver'`.
+RUN uv sync --frozen --no-dev --no-editable --package klassenzeit-backend
 
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS runtime
 WORKDIR /app
 
 COPY --from=builder /app/.venv /app/.venv
-COPY backend/ /app/backend/
+# The wheel inside the venv carries the backend source, so we only need the
+# Alembic config + migration scripts at runtime for the migrate container.
+COPY backend/alembic.ini /app/backend/alembic.ini
+COPY backend/alembic /app/backend/alembic
 
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
