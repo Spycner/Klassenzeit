@@ -21,6 +21,9 @@ from klassenzeit_backend.db.models.user import User
 
 cli = typer.Typer(no_args_is_help=True)
 
+E2E_ADMIN_EMAIL = "admin@test.local"
+E2E_ADMIN_PASSWORD = "test-password-12345"  # noqa: S105
+
 
 async def create_admin_in_db(
     db: AsyncSession,
@@ -109,6 +112,24 @@ def cleanup_sessions() -> None:
     """Delete expired sessions from the database."""
     count = asyncio.run(_run_cleanup_sessions())
     typer.echo(f"Deleted {count} expired session(s)")
+
+
+@cli.command()
+def seed_e2e_admin() -> None:
+    """Idempotently seed the fixed e2e admin user.
+
+    Intended to be called by ``mise run e2e`` before Playwright starts.
+    No-op if the user already exists (by email).
+    """
+    try:
+        asyncio.run(_run_create_admin(E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD))
+    except ValueError as exc:
+        if "already exists" in str(exc):
+            typer.echo(f"Admin user already present: {E2E_ADMIN_EMAIL}")
+            return
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Admin user created: {E2E_ADMIN_EMAIL}")
 
 
 def main() -> None:
