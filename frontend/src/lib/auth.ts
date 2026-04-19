@@ -7,7 +7,7 @@ export type Me = components["schemas"]["MeResponse"];
 export const meQueryKey = ["auth", "me"] as const;
 
 async function fetchMe(): Promise<Me> {
-  const { data } = await client.GET("/auth/me");
+  const { data } = await client.GET("/api/auth/me");
   if (!data) {
     throw new ApiError(500, null, "Empty response from /auth/me");
   }
@@ -25,7 +25,7 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      await client.POST("/auth/logout");
+      await client.POST("/api/auth/logout");
     },
     onSuccess: () => {
       queryClient.clear();

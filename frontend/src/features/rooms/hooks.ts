@@ -12,7 +12,7 @@ export function useRooms() {
   return useQuery({
     queryKey: roomsQueryKey,
     queryFn: async (): Promise<Room[]> => {
-      const { data } = await client.GET("/rooms");
+      const { data } = await client.GET("/api/rooms");
       if (!data) {
         throw new ApiError(500, null, "Empty response from /rooms");
       }
@@ -25,7 +25,7 @@ export function useCreateRoom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: RoomCreate): Promise<Room> => {
-      const { data } = await client.POST("/rooms", { body });
+      const { data } = await client.POST("/api/rooms", { body });
       if (!data) {
         throw new ApiError(500, null, "Empty response from POST /rooms");
       }
@@ -39,7 +39,7 @@ export function useUpdateRoom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, body }: { id: string; body: RoomUpdate }): Promise<Room> => {
-      const { data } = await client.PATCH("/rooms/{room_id}", {
+      const { data } = await client.PATCH("/api/rooms/{room_id}", {
         params: { path: { room_id: id } },
         body,
       });
@@ -56,7 +56,7 @@ export function useDeleteRoom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await client.DELETE("/rooms/{room_id}", {
+      await client.DELETE("/api/rooms/{room_id}", {
         params: { path: { room_id: id } },
       });
     },

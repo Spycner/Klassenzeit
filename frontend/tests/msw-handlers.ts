@@ -80,11 +80,11 @@ export const initialSchoolClasses = [
 ];
 
 export const defaultHandlers = [
-  http.get(`${BASE}/auth/me`, () => HttpResponse.json(adminMe)),
-  http.post(`${BASE}/auth/login`, async () => HttpResponse.json(null, { status: 204 })),
-  http.post(`${BASE}/auth/logout`, () => HttpResponse.json(null, { status: 204 })),
-  http.get(`${BASE}/subjects`, () => HttpResponse.json(initialSubjects)),
-  http.post(`${BASE}/subjects`, async ({ request }) => {
+  http.get(`${BASE}/api/auth/me`, () => HttpResponse.json(adminMe)),
+  http.post(`${BASE}/api/auth/login`, async () => HttpResponse.json(null, { status: 204 })),
+  http.post(`${BASE}/api/auth/logout`, () => HttpResponse.json(null, { status: 204 })),
+  http.get(`${BASE}/api/subjects`, () => HttpResponse.json(initialSubjects)),
+  http.post(`${BASE}/api/subjects`, async ({ request }) => {
     const body = (await request.json()) as { name: string; short_name: string };
     return HttpResponse.json(
       {
@@ -97,8 +97,8 @@ export const defaultHandlers = [
       { status: 201 },
     );
   }),
-  http.get(`${BASE}/rooms`, () => HttpResponse.json(initialRooms)),
-  http.post(`${BASE}/rooms`, async ({ request }) => {
+  http.get(`${BASE}/api/rooms`, () => HttpResponse.json(initialRooms)),
+  http.post(`${BASE}/api/rooms`, async ({ request }) => {
     const body = (await request.json()) as {
       name: string;
       short_name: string;
@@ -115,8 +115,8 @@ export const defaultHandlers = [
       { status: 201 },
     );
   }),
-  http.get(`${BASE}/teachers`, () => HttpResponse.json(initialTeachers)),
-  http.post(`${BASE}/teachers`, async ({ request }) => {
+  http.get(`${BASE}/api/teachers`, () => HttpResponse.json(initialTeachers)),
+  http.post(`${BASE}/api/teachers`, async ({ request }) => {
     const body = (await request.json()) as {
       first_name: string;
       last_name: string;
@@ -134,8 +134,8 @@ export const defaultHandlers = [
       { status: 201 },
     );
   }),
-  http.get(`${BASE}/week-schemes`, () => HttpResponse.json(initialWeekSchemes)),
-  http.post(`${BASE}/week-schemes`, async ({ request }) => {
+  http.get(`${BASE}/api/week-schemes`, () => HttpResponse.json(initialWeekSchemes)),
+  http.post(`${BASE}/api/week-schemes`, async ({ request }) => {
     const body = (await request.json()) as { name: string; description?: string | null };
     return HttpResponse.json(
       {
@@ -148,9 +148,9 @@ export const defaultHandlers = [
       { status: 201 },
     );
   }),
-  http.get(`${BASE}/stundentafeln`, () => HttpResponse.json(initialStundentafeln)),
-  http.get(`${BASE}/classes`, () => HttpResponse.json(initialSchoolClasses)),
-  http.post(`${BASE}/classes`, async ({ request }) => {
+  http.get(`${BASE}/api/stundentafeln`, () => HttpResponse.json(initialStundentafeln)),
+  http.get(`${BASE}/api/classes`, () => HttpResponse.json(initialSchoolClasses)),
+  http.post(`${BASE}/api/classes`, async ({ request }) => {
     const body = (await request.json()) as {
       name: string;
       grade_level: number;
