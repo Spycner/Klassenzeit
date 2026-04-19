@@ -82,6 +82,9 @@ Run from repo root unless noted.
 - **No `queryBy*` for async-rendered content.** Use `findBy*` so the test waits instead of racing.
 - **No mocking of `client` or hooks.** MSW handles the network boundary; components render as in prod.
 - **No `data-testid` when a role or accessible name exists.** Query by role first (`getByRole("button", { name: /…/i })`).
+- **Radix primitives need Pointer Events polyfills in jsdom.** `Select`, `Slider`, `Popover`, etc. call `target.hasPointerCapture(...)` on click; without `Element.prototype.hasPointerCapture` / `setPointerCapture` / `releasePointerCapture` / `scrollIntoView` stubbed, the trigger throws and the dropdown never opens. The polyfills live in `tests/setup.ts` gated by `if (!Element.prototype.X)`. Leave them in place when adding new Radix-using tests.
+- **shadcn `Select` trigger has `role="combobox"` in tests.** Query the trigger with `getByRole("combobox", { name: /label/i })`. Options render in a Radix portal, so look them up with `screen.findByRole("option", { name: /…/i })` (not `within(dialog)`).
+- **Same translated string in two places breaks `getByText`.** When two i18n keys resolve to the same copy and both render on screen (e.g. `dashboard.stats.classes` and `sidebar.schoolClasses` both producing "School classes"), `findByText` throws "Found multiple elements". Disambiguate with `getAllByText` + a className / role filter, or rename one of the keys so the rendered labels diverge.
 
 ## Bundle
 
