@@ -1,7 +1,5 @@
 """Tests for the Settings class — env loading, prefix, defaults."""
 
-from pathlib import Path
-
 import pytest
 from pydantic import ValidationError
 
@@ -78,28 +76,25 @@ def test_auth_settings_from_env(monkeypatch) -> None:
     assert settings.login_lockout_minutes == 30
 
 
-def test_env_defaults_to_dev(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_env_defaults_to_dev(monkeypatch: pytest.MonkeyPatch) -> None:
     """KZ_ENV unset should default to ``"dev"``."""
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost/x")
     monkeypatch.delenv("KZ_ENV", raising=False)
-    env_file = tmp_path / ".env"
-    env_file.write_text("KZ_DATABASE_URL=postgresql+psycopg://u:p@localhost/x\n")
-    s = Settings(_env_file=str(env_file))  # ty: ignore[missing-argument, unknown-argument]
+    s = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
     assert s.env == "dev"
 
 
-def test_env_reads_kz_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_env_reads_kz_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """KZ_ENV=test should set env to ``"test"``."""
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost/x")
     monkeypatch.setenv("KZ_ENV", "test")
-    env_file = tmp_path / ".env"
-    env_file.write_text("KZ_DATABASE_URL=postgresql+psycopg://u:p@localhost/x\n")
-    s = Settings(_env_file=str(env_file))  # ty: ignore[missing-argument, unknown-argument]
+    s = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
     assert s.env == "test"
 
 
-def test_env_rejects_unknown_value(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_env_rejects_unknown_value(monkeypatch: pytest.MonkeyPatch) -> None:
     """Unknown env values raise a validation error."""
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost/x")
     monkeypatch.setenv("KZ_ENV", "staging")
-    env_file = tmp_path / ".env"
-    env_file.write_text("KZ_DATABASE_URL=postgresql+psycopg://u:p@localhost/x\n")
     with pytest.raises(ValidationError):
-        Settings(_env_file=str(env_file))  # ty: ignore[missing-argument, unknown-argument]
+        Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
