@@ -57,6 +57,28 @@ export const initialWeekSchemes = [
   },
 ];
 
+export const initialStundentafeln = [
+  {
+    id: "99999999-9999-9999-9999-999999999999",
+    name: "Grundschule Klasse 1",
+    grade_level: 1,
+    created_at: "2026-04-17T00:00:00Z",
+    updated_at: "2026-04-17T00:00:00Z",
+  },
+];
+
+export const initialSchoolClasses = [
+  {
+    id: "88888888-8888-8888-8888-888888888888",
+    name: "1a",
+    grade_level: 1,
+    stundentafel_id: "99999999-9999-9999-9999-999999999999",
+    week_scheme_id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    created_at: "2026-04-17T00:00:00Z",
+    updated_at: "2026-04-17T00:00:00Z",
+  },
+];
+
 export const defaultHandlers = [
   http.get(`${BASE}/auth/me`, () => HttpResponse.json(adminMe)),
   http.post(`${BASE}/auth/login`, async () => HttpResponse.json(null, { status: 204 })),
@@ -120,6 +142,25 @@ export const defaultHandlers = [
         id: "ffffffff-ffff-ffff-ffff-ffffffffffff",
         name: body.name,
         description: body.description ?? null,
+        created_at: "2026-04-17T00:00:00Z",
+        updated_at: "2026-04-17T00:00:00Z",
+      },
+      { status: 201 },
+    );
+  }),
+  http.get(`${BASE}/stundentafeln`, () => HttpResponse.json(initialStundentafeln)),
+  http.get(`${BASE}/classes`, () => HttpResponse.json(initialSchoolClasses)),
+  http.post(`${BASE}/classes`, async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string;
+      grade_level: number;
+      stundentafel_id: string;
+      week_scheme_id: string;
+    };
+    return HttpResponse.json(
+      {
+        id: "77777777-7777-7777-7777-777777777777",
+        ...body,
         created_at: "2026-04-17T00:00:00Z",
         updated_at: "2026-04-17T00:00:00Z",
       },
