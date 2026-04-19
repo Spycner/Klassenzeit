@@ -5,6 +5,7 @@ settings, and rate limiter. They live on ``app.state`` rather than as
 module-level globals so tests can override them.
 """
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -16,6 +17,7 @@ from klassenzeit_backend.auth.routes import auth_router
 from klassenzeit_backend.core.settings import get_settings
 from klassenzeit_backend.db.engine import build_engine
 from klassenzeit_backend.scheduling.routes import scheduling_router
+from klassenzeit_backend.testing.mount import include_testing_router_if_enabled
 from klassenzeit_solver import reverse_chars
 
 
@@ -43,6 +45,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Klassenzeit", lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(scheduling_router)
+
+# Routing decisions happen at import time. Reading ``KZ_ENV`` directly from
+# ``os.environ`` avoids constructing a full ``Settings`` at module load: the
+# ``dump_openapi`` script and CI type regeneration import this module without
+# a ``KZ_DATABASE_URL`` available. The runtime check here only needs the env
+# name, so the lighter dependency is appropriate.
+
+include_testing_router_if_enabled(app, os.environ.get("KZ_ENV"))
 
 
 @app.get("/health")

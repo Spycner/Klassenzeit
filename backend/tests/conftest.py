@@ -33,6 +33,13 @@ Implementation notes:
 """
 
 import os
+
+# Must precede any ``from klassenzeit_backend`` import. ``get_settings()`` is
+# lru_cache'd and ``main.py`` mounts routers at module-load time based on the
+# Settings instance it constructs. ``KZ_ENV=test`` needs to be in the process
+# env before that happens so the testing router (Tasks 3-5) is mounted.
+os.environ.setdefault("KZ_ENV", "test")
+
 import subprocess
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable

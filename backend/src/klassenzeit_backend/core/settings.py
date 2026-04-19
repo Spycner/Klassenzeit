@@ -12,6 +12,7 @@ which tool loaded Settings first.
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -35,6 +36,8 @@ class Settings(BaseSettings):
     db_pool_size: int = 5
     db_max_overflow: int = 10
     db_echo: bool = False
+
+    env: Literal["dev", "test", "prod"] = "dev"
 
     # Auth
     cookie_secure: bool = True

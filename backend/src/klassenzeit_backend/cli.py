@@ -21,6 +21,13 @@ from klassenzeit_backend.db.models.user import User
 
 cli = typer.Typer(no_args_is_help=True)
 
+E2E_ADMIN_EMAIL = "admin@example.com"
+E2E_ADMIN_PASSWORD = "test-password-12345"  # noqa: S105
+
+
+class DuplicateEmailError(ValueError):
+    """Raised when a user with the given email already exists."""
+
 
 async def create_admin_in_db(
     db: AsyncSession,
@@ -34,7 +41,8 @@ async def create_admin_in_db(
     Validates the password and checks for duplicate emails.
     Does NOT commit — caller must commit or the test fixture rolls back.
 
-    Raises ``ValueError`` on validation failure or duplicate email.
+    Raises ``DuplicateEmailError`` on duplicate email, ``ValueError`` on other
+    validation failures.
     """
     try:
         validate_password(password, min_length=min_password_length)
@@ -45,7 +53,7 @@ async def create_admin_in_db(
     result = await db.execute(select(User).where(User.email == email))
     if result.scalar_one_or_none() is not None:
         msg = f"User with email {email} already exists"
-        raise ValueError(msg)
+        raise DuplicateEmailError(msg)
 
     user = User(
         email=email,
@@ -109,6 +117,29 @@ def cleanup_sessions() -> None:
     """Delete expired sessions from the database."""
     count = asyncio.run(_run_cleanup_sessions())
     typer.echo(f"Deleted {count} expired session(s)")
+
+
+@cli.command()
+def seed_e2e_admin() -> None:
+    """Idempotently seed the fixed e2e admin user.
+
+    Intended to be called by ``mise run e2e`` before Playwright starts.
+    No-op if the user already exists (by email).
+    Only runs when ``KZ_ENV=test``.
+    """
+    settings = get_settings()
+    if settings.env != "test":
+        typer.echo("seed-e2e-admin is only allowed when KZ_ENV=test", err=True)
+        raise typer.Exit(code=1)
+    try:
+        asyncio.run(_run_create_admin(E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD))
+    except DuplicateEmailError:
+        typer.echo(f"Admin user already present: {E2E_ADMIN_EMAIL}")
+        return
+    except ValueError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Admin user created: {E2E_ADMIN_EMAIL}")
 
 
 def main() -> None:

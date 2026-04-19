@@ -1,5 +1,8 @@
 """Tests for the Settings class — env loading, prefix, defaults."""
 
+import pytest
+from pydantic import ValidationError
+
 from klassenzeit_backend.core.settings import Settings
 
 
@@ -71,3 +74,27 @@ def test_auth_settings_from_env(monkeypatch) -> None:
     assert settings.password_min_length == 16
     assert settings.login_max_attempts == 3
     assert settings.login_lockout_minutes == 30
+
+
+def test_env_defaults_to_dev(monkeypatch: pytest.MonkeyPatch) -> None:
+    """KZ_ENV unset should default to ``"dev"``."""
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost/x")
+    monkeypatch.delenv("KZ_ENV", raising=False)
+    s = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+    assert s.env == "dev"
+
+
+def test_env_reads_kz_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """KZ_ENV=test should set env to ``"test"``."""
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost/x")
+    monkeypatch.setenv("KZ_ENV", "test")
+    s = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+    assert s.env == "test"
+
+
+def test_env_rejects_unknown_value(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unknown env values raise a validation error."""
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost/x")
+    monkeypatch.setenv("KZ_ENV", "staging")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
