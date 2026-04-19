@@ -14,7 +14,7 @@ setup("authenticate as admin", async ({ page }) => {
 
   // Wait for the dashboard to render; the welcome copy comes from the English
   // i18n catalog and is unique to the authenticated landing page.
-  await page.getByRole("heading", { name: "Dashboard" }).waitFor({ state: "visible" });
+  await page.getByRole("heading", { name: /welcome back/i }).waitFor({ state: "visible" });
 
   await page.context().storageState({ path: STORAGE_STATE });
 });

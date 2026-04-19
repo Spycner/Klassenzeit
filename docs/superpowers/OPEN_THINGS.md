@@ -2,20 +2,27 @@
 
 Running log of items deferred or noted as tech debt during spec/plan work. Each entry points back to the spec that introduced it. Within each section, items are ordered by importance.
 
-Items trace back to the specs that introduced them: the [project scaffolding design](specs/2026-04-11-project-scaffolding-design.md), the [frontend theming / i18n / ratchet design](specs/2026-04-17-frontend-theming-i18n-design.md), and the [entity CRUD pages batch 1 design](specs/2026-04-17-frontend-entity-crud-pages-design.md).
+Items trace back to the specs that introduced them: the [project scaffolding design](specs/2026-04-11-project-scaffolding-design.md), the [frontend theming / i18n / ratchet design](specs/2026-04-17-frontend-theming-i18n-design.md), the [entity CRUD pages batch 1 design](specs/2026-04-17-frontend-entity-crud-pages-design.md), and the [frontend design implementation](specs/2026-04-19-frontend-design-implementation-design.md).
 
 ## Product capabilities (blocks user-facing functionality)
 
 Ordered roughly in the sequence they need to land: data first, then access control, then the product surface, then the UI on top, then the path to production.
 
 - **Remaining entity CRUD pages.** Subjects, Rooms, Teachers, and WeekSchemes have UI pages. Stundentafel, SchoolClass, and Lesson still need UI pages; SchoolClass and Lesson want FK dropdowns, and Stundentafel wants a nested-row editor, so each deserves its own spec.
+- **`updated_at` on list endpoints.** Dashboard "Recently edited" tile renders a placeholder until the backend surfaces `updated_at` on every list endpoint (subjects, rooms, teachers, week-schemes). Unblock the tile by returning `updated_at` and sorting the client query.
+- **Subject color as a real column.** Subject swatches are client-derived from `id` (stable hash over five chart tokens). Move to a persisted `color` column on `Subject` so renaming a subject doesn't churn its palette slot.
+- **`active` flag on WeekScheme.** Split-view detail pane is wired to render an "active" badge; currently never shows because the backend has no flag. Add the column (plus a "set active" mutation) before the badge earns its space.
+- **Bulk delete across entity tables.** Design includes checkbox columns; we dropped them this pass because there's no bulk-delete backend route. Add `DELETE /<entity>?ids=...` + a confirm dialog once there's a compelling workflow.
+- **Import / export buttons.** Placeholder "Import" button renders disabled on every CRUD page. Wire to backend CSV/JSON endpoints once those land.
+- **Multi-select chip editors for sub-resources.** Room suitability subjects, teacher qualifications, teacher availability grid — each needs a backend association plus a UI surface. Bundled with the sub-resource-editors item above.
 - **Sub-resource editors for base entities.** Room availability and suitability, Teacher availability and qualifications, WeekScheme time blocks, and Stundentafel entries all need their own UI. Treat them as one variant of "manage related rows" and do them in a single spec rather than one spec per entity.
 - **Typed deletion errors for in-use entities.** Deleting a Room or Teacher that a Lesson references surfaces the backend 409 as a generic `ApiError` toast. A typed 409 handler, or a pre-flight "is-used" check before opening the delete dialog, should land as one cross-entity pass rather than per-entity duplication.
 - **Translate Zod validation errors beyond login.** `LoginSchema` reads message keys via `i18n.t()` at module load (so the text is whatever language was detected on first load and does not update on locale switch). Subjects, Rooms, Teachers, and WeekSchemes schemas all ship with raw English literals. Ship a translated Zod global error map once a second non-login form surfaces them.
 - **Raise the frontend coverage floor.** Ratchet currently floors at 50% with baseline 61%. Bump the floor to 70% once baseline clears 75% organically, then 80% to match Python.
 - **Parallel `mise run dev` for backend + frontend.** Currently needs two terminals. A `concurrently`-style task or a `mise run dev:all` task would be convenient.
 - **Frontend `/api` prefix + CORS.** Vite proxy currently lists backend prefixes explicitly. When the backend adopts a uniform `/api` prefix, the proxy collapses to a single rule and CORS-for-dev becomes unnecessary.
-- **Chart and sidebar tokens.** Deferred from the theming spec until a component actually needs them.
+- **Self-hosted fonts.** Frontend imports Quicksand / Lora / Fira Code / Special Elite via `@import url(fonts.googleapis.com/...)`. Move to locally hosted `@font-face` (`public/fonts/*.woff2`) once offline dev or third-party privacy is a concern.
+- **Time-of-day-aware welcome greeting.** Dashboard shows "Welcome back." regardless of clock; prototype suggested "Guten Morgen, Pascal." A one-liner with `Intl.DateTimeFormat` plus the logged-in user's first name.
 - **Untranslated-string lint rule.** Review discipline is the only line of defence against hardcoded English or German sneaking into JSX. Add a Biome plugin or parallel ESLint rule if violations happen in practice.
 - **Production deployment.** Docker, reverse proxy, secrets management.
 - **Repository / unit-of-work layer.** Routes currently take

@@ -7,7 +7,12 @@
     "save": "Speichern",
     "create": "Anlegen",
     "delete": "Löschen",
-    "edit": "Bearbeiten"
+    "edit": "Bearbeiten",
+    "new": "Neu",
+    "import": "Importieren",
+    "search": "Suchen",
+    "noResults": "Keine Treffer. Andere Suche versuchen.",
+    "open": "Öffnen"
   },
   "nav": {
     "dashboard": "Übersicht",
@@ -16,6 +21,15 @@
     "teachers": "Lehrkräfte",
     "weekSchemes": "Wochenschemata",
     "logOut": "Abmelden"
+  },
+  "sidebar": {
+    "collapse": "Seitenleiste einklappen",
+    "expand": "Seitenleiste ausklappen",
+    "main": "Allgemein",
+    "data": "Stammdaten",
+    "schoolClasses": "Klassen",
+    "lessons": "Unterricht",
+    "comingSoon": "Bald verfügbar"
   },
   "theme": {
     "toggle": "Farbschema umschalten"
@@ -41,18 +55,55 @@
   },
   "dashboard": {
     "title": "Übersicht",
-    "welcome": "Willkommen. Wähle links einen Bereich zum Verwalten.",
-    "welcomeEmail": "Willkommen, {{email}}. Wähle links einen Bereich zum Verwalten."
+    "welcome": "Willkommen zurück.",
+    "subtitle": "So sehen die Planungsdaten aus.",
+    "welcomeEmail": "Willkommen, {{email}}. Wähle links einen Bereich zum Verwalten.",
+    "stats": {
+      "classes": "Klassen",
+      "teachers": "Lehrkräfte",
+      "rooms": "Räume",
+      "subjects": "Fächer"
+    },
+    "readiness": "Planungsstand",
+    "readinessSub": "Was der Solver braucht, bevor er loslegt.",
+    "readinessItems": {
+      "subjectsCatalogue": "Fächerkatalog begonnen",
+      "roomsDefined": "Mindestens ein Raum angelegt",
+      "teachersDefined": "Mindestens eine Lehrkraft angelegt",
+      "weekSchemeDefined": "Mindestens ein Wochenraster angelegt"
+    },
+    "nextSteps": "Nächste Schritte",
+    "nextStepsSub": "Ein paar Lücken vor dem Solver-Lauf.",
+    "quickAdd": "Schnell anlegen",
+    "recent": "Zuletzt bearbeitet",
+    "recentPlaceholder": "Die Liste erscheint, sobald das Backend updated_at liefert.",
+    "hint": {
+      "noTeachers": "Noch keine Lehrkräfte",
+      "noTeachersSub": "Lege das Kollegium an.",
+      "noSubjects": "Noch keine Fächer",
+      "noSubjectsSub": "Beginne mit den Kernfächern.",
+      "noRooms": "Noch keine Räume",
+      "noRoomsSub": "Lege mindestens einen Raum an.",
+      "noWeekScheme": "Noch kein Wochenraster",
+      "noWeekSchemeSub": "Definiere das wöchentliche Raster."
+    }
   },
   "subjects": {
     "title": "Fächer",
+    "subtitle": "Der Fächerkatalog der Schule.",
     "new": "Neues Fach",
     "columns": {
       "name": "Name",
       "shortName": "Kürzel",
       "actions": "Aktionen"
     },
-    "empty": "Noch keine Fächer. Lege eines an, um zu starten.",
+    "empty": {
+      "title": "Fächerkatalog anlegen",
+      "body": "Fächer sind die Grundlage der Planungsdaten. Sie fließen in Stundentafeln, Unterricht und Raumeignung ein. Beginne mit den Kernfächern.",
+      "step1": "Fach anlegen",
+      "step2": "Farbe zuweisen",
+      "step3": "In Stundentafel nutzen"
+    },
     "loadError": "Fächer konnten nicht geladen werden.",
     "dialog": {
       "createTitle": "Neues Fach",
@@ -65,6 +116,7 @@
   },
   "rooms": {
     "title": "Räume",
+    "subtitle": "Räume und Fachräume der Schule.",
     "new": "Neuer Raum",
     "columns": {
       "name": "Name",
@@ -73,7 +125,13 @@
       "mode": "Eignung",
       "actions": "Aktionen"
     },
-    "empty": "Noch keine Räume. Lege einen an, um zu starten.",
+    "empty": {
+      "title": "Noch keine Räume",
+      "body": "Lege einen Raum an, damit der Solver weiß, wo Unterricht stattfinden kann. Beginne mit allgemeinen Klassenräumen, danach Fachräume.",
+      "step1": "Klassenraum anlegen",
+      "step2": "Fachräume kennzeichnen",
+      "step3": "Verfügbarkeit setzen"
+    },
     "loadError": "Räume konnten nicht geladen werden.",
     "suitabilityModes": {
       "general": "Allgemein",
@@ -90,6 +148,7 @@
   },
   "teachers": {
     "title": "Lehrkräfte",
+    "subtitle": "Kollegium und Deputate.",
     "new": "Neue Lehrkraft",
     "columns": {
       "firstName": "Vorname",
@@ -98,7 +157,13 @@
       "maxHoursPerWeek": "Max. Stunden / Woche",
       "actions": "Aktionen"
     },
-    "empty": "Noch keine Lehrkräfte. Lege eine an, um zu starten.",
+    "empty": {
+      "title": "Noch keine Lehrkräfte",
+      "body": "Füge das Kollegium mit Stundendeputat hinzu. Der Solver berücksichtigt damit Vertragsarbeitszeiten.",
+      "step1": "Lehrkraft anlegen",
+      "step2": "Fakultas setzen",
+      "step3": "Verfügbarkeit setzen"
+    },
     "loadError": "Lehrkräfte konnten nicht geladen werden.",
     "dialog": {
       "createTitle": "Neue Lehrkraft",
@@ -111,13 +176,20 @@
   },
   "weekSchemes": {
     "title": "Wochenschemata",
+    "subtitle": "Das wöchentliche Zeitraster mit Stunden, Pausen und Tagen.",
     "new": "Neues Wochenschema",
     "columns": {
       "name": "Name",
       "description": "Beschreibung",
       "actions": "Aktionen"
     },
-    "empty": "Noch keine Wochenschemata. Lege eines an, um zu starten.",
+    "empty": {
+      "title": "Noch keine Wochenschemata",
+      "body": "Ein Wochenraster definiert Stunden und Pausen. Meist genügt ein Standardraster; Varianten für Sonderwochen sind möglich.",
+      "step1": "Raster benennen",
+      "step2": "Zeitblöcke hinzufügen",
+      "step3": "Klassen zuweisen"
+    },
     "loadError": "Wochenschemata konnten nicht geladen werden.",
     "dialog": {
       "createTitle": "Neues Wochenschema",
