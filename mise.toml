@@ -107,6 +107,11 @@ description = "Delete expired sessions from the database"
 dir = "{{config_root}}/backend"
 run = "uv run klassenzeit-backend cleanup-sessions"
 
+[tasks."auth:seed-e2e-admin"]
+description = "Idempotently seed the fixed e2e admin user"
+dir = "{{config_root}}/backend"
+run = "uv run klassenzeit-backend seed-e2e-admin"
+
 # ─── Coverage (separate from `test` — slower, for reports not TDD) ──────────
 
 [tasks.cov]
@@ -190,6 +195,11 @@ description = "Build the frontend for production"
 dir = "{{config_root}}/frontend"
 run = "pnpm build"
 
+[tasks."fe:preview"]
+description = "Serve the built frontend via vite preview on :4173"
+dir = "{{config_root}}/frontend"
+run = "pnpm exec vite preview --port 4173 --strictPort"
+
 [tasks."fe:test"]
 description = "Run frontend tests"
 run = "if [ -f frontend/package.json ]; then pnpm -C frontend test; else echo 'frontend not installed, skipping'; fi"
@@ -219,3 +229,24 @@ run = "if [ -f frontend/package.json ]; then pnpm -C frontend fmt; else echo 'fr
 [tasks."fe:types"]
 description = "Regenerate OpenAPI types for the frontend"
 run = "bash scripts/gen_frontend_types.sh"
+
+# ─── End-to-end (Playwright) ────────────────────────────────────────────────
+
+[tasks."e2e:install"]
+description = "One-time Chromium install for Playwright"
+dir = "{{config_root}}/frontend"
+run = "pnpm exec playwright install chromium"
+
+[tasks.e2e]
+description = "Run the Playwright e2e suite (starts DB, migrates, seeds admin, runs tests)"
+depends = ["db:up", "db:migrate", "auth:seed-e2e-admin"]
+dir = "{{config_root}}/frontend"
+env = { KZ_ENV = "test" }
+run = "pnpm exec playwright test --config e2e/playwright.config.ts"
+
+[tasks."e2e:ui"]
+description = "Run the Playwright e2e suite in interactive UI mode"
+depends = ["db:up", "db:migrate", "auth:seed-e2e-admin"]
+dir = "{{config_root}}/frontend"
+env = { KZ_ENV = "test" }
+run = "pnpm exec playwright test --config e2e/playwright.config.ts --ui"
