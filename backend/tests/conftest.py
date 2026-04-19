@@ -33,6 +33,9 @@ Implementation notes:
 """
 
 import os
+
+os.environ.setdefault("KZ_ENV", "test")
+
 import subprocess
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
