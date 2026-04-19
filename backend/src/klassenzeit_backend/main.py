@@ -44,6 +44,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Klassenzeit", lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(scheduling_router)
+
+# Routing decisions happen at import time; ``get_settings()`` is ``lru_cache``d
+# so this and the ``lifespan`` call below resolve to the same ``Settings``
+# instance. The testing router must be attached before the app starts
+# serving requests, which rules out a lifespan-scoped mount.
+
 include_testing_router_if_enabled(app, get_settings())
 
 
