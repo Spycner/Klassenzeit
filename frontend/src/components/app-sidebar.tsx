@@ -53,7 +53,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/teachers", labelKey: "nav.teachers", icon: GraduationCap },
       { to: "/week-schemes", labelKey: "nav.weekSchemes", icon: CalendarDays },
       { to: "/school-classes", labelKey: "sidebar.schoolClasses", icon: Users },
-      { to: "#", labelKey: "sidebar.lessons", icon: Layers, disabled: true },
+      { to: "/lessons", labelKey: "sidebar.lessons", icon: Layers },
     ],
   },
 ];
