@@ -50,7 +50,8 @@ klassenzeit/
   SQLAlchemy 2.0 async on Postgres 17 with Alembic migrations. See
   [`database.md`](database.md) for contributor details.
 - **HTTP API** (`backend/src/klassenzeit_backend/main.py`, growing) —
-  FastAPI app. Currently only `/health` exists.
+  FastAPI app. Routes are mounted under `/api/*` (see ADR 0010);
+  `/api/health` is the liveness probe.
 - **Solver** — see `solver/solver-core/` for the Rust crate and its
   benches; `solver/solver-py/` for the PyO3 binding layer.
 - **Authentication** — self-rolled cookie-session auth in

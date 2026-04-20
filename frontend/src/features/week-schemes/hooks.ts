@@ -12,7 +12,7 @@ export function useWeekSchemes() {
   return useQuery({
     queryKey: weekSchemesQueryKey,
     queryFn: async (): Promise<WeekScheme[]> => {
-      const { data } = await client.GET("/week-schemes");
+      const { data } = await client.GET("/api/week-schemes");
       if (!data) {
         throw new ApiError(500, null, "Empty response from /week-schemes");
       }
@@ -25,7 +25,7 @@ export function useCreateWeekScheme() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: WeekSchemeCreate): Promise<WeekScheme> => {
-      const { data } = await client.POST("/week-schemes", { body });
+      const { data } = await client.POST("/api/week-schemes", { body });
       if (!data) {
         throw new ApiError(500, null, "Empty response from POST /week-schemes");
       }
@@ -45,7 +45,7 @@ export function useUpdateWeekScheme() {
       id: string;
       body: WeekSchemeUpdate;
     }): Promise<WeekScheme> => {
-      const { data } = await client.PATCH("/week-schemes/{scheme_id}", {
+      const { data } = await client.PATCH("/api/week-schemes/{scheme_id}", {
         params: { path: { scheme_id: id } },
         body,
       });
@@ -62,7 +62,7 @@ export function useDeleteWeekScheme() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await client.DELETE("/week-schemes/{scheme_id}", {
+      await client.DELETE("/api/week-schemes/{scheme_id}", {
         params: { path: { scheme_id: id } },
       });
     },

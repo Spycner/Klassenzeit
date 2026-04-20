@@ -6,18 +6,6 @@ import { defineConfig } from "vite";
 
 const BACKEND = "http://localhost:8000";
 
-const API_PREFIXES = [
-  "/auth",
-  "/health",
-  "/subjects",
-  "/week-schemes",
-  "/rooms",
-  "/teachers",
-  "/stundentafeln",
-  "/classes",
-  "/lessons",
-];
-
 export default defineConfig({
   plugins: [TanStackRouterVite({ autoCodeSplitting: true }), react(), tailwindcss()],
   resolve: {
@@ -27,13 +15,13 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: Object.fromEntries(
-      API_PREFIXES.map((prefix) => [prefix, { target: BACKEND, changeOrigin: true }]),
-    ),
+    proxy: {
+      "/api": { target: BACKEND, changeOrigin: true },
+    },
   },
   preview: {
-    proxy: Object.fromEntries(
-      API_PREFIXES.map((prefix) => [prefix, { target: BACKEND, changeOrigin: true }]),
-    ),
+    proxy: {
+      "/api": { target: BACKEND, changeOrigin: true },
+    },
   },
 });

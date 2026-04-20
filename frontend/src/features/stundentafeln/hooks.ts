@@ -10,7 +10,7 @@ export function useStundentafeln() {
   return useQuery({
     queryKey: stundentafelnQueryKey,
     queryFn: async (): Promise<Stundentafel[]> => {
-      const { data } = await client.GET("/stundentafeln");
+      const { data } = await client.GET("/api/stundentafeln");
       if (!data) {
         throw new ApiError(500, null, "Empty response from /stundentafeln");
       }

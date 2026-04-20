@@ -9,7 +9,7 @@ import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from klassenzeit_backend.auth.rate_limit import LoginRateLimiter
@@ -42,9 +42,26 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await engine.dispose()
 
 
-app = FastAPI(title="Klassenzeit", lifespan=lifespan)
-app.include_router(auth_router)
-app.include_router(scheduling_router)
+app = FastAPI(
+    title="Klassenzeit",
+    lifespan=lifespan,
+    openapi_url="/api/openapi.json",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+)
+
+health_router = APIRouter(tags=["health"])
+
+
+@health_router.get("/health")
+async def health() -> dict[str, str]:
+    """Return a simple health-check response with a solver smoke test."""
+    return {"status": "ok", "solver_check": reverse_chars("ok")}
+
+
+app.include_router(auth_router, prefix="/api")
+app.include_router(scheduling_router, prefix="/api")
+app.include_router(health_router, prefix="/api")
 
 # Routing decisions happen at import time. Reading ``KZ_ENV`` directly from
 # ``os.environ`` avoids constructing a full ``Settings`` at module load: the
@@ -53,9 +70,3 @@ app.include_router(scheduling_router)
 # name, so the lighter dependency is appropriate.
 
 include_testing_router_if_enabled(app, os.environ.get("KZ_ENV"))
-
-
-@app.get("/health")
-async def health() -> dict[str, str]:
-    """Return a simple health-check response with a solver smoke test."""
-    return {"status": "ok", "solver_check": reverse_chars("ok")}

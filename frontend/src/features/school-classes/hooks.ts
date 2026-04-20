@@ -12,7 +12,7 @@ export function useSchoolClasses() {
   return useQuery({
     queryKey: schoolClassesQueryKey,
     queryFn: async (): Promise<SchoolClass[]> => {
-      const { data } = await client.GET("/classes");
+      const { data } = await client.GET("/api/classes");
       if (!data) {
         throw new ApiError(500, null, "Empty response from /classes");
       }
@@ -25,7 +25,7 @@ export function useCreateSchoolClass() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: SchoolClassCreate): Promise<SchoolClass> => {
-      const { data } = await client.POST("/classes", { body });
+      const { data } = await client.POST("/api/classes", { body });
       if (!data) {
         throw new ApiError(500, null, "Empty response from POST /classes");
       }
@@ -45,7 +45,7 @@ export function useUpdateSchoolClass() {
       id: string;
       body: SchoolClassUpdate;
     }): Promise<SchoolClass> => {
-      const { data } = await client.PATCH("/classes/{class_id}", {
+      const { data } = await client.PATCH("/api/classes/{class_id}", {
         params: { path: { class_id: id } },
         body,
       });
@@ -62,7 +62,7 @@ export function useDeleteSchoolClass() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await client.DELETE("/classes/{class_id}", {
+      await client.DELETE("/api/classes/{class_id}", {
         params: { path: { class_id: id } },
       });
     },

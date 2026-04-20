@@ -12,7 +12,7 @@ export function useSubjects() {
   return useQuery({
     queryKey: subjectsQueryKey,
     queryFn: async (): Promise<Subject[]> => {
-      const { data } = await client.GET("/subjects");
+      const { data } = await client.GET("/api/subjects");
       if (!data) {
         throw new ApiError(500, null, "Empty response from /subjects");
       }
@@ -25,7 +25,7 @@ export function useCreateSubject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: SubjectCreate): Promise<Subject> => {
-      const { data } = await client.POST("/subjects", { body });
+      const { data } = await client.POST("/api/subjects", { body });
       if (!data) {
         throw new ApiError(500, null, "Empty response from POST /subjects");
       }
@@ -39,7 +39,7 @@ export function useUpdateSubject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, body }: { id: string; body: SubjectUpdate }): Promise<Subject> => {
-      const { data } = await client.PATCH("/subjects/{subject_id}", {
+      const { data } = await client.PATCH("/api/subjects/{subject_id}", {
         params: { path: { subject_id: id } },
         body,
       });
@@ -56,7 +56,7 @@ export function useDeleteSubject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await client.DELETE("/subjects/{subject_id}", {
+      await client.DELETE("/api/subjects/{subject_id}", {
         params: { path: { subject_id: id } },
       });
     },

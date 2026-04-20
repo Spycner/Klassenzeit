@@ -26,7 +26,7 @@ async def _create_subject(client: AsyncClient, name: str, short_name: str) -> st
     Returns:
         The UUID string of the created Subject.
     """
-    resp = await client.post("/subjects", json={"name": name, "short_name": short_name})
+    resp = await client.post("/api/subjects", json={"name": name, "short_name": short_name})
     assert resp.status_code == 201, resp.text
     return resp.json()["id"]
 
@@ -41,7 +41,7 @@ async def _setup_week_scheme_for_lessons(client: AsyncClient, name: str) -> str:
     Returns:
         The UUID string of the created WeekScheme.
     """
-    resp = await client.post("/week-schemes", json={"name": name})
+    resp = await client.post("/api/week-schemes", json={"name": name})
     assert resp.status_code == 201, resp.text
     return resp.json()["id"]
 
@@ -59,7 +59,7 @@ async def _setup_stundentafel_for_lessons(
     Returns:
         The UUID string of the created Stundentafel.
     """
-    resp = await client.post("/stundentafeln", json={"name": name, "grade_level": grade_level})
+    resp = await client.post("/api/stundentafeln", json={"name": name, "grade_level": grade_level})
     assert resp.status_code == 201, resp.text
     return resp.json()["id"]
 
@@ -84,7 +84,7 @@ async def _create_school_class(
         The UUID string of the created SchoolClass.
     """
     resp = await client.post(
-        "/classes",
+        "/api/classes",
         json={
             "name": name,
             "grade_level": grade_level,
@@ -111,7 +111,7 @@ async def _create_teacher(
         The UUID string of the created Teacher.
     """
     resp = await client.post(
-        "/teachers",
+        "/api/teachers",
         json={
             "first_name": first_name,
             "last_name": last_name,
@@ -145,7 +145,7 @@ async def test_create_lesson(
     teacher_id = await _create_teacher(client, "Hans", "Müller", "HMU1")
 
     resp = await client.post(
-        "/lessons",
+        "/api/lessons",
         json={
             "school_class_id": class_id,
             "subject_id": subject_id,
@@ -187,7 +187,7 @@ async def test_create_lesson_without_teacher(
     class_id = await _create_school_class(client, "5b-L2", 5, tafel_id, scheme_id)
 
     resp = await client.post(
-        "/lessons",
+        "/api/lessons",
         json={
             "school_class_id": class_id,
             "subject_id": subject_id,
@@ -221,8 +221,8 @@ async def test_create_lesson_duplicate_class_subject(
     class_id = await _create_school_class(client, "6a-L3", 6, tafel_id, scheme_id)
 
     payload = {"school_class_id": class_id, "subject_id": subject_id, "hours_per_week": 3}
-    await client.post("/lessons", json=payload)
-    resp = await client.post("/lessons", json=payload)
+    await client.post("/api/lessons", json=payload)
+    resp = await client.post("/api/lessons", json=payload)
     assert resp.status_code == 409
 
 
@@ -247,11 +247,11 @@ async def test_list_lessons(
     class_id = await _create_school_class(client, "7a-L4", 7, tafel_id, scheme_id)
 
     await client.post(
-        "/lessons",
+        "/api/lessons",
         json={"school_class_id": class_id, "subject_id": subject_id, "hours_per_week": 2},
     )
 
-    resp = await client.get("/lessons")
+    resp = await client.get("/api/lessons")
     assert resp.status_code == 200
     body = resp.json()
     assert isinstance(body, list)
@@ -281,15 +281,15 @@ async def test_list_lessons_filter_by_class(
     class2_id = await _create_school_class(client, "8b-L5", 8, tafel_id, scheme_id)
 
     await client.post(
-        "/lessons",
+        "/api/lessons",
         json={"school_class_id": class1_id, "subject_id": subj1_id, "hours_per_week": 2},
     )
     await client.post(
-        "/lessons",
+        "/api/lessons",
         json={"school_class_id": class2_id, "subject_id": subj2_id, "hours_per_week": 2},
     )
 
-    resp = await client.get(f"/lessons?class_id={class1_id}")
+    resp = await client.get(f"/api/lessons?class_id={class1_id}")
     assert resp.status_code == 200
     body = resp.json()
     assert all(lesson["school_class"]["id"] == class1_id for lesson in body)
@@ -320,7 +320,7 @@ async def test_list_lessons_filter_by_teacher(
     teacher2_id = await _create_teacher(client, "Bob", "Meier", "BME6")
 
     await client.post(
-        "/lessons",
+        "/api/lessons",
         json={
             "school_class_id": class_id,
             "subject_id": subj1_id,
@@ -329,7 +329,7 @@ async def test_list_lessons_filter_by_teacher(
         },
     )
     await client.post(
-        "/lessons",
+        "/api/lessons",
         json={
             "school_class_id": class_id,
             "subject_id": subj2_id,
@@ -338,7 +338,7 @@ async def test_list_lessons_filter_by_teacher(
         },
     )
 
-    resp = await client.get(f"/lessons?teacher_id={teacher1_id}")
+    resp = await client.get(f"/api/lessons?teacher_id={teacher1_id}")
     assert resp.status_code == 200
     body = resp.json()
     assert all(lesson["teacher"]["id"] == teacher1_id for lesson in body)
@@ -367,7 +367,7 @@ async def test_get_lesson(
     teacher_id = await _create_teacher(client, "Clara", "Weber", "CWE7")
 
     create_resp = await client.post(
-        "/lessons",
+        "/api/lessons",
         json={
             "school_class_id": class_id,
             "subject_id": subject_id,
@@ -377,7 +377,7 @@ async def test_get_lesson(
     )
     lesson_id = create_resp.json()["id"]
 
-    resp = await client.get(f"/lessons/{lesson_id}")
+    resp = await client.get(f"/api/lessons/{lesson_id}")
     assert resp.status_code == 200
     body = resp.json()
     assert body["id"] == lesson_id
@@ -411,13 +411,13 @@ async def test_update_lesson_assign_teacher(
     teacher_id = await _create_teacher(client, "Dirk", "Fischer", "DFI8")
 
     create_resp = await client.post(
-        "/lessons",
+        "/api/lessons",
         json={"school_class_id": class_id, "subject_id": subject_id, "hours_per_week": 3},
     )
     lesson_id = create_resp.json()["id"]
     assert create_resp.json()["teacher"] is None
 
-    patch_resp = await client.patch(f"/lessons/{lesson_id}", json={"teacher_id": teacher_id})
+    patch_resp = await client.patch(f"/api/lessons/{lesson_id}", json={"teacher_id": teacher_id})
     assert patch_resp.status_code == 200
     body = patch_resp.json()
     assert body["teacher"]["id"] == teacher_id
@@ -445,15 +445,15 @@ async def test_delete_lesson(
     class_id = await _create_school_class(client, "6c-L9", 6, tafel_id, scheme_id)
 
     create_resp = await client.post(
-        "/lessons",
+        "/api/lessons",
         json={"school_class_id": class_id, "subject_id": subject_id, "hours_per_week": 2},
     )
     lesson_id = create_resp.json()["id"]
 
-    delete_resp = await client.delete(f"/lessons/{lesson_id}")
+    delete_resp = await client.delete(f"/api/lessons/{lesson_id}")
     assert delete_resp.status_code == 204
 
-    get_resp = await client.get(f"/lessons/{lesson_id}")
+    get_resp = await client.get(f"/api/lessons/{lesson_id}")
     assert get_resp.status_code == 404
 
 
@@ -478,17 +478,17 @@ async def test_generate_lessons_from_stundentafel(
     tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L10", 7)
 
     await client.post(
-        f"/stundentafeln/{tafel_id}/entries",
+        f"/api/stundentafeln/{tafel_id}/entries",
         json={"subject_id": subj1_id, "hours_per_week": 2, "preferred_block_size": 1},
     )
     await client.post(
-        f"/stundentafeln/{tafel_id}/entries",
+        f"/api/stundentafeln/{tafel_id}/entries",
         json={"subject_id": subj2_id, "hours_per_week": 3, "preferred_block_size": 2},
     )
 
     class_id = await _create_school_class(client, "7a-L10", 7, tafel_id, scheme_id)
 
-    resp = await client.post(f"/classes/{class_id}/generate-lessons")
+    resp = await client.post(f"/api/classes/{class_id}/generate-lessons")
     assert resp.status_code == 201, resp.text
     body = resp.json()
     assert len(body) == 2
@@ -522,11 +522,11 @@ async def test_generate_lessons_skips_existing(
     tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel L11", 8)
 
     await client.post(
-        f"/stundentafeln/{tafel_id}/entries",
+        f"/api/stundentafeln/{tafel_id}/entries",
         json={"subject_id": subj1_id, "hours_per_week": 2},
     )
     await client.post(
-        f"/stundentafeln/{tafel_id}/entries",
+        f"/api/stundentafeln/{tafel_id}/entries",
         json={"subject_id": subj2_id, "hours_per_week": 2},
     )
 
@@ -534,11 +534,11 @@ async def test_generate_lessons_skips_existing(
 
     # Pre-create a lesson for subj1
     await client.post(
-        "/lessons",
+        "/api/lessons",
         json={"school_class_id": class_id, "subject_id": subj1_id, "hours_per_week": 2},
     )
 
-    resp = await client.post(f"/classes/{class_id}/generate-lessons")
+    resp = await client.post(f"/api/classes/{class_id}/generate-lessons")
     assert resp.status_code == 201, resp.text
     body = resp.json()
     assert len(body) == 1
@@ -551,8 +551,8 @@ async def test_lesson_requires_admin(client: AsyncClient) -> None:
     Args:
         client: The async test HTTP client (no session cookie set).
     """
-    resp = await client.get("/lessons")
+    resp = await client.get("/api/lessons")
     assert resp.status_code == 401
 
-    resp = await client.post(f"/classes/{uuid.uuid4()}/generate-lessons")
+    resp = await client.post(f"/api/classes/{uuid.uuid4()}/generate-lessons")
     assert resp.status_code == 401

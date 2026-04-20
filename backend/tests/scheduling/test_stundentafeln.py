@@ -29,7 +29,7 @@ async def test_create_stundentafel(
     await create_test_user(email="admin@st1.com", role="admin")
     await login_as("admin@st1.com", "testpassword123")
     response = await client.post(
-        "/stundentafeln",
+        "/api/stundentafeln",
         json={"name": "Gymnasium Klasse 5", "grade_level": 5},
     )
     assert response.status_code == 201
@@ -55,9 +55,9 @@ async def test_create_stundentafel_duplicate_name(
     """
     await create_test_user(email="admin@st2.com", role="admin")
     await login_as("admin@st2.com", "testpassword123")
-    await client.post("/stundentafeln", json={"name": "Duplicate Tafel", "grade_level": 6})
+    await client.post("/api/stundentafeln", json={"name": "Duplicate Tafel", "grade_level": 6})
     response = await client.post(
-        "/stundentafeln", json={"name": "Duplicate Tafel", "grade_level": 7}
+        "/api/stundentafeln", json={"name": "Duplicate Tafel", "grade_level": 7}
     )
     assert response.status_code == 409
 
@@ -76,9 +76,9 @@ async def test_list_stundentafeln(
     """
     await create_test_user(email="admin@st3.com", role="admin")
     await login_as("admin@st3.com", "testpassword123")
-    await client.post("/stundentafeln", json={"name": "Alpha Tafel", "grade_level": 5})
-    await client.post("/stundentafeln", json={"name": "Beta Tafel", "grade_level": 6})
-    response = await client.get("/stundentafeln")
+    await client.post("/api/stundentafeln", json={"name": "Alpha Tafel", "grade_level": 5})
+    await client.post("/api/stundentafeln", json={"name": "Beta Tafel", "grade_level": 6})
+    response = await client.get("/api/stundentafeln")
     assert response.status_code == 200
     body = response.json()
     assert len(body) >= 2
@@ -106,24 +106,24 @@ async def test_get_stundentafel_with_entries(
     await login_as("admin@st4.com", "testpassword123")
     # Create a subject first
     subj_resp = await client.post(
-        "/subjects", json={"name": "Mathematik ST4", "short_name": "MaST4"}
+        "/api/subjects", json={"name": "Mathematik ST4", "short_name": "MaST4"}
     )
     assert subj_resp.status_code == 201
     subject_id = subj_resp.json()["id"]
     # Create Stundentafel
     tafel_resp = await client.post(
-        "/stundentafeln", json={"name": "Detail Tafel", "grade_level": 5}
+        "/api/stundentafeln", json={"name": "Detail Tafel", "grade_level": 5}
     )
     assert tafel_resp.status_code == 201
     tafel_id = tafel_resp.json()["id"]
     # Add entry
     entry_resp = await client.post(
-        f"/stundentafeln/{tafel_id}/entries",
+        f"/api/stundentafeln/{tafel_id}/entries",
         json={"subject_id": subject_id, "hours_per_week": 4, "preferred_block_size": 2},
     )
     assert entry_resp.status_code == 201
     # Fetch detail
-    response = await client.get(f"/stundentafeln/{tafel_id}")
+    response = await client.get(f"/api/stundentafeln/{tafel_id}")
     assert response.status_code == 200
     body = response.json()
     assert body["id"] == tafel_id
@@ -154,10 +154,10 @@ async def test_update_stundentafel(
     await create_test_user(email="admin@st5.com", role="admin")
     await login_as("admin@st5.com", "testpassword123")
     create_resp = await client.post(
-        "/stundentafeln", json={"name": "Old Tafel Name", "grade_level": 5}
+        "/api/stundentafeln", json={"name": "Old Tafel Name", "grade_level": 5}
     )
     tafel_id = create_resp.json()["id"]
-    response = await client.patch(f"/stundentafeln/{tafel_id}", json={"name": "New Tafel Name"})
+    response = await client.patch(f"/api/stundentafeln/{tafel_id}", json={"name": "New Tafel Name"})
     assert response.status_code == 200
     body = response.json()
     assert body["name"] == "New Tafel Name"
@@ -179,12 +179,12 @@ async def test_delete_stundentafel(
     await create_test_user(email="admin@st6.com", role="admin")
     await login_as("admin@st6.com", "testpassword123")
     create_resp = await client.post(
-        "/stundentafeln", json={"name": "To Delete Tafel", "grade_level": 8}
+        "/api/stundentafeln", json={"name": "To Delete Tafel", "grade_level": 8}
     )
     tafel_id = create_resp.json()["id"]
-    delete_resp = await client.delete(f"/stundentafeln/{tafel_id}")
+    delete_resp = await client.delete(f"/api/stundentafeln/{tafel_id}")
     assert delete_resp.status_code == 204
-    get_resp = await client.get(f"/stundentafeln/{tafel_id}")
+    get_resp = await client.get(f"/api/stundentafeln/{tafel_id}")
     assert get_resp.status_code == 404
 
 
@@ -202,12 +202,16 @@ async def test_create_entry(
     """
     await create_test_user(email="admin@st7.com", role="admin")
     await login_as("admin@st7.com", "testpassword123")
-    subj_resp = await client.post("/subjects", json={"name": "Deutsch ST7", "short_name": "DeST7"})
+    subj_resp = await client.post(
+        "/api/subjects", json={"name": "Deutsch ST7", "short_name": "DeST7"}
+    )
     subject_id = subj_resp.json()["id"]
-    tafel_resp = await client.post("/stundentafeln", json={"name": "Entry Tafel", "grade_level": 6})
+    tafel_resp = await client.post(
+        "/api/stundentafeln", json={"name": "Entry Tafel", "grade_level": 6}
+    )
     tafel_id = tafel_resp.json()["id"]
     response = await client.post(
-        f"/stundentafeln/{tafel_id}/entries",
+        f"/api/stundentafeln/{tafel_id}/entries",
         json={"subject_id": subject_id, "hours_per_week": 5, "preferred_block_size": 1},
     )
     assert response.status_code == 201
@@ -232,18 +236,20 @@ async def test_create_entry_duplicate_subject(
     """
     await create_test_user(email="admin@st8.com", role="admin")
     await login_as("admin@st8.com", "testpassword123")
-    subj_resp = await client.post("/subjects", json={"name": "Sport ST8", "short_name": "SpST8"})
+    subj_resp = await client.post(
+        "/api/subjects", json={"name": "Sport ST8", "short_name": "SpST8"}
+    )
     subject_id = subj_resp.json()["id"]
     tafel_resp = await client.post(
-        "/stundentafeln", json={"name": "Dup Entry Tafel", "grade_level": 7}
+        "/api/stundentafeln", json={"name": "Dup Entry Tafel", "grade_level": 7}
     )
     tafel_id = tafel_resp.json()["id"]
     await client.post(
-        f"/stundentafeln/{tafel_id}/entries",
+        f"/api/stundentafeln/{tafel_id}/entries",
         json={"subject_id": subject_id, "hours_per_week": 3},
     )
     response = await client.post(
-        f"/stundentafeln/{tafel_id}/entries",
+        f"/api/stundentafeln/{tafel_id}/entries",
         json={"subject_id": subject_id, "hours_per_week": 4},
     )
     assert response.status_code == 409
@@ -263,19 +269,21 @@ async def test_update_entry(
     """
     await create_test_user(email="admin@st9.com", role="admin")
     await login_as("admin@st9.com", "testpassword123")
-    subj_resp = await client.post("/subjects", json={"name": "Englisch ST9", "short_name": "EnST9"})
+    subj_resp = await client.post(
+        "/api/subjects", json={"name": "Englisch ST9", "short_name": "EnST9"}
+    )
     subject_id = subj_resp.json()["id"]
     tafel_resp = await client.post(
-        "/stundentafeln", json={"name": "Update Entry Tafel", "grade_level": 5}
+        "/api/stundentafeln", json={"name": "Update Entry Tafel", "grade_level": 5}
     )
     tafel_id = tafel_resp.json()["id"]
     entry_resp = await client.post(
-        f"/stundentafeln/{tafel_id}/entries",
+        f"/api/stundentafeln/{tafel_id}/entries",
         json={"subject_id": subject_id, "hours_per_week": 3, "preferred_block_size": 1},
     )
     entry_id = entry_resp.json()["id"]
     response = await client.patch(
-        f"/stundentafeln/{tafel_id}/entries/{entry_id}",
+        f"/api/stundentafeln/{tafel_id}/entries/{entry_id}",
         json={"hours_per_week": 5, "preferred_block_size": 2},
     )
     assert response.status_code == 200
@@ -299,20 +307,22 @@ async def test_delete_entry(
     """
     await create_test_user(email="admin@st10.com", role="admin")
     await login_as("admin@st10.com", "testpassword123")
-    subj_resp = await client.post("/subjects", json={"name": "Kunst ST10", "short_name": "KuST10"})
+    subj_resp = await client.post(
+        "/api/subjects", json={"name": "Kunst ST10", "short_name": "KuST10"}
+    )
     subject_id = subj_resp.json()["id"]
     tafel_resp = await client.post(
-        "/stundentafeln", json={"name": "Delete Entry Tafel", "grade_level": 9}
+        "/api/stundentafeln", json={"name": "Delete Entry Tafel", "grade_level": 9}
     )
     tafel_id = tafel_resp.json()["id"]
     entry_resp = await client.post(
-        f"/stundentafeln/{tafel_id}/entries",
+        f"/api/stundentafeln/{tafel_id}/entries",
         json={"subject_id": subject_id, "hours_per_week": 2},
     )
     entry_id = entry_resp.json()["id"]
-    delete_resp = await client.delete(f"/stundentafeln/{tafel_id}/entries/{entry_id}")
+    delete_resp = await client.delete(f"/api/stundentafeln/{tafel_id}/entries/{entry_id}")
     assert delete_resp.status_code == 204
-    get_resp = await client.get(f"/stundentafeln/{tafel_id}")
+    get_resp = await client.get(f"/api/stundentafeln/{tafel_id}")
     body = get_resp.json()
     entry_ids = [e["id"] for e in body["entries"]]
     assert entry_id not in entry_ids
@@ -332,13 +342,13 @@ async def test_delete_stundentafel_referenced_by_class(
     """
     await create_test_user(email="admin@st11.com", role="admin")
     await login_as("admin@st11.com", "testpassword123")
-    scheme_resp = await client.post("/week-schemes", json={"name": "Test Scheme ST11"})
+    scheme_resp = await client.post("/api/week-schemes", json={"name": "Test Scheme ST11"})
     tafel_resp = await client.post(
-        "/stundentafeln", json={"name": "Test Tafel ST11", "grade_level": 5}
+        "/api/stundentafeln", json={"name": "Test Tafel ST11", "grade_level": 5}
     )
     tafel_id = tafel_resp.json()["id"]
     await client.post(
-        "/classes",
+        "/api/classes",
         json={
             "name": "5a",
             "grade_level": 5,
@@ -346,7 +356,7 @@ async def test_delete_stundentafel_referenced_by_class(
             "week_scheme_id": scheme_resp.json()["id"],
         },
     )
-    response = await client.delete(f"/stundentafeln/{tafel_id}")
+    response = await client.delete(f"/api/stundentafeln/{tafel_id}")
     assert response.status_code == 409
 
 
@@ -356,5 +366,5 @@ async def test_stundentafel_requires_admin(client: AsyncClient) -> None:
     Args:
         client: The async test HTTP client (no session cookie set).
     """
-    response = await client.get("/stundentafeln")
+    response = await client.get("/api/stundentafeln")
     assert response.status_code == 401

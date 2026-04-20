@@ -6,8 +6,8 @@ Self-rolled cookie-session authentication. Closed, invite-only system with two r
 
 ## How it works
 
-1. Admin creates a user via `POST /auth/admin/users` (or CLI `create-admin` for the first admin).
-2. User logs in via `POST /auth/login` with email + password.
+1. Admin creates a user via `POST /api/auth/admin/users` (or CLI `create-admin` for the first admin).
+2. User logs in via `POST /api/auth/login` with email + password.
 3. Backend validates credentials, creates a row in the `sessions` table, returns a `kz_session` cookie.
 4. Subsequent requests include the cookie. The `get_current_user` dependency reads it, looks up the session, loads the user.
 5. Logout deletes the session row and clears the cookie.

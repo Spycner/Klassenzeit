@@ -12,7 +12,7 @@ export function useTeachers() {
   return useQuery({
     queryKey: teachersQueryKey,
     queryFn: async (): Promise<Teacher[]> => {
-      const { data } = await client.GET("/teachers");
+      const { data } = await client.GET("/api/teachers");
       if (!data) {
         throw new ApiError(500, null, "Empty response from /teachers");
       }
@@ -25,7 +25,7 @@ export function useCreateTeacher() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: TeacherCreate): Promise<Teacher> => {
-      const { data } = await client.POST("/teachers", { body });
+      const { data } = await client.POST("/api/teachers", { body });
       if (!data) {
         throw new ApiError(500, null, "Empty response from POST /teachers");
       }
@@ -39,7 +39,7 @@ export function useUpdateTeacher() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, body }: { id: string; body: TeacherUpdate }): Promise<Teacher> => {
-      const { data } = await client.PATCH("/teachers/{teacher_id}", {
+      const { data } = await client.PATCH("/api/teachers/{teacher_id}", {
         params: { path: { teacher_id: id } },
         body,
       });
@@ -56,7 +56,7 @@ export function useDeleteTeacher() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await client.DELETE("/teachers/{teacher_id}", {
+      await client.DELETE("/api/teachers/{teacher_id}", {
         params: { path: { teacher_id: id } },
       });
     },

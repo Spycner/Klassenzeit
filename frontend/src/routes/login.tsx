@@ -47,7 +47,7 @@ function LoginPage() {
 
   const login = useMutation({
     mutationFn: async (values: LoginValues) => {
-      await client.POST("/auth/login", { body: values });
+      await client.POST("/api/auth/login", { body: values });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: meQueryKey });

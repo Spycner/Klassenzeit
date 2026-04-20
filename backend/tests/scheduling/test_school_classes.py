@@ -29,7 +29,7 @@ async def _setup_stundentafel_for_classes(
         The UUID string of the created Stundentafel.
     """
     resp = await client.post(
-        "/stundentafeln",
+        "/api/stundentafeln",
         json={"name": name, "grade_level": grade_level},
     )
     assert resp.status_code == 201
@@ -46,7 +46,7 @@ async def _setup_week_scheme_for_classes(client: AsyncClient, name: str) -> str:
     Returns:
         The UUID string of the created WeekScheme.
     """
-    resp = await client.post("/week-schemes", json={"name": name})
+    resp = await client.post("/api/week-schemes", json={"name": name})
     assert resp.status_code == 201
     return resp.json()["id"]
 
@@ -68,7 +68,7 @@ async def test_create_school_class(
     tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC1", 5)
     scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC1")
     response = await client.post(
-        "/classes",
+        "/api/classes",
         json={
             "name": "5a",
             "grade_level": 5,
@@ -104,7 +104,7 @@ async def test_create_school_class_duplicate_name(
     tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC2", 6)
     scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC2")
     await client.post(
-        "/classes",
+        "/api/classes",
         json={
             "name": "6b",
             "grade_level": 6,
@@ -113,7 +113,7 @@ async def test_create_school_class_duplicate_name(
         },
     )
     response = await client.post(
-        "/classes",
+        "/api/classes",
         json={
             "name": "6b",
             "grade_level": 6,
@@ -141,7 +141,7 @@ async def test_list_school_classes(
     tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC3", 7)
     scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC3")
     await client.post(
-        "/classes",
+        "/api/classes",
         json={
             "name": "7a",
             "grade_level": 7,
@@ -150,7 +150,7 @@ async def test_list_school_classes(
         },
     )
     await client.post(
-        "/classes",
+        "/api/classes",
         json={
             "name": "7b",
             "grade_level": 7,
@@ -158,7 +158,7 @@ async def test_list_school_classes(
             "week_scheme_id": scheme_id,
         },
     )
-    response = await client.get("/classes")
+    response = await client.get("/api/classes")
     assert response.status_code == 200
     body = response.json()
     assert len(body) >= 2
@@ -184,7 +184,7 @@ async def test_get_school_class(
     tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC4", 8)
     scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC4")
     create_resp = await client.post(
-        "/classes",
+        "/api/classes",
         json={
             "name": "8c",
             "grade_level": 8,
@@ -193,7 +193,7 @@ async def test_get_school_class(
         },
     )
     class_id = create_resp.json()["id"]
-    response = await client.get(f"/classes/{class_id}")
+    response = await client.get(f"/api/classes/{class_id}")
     assert response.status_code == 200
     body = response.json()
     assert body["id"] == class_id
@@ -218,7 +218,7 @@ async def test_update_school_class(
     tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC5", 9)
     scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC5")
     create_resp = await client.post(
-        "/classes",
+        "/api/classes",
         json={
             "name": "9a",
             "grade_level": 9,
@@ -227,7 +227,7 @@ async def test_update_school_class(
         },
     )
     class_id = create_resp.json()["id"]
-    response = await client.patch(f"/classes/{class_id}", json={"name": "9a-updated"})
+    response = await client.patch(f"/api/classes/{class_id}", json={"name": "9a-updated"})
     assert response.status_code == 200
     body = response.json()
     assert body["name"] == "9a-updated"
@@ -253,7 +253,7 @@ async def test_delete_school_class(
     tafel_id = await _setup_stundentafel_for_classes(client, "Tafel SC6", 10)
     scheme_id = await _setup_week_scheme_for_classes(client, "Scheme SC6")
     create_resp = await client.post(
-        "/classes",
+        "/api/classes",
         json={
             "name": "10a",
             "grade_level": 10,
@@ -262,9 +262,9 @@ async def test_delete_school_class(
         },
     )
     class_id = create_resp.json()["id"]
-    delete_resp = await client.delete(f"/classes/{class_id}")
+    delete_resp = await client.delete(f"/api/classes/{class_id}")
     assert delete_resp.status_code == 204
-    get_resp = await client.get(f"/classes/{class_id}")
+    get_resp = await client.get(f"/api/classes/{class_id}")
     assert get_resp.status_code == 404
 
 
@@ -274,7 +274,7 @@ async def test_school_class_requires_admin(client: AsyncClient) -> None:
     Args:
         client: The async test HTTP client (no session cookie set).
     """
-    response = await client.get("/classes")
+    response = await client.get("/api/classes")
     assert response.status_code == 401
 
 
@@ -292,5 +292,5 @@ async def test_get_school_class_not_found(
     """
     await create_test_user(email="admin@sc7.com", role="admin")
     await login_as("admin@sc7.com", "testpassword123")
-    response = await client.get(f"/classes/{uuid.uuid4()}")
+    response = await client.get(f"/api/classes/{uuid.uuid4()}")
     assert response.status_code == 404
