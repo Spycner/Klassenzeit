@@ -12,7 +12,24 @@
     "import": "Importieren",
     "search": "Suchen",
     "noResults": "Keine Treffer. Andere Suche versuchen.",
-    "open": "Öffnen"
+    "open": "Öffnen",
+    "daysShort": {
+      "0": "Mo",
+      "1": "Di",
+      "2": "Mi",
+      "3": "Do",
+      "4": "Fr"
+    },
+    "daysLong": {
+      "0": "Montag",
+      "1": "Dienstag",
+      "2": "Mittwoch",
+      "3": "Donnerstag",
+      "4": "Freitag"
+    },
+    "start": "Start",
+    "end": "Ende",
+    "position": "Stunde"
   },
   "nav": {
     "dashboard": "Übersicht",
@@ -202,6 +219,26 @@
       "editDescription": "{{name}} aktualisieren.",
       "deleteTitle": "Wochenschema löschen",
       "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    },
+    "timeBlocks": {
+      "sectionTitle": "Zeitblöcke",
+      "add": "Zeitblock hinzufügen",
+      "empty": "Noch keine Zeitblöcke. Füge einen hinzu, um die Woche zu planen.",
+      "columns": {
+        "day": "Tag",
+        "position": "Stunde",
+        "start": "Start",
+        "end": "Ende",
+        "actions": "Aktionen"
+      },
+      "createTitle": "Zeitblock hinzufügen",
+      "editTitle": "Zeitblock bearbeiten",
+      "deleteTitle": "Zeitblock löschen",
+      "deleteDescription": "{{day}} Stunde {{position}} entfernen?",
+      "errors": {
+        "duplicate": "Für diesen Tag und diese Stunde existiert bereits ein Zeitblock.",
+        "invalidTime": "Zeit muss im Format HH:MM sein."
+      }
     }
   },
   "schoolClasses": {

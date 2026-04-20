@@ -12,7 +12,24 @@
     "import": "Import",
     "search": "Search",
     "noResults": "No matches. Try a different search.",
-    "open": "Open"
+    "open": "Open",
+    "daysShort": {
+      "0": "Mon",
+      "1": "Tue",
+      "2": "Wed",
+      "3": "Thu",
+      "4": "Fri"
+    },
+    "daysLong": {
+      "0": "Monday",
+      "1": "Tuesday",
+      "2": "Wednesday",
+      "3": "Thursday",
+      "4": "Friday"
+    },
+    "start": "Start",
+    "end": "End",
+    "position": "Period"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -202,6 +219,26 @@
       "editDescription": "Update {{name}}.",
       "deleteTitle": "Delete week scheme",
       "deleteDescription": "This will permanently delete \"{{name}}\"."
+    },
+    "timeBlocks": {
+      "sectionTitle": "Time blocks",
+      "add": "Add time block",
+      "empty": "No time blocks yet. Add one to start planning the week.",
+      "columns": {
+        "day": "Day",
+        "position": "Period",
+        "start": "Start",
+        "end": "End",
+        "actions": "Actions"
+      },
+      "createTitle": "Add time block",
+      "editTitle": "Edit time block",
+      "deleteTitle": "Delete time block",
+      "deleteDescription": "Remove {{day}} period {{position}}?",
+      "errors": {
+        "duplicate": "A time block with this day and position already exists.",
+        "invalidTime": "Time must be HH:MM."
+      }
     }
   },
   "schoolClasses": {

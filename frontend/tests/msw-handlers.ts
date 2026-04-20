@@ -57,6 +57,21 @@ export const initialWeekSchemes = [
   },
 ];
 
+export type TimeBlock = {
+  id: string;
+  day_of_week: number;
+  position: number;
+  start_time: string;
+  end_time: string;
+};
+
+// Mutable per-test store so POST/PATCH/DELETE on time blocks see a consistent
+// view. Tests reset the buckets in `beforeEach`; seed values here are only used
+// when a test does not override them.
+export const timeBlocksBySchemeId: Record<string, TimeBlock[]> = {
+  "cccccccc-cccc-cccc-cccc-cccccccccccc": [],
+};
+
 export const initialStundentafeln = [
   {
     id: "99999999-9999-9999-9999-999999999999",
@@ -245,6 +260,87 @@ export const defaultHandlers = [
       },
       { status: 201 },
     );
+  }),
+  http.get(`${BASE}/api/week-schemes/:scheme_id`, ({ params }) => {
+    const id = String(params.scheme_id);
+    const base = initialWeekSchemes.find((s) => s.id === id);
+    if (!base) {
+      return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    }
+    return HttpResponse.json({
+      ...base,
+      time_blocks: timeBlocksBySchemeId[id] ?? [],
+    });
+  }),
+  http.post(`${BASE}/api/week-schemes/:scheme_id/time-blocks`, async ({ request, params }) => {
+    const id = String(params.scheme_id);
+    const body = (await request.json()) as {
+      day_of_week: number;
+      position: number;
+      start_time: string;
+      end_time: string;
+    };
+    const bucket = timeBlocksBySchemeId[id] ?? [];
+    if (bucket.some((b) => b.day_of_week === body.day_of_week && b.position === body.position)) {
+      return HttpResponse.json(
+        { detail: "A time block with this day and position already exists in this scheme." },
+        { status: 409 },
+      );
+    }
+    const created: TimeBlock = {
+      id: `tb-${id}-${bucket.length + 1}`,
+      day_of_week: body.day_of_week,
+      position: body.position,
+      start_time: body.start_time,
+      end_time: body.end_time,
+    };
+    timeBlocksBySchemeId[id] = [...bucket, created];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+  http.patch(
+    `${BASE}/api/week-schemes/:scheme_id/time-blocks/:block_id`,
+    async ({ request, params }) => {
+      const schemeId = String(params.scheme_id);
+      const blockId = String(params.block_id);
+      const body = (await request.json()) as Partial<{
+        day_of_week: number;
+        position: number;
+        start_time: string;
+        end_time: string;
+      }>;
+      const bucket = timeBlocksBySchemeId[schemeId] ?? [];
+      const existing = bucket.find((b) => b.id === blockId);
+      if (!existing) {
+        return HttpResponse.json({ detail: "not found" }, { status: 404 });
+      }
+      const next: TimeBlock = {
+        ...existing,
+        day_of_week: body.day_of_week ?? existing.day_of_week,
+        position: body.position ?? existing.position,
+        start_time: body.start_time ?? existing.start_time,
+        end_time: body.end_time ?? existing.end_time,
+      };
+      if (
+        bucket.some(
+          (b) =>
+            b.id !== blockId && b.day_of_week === next.day_of_week && b.position === next.position,
+        )
+      ) {
+        return HttpResponse.json(
+          { detail: "A time block with this day and position already exists in this scheme." },
+          { status: 409 },
+        );
+      }
+      timeBlocksBySchemeId[schemeId] = bucket.map((b) => (b.id === blockId ? next : b));
+      return HttpResponse.json(next);
+    },
+  ),
+  http.delete(`${BASE}/api/week-schemes/:scheme_id/time-blocks/:block_id`, ({ params }) => {
+    const schemeId = String(params.scheme_id);
+    const blockId = String(params.block_id);
+    const bucket = timeBlocksBySchemeId[schemeId] ?? [];
+    timeBlocksBySchemeId[schemeId] = bucket.filter((b) => b.id !== blockId);
+    return HttpResponse.json(null, { status: 204 });
   }),
   http.get(`${BASE}/api/stundentafeln`, () => HttpResponse.json(initialStundentafeln)),
   http.post(`${BASE}/api/stundentafeln`, async ({ request }) => {

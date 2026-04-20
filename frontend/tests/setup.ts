@@ -1,6 +1,11 @@
 import "@testing-library/jest-dom/vitest";
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
-import { roomSuitabilityByRoomId, server, stundentafelEntriesByTafelId } from "./msw-handlers";
+import {
+  roomSuitabilityByRoomId,
+  server,
+  stundentafelEntriesByTafelId,
+  timeBlocksBySchemeId,
+} from "./msw-handlers";
 
 // jsdom does not implement matchMedia; next-themes calls it during mount.
 if (!window.matchMedia) {
@@ -43,6 +48,9 @@ beforeEach(() => {
   }
   for (const key of Object.keys(roomSuitabilityByRoomId)) {
     roomSuitabilityByRoomId[key] = [];
+  }
+  for (const key of Object.keys(timeBlocksBySchemeId)) {
+    timeBlocksBySchemeId[key] = [];
   }
 });
 afterEach(() => server.resetHandlers());
