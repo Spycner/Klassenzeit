@@ -1,5 +1,6 @@
 """Integration tests for the Room CRUD routes with suitability and availability."""
 
+import uuid
 from collections.abc import Awaitable, Callable
 
 import pytest
@@ -311,3 +312,69 @@ async def test_room_requires_admin(client: AsyncClient) -> None:
     """
     response = await client.get("/api/rooms")
     assert response.status_code == 401
+
+
+async def test_put_suitability_rejects_missing_subject_ids(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """PUT /rooms/{id}/suitability with an unknown subject_id returns 400 with the missing ids."""
+    await create_test_user(email="admin@suit-miss.com", role="admin")
+    await login_as("admin@suit-miss.com", "testpassword123")
+    room_resp = await client.post("/api/rooms", json={"name": "Miss Room", "short_name": "MR"})
+    room_id = room_resp.json()["id"]
+    fake_id = str(uuid.uuid4())
+    response = await client.put(
+        f"/api/rooms/{room_id}/suitability",
+        json={"subject_ids": [fake_id]},
+    )
+    assert response.status_code == 400
+    body = response.json()
+    assert body["detail"]["missing_subject_ids"] == [fake_id]
+
+
+async def test_put_suitability_dedupes_duplicates(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """PUT /rooms/{id}/suitability collapses duplicate subject_ids to a single row."""
+    await create_test_user(email="admin@suit-dup.com", role="admin")
+    await login_as("admin@suit-dup.com", "testpassword123")
+    room_resp = await client.post("/api/rooms", json={"name": "Dup Room", "short_name": "DR"})
+    room_id = room_resp.json()["id"]
+    subj_resp = await client.post(
+        "/api/subjects",
+        json={"name": "Dedup Subject", "short_name": "DS", "color": "chart-1"},
+    )
+    subject_id = subj_resp.json()["id"]
+    response = await client.put(
+        f"/api/rooms/{room_id}/suitability",
+        json={"subject_ids": [subject_id, subject_id, subject_id]},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["suitability_subjects"]) == 1
+    assert body["suitability_subjects"][0]["id"] == subject_id
+
+
+async def test_put_suitability_empty_list(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """PUT /rooms/{id}/suitability with [] clears the suitability set."""
+    await create_test_user(email="admin@suit-empty.com", role="admin")
+    await login_as("admin@suit-empty.com", "testpassword123")
+    room_resp = await client.post("/api/rooms", json={"name": "Empty Room", "short_name": "ER"})
+    room_id = room_resp.json()["id"]
+    subj_resp = await client.post(
+        "/api/subjects",
+        json={"name": "Goes Away", "short_name": "GA", "color": "chart-2"},
+    )
+    subject_id = subj_resp.json()["id"]
+    await client.put(f"/api/rooms/{room_id}/suitability", json={"subject_ids": [subject_id]})
+    response = await client.put(f"/api/rooms/{room_id}/suitability", json={"subject_ids": []})
+    assert response.status_code == 200
+    assert response.json()["suitability_subjects"] == []
