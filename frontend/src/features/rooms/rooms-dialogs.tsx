@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { SubjectMultiPicker } from "@/features/subjects/subject-multi-picker";
 import { ApiError } from "@/lib/api-client";
 import {
   type Room,
@@ -28,7 +29,6 @@ import {
   useUpdateRoomWithSuitability,
 } from "./hooks";
 import { RoomFormSchema, type RoomFormValues } from "./schema";
-import { SubjectMultiPicker } from "./subject-multi-picker";
 
 interface RoomFormDialogProps {
   open: boolean;
