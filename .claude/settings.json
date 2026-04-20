@@ -23,7 +23,9 @@
       "Bash(cargo metadata *)",
       "Bash(cargo test:*)",
       "Bash(cargo check:*)",
-      "Bash(cargo clippy:*)"
+      "Bash(cargo clippy:*)",
+      "Bash(mise exec -- pnpm exec tsc --noEmit)",
+      "Bash(mise exec -- pnpm vitest run *)"
     ]
   }
 }
