@@ -69,3 +69,24 @@ export function useDeleteSchoolClass() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: schoolClassesQueryKey }),
   });
 }
+
+export type GeneratedLessons = components["schemas"]["LessonResponse"][];
+
+export function useGenerateLessons() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (classId: string): Promise<GeneratedLessons> => {
+      const { data } = await client.POST("/api/classes/{class_id}/generate-lessons", {
+        params: { path: { class_id: classId } },
+      });
+      if (!data) {
+        throw new ApiError(500, null, "Empty response from generate-lessons");
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lessons"] });
+      queryClient.invalidateQueries({ queryKey: schoolClassesQueryKey });
+    },
+  });
+}

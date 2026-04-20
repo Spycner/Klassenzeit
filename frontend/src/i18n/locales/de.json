@@ -308,6 +308,15 @@
       "missingPrereqs": "Lege mindestens eine Stundentafel und ein Wochenraster an, bevor du eine Klasse anlegst.",
       "addStundentafel": "Stundentafel anlegen",
       "addWeekScheme": "Wochenraster anlegen"
+    },
+    "generateLessons": {
+      "action": "Unterricht erzeugen",
+      "confirmTitle": "Unterricht erzeugen",
+      "confirmDescription": "Fehlenden Unterricht für {{name}} aus der Stundentafel erzeugen?",
+      "confirm": "Erzeugen",
+      "created_one": "{{count}} Stunde erzeugt",
+      "created_other": "{{count}} Stunden erzeugt",
+      "noneCreated": "Kein neuer Unterricht erzeugt"
     }
   },
   "lessons": {

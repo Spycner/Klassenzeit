@@ -568,6 +568,28 @@ export const defaultHandlers = [
       { status: 201 },
     );
   }),
+  http.post(`${BASE}/api/classes/:class_id/generate-lessons`, ({ params }) => {
+    const classId = String(params.class_id);
+    const schoolClass = initialSchoolClasses.find((c) => c.id === classId);
+    if (!schoolClass) return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    const subject = initialSubjects[0];
+    if (!subject) return HttpResponse.json([], { status: 201 });
+    return HttpResponse.json(
+      [
+        {
+          id: "gen-0000-0000-0000-0000-000000000001",
+          school_class: { id: schoolClass.id, name: schoolClass.name },
+          subject: { id: subject.id, name: subject.name, short_name: subject.short_name },
+          teacher: null,
+          hours_per_week: 4,
+          preferred_block_size: 1,
+          created_at: "2026-04-20T00:00:00Z",
+          updated_at: "2026-04-20T00:00:00Z",
+        },
+      ],
+      { status: 201 },
+    );
+  }),
   http.get(`${BASE}/api/lessons`, () => HttpResponse.json(initialLessons)),
   http.post(`${BASE}/api/lessons`, async ({ request }) => {
     const body = (await request.json()) as {

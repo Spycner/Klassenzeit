@@ -308,6 +308,15 @@
       "missingPrereqs": "Add at least one curriculum and one week scheme before creating a class.",
       "addStundentafel": "Add a curriculum",
       "addWeekScheme": "Add a week scheme"
+    },
+    "generateLessons": {
+      "action": "Generate lessons",
+      "confirmTitle": "Generate lessons",
+      "confirmDescription": "Generate remaining lessons for {{name}} from its curriculum?",
+      "confirm": "Generate",
+      "created_one": "{{count}} lesson created",
+      "created_other": "{{count}} lessons created",
+      "noneCreated": "No new lessons generated"
     }
   },
   "lessons": {
