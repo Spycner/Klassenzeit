@@ -19,21 +19,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { type Room, useCreateRoom, useDeleteRoom, useUpdateRoom } from "./hooks";
 import { RoomFormSchema, type RoomFormValues } from "./schema";
-
-type SuitabilityMode = "general" | "specialized";
-
-export function suitabilityModeKey(mode: string): SuitabilityMode {
-  return mode === "specialized" ? "specialized" : "general";
-}
 
 interface RoomFormDialogProps {
   open: boolean;
@@ -50,7 +37,6 @@ export function RoomFormDialog({ open, onOpenChange, submitLabel, room }: RoomFo
       name: room?.name ?? "",
       short_name: room?.short_name ?? "",
       capacity: room?.capacity ?? undefined,
-      suitability_mode: room ? suitabilityModeKey(room.suitability_mode) : "general",
     },
   });
   const createMutation = useCreateRoom();
@@ -68,7 +54,6 @@ export function RoomFormDialog({ open, onOpenChange, submitLabel, room }: RoomFo
       name: values.name,
       short_name: values.short_name,
       capacity,
-      suitability_mode: values.suitability_mode,
     };
     if (room) {
       await updateMutation.mutateAsync({ id: room.id, body });
@@ -136,29 +121,6 @@ export function RoomFormDialog({ open, onOpenChange, submitLabel, room }: RoomFo
                       }
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="suitability_mode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("rooms.columns.mode")}</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="general">{t("rooms.suitabilityModes.general")}</SelectItem>
-                      <SelectItem value="specialized">
-                        {t("rooms.suitabilityModes.specialized")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

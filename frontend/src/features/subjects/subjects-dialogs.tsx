@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { autoPickColor } from "./color";
 import { type Subject, useCreateSubject, useDeleteSubject, useUpdateSubject } from "./hooks";
 import { SubjectFormSchema, type SubjectFormValues } from "./schema";
 
@@ -41,6 +42,7 @@ export function SubjectFormDialog({
     defaultValues: {
       name: subject?.name ?? "",
       short_name: subject?.short_name ?? "",
+      color: subject?.color ?? autoPickColor(""),
     },
   });
   const createMutation = useCreateSubject();

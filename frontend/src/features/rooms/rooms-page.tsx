@@ -13,9 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import { type Room, useRooms } from "./hooks";
-import { DeleteRoomDialog, RoomFormDialog, suitabilityModeKey } from "./rooms-dialogs";
+import { DeleteRoomDialog, RoomFormDialog } from "./rooms-dialogs";
 
 export function RoomsPage() {
   const { t } = useTranslation();
@@ -73,52 +72,35 @@ export function RoomsPage() {
                   <TableHead className="py-2">{t("rooms.columns.name")}</TableHead>
                   <TableHead className="py-2">{t("rooms.columns.shortName")}</TableHead>
                   <TableHead className="py-2 text-right">{t("rooms.columns.capacity")}</TableHead>
-                  <TableHead className="py-2">{t("rooms.columns.mode")}</TableHead>
                   <TableHead className="w-40 py-2 text-right">
                     {t("rooms.columns.actions")}
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((room) => {
-                  const mode = suitabilityModeKey(room.suitability_mode);
-                  return (
-                    <TableRow key={room.id}>
-                      <TableCell className="py-1.5 font-medium">{room.name}</TableCell>
-                      <TableCell className="py-1.5 font-mono text-[12.5px]">
-                        {room.short_name}
-                      </TableCell>
-                      <TableCell className="py-1.5 text-right font-mono text-[12.5px]">
-                        {room.capacity ?? "—"}
-                      </TableCell>
-                      <TableCell className="py-1.5">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
-                            mode === "specialized"
-                              ? "border-secondary/40 bg-secondary/15 text-secondary"
-                              : "bg-muted text-muted-foreground",
-                          )}
-                        >
-                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                          {t(`rooms.suitabilityModes.${mode}`)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="space-x-2 py-1.5 text-right">
-                        <Button size="sm" variant="outline" onClick={() => setEditing(room)}>
-                          {t("common.edit")}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => setConfirmDelete(room)}
-                        >
-                          {t("common.delete")}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {rows.map((room) => (
+                  <TableRow key={room.id}>
+                    <TableCell className="py-1.5 font-medium">{room.name}</TableCell>
+                    <TableCell className="py-1.5 font-mono text-[12.5px]">
+                      {room.short_name}
+                    </TableCell>
+                    <TableCell className="py-1.5 text-right font-mono text-[12.5px]">
+                      {room.capacity ?? "—"}
+                    </TableCell>
+                    <TableCell className="space-x-2 py-1.5 text-right">
+                      <Button size="sm" variant="outline" onClick={() => setEditing(room)}>
+                        {t("common.edit")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setConfirmDelete(room)}
+                      >
+                        {t("common.delete")}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
