@@ -21,7 +21,6 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 - **Self-hosted fonts.** Frontend imports Quicksand / Lora / Fira Code / Special Elite via `@import url(fonts.googleapis.com/...)`. Move to locally hosted `@font-face` (`public/fonts/*.woff2`) once offline dev or third-party privacy is a concern.
 - **Time-of-day-aware welcome greeting.** Dashboard shows "Welcome back." regardless of clock; prototype suggested "Guten Morgen, Pascal." A one-liner with `Intl.DateTimeFormat` plus the logged-in user's first name.
 - **Untranslated-string lint rule.** Review discipline is the only line of defence against hardcoded English or German sneaking into JSX. Add a Biome plugin or parallel ESLint rule if violations happen in practice.
-- **Shared `ConfirmDialog` component.** Each CRUD page ships its own `Delete<Entity>Dialog` with identical structure (cancel button, destructive confirm button, pending label). Extract once the sixth entity lands, or once a non-delete confirmation (e.g. "publish schedule") gives the abstraction a second use.
 - **Production deployment.** Docker, reverse proxy, secrets management.
 - **Repository / unit-of-work layer.** Routes currently take
   `AsyncSession` directly. A repository layer earns its place only

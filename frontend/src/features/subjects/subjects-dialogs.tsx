@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -139,32 +140,17 @@ interface DeleteSubjectDialogProps {
 export function DeleteSubjectDialog({ subject, onClose }: DeleteSubjectDialogProps) {
   const { t } = useTranslation();
   const mutation = useDeleteSubject();
-  async function confirmSubjectDelete() {
-    await mutation.mutateAsync(subject.id);
-    onClose();
-  }
   return (
-    <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("subjects.dialog.deleteTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("subjects.dialog.deleteDescription", { name: subject.name })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={confirmSubjectDelete}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? t("common.deleting") : t("common.delete")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      open
+      onClose={onClose}
+      title={t("subjects.dialog.deleteTitle")}
+      description={t("subjects.dialog.deleteDescription", { name: subject.name })}
+      isPending={mutation.isPending}
+      onConfirm={async () => {
+        await mutation.mutateAsync(subject.id);
+        onClose();
+      }}
+    />
   );
 }

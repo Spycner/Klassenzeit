@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -542,33 +543,18 @@ interface DeleteStundentafelDialogProps {
 export function DeleteStundentafelDialog({ stundentafel, onClose }: DeleteStundentafelDialogProps) {
   const { t } = useTranslation();
   const mutation = useDeleteStundentafel();
-  async function confirmStundentafelDelete() {
-    await mutation.mutateAsync(stundentafel.id);
-    onClose();
-  }
   return (
-    <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("stundentafeln.dialog.deleteTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("stundentafeln.dialog.deleteDescription", { name: stundentafel.name })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={confirmStundentafelDelete}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? t("common.deleting") : t("common.delete")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      open
+      onClose={onClose}
+      title={t("stundentafeln.dialog.deleteTitle")}
+      description={t("stundentafeln.dialog.deleteDescription", { name: stundentafel.name })}
+      isPending={mutation.isPending}
+      onConfirm={async () => {
+        await mutation.mutateAsync(stundentafel.id);
+        onClose();
+      }}
+    />
   );
 }
 
@@ -581,30 +567,19 @@ interface DeleteEntryDialogProps {
 function DeleteEntryDialog({ tafelId, entry, onClose }: DeleteEntryDialogProps) {
   const { t } = useTranslation();
   const mutation = useDeleteStundentafelEntry(tafelId);
-  async function confirmEntryRemove() {
-    await mutation.mutateAsync(entry.id);
-    onClose();
-  }
   return (
-    <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("stundentafeln.entries.deleteTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("stundentafeln.entries.deleteDescription", {
-              subjectName: entry.subject.name,
-            })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button variant="destructive" onClick={confirmEntryRemove} disabled={mutation.isPending}>
-            {mutation.isPending ? t("common.deleting") : t("common.delete")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      open
+      onClose={onClose}
+      title={t("stundentafeln.entries.deleteTitle")}
+      description={t("stundentafeln.entries.deleteDescription", {
+        subjectName: entry.subject.name,
+      })}
+      isPending={mutation.isPending}
+      onConfirm={async () => {
+        await mutation.mutateAsync(entry.id);
+        onClose();
+      }}
+    />
   );
 }
