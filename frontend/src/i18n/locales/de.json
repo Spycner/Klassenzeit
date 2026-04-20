@@ -127,7 +127,7 @@
       "name": "Name",
       "shortName": "Kürzel",
       "capacity": "Kapazität",
-      "mode": "Eignung",
+      "subjects": "Fächer",
       "actions": "Aktionen"
     },
     "empty": {
@@ -138,10 +138,9 @@
       "step3": "Verfügbarkeit setzen"
     },
     "loadError": "Räume konnten nicht geladen werden.",
-    "suitabilityModes": {
-      "general": "Allgemein",
-      "specialized": "Fachraum"
-    },
+    "suitableSubjects": "Geeignete Fächer",
+    "suitableSubjectsEmpty": "Leere Liste: jedes Fach kann hier stattfinden.",
+    "suitableSubjectsError": "Einige Fächer existieren nicht mehr. Bitte neu auswählen.",
     "dialog": {
       "createTitle": "Neuer Raum",
       "createDescription": "Einen neuen Raum anlegen.",

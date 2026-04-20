@@ -19,8 +19,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { type Room, useCreateRoom, useDeleteRoom, useUpdateRoom } from "./hooks";
+import { ApiError } from "@/lib/api-client";
+import {
+  type Room,
+  useCreateRoomWithSuitability,
+  useDeleteRoom,
+  useRoomDetail,
+  useUpdateRoomWithSuitability,
+} from "./hooks";
 import { RoomFormSchema, type RoomFormValues } from "./schema";
+import { SubjectMultiPicker } from "./subject-multi-picker";
 
 interface RoomFormDialogProps {
   open: boolean;
@@ -31,16 +39,28 @@ interface RoomFormDialogProps {
 
 export function RoomFormDialog({ open, onOpenChange, submitLabel, room }: RoomFormDialogProps) {
   const { t } = useTranslation();
+  const detail = useRoomDetail(room ? room.id : null);
+  const original = detail.data?.suitability_subjects.map((s) => s.id) ?? [];
+
   const form = useForm<RoomFormValues>({
     resolver: zodResolver(RoomFormSchema),
     defaultValues: {
       name: room?.name ?? "",
       short_name: room?.short_name ?? "",
       capacity: room?.capacity ?? undefined,
+      suitable_subject_ids: original,
     },
+    values: room
+      ? {
+          name: room.name,
+          short_name: room.short_name,
+          capacity: room.capacity ?? undefined,
+          suitable_subject_ids: original,
+        }
+      : undefined,
   });
-  const createMutation = useCreateRoom();
-  const updateMutation = useUpdateRoom();
+  const createMutation = useCreateRoomWithSuitability();
+  const updateMutation = useUpdateRoomWithSuitability();
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   const title = room ? t("rooms.dialog.editTitle") : t("rooms.dialog.createTitle");
@@ -50,18 +70,38 @@ export function RoomFormDialog({ open, onOpenChange, submitLabel, room }: RoomFo
 
   async function handleRoomSubmit(values: RoomFormValues) {
     const capacity = typeof values.capacity === "number" ? values.capacity : null;
-    const body = {
-      name: values.name,
-      short_name: values.short_name,
-      capacity,
-    };
-    if (room) {
-      await updateMutation.mutateAsync({ id: room.id, body });
-    } else {
-      await createMutation.mutateAsync(body);
+    try {
+      if (room) {
+        await updateMutation.mutateAsync({
+          id: room.id,
+          base: { name: values.name, short_name: values.short_name, capacity },
+          suitable_subject_ids: values.suitable_subject_ids,
+          original_suitable_subject_ids: original,
+        });
+      } else {
+        await createMutation.mutateAsync({
+          base: { name: values.name, short_name: values.short_name, capacity },
+          suitable_subject_ids: values.suitable_subject_ids,
+        });
+      }
+      form.reset();
+      onOpenChange(false);
+    } catch (err) {
+      if (
+        err instanceof ApiError &&
+        err.status === 400 &&
+        err.data &&
+        typeof err.data === "object" &&
+        "missing_subject_ids" in err.data
+      ) {
+        form.setError("suitable_subject_ids", {
+          type: "custom",
+          message: t("rooms.suitableSubjectsError"),
+        });
+        return;
+      }
+      throw err;
     }
-    form.reset();
-    onOpenChange(false);
   }
 
   return (
@@ -120,6 +160,19 @@ export function RoomFormDialog({ open, onOpenChange, submitLabel, room }: RoomFo
                         field.onChange(e.target.value === "" ? undefined : Number(e.target.value))
                       }
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="suitable_subject_ids"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("rooms.suitableSubjects")}</FormLabel>
+                  <FormControl>
+                    <SubjectMultiPicker value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
