@@ -239,5 +239,53 @@
       "addStundentafel": "Stundentafel anlegen",
       "addWeekScheme": "Wochenraster anlegen"
     }
+  },
+  "lessons": {
+    "title": "Unterricht",
+    "subtitle": "Konkrete wöchentliche Zuordnung von Klasse, Fach und Lehrkraft.",
+    "new": "Neuer Unterricht",
+    "loadError": "Unterricht konnte nicht geladen werden.",
+    "columns": {
+      "schoolClass": "Klasse",
+      "subject": "Fach",
+      "teacher": "Lehrkraft",
+      "hoursPerWeek": "Stunden / Woche",
+      "blockSize": "Blockgröße",
+      "actions": "Aktionen"
+    },
+    "empty": {
+      "title": "Noch kein Unterricht",
+      "body": "Weise jeder Klasse die Fächer dieses Schuljahres zu, mit Lehrkraft und Wochenstunden.",
+      "step1": "Klassen und Fächer anlegen",
+      "step2": "Lehrkräfte hinzufügen",
+      "step3": "Unterricht anlegen"
+    },
+    "fields": {
+      "schoolClassLabel": "Klasse",
+      "schoolClassPlaceholder": "Klasse auswählen",
+      "subjectLabel": "Fach",
+      "subjectPlaceholder": "Fach auswählen",
+      "teacherLabel": "Lehrkraft",
+      "teacherPlaceholder": "Lehrkraft auswählen",
+      "teacherUnassigned": "Nicht zugewiesen",
+      "hoursPerWeekLabel": "Stunden / Woche",
+      "blockSizeLabel": "Blockgröße",
+      "blockSizeSingle": "Einzelstunde",
+      "blockSizeDouble": "Doppelstunde"
+    },
+    "dialog": {
+      "createTitle": "Neuer Unterricht",
+      "createDescription": "Lege neuen Unterricht an.",
+      "editTitle": "Unterricht bearbeiten",
+      "editDescription": "{{className}} · {{subjectName}} aktualisieren.",
+      "deleteTitle": "Unterricht löschen",
+      "deleteDescription": "Dies löscht {{className}} · {{subjectName}} dauerhaft.",
+      "missingPrereqs": "Lege mindestens eine Klasse und ein Fach an, bevor du Unterricht anlegst.",
+      "addSchoolClass": "Klasse anlegen",
+      "addSubject": "Fach anlegen"
+    },
+    "errors": {
+      "duplicate": "Für diese Klasse und dieses Fach existiert bereits Unterricht."
+    }
   }
 }

@@ -239,5 +239,53 @@
       "addStundentafel": "Add a curriculum",
       "addWeekScheme": "Add a week scheme"
     }
+  },
+  "lessons": {
+    "title": "Lessons",
+    "subtitle": "Concrete weekly assignments of a class to a subject and teacher.",
+    "new": "New lesson",
+    "loadError": "Could not load lessons.",
+    "columns": {
+      "schoolClass": "Class",
+      "subject": "Subject",
+      "teacher": "Teacher",
+      "hoursPerWeek": "Hours / week",
+      "blockSize": "Block size",
+      "actions": "Actions"
+    },
+    "empty": {
+      "title": "No lessons yet",
+      "body": "Assign each class the subjects it studies this year, with a teacher and weekly hours.",
+      "step1": "Create classes and subjects",
+      "step2": "Add teachers",
+      "step3": "Create a lesson"
+    },
+    "fields": {
+      "schoolClassLabel": "Class",
+      "schoolClassPlaceholder": "Select a class",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Select a subject",
+      "teacherLabel": "Teacher",
+      "teacherPlaceholder": "Select a teacher",
+      "teacherUnassigned": "Unassigned",
+      "hoursPerWeekLabel": "Hours / week",
+      "blockSizeLabel": "Block size",
+      "blockSizeSingle": "Single period",
+      "blockSizeDouble": "Double period"
+    },
+    "dialog": {
+      "createTitle": "New lesson",
+      "createDescription": "Create a new lesson.",
+      "editTitle": "Edit lesson",
+      "editDescription": "Update {{className}} · {{subjectName}}.",
+      "deleteTitle": "Delete lesson",
+      "deleteDescription": "This will permanently delete {{className}} · {{subjectName}}.",
+      "missingPrereqs": "Add at least one class and one subject before creating a lesson.",
+      "addSchoolClass": "Add a class",
+      "addSubject": "Add a subject"
+    },
+    "errors": {
+      "duplicate": "A lesson for this class and subject already exists."
+    }
   }
 }
