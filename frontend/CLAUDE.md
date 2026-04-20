@@ -46,6 +46,7 @@ Run from repo root unless noted.
 - **No uncontrolled to controlled flipping.** Seed `defaultValues` with `""`, not `undefined` or `null`.
 - **No submit button without `disabled={isPending}`** and a pending label (`t("common.saving")` etc.).
 - **No Zod `.email("msg")` literals for user-facing errors.** Go through `t("…")`; if the message needs to update on locale switch, move the message lookup into the render path (`FormMessage` children), not the schema.
+- **No Zod `.uuid()` for FK form fields.** Zod v4's `.uuid()` enforces RFC 4122 version/variant bits, so pattern-UUIDs like `11111111-…-111111111111` (seed / test data) fail validation. Use `z.string().min(1)` for FK IDs; the backend validates UUID format anyway.
 
 ## Styling
 
