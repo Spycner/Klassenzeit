@@ -8,7 +8,8 @@ Items trace back to the specs that introduced them: the [project scaffolding des
 
 Ordered roughly in the sequence they need to land: data first, then access control, then the product surface, then the UI on top, then the path to production.
 
-- **Remaining entity CRUD pages.** Subjects, Rooms, Teachers, WeekSchemes, and SchoolClasses have UI pages. Stundentafel and Lesson still need UI pages; Lesson wants FK dropdowns (the SchoolClass spec established the `Select`-backed pattern), and Stundentafel wants a nested-row editor, so each deserves its own spec. SchoolClass also added a read-only `useStundentafeln` hook the future Stundentafel page can reuse.
+- **Remaining entity CRUD pages.** Subjects, Rooms, Teachers, WeekSchemes, SchoolClasses, and Lessons have UI pages. Stundentafel still needs a UI page with a nested-row editor for entries referencing subjects; it earns its own spec.
+- **Bulk "Generate lessons from Stundentafel" UI.** The backend already exposes `POST /api/classes/{class_id}/generate-lessons`. The UI surface (per-class button + confirmation) is deferred here and bundled with the "Sub-resource editors for base entities" item; the shared pattern is "manage related rows across class / stundentafel / lessons."
 - **`updated_at` on list endpoints.** Dashboard "Recently edited" tile renders a placeholder until the backend surfaces `updated_at` on every list endpoint (subjects, rooms, teachers, week-schemes). Unblock the tile by returning `updated_at` and sorting the client query.
 - **Subject color as a real column.** Subject swatches are client-derived from `id` (stable hash over five chart tokens). Move to a persisted `color` column on `Subject` so renaming a subject doesn't churn its palette slot.
 - **`active` flag on WeekScheme.** Split-view detail pane is wired to render an "active" badge; currently never shows because the backend has no flag. Add the column (plus a "set active" mutation) before the badge earns its space.
@@ -23,6 +24,7 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 - **Self-hosted fonts.** Frontend imports Quicksand / Lora / Fira Code / Special Elite via `@import url(fonts.googleapis.com/...)`. Move to locally hosted `@font-face` (`public/fonts/*.woff2`) once offline dev or third-party privacy is a concern.
 - **Time-of-day-aware welcome greeting.** Dashboard shows "Welcome back." regardless of clock; prototype suggested "Guten Morgen, Pascal." A one-liner with `Intl.DateTimeFormat` plus the logged-in user's first name.
 - **Untranslated-string lint rule.** Review discipline is the only line of defence against hardcoded English or German sneaking into JSX. Add a Biome plugin or parallel ESLint rule if violations happen in practice.
+- **Shared `ConfirmDialog` component.** Each CRUD page ships its own `Delete<Entity>Dialog` with identical structure (cancel button, destructive confirm button, pending label). Extract once the sixth entity lands, or once a non-delete confirmation (e.g. "publish schedule") gives the abstraction a second use.
 - **Production deployment.** Docker, reverse proxy, secrets management.
 - **Repository / unit-of-work layer.** Routes currently take
   `AsyncSession` directly. A repository layer earns its place only

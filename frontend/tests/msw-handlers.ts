@@ -79,6 +79,31 @@ export const initialSchoolClasses = [
   },
 ];
 
+export const initialLessons = [
+  {
+    id: "55555555-5555-5555-5555-555555555555",
+    school_class: {
+      id: "88888888-8888-8888-8888-888888888888",
+      name: "1a",
+    },
+    subject: {
+      id: "11111111-1111-1111-1111-111111111111",
+      name: "Mathematik",
+      short_name: "MA",
+    },
+    teacher: {
+      id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      first_name: "Anna",
+      last_name: "Schmidt",
+      short_code: "SCH",
+    },
+    hours_per_week: 4,
+    preferred_block_size: 1,
+    created_at: "2026-04-20T00:00:00Z",
+    updated_at: "2026-04-20T00:00:00Z",
+  },
+];
+
 export const defaultHandlers = [
   http.get(`${BASE}/api/auth/me`, () => HttpResponse.json(adminMe)),
   http.post(`${BASE}/api/auth/login`, async () => HttpResponse.json(null, { status: 204 })),
@@ -167,6 +192,80 @@ export const defaultHandlers = [
       { status: 201 },
     );
   }),
+  http.get(`${BASE}/api/lessons`, () => HttpResponse.json(initialLessons)),
+  http.post(`${BASE}/api/lessons`, async ({ request }) => {
+    const body = (await request.json()) as {
+      school_class_id: string;
+      subject_id: string;
+      teacher_id: string | null;
+      hours_per_week: number;
+      preferred_block_size: number;
+    };
+    const schoolClass = initialSchoolClasses.find((c) => c.id === body.school_class_id);
+    const subject = initialSubjects.find((s) => s.id === body.subject_id);
+    const teacher =
+      body.teacher_id === null
+        ? null
+        : (initialTeachers.find((t) => t.id === body.teacher_id) ?? null);
+    return HttpResponse.json(
+      {
+        id: "66666666-6666-6666-6666-666666666666",
+        school_class: schoolClass
+          ? { id: schoolClass.id, name: schoolClass.name }
+          : { id: body.school_class_id, name: "Unknown class" },
+        subject: subject
+          ? { id: subject.id, name: subject.name, short_name: subject.short_name }
+          : { id: body.subject_id, name: "Unknown subject", short_name: "??" },
+        teacher: teacher
+          ? {
+              id: teacher.id,
+              first_name: teacher.first_name,
+              last_name: teacher.last_name,
+              short_code: teacher.short_code,
+            }
+          : null,
+        hours_per_week: body.hours_per_week,
+        preferred_block_size: body.preferred_block_size,
+        created_at: "2026-04-20T00:00:00Z",
+        updated_at: "2026-04-20T00:00:00Z",
+      },
+      { status: 201 },
+    );
+  }),
+  http.patch(`${BASE}/api/lessons/:lesson_id`, async ({ request, params }) => {
+    const body = (await request.json()) as {
+      teacher_id?: string | null;
+      hours_per_week?: number;
+      preferred_block_size?: number;
+    };
+    const [base] = initialLessons;
+    if (!base) {
+      return HttpResponse.json({ detail: "seed missing" }, { status: 500 });
+    }
+    return HttpResponse.json({
+      ...base,
+      id: String(params.lesson_id),
+      hours_per_week: body.hours_per_week ?? base.hours_per_week,
+      preferred_block_size: body.preferred_block_size ?? base.preferred_block_size,
+      teacher:
+        body.teacher_id === undefined
+          ? base.teacher
+          : body.teacher_id === null
+            ? null
+            : (() => {
+                const match = initialTeachers.find((t) => t.id === body.teacher_id);
+                return match
+                  ? {
+                      id: match.id,
+                      first_name: match.first_name,
+                      last_name: match.last_name,
+                      short_code: match.short_code,
+                    }
+                  : null;
+              })(),
+    });
+  }),
+  http.delete(`${BASE}/api/lessons/:lesson_id`, () => HttpResponse.json(null, { status: 204 })),
 ];
 
 export const server = setupServer(...defaultHandlers);

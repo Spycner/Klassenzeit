@@ -24,6 +24,7 @@ Run from repo root unless noted.
 - `mise run fe:types` — regenerate `src/lib/api-types.ts` from the backend OpenAPI schema.
 - `mise run fe:build` — production build into `frontend/dist/`.
 - `mise exec -- pnpm -C frontend add <pkg>` / `add -D <pkg>` — add a dep (never hand-edit `package.json`).
+- **Single test file:** `cd frontend && mise exec -- pnpm vitest run <path>`. Don't use `mise exec -- pnpm -C frontend vitest ...`: pnpm treats `frontend` as a filter target, then can't find `vitest` in the recursive set. Don't use `mise run fe:test -- --run` either: the task body is a shell `if [ -f ... ]`, so positional args land in the `if` arg list and the shell errors.
 
 ## Hooks and state
 
@@ -46,6 +47,7 @@ Run from repo root unless noted.
 - **No uncontrolled to controlled flipping.** Seed `defaultValues` with `""`, not `undefined` or `null`.
 - **No submit button without `disabled={isPending}`** and a pending label (`t("common.saving")` etc.).
 - **No Zod `.email("msg")` literals for user-facing errors.** Go through `t("…")`; if the message needs to update on locale switch, move the message lookup into the render path (`FormMessage` children), not the schema.
+- **No Zod `.uuid()` for FK form fields.** Zod v4's `.uuid()` enforces RFC 4122 version/variant bits, so pattern-UUIDs like `11111111-…-111111111111` (seed / test data) fail validation. Use `z.string().min(1)` for FK IDs; the backend validates UUID format anyway.
 
 ## Styling
 
