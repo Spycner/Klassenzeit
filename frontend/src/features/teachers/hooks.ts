@@ -80,6 +80,33 @@ export function useTeacherDetail(id: string | null) {
   });
 }
 
+export type TeacherAvailabilityEntry = {
+  time_block_id: string;
+  status: "available" | "preferred" | "unavailable";
+};
+
+export function useSaveTeacherAvailability() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      entries,
+    }: {
+      id: string;
+      entries: TeacherAvailabilityEntry[];
+    }): Promise<TeacherDetail> => {
+      const { data } = await client.PUT("/api/teachers/{teacher_id}/availability", {
+        params: { path: { teacher_id: id } },
+        body: { entries },
+      });
+      if (!data) throw new ApiError(500, null, "Empty response from PUT availability");
+      return data;
+    },
+    onSuccess: (_, vars) =>
+      queryClient.invalidateQueries({ queryKey: teacherDetailQueryKey(vars.id) }),
+  });
+}
+
 export function useSaveTeacherQualifications() {
   const queryClient = useQueryClient();
   return useMutation({

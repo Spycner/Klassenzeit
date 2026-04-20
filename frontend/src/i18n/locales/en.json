@@ -207,6 +207,23 @@
       "save": "Save qualifications",
       "saved": "Qualifications saved",
       "empty": "No subjects assigned"
+    },
+    "availability": {
+      "sectionTitle": "Availability",
+      "noSchemes": "Create a week scheme first.",
+      "noBlocks": "No time blocks yet in this scheme.",
+      "status": {
+        "available": "A",
+        "preferred": "P",
+        "unavailable": "U"
+      },
+      "statusLabel": {
+        "available": "Available",
+        "preferred": "Preferred",
+        "unavailable": "Unavailable"
+      },
+      "cellLabel": "{{status}} at {{day}} period {{position}}",
+      "save": "Save availability"
     }
   },
   "weekSchemes": {

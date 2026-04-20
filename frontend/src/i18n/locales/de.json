@@ -207,6 +207,23 @@
       "save": "Qualifikationen speichern",
       "saved": "Qualifikationen gespeichert",
       "empty": "Keine Fächer zugewiesen"
+    },
+    "availability": {
+      "sectionTitle": "Verfügbarkeit",
+      "noSchemes": "Zuerst ein Wochenschema anlegen.",
+      "noBlocks": "Noch keine Zeitblöcke in diesem Schema.",
+      "status": {
+        "available": "V",
+        "preferred": "B",
+        "unavailable": "N"
+      },
+      "statusLabel": {
+        "available": "Verfügbar",
+        "preferred": "Bevorzugt",
+        "unavailable": "Nicht verfügbar"
+      },
+      "cellLabel": "{{status}} am {{day}}, Stunde {{position}}",
+      "save": "Verfügbarkeit speichern"
     }
   },
   "weekSchemes": {
