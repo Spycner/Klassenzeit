@@ -157,11 +157,11 @@ Two new test files plus one update:
    - Firing `toast.info("empty")` renders that text.
    This test file uses bare `render()` (no router, no query client, no theme provider). The sonner wrapper calls `useTheme()` from next-themes, which returns `theme: undefined` outside a provider; the wrapper's `?? "system"` fallback keeps rendering safe. No i18n pin is needed because the test passes literal strings, not `t()` keys.
 
-2. **`frontend/src/features/school-classes/school-classes-page.test.tsx`** (update). The existing tests render the page via `renderWithProviders`, so they now have a Toaster in scope. Add one test that clicks the "Generate lessons" row action, confirms the dialog, waits for the toast copy, and asserts the notification uses the interpolated success message instead of calling `window.alert`. Also add a spy that confirms `window.alert` is *not* invoked for the same flow.
+2. **`frontend/tests/school-classes-page.test.tsx`** (update). The existing page tests already render `<SchoolClassesPage />` via `renderWithProviders`, so they will pick up the new `<Toaster />` automatically. Add two tests in a new `describe("Generate-lessons toast", ...)` block: one for `count > 0` (success toast, from the existing MSW handler that returns a single generated lesson) and one for `count === 0` (info toast, via an MSW override that returns `[]`). Both spy on `window.alert` and assert it is never invoked. The existing file pins locale to German, so the toast-copy assertions use the German strings from `de.json` (`"1 Stunde erzeugt"`, `"Kein neuer Unterricht erzeugt"`). Using the file's existing locale avoids cross-test state leaks from `i18n.changeLanguage`.
 
 3. **`frontend/src/features/school-classes/generate-lessons-dialog.test.tsx`**. No change; this test asserts `onDone` was called with the count. The toast lives in the page-level consumer, not the dialog itself.
 
-Each new test pins the locale to English at the top of the file (`beforeAll(() => i18n.changeLanguage("en"))`) per the frontend CLAUDE.md rule.
+The new `sonner.test.tsx` needs no i18n pin because it asserts literal strings. The page test inherits its existing German locale pin.
 
 ### Dead dep removal
 
