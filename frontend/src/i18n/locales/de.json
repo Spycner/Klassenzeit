@@ -193,6 +193,12 @@
       "editDescription": "{{name}} aktualisieren.",
       "deleteTitle": "Lehrkraft löschen",
       "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    },
+    "qualifications": {
+      "sectionTitle": "Qualifikationen",
+      "save": "Qualifikationen speichern",
+      "saved": "Qualifikationen gespeichert",
+      "empty": "Keine Fächer zugewiesen"
     }
   },
   "weekSchemes": {

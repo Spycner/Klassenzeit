@@ -101,6 +101,16 @@ export const roomSuitabilityByRoomId: Record<string, string[]> = {
   "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa": [],
 };
 
+export const teacherQualsByTeacherId: Record<string, string[]> = {
+  "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb": [],
+};
+export const teacherAvailabilityByTeacherId: Record<
+  string,
+  Array<{ time_block_id: string; status: string }>
+> = {
+  "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb": [],
+};
+
 export const initialSchoolClasses = [
   {
     id: "88888888-8888-8888-8888-888888888888",
@@ -246,6 +256,64 @@ export const defaultHandlers = [
       },
       { status: 201 },
     );
+  }),
+  http.get(`${BASE}/api/teachers/:teacher_id`, ({ params }) => {
+    const id = String(params.teacher_id);
+    const base = initialTeachers.find((t) => t.id === id) ?? initialTeachers[0];
+    if (!base) return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    const qualIds = teacherQualsByTeacherId[id] ?? [];
+    const qualifications = qualIds
+      .map((sid) => initialSubjects.find((s) => s.id === sid))
+      .filter((s): s is (typeof initialSubjects)[number] => s !== undefined)
+      .map((s) => ({ id: s.id, name: s.name, short_name: s.short_name }));
+    const allBlocks = Object.values(timeBlocksBySchemeId).flat();
+    const availability = (teacherAvailabilityByTeacherId[id] ?? []).flatMap((entry) => {
+      const block = allBlocks.find((b) => b.id === entry.time_block_id);
+      if (!block) return [];
+      return [
+        {
+          time_block_id: entry.time_block_id,
+          day_of_week: block.day_of_week,
+          position: block.position,
+          status: entry.status,
+        },
+      ];
+    });
+    return HttpResponse.json({
+      ...base,
+      qualifications,
+      availability,
+    });
+  }),
+  http.put(`${BASE}/api/teachers/:teacher_id/qualifications`, async ({ request, params }) => {
+    const id = String(params.teacher_id);
+    const body = (await request.json()) as { subject_ids: string[] };
+    teacherQualsByTeacherId[id] = [...body.subject_ids];
+    const base = initialTeachers.find((t) => t.id === id) ?? initialTeachers[0];
+    if (!base) return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    const qualifications = body.subject_ids
+      .map((sid) => initialSubjects.find((s) => s.id === sid))
+      .filter((s): s is (typeof initialSubjects)[number] => s !== undefined)
+      .map((s) => ({ id: s.id, name: s.name, short_name: s.short_name }));
+    return HttpResponse.json({
+      ...base,
+      qualifications,
+      availability: [],
+    });
+  }),
+  http.put(`${BASE}/api/teachers/:teacher_id/availability`, async ({ request, params }) => {
+    const id = String(params.teacher_id);
+    const body = (await request.json()) as {
+      entries: Array<{ time_block_id: string; status: string }>;
+    };
+    teacherAvailabilityByTeacherId[id] = [...body.entries];
+    const base = initialTeachers.find((t) => t.id === id) ?? initialTeachers[0];
+    if (!base) return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    return HttpResponse.json({
+      ...base,
+      qualifications: [],
+      availability: body.entries.map((e) => ({ ...e, day_of_week: 0, position: 1 })),
+    });
   }),
   http.get(`${BASE}/api/week-schemes`, () => HttpResponse.json(initialWeekSchemes)),
   http.post(`${BASE}/api/week-schemes`, async ({ request }) => {

@@ -193,6 +193,12 @@
       "editDescription": "Update {{name}}.",
       "deleteTitle": "Delete teacher",
       "deleteDescription": "This will permanently delete \"{{name}}\"."
+    },
+    "qualifications": {
+      "sectionTitle": "Qualifications",
+      "save": "Save qualifications",
+      "saved": "Qualifications saved",
+      "empty": "No subjects assigned"
     }
   },
   "weekSchemes": {

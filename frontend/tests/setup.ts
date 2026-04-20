@@ -4,6 +4,8 @@ import {
   roomSuitabilityByRoomId,
   server,
   stundentafelEntriesByTafelId,
+  teacherAvailabilityByTeacherId,
+  teacherQualsByTeacherId,
   timeBlocksBySchemeId,
 } from "./msw-handlers";
 
@@ -51,6 +53,12 @@ beforeEach(() => {
   }
   for (const key of Object.keys(timeBlocksBySchemeId)) {
     timeBlocksBySchemeId[key] = [];
+  }
+  for (const key of Object.keys(teacherQualsByTeacherId)) {
+    teacherQualsByTeacherId[key] = [];
+  }
+  for (const key of Object.keys(teacherAvailabilityByTeacherId)) {
+    teacherAvailabilityByTeacherId[key] = [];
   }
 });
 afterEach(() => server.resetHandlers());
