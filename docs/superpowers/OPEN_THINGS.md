@@ -8,7 +8,7 @@ Items trace back to the specs that introduced them: the [project scaffolding des
 
 Ordered roughly in the sequence they need to land: data first, then access control, then the product surface, then the UI on top, then the path to production.
 
-- **`updated_at` on list endpoints.** Dashboard "Recently edited" tile renders a placeholder until the backend surfaces `updated_at` on every list endpoint (subjects, rooms, teachers, week-schemes). Unblock the tile by returning `updated_at` and sorting the client query.
+- **Deep-linked entity edit.** The Dashboard "Recently edited" tile links to the entity's list page without opening the edit dialog for that row. Add a `?edit=<id>` search param (validated by Zod in `validateSearch`) on each CRUD page, and teach the list component to open the matching dialog on mount. Defer until a second use case demands bookmarkable edits.
 - **`active` flag on WeekScheme.** Split-view detail pane is wired to render an "active" badge; currently never shows because the backend has no flag. Add the column (plus a "set active" mutation) before the badge earns its space.
 - **Bulk delete across entity tables.** Design includes checkbox columns; we dropped them this pass because there's no bulk-delete backend route. Add `DELETE /<entity>?ids=...` + a confirm dialog once there's a compelling workflow.
 - **Import / export buttons.** Placeholder "Import" button renders disabled on every CRUD page. Wire to backend CSV/JSON endpoints once those land.
