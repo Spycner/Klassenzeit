@@ -238,7 +238,10 @@ export const defaultHandlers = [
       hours_per_week?: number;
       preferred_block_size?: number;
     };
-    const base = initialLessons[0];
+    const [base] = initialLessons;
+    if (!base) {
+      return HttpResponse.json({ detail: "seed missing" }, { status: 500 });
+    }
     return HttpResponse.json({
       ...base,
       id: String(params.lesson_id),
