@@ -94,7 +94,18 @@
     "nextStepsSub": "A few gaps to close before the solver can run.",
     "quickAdd": "Quick add",
     "recent": "Recently edited",
-    "recentPlaceholder": "Recently-edited list will appear once the backend exposes updated_at.",
+    "recentEntries": {
+      "empty": "Edit an entity to see it here.",
+      "justNow": "Just now",
+      "types": {
+        "subject": "Subject",
+        "room": "Room",
+        "teacher": "Teacher",
+        "weekScheme": "Week scheme",
+        "schoolClass": "School class",
+        "stundentafel": "Curriculum"
+      }
+    },
     "hint": {
       "noTeachers": "No teachers on staff",
       "noTeachersSub": "Add your teaching staff to start.",
