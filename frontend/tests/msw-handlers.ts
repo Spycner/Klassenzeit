@@ -29,7 +29,6 @@ export const initialRooms = [
     name: "Raum 101",
     short_name: "101",
     capacity: 30,
-    suitability_mode: "general",
     created_at: "2026-04-17T00:00:00Z",
     updated_at: "2026-04-17T00:00:00Z",
   },
@@ -81,6 +80,10 @@ export const stundentafelEntriesByTafelId: Record<
   }>
 > = {
   "99999999-9999-9999-9999-999999999999": [],
+};
+
+export const roomSuitabilityByRoomId: Record<string, string[]> = {
+  "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa": [],
 };
 
 export const initialSchoolClasses = [
@@ -145,17 +148,70 @@ export const defaultHandlers = [
       name: string;
       short_name: string;
       capacity: number | null;
-      suitability_mode: "general" | "specialized";
     };
+    const id = "dddddddd-dddd-dddd-dddd-dddddddddddd";
+    roomSuitabilityByRoomId[id] = [];
     return HttpResponse.json(
       {
-        id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+        id,
         ...body,
         created_at: "2026-04-17T00:00:00Z",
         updated_at: "2026-04-17T00:00:00Z",
       },
       { status: 201 },
     );
+  }),
+  http.get(`${BASE}/api/rooms/:room_id`, ({ params }) => {
+    const id = String(params.room_id);
+    const base = initialRooms.find((r) => r.id === id);
+    const selectedIds = roomSuitabilityByRoomId[id] ?? [];
+    const suitability_subjects = selectedIds
+      .map((sid) => initialSubjects.find((s) => s.id === sid))
+      .filter((s): s is (typeof initialSubjects)[number] => s !== undefined)
+      .map((s) => ({ id: s.id, name: s.name, short_name: s.short_name }));
+    if (!base) {
+      return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    }
+    return HttpResponse.json({
+      ...base,
+      suitability_subjects,
+      availability: [],
+    });
+  }),
+  http.put(`${BASE}/api/rooms/:room_id/suitability`, async ({ request, params }) => {
+    const body = (await request.json()) as { subject_ids: string[] };
+    const id = String(params.room_id);
+    const seen = new Set<string>();
+    const unique = body.subject_ids.filter((sid) => {
+      if (seen.has(sid)) return false;
+      seen.add(sid);
+      return true;
+    });
+    const missing = unique.filter((sid) => !initialSubjects.some((s) => s.id === sid));
+    if (missing.length > 0) {
+      return HttpResponse.json(
+        { detail: { detail: "Some subjects do not exist.", missing_subject_ids: missing } },
+        { status: 400 },
+      );
+    }
+    roomSuitabilityByRoomId[id] = unique;
+    const base = initialRooms.find((r) => r.id === id) ?? {
+      id,
+      name: "mutable",
+      short_name: "X",
+      capacity: null,
+      created_at: "2026-04-17T00:00:00Z",
+      updated_at: "2026-04-17T00:00:00Z",
+    };
+    const suitability_subjects = unique
+      .map((sid) => initialSubjects.find((s) => s.id === sid))
+      .filter((s): s is (typeof initialSubjects)[number] => s !== undefined)
+      .map((s) => ({ id: s.id, name: s.name, short_name: s.short_name }));
+    return HttpResponse.json({
+      ...base,
+      suitability_subjects,
+      availability: [],
+    });
   }),
   http.get(`${BASE}/api/teachers`, () => HttpResponse.json(initialTeachers)),
   http.post(`${BASE}/api/teachers`, async ({ request }) => {
