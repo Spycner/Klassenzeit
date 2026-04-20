@@ -28,6 +28,7 @@
     "main": "Allgemein",
     "data": "Stammdaten",
     "schoolClasses": "Klassen",
+    "stundentafeln": "Stundentafel",
     "lessons": "Unterricht",
     "comingSoon": "Bald verfügbar"
   },
@@ -238,6 +239,115 @@
       "missingPrereqs": "Lege mindestens eine Stundentafel und ein Wochenraster an, bevor du eine Klasse anlegst.",
       "addStundentafel": "Stundentafel anlegen",
       "addWeekScheme": "Wochenraster anlegen"
+    }
+  },
+  "lessons": {
+    "title": "Unterricht",
+    "subtitle": "Konkrete wöchentliche Zuordnung von Klasse, Fach und Lehrkraft.",
+    "new": "Neuer Unterricht",
+    "loadError": "Unterricht konnte nicht geladen werden.",
+    "columns": {
+      "schoolClass": "Klasse",
+      "subject": "Fach",
+      "teacher": "Lehrkraft",
+      "hoursPerWeek": "Stunden / Woche",
+      "blockSize": "Blockgröße",
+      "actions": "Aktionen"
+    },
+    "empty": {
+      "title": "Noch kein Unterricht",
+      "body": "Weise jeder Klasse die Fächer dieses Schuljahres zu, mit Lehrkraft und Wochenstunden.",
+      "step1": "Klassen und Fächer anlegen",
+      "step2": "Lehrkräfte hinzufügen",
+      "step3": "Unterricht anlegen"
+    },
+    "fields": {
+      "schoolClassLabel": "Klasse",
+      "schoolClassPlaceholder": "Klasse auswählen",
+      "subjectLabel": "Fach",
+      "subjectPlaceholder": "Fach auswählen",
+      "teacherLabel": "Lehrkraft",
+      "teacherPlaceholder": "Lehrkraft auswählen",
+      "teacherUnassigned": "Nicht zugewiesen",
+      "hoursPerWeekLabel": "Stunden / Woche",
+      "blockSizeLabel": "Blockgröße",
+      "blockSizeSingle": "Einzelstunde",
+      "blockSizeDouble": "Doppelstunde"
+    },
+    "dialog": {
+      "createTitle": "Neuer Unterricht",
+      "createDescription": "Lege neuen Unterricht an.",
+      "editTitle": "Unterricht bearbeiten",
+      "editDescription": "{{className}} · {{subjectName}} aktualisieren.",
+      "deleteTitle": "Unterricht löschen",
+      "deleteDescription": "Dies löscht {{className}} · {{subjectName}} dauerhaft.",
+      "missingPrereqs": "Lege mindestens eine Klasse und ein Fach an, bevor du Unterricht anlegst.",
+      "addSchoolClass": "Klasse anlegen",
+      "addSubject": "Fach anlegen"
+    },
+    "errors": {
+      "duplicate": "Für diese Klasse und dieses Fach existiert bereits Unterricht."
+    }
+  },
+  "stundentafeln": {
+    "title": "Stundentafel",
+    "subtitle": "Wiederverwendbare Wochenstunden-Vorlagen für Klassen.",
+    "new": "Neue Stundentafel",
+    "loadError": "Stundentafeln konnten nicht geladen werden.",
+    "columns": {
+      "name": "Name",
+      "gradeLevel": "Jahrgang",
+      "actions": "Aktionen"
+    },
+    "empty": {
+      "title": "Noch keine Stundentafeln",
+      "body": "Lege eine Stundentafel an, um die Fächer und Wochenstunden einer Klasse zu definieren.",
+      "step1": "Mindestens ein Fach anlegen",
+      "step2": "Stundentafel anlegen",
+      "step3": "Einträge je Fach hinzufügen"
+    },
+    "fields": {
+      "nameLabel": "Name",
+      "namePlaceholder": "z. B. Grundschule Klasse 1",
+      "gradeLevelLabel": "Jahrgang",
+      "subjectLabel": "Fach",
+      "subjectPlaceholder": "Fach auswählen",
+      "hoursPerWeekLabel": "Stunden / Woche",
+      "blockSizeLabel": "Blockgröße",
+      "blockSizeSingle": "Einzelstunde",
+      "blockSizeDouble": "Doppelstunde"
+    },
+    "dialog": {
+      "createTitle": "Neue Stundentafel",
+      "createDescription": "Lege eine neue Stundentafel-Vorlage an.",
+      "editTitle": "Stundentafel bearbeiten",
+      "editDescription": "{{name}} aktualisieren und Einträge verwalten.",
+      "deleteTitle": "Stundentafel löschen",
+      "deleteDescription": "Dies löscht {{name}} mit allen Einträgen dauerhaft.",
+      "missingSubjects": "Lege mindestens ein Fach an, bevor du Einträge anlegst.",
+      "addSubject": "Fach anlegen",
+      "close": "Schließen"
+    },
+    "entries": {
+      "sectionTitle": "Einträge",
+      "add": "Eintrag hinzufügen",
+      "empty": "Noch keine Einträge.",
+      "loadError": "Einträge konnten nicht geladen werden.",
+      "columns": {
+        "subject": "Fach",
+        "hoursPerWeek": "Stunden / Woche",
+        "blockSize": "Blockgröße",
+        "actions": "Aktionen"
+      },
+      "createTitle": "Neuer Eintrag",
+      "editTitle": "Eintrag bearbeiten",
+      "deleteTitle": "Eintrag entfernen",
+      "deleteDescription": "{{subjectName}} wird aus dieser Stundentafel entfernt.",
+      "allSubjectsAssigned": "Alle Fächer sind bereits zugewiesen."
+    },
+    "errors": {
+      "duplicateName": "Eine Stundentafel mit diesem Namen existiert bereits.",
+      "duplicateSubject": "Dieses Fach ist bereits in der Stundentafel."
     }
   }
 }

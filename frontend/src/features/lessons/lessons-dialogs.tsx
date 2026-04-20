@@ -1,0 +1,332 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useSchoolClasses } from "@/features/school-classes/hooks";
+import { useSubjects } from "@/features/subjects/hooks";
+import { useTeachers } from "@/features/teachers/hooks";
+import { ApiError } from "@/lib/api-client";
+import {
+  type Lesson,
+  type LessonCreate,
+  type LessonUpdate,
+  useCreateLesson,
+  useDeleteLesson,
+  useUpdateLesson,
+} from "./hooks";
+import { LessonFormSchema, type LessonFormValues, UNASSIGNED } from "./schema";
+
+interface LessonFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  submitLabel: string;
+  lesson?: Lesson;
+}
+
+export function LessonFormDialog({
+  open,
+  onOpenChange,
+  submitLabel,
+  lesson,
+}: LessonFormDialogProps) {
+  const { t } = useTranslation();
+  const schoolClasses = useSchoolClasses();
+  const subjects = useSubjects();
+  const teachers = useTeachers();
+
+  const form = useForm<LessonFormValues>({
+    resolver: zodResolver(LessonFormSchema),
+    defaultValues: {
+      school_class_id: lesson?.school_class.id ?? "",
+      subject_id: lesson?.subject.id ?? "",
+      teacher_id: lesson?.teacher?.id ?? UNASSIGNED,
+      hours_per_week: lesson?.hours_per_week ?? 1,
+      preferred_block_size: lesson?.preferred_block_size ?? 1,
+    },
+  });
+  const createMutation = useCreateLesson();
+  const updateMutation = useUpdateLesson();
+  const submitting = createMutation.isPending || updateMutation.isPending;
+
+  const classOptions = schoolClasses.data ?? [];
+  const subjectOptions = subjects.data ?? [];
+  const teacherOptions = teachers.data ?? [];
+  const missingPrereqs =
+    !schoolClasses.isLoading &&
+    !subjects.isLoading &&
+    (classOptions.length === 0 || subjectOptions.length === 0);
+
+  const title = lesson ? t("lessons.dialog.editTitle") : t("lessons.dialog.createTitle");
+  const description = lesson
+    ? t("lessons.dialog.editDescription", {
+        className: lesson.school_class.name,
+        subjectName: lesson.subject.name,
+      })
+    : t("lessons.dialog.createDescription");
+
+  async function handleLessonSubmit(values: LessonFormValues) {
+    const teacherId = values.teacher_id === UNASSIGNED ? null : values.teacher_id;
+    const createBody: LessonCreate = {
+      school_class_id: values.school_class_id,
+      subject_id: values.subject_id,
+      teacher_id: teacherId,
+      hours_per_week: values.hours_per_week,
+      preferred_block_size: values.preferred_block_size,
+    };
+    const updateBody: LessonUpdate = {
+      teacher_id: teacherId,
+      hours_per_week: values.hours_per_week,
+      preferred_block_size: values.preferred_block_size,
+    };
+    try {
+      if (lesson) {
+        await updateMutation.mutateAsync({ id: lesson.id, body: updateBody });
+      } else {
+        await createMutation.mutateAsync(createBody);
+      }
+      form.reset();
+      onOpenChange(false);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        form.setError("root", { message: t("lessons.errors.duplicate") });
+        return;
+      }
+      throw err;
+    }
+  }
+
+  const rootError = form.formState.errors.root?.message;
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) form.reset();
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        {missingPrereqs ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-foreground"
+          >
+            <p>{t("lessons.dialog.missingPrereqs")}</p>
+            <div className="mt-2 flex flex-wrap gap-3 text-sm font-medium">
+              {classOptions.length === 0 ? (
+                <a href="/school-classes" className="underline">
+                  {t("lessons.dialog.addSchoolClass")}
+                </a>
+              ) : null}
+              {subjectOptions.length === 0 ? (
+                <a href="/subjects" className="underline">
+                  {t("lessons.dialog.addSubject")}
+                </a>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+        <Form {...form}>
+          <form className="space-y-4" onSubmit={form.handleSubmit(handleLessonSubmit)}>
+            <FormField
+              control={form.control}
+              name="school_class_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("lessons.fields.schoolClassLabel")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("lessons.fields.schoolClassPlaceholder")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {classOptions.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="subject_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("lessons.fields.subjectLabel")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("lessons.fields.subjectPlaceholder")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {subjectOptions.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.name} · {option.short_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="teacher_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("lessons.fields.teacherLabel")}</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("lessons.fields.teacherPlaceholder")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={UNASSIGNED}>
+                        {t("lessons.fields.teacherUnassigned")}
+                      </SelectItem>
+                      {teacherOptions.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.first_name} {option.last_name} ({option.short_code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="hours_per_week"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("lessons.fields.hoursPerWeekLabel")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={40}
+                      value={field.value}
+                      onChange={(e) =>
+                        field.onChange(e.target.value === "" ? 0 : Number(e.target.value))
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="preferred_block_size"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("lessons.fields.blockSizeLabel")}</FormLabel>
+                  <Select
+                    value={String(field.value)}
+                    onValueChange={(value) => field.onChange(Number(value))}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">{t("lessons.fields.blockSizeSingle")}</SelectItem>
+                      <SelectItem value="2">{t("lessons.fields.blockSizeDouble")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {rootError ? (
+              <p role="alert" className="text-sm font-medium text-destructive">
+                {rootError}
+              </p>
+            ) : null}
+            <DialogFooter>
+              <Button type="submit" disabled={submitting || missingPrereqs}>
+                {submitting ? t("common.saving") : submitLabel}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface DeleteLessonDialogProps {
+  lesson: Lesson;
+  onClose: () => void;
+}
+
+export function DeleteLessonDialog({ lesson, onClose }: DeleteLessonDialogProps) {
+  const { t } = useTranslation();
+  const mutation = useDeleteLesson();
+  async function confirmLessonDelete() {
+    await mutation.mutateAsync(lesson.id);
+    onClose();
+  }
+  return (
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("lessons.dialog.deleteTitle")}</DialogTitle>
+          <DialogDescription>
+            {t("lessons.dialog.deleteDescription", {
+              className: lesson.school_class.name,
+              subjectName: lesson.subject.name,
+            })}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {t("common.cancel")}
+          </Button>
+          <Button variant="destructive" onClick={confirmLessonDelete} disabled={mutation.isPending}>
+            {mutation.isPending ? t("common.deleting") : t("common.delete")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

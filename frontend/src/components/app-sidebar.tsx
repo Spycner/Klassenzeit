@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import {
   BookOpen,
   CalendarDays,
+  ClipboardList,
   DoorOpen,
   GraduationCap,
   Layers,
@@ -24,6 +25,7 @@ type NavLabelKey =
   | "nav.teachers"
   | "nav.weekSchemes"
   | "sidebar.schoolClasses"
+  | "sidebar.stundentafeln"
   | "sidebar.lessons";
 
 type GroupLabelKey = "sidebar.main" | "sidebar.data";
@@ -53,7 +55,8 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/teachers", labelKey: "nav.teachers", icon: GraduationCap },
       { to: "/week-schemes", labelKey: "nav.weekSchemes", icon: CalendarDays },
       { to: "/school-classes", labelKey: "sidebar.schoolClasses", icon: Users },
-      { to: "#", labelKey: "sidebar.lessons", icon: Layers, disabled: true },
+      { to: "/stundentafeln", labelKey: "sidebar.stundentafeln", icon: ClipboardList },
+      { to: "/lessons", labelKey: "sidebar.lessons", icon: Layers },
     ],
   },
 ];
