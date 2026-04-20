@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -139,32 +140,17 @@ interface DeleteWeekSchemeDialogProps {
 export function DeleteWeekSchemeDialog({ scheme, onClose }: DeleteWeekSchemeDialogProps) {
   const { t } = useTranslation();
   const mutation = useDeleteWeekScheme();
-  async function confirmWeekSchemeDelete() {
-    await mutation.mutateAsync(scheme.id);
-    onClose();
-  }
   return (
-    <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("weekSchemes.dialog.deleteTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("weekSchemes.dialog.deleteDescription", { name: scheme.name })}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={confirmWeekSchemeDelete}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? t("common.deleting") : t("common.delete")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      open
+      onClose={onClose}
+      title={t("weekSchemes.dialog.deleteTitle")}
+      description={t("weekSchemes.dialog.deleteDescription", { name: scheme.name })}
+      isPending={mutation.isPending}
+      onConfirm={async () => {
+        await mutation.mutateAsync(scheme.id);
+        onClose();
+      }}
+    />
   );
 }
