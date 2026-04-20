@@ -2,6 +2,7 @@ import { useSearch } from "@tanstack/react-router";
 import { Users } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { Toolbar } from "@/components/toolbar";
 import { Button } from "@/components/ui/button";
@@ -165,11 +166,11 @@ export function SchoolClassesPage() {
           onDone={(count) => {
             setGenerateFor(null);
             if (count < 0) return;
-            const msg =
-              count === 0
-                ? t("schoolClasses.generateLessons.noneCreated")
-                : t("schoolClasses.generateLessons.created", { count });
-            window.alert(msg);
+            if (count === 0) {
+              toast.info(t("schoolClasses.generateLessons.noneCreated"));
+            } else {
+              toast.success(t("schoolClasses.generateLessons.created", { count }));
+            }
           }}
         />
       ) : null}
