@@ -56,12 +56,14 @@ def create_subject(db_session: AsyncSession) -> CreateSubjectFn:
         *,
         name: str | None = None,
         short_name: str | None = None,
+        color: str = "chart-1",
     ) -> Subject:
         """Create and flush a Subject with auto-generated unique defaults.
 
         Args:
             name: Subject name; auto-generated if omitted.
             short_name: Short abbreviation; auto-generated if omitted.
+            color: Palette token or hex color; defaults to ``"chart-1"``.
 
         Returns:
             The newly created Subject ORM instance.
@@ -70,6 +72,7 @@ def create_subject(db_session: AsyncSession) -> CreateSubjectFn:
         subject = Subject(
             name=name if name is not None else f"Subject {n}",
             short_name=short_name if short_name is not None else f"S{n}",
+            color=color,
         )
         db_session.add(subject)
         await db_session.flush()

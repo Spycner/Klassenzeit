@@ -25,7 +25,7 @@ async def test_reset_truncates_entity_tables(
     await create_test_user(email="admin@reset-test.com", role="admin")
     await login_as("admin@reset-test.com", "testpassword123")
 
-    subject = Subject(name="Temp", short_name="TMP")
+    subject = Subject(name="Temp", short_name="TMP", color="chart-1")
     db_session.add(subject)
     await db_session.flush()
 

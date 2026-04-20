@@ -106,7 +106,7 @@ async def test_get_stundentafel_with_entries(
     await login_as("admin@st4.com", "testpassword123")
     # Create a subject first
     subj_resp = await client.post(
-        "/api/subjects", json={"name": "Mathematik ST4", "short_name": "MaST4"}
+        "/api/subjects", json={"name": "Mathematik ST4", "short_name": "MaST4", "color": "chart-1"}
     )
     assert subj_resp.status_code == 201
     subject_id = subj_resp.json()["id"]
@@ -203,7 +203,7 @@ async def test_create_entry(
     await create_test_user(email="admin@st7.com", role="admin")
     await login_as("admin@st7.com", "testpassword123")
     subj_resp = await client.post(
-        "/api/subjects", json={"name": "Deutsch ST7", "short_name": "DeST7"}
+        "/api/subjects", json={"name": "Deutsch ST7", "short_name": "DeST7", "color": "chart-2"}
     )
     subject_id = subj_resp.json()["id"]
     tafel_resp = await client.post(
@@ -237,7 +237,7 @@ async def test_create_entry_duplicate_subject(
     await create_test_user(email="admin@st8.com", role="admin")
     await login_as("admin@st8.com", "testpassword123")
     subj_resp = await client.post(
-        "/api/subjects", json={"name": "Sport ST8", "short_name": "SpST8"}
+        "/api/subjects", json={"name": "Sport ST8", "short_name": "SpST8", "color": "chart-3"}
     )
     subject_id = subj_resp.json()["id"]
     tafel_resp = await client.post(
@@ -270,7 +270,7 @@ async def test_update_entry(
     await create_test_user(email="admin@st9.com", role="admin")
     await login_as("admin@st9.com", "testpassword123")
     subj_resp = await client.post(
-        "/api/subjects", json={"name": "Englisch ST9", "short_name": "EnST9"}
+        "/api/subjects", json={"name": "Englisch ST9", "short_name": "EnST9", "color": "chart-4"}
     )
     subject_id = subj_resp.json()["id"]
     tafel_resp = await client.post(
@@ -308,7 +308,7 @@ async def test_delete_entry(
     await create_test_user(email="admin@st10.com", role="admin")
     await login_as("admin@st10.com", "testpassword123")
     subj_resp = await client.post(
-        "/api/subjects", json={"name": "Kunst ST10", "short_name": "KuST10"}
+        "/api/subjects", json={"name": "Kunst ST10", "short_name": "KuST10", "color": "chart-5"}
     )
     subject_id = subj_resp.json()["id"]
     tafel_resp = await client.post(
