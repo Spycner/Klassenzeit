@@ -28,6 +28,7 @@
     "main": "Main",
     "data": "Scheduling data",
     "schoolClasses": "School classes",
+    "stundentafeln": "Curriculum",
     "lessons": "Lessons",
     "comingSoon": "Coming soon"
   },
@@ -286,6 +287,67 @@
     },
     "errors": {
       "duplicate": "A lesson for this class and subject already exists."
+    }
+  },
+  "stundentafeln": {
+    "title": "Curriculum",
+    "subtitle": "Reusable weekly-hour templates assigned to school classes.",
+    "new": "New curriculum",
+    "loadError": "Could not load curricula.",
+    "columns": {
+      "name": "Name",
+      "gradeLevel": "Grade",
+      "actions": "Actions"
+    },
+    "empty": {
+      "title": "No curricula yet",
+      "body": "Create a curriculum to define the subjects and hours each class studies this year.",
+      "step1": "Create at least one subject",
+      "step2": "Create a curriculum",
+      "step3": "Add entries for each subject"
+    },
+    "fields": {
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Grundschule Klasse 1",
+      "gradeLevelLabel": "Grade",
+      "subjectLabel": "Subject",
+      "subjectPlaceholder": "Select a subject",
+      "hoursPerWeekLabel": "Hours / week",
+      "blockSizeLabel": "Block size",
+      "blockSizeSingle": "Single period",
+      "blockSizeDouble": "Double period"
+    },
+    "dialog": {
+      "createTitle": "New curriculum",
+      "createDescription": "Create a new curriculum template.",
+      "editTitle": "Edit curriculum",
+      "editDescription": "Update {{name}} and manage its entries.",
+      "deleteTitle": "Delete curriculum",
+      "deleteDescription": "This will permanently delete {{name}} and all its entries.",
+      "missingSubjects": "Add at least one subject before creating entries.",
+      "addSubject": "Add a subject",
+      "close": "Close"
+    },
+    "entries": {
+      "sectionTitle": "Entries",
+      "add": "Add entry",
+      "empty": "No entries yet.",
+      "loadError": "Could not load entries.",
+      "columns": {
+        "subject": "Subject",
+        "hoursPerWeek": "Hours / week",
+        "blockSize": "Block size",
+        "actions": "Actions"
+      },
+      "createTitle": "New entry",
+      "editTitle": "Edit entry",
+      "deleteTitle": "Remove entry",
+      "deleteDescription": "This will remove {{subjectName}} from this curriculum.",
+      "allSubjectsAssigned": "Every subject is already assigned."
+    },
+    "errors": {
+      "duplicateName": "A curriculum with this name already exists.",
+      "duplicateSubject": "This subject is already in the curriculum."
     }
   }
 }
