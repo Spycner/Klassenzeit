@@ -88,7 +88,6 @@ async def _build_room_detail(db: AsyncSession, room: Room) -> RoomDetailResponse
         name=room.name,
         short_name=room.short_name,
         capacity=room.capacity,
-        suitability_mode=room.suitability_mode,
         suitability_subjects=suitability_subjects,
         availability=availability,
         created_at=room.created_at,
@@ -105,7 +104,7 @@ async def create_room_route(
     """Create a new room.
 
     Args:
-        body: Name, short_name, capacity, and suitability_mode for the new room.
+        body: Name, short_name, and capacity for the new room.
         _admin: Injected admin user (enforces authentication).
         db: Injected async database session.
 
@@ -119,7 +118,6 @@ async def create_room_route(
         name=body.name,
         short_name=body.short_name,
         capacity=body.capacity,
-        suitability_mode=body.suitability_mode,
     )
     db.add(room)
     try:
@@ -135,7 +133,6 @@ async def create_room_route(
         name=room.name,
         short_name=room.short_name,
         capacity=room.capacity,
-        suitability_mode=room.suitability_mode,
         created_at=room.created_at,
         updated_at=room.updated_at,
     )
@@ -162,7 +159,6 @@ async def list_rooms(
             name=r.name,
             short_name=r.short_name,
             capacity=r.capacity,
-            suitability_mode=r.suitability_mode,
             created_at=r.created_at,
             updated_at=r.updated_at,
         )
@@ -222,8 +218,6 @@ async def update_room_route(
         room.short_name = body.short_name
     if body.capacity is not None:
         room.capacity = body.capacity
-    if body.suitability_mode is not None:
-        room.suitability_mode = body.suitability_mode
     try:
         await db.commit()
     except IntegrityError as exc:
@@ -237,7 +231,6 @@ async def update_room_route(
         name=room.name,
         short_name=room.short_name,
         capacity=room.capacity,
-        suitability_mode=room.suitability_mode,
         created_at=room.created_at,
         updated_at=room.updated_at,
     )
@@ -283,7 +276,7 @@ async def replace_room_suitability(
     """Replace the entire suitability subject list for a room.
 
     Deletes all existing RoomSubjectSuitability rows for the room and inserts
-    new ones from the supplied subject_ids list.
+    new ones from the supplied subject_ids list. Deduplicates input server-side.
 
     Args:
         room_id: UUID path parameter identifying the room.
@@ -296,21 +289,37 @@ async def replace_room_suitability(
 
     Raises:
         HTTPException: 404 if no room with that ID exists.
-        HTTPException: 409 if any subject_id is invalid (FK violation).
+        HTTPException: 400 if any subject_id does not exist; body contains
+            ``missing_subject_ids`` list.
     """
     room = await _get_room(db, room_id)
+    # Deduplicate while preserving order.
+    seen: set[uuid.UUID] = set()
+    unique_ids: list[uuid.UUID] = []
+    for sid in body.subject_ids:
+        if sid not in seen:
+            seen.add(sid)
+            unique_ids.append(sid)
+
+    if unique_ids:
+        found = await db.execute(select(Subject.id).where(Subject.id.in_(unique_ids)))
+        found_ids = {row[0] for row in found}
+        missing = [sid for sid in unique_ids if sid not in found_ids]
+        if missing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "detail": "Some subjects do not exist.",
+                    "missing_subject_ids": [str(m) for m in missing],
+                },
+            )
+
     await db.execute(
         delete(RoomSubjectSuitability).where(RoomSubjectSuitability.room_id == room_id)
     )
-    for subject_id in body.subject_ids:
+    for subject_id in unique_ids:
         db.add(RoomSubjectSuitability(room_id=room_id, subject_id=subject_id))
-    try:
-        await db.commit()
-    except IntegrityError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="One or more subject IDs are invalid.",
-        ) from exc
+    await db.commit()
 
     await db.refresh(room)
     return await _build_room_detail(db, room)

@@ -19,7 +19,7 @@ async def test_create_room(
     create_test_user: CreateUserFn,
     login_as: LoginFn,
 ) -> None:
-    """POST /rooms creates a room with default suitability_mode=general and returns 201.
+    """POST /rooms creates a room and returns 201.
 
     Args:
         client: The async test HTTP client.
@@ -37,32 +37,7 @@ async def test_create_room(
     assert body["name"] == "Room A"
     assert body["short_name"] == "A"
     assert body["capacity"] == 30
-    assert body["suitability_mode"] == "general"
     assert "id" in body
-
-
-async def test_create_specialized_room(
-    client: AsyncClient,
-    create_test_user: CreateUserFn,
-    login_as: LoginFn,
-) -> None:
-    """POST /rooms with suitability_mode=specialized returns 201 with the correct mode.
-
-    Args:
-        client: The async test HTTP client.
-        create_test_user: Factory fixture for inserting a User into the DB.
-        login_as: Factory fixture for authenticating via /auth/login.
-    """
-    await create_test_user(email="admin@room2.com", role="admin")
-    await login_as("admin@room2.com", "testpassword123")
-    response = await client.post(
-        "/api/rooms",
-        json={"name": "Lab 1", "short_name": "L1", "suitability_mode": "specialized"},
-    )
-    assert response.status_code == 201
-    body = response.json()
-    assert body["suitability_mode"] == "specialized"
-    assert body["capacity"] is None
 
 
 async def test_create_room_duplicate_name(
@@ -132,7 +107,9 @@ async def test_get_room_detail(
     room_id = room_resp.json()["id"]
 
     # Create a subject and assign as suitability
-    subj_resp = await client.post("/api/subjects", json={"name": "Physics", "short_name": "PHY"})
+    subj_resp = await client.post(
+        "/api/subjects", json={"name": "Physics", "short_name": "PHY", "color": "chart-1"}
+    )
     subject_id = subj_resp.json()["id"]
     await client.put(f"/api/rooms/{room_id}/suitability", json={"subject_ids": [subject_id]})
 
@@ -233,9 +210,11 @@ async def test_replace_suitability(
 
     # Create two subjects
     math_resp = await client.post(
-        "/api/subjects", json={"name": "Mathematics", "short_name": "MAT"}
+        "/api/subjects", json={"name": "Mathematics", "short_name": "MAT", "color": "chart-2"}
     )
-    chem_resp = await client.post("/api/subjects", json={"name": "Chemistry", "short_name": "CHE"})
+    chem_resp = await client.post(
+        "/api/subjects", json={"name": "Chemistry", "short_name": "CHE", "color": "chart-4"}
+    )
     math_id = math_resp.json()["id"]
     chem_id = chem_resp.json()["id"]
 

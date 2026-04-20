@@ -2,7 +2,6 @@
 
 import uuid
 from datetime import datetime
-from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +12,6 @@ class RoomCreate(BaseModel):
     name: str
     short_name: str
     capacity: int | None = Field(default=None, ge=1)
-    suitability_mode: Literal["general", "specialized"] = "general"
 
 
 class RoomUpdate(BaseModel):
@@ -22,7 +20,6 @@ class RoomUpdate(BaseModel):
     name: str | None = None
     short_name: str | None = None
     capacity: int | None = Field(default=None, ge=1)
-    suitability_mode: Literal["general", "specialized"] | None = None
 
 
 class SuitabilitySubjectResponse(BaseModel):
@@ -48,7 +45,6 @@ class RoomListResponse(BaseModel):
     name: str
     short_name: str
     capacity: int | None
-    suitability_mode: str
     created_at: datetime
     updated_at: datetime
 
@@ -60,7 +56,6 @@ class RoomDetailResponse(BaseModel):
     name: str
     short_name: str
     capacity: int | None
-    suitability_mode: str
     suitability_subjects: list[SuitabilitySubjectResponse]
     availability: list[AvailabilityResponse]
     created_at: datetime
@@ -77,3 +72,10 @@ class AvailabilityReplaceRequest(BaseModel):
     """Request body for replacing a room's availability list."""
 
     time_block_ids: list[uuid.UUID]
+
+
+class MissingSubjectsErrorDetail(BaseModel):
+    """Detail payload for 400 Bad Request when suitability references unknown subjects."""
+
+    detail: str
+    missing_subject_ids: list[uuid.UUID]
