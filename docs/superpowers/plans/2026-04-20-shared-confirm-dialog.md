@@ -15,7 +15,7 @@
 ## File Structure
 
 - **Create:** `frontend/src/components/confirm-dialog.tsx` (~60 LoC). Single exported `ConfirmDialog` component. Owns no state, no mutations; consumes `useTranslation` only for default button labels.
-- **Create:** `frontend/src/components/confirm-dialog.test.tsx` (~120 LoC). Five Vitest tests using `renderWithProviders` from `frontend/tests/render-helpers.tsx`. Pins locale to English in `beforeAll`.
+- **Create:** `frontend/src/components/confirm-dialog.test.tsx` (~100 LoC). Four Vitest tests using a local `QueryClientProvider` wrapper (same pattern as `frontend/src/features/rooms/rooms-dialogs.test.tsx`), not `renderWithProviders`, because the component does not need TanStack Router and the shared helper mounts asynchronously. Pins locale to English in `beforeAll`.
 - **Modify:** `frontend/src/features/rooms/rooms-dialogs.tsx` (replace `DeleteRoomDialog` body).
 - **Modify:** `frontend/src/features/teachers/teachers-dialogs.tsx` (replace `DeleteTeacherDialog` body).
 - **Modify:** `frontend/src/features/subjects/subjects-dialogs.tsx` (replace `DeleteSubjectDialog` body).
@@ -36,29 +36,37 @@ No test files are modified. No i18n catalog changes. No mutation changes.
 
 - [ ] **Step 1: Write the failing test file**
 
-Create `frontend/src/components/confirm-dialog.test.tsx`:
+Create `frontend/src/components/confirm-dialog.test.tsx`. This file mirrors `frontend/src/features/rooms/rooms-dialogs.test.tsx`'s harness: a local `QueryClientProvider` wrapper and a synchronous `render`, not `renderWithProviders` (the shared helper wraps the tree in TanStack Router, which mounts asynchronously and breaks sync `getBy*` queries for a component that needs no Router at all).
 
 ```tsx
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import i18n from "@/i18n/config";
-import { renderWithProviders } from "../../tests/render-helpers";
+import i18n from "@/i18n/init";
 
-beforeAll(() => {
-  void i18n.changeLanguage("en");
-});
+function wrapConfirmDialog(children: ReactNode) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
+}
 
 describe("ConfirmDialog", () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage("en");
+  });
+
   it("renders title, description, and default cancel/confirm labels", () => {
-    renderWithProviders(
-      <ConfirmDialog
-        open
-        onClose={() => {}}
-        title="Delete the thing?"
-        description="This cannot be undone."
-        onConfirm={() => {}}
-      />,
+    render(
+      wrapConfirmDialog(
+        <ConfirmDialog
+          open
+          onClose={() => {}}
+          title="Delete the thing?"
+          description="This cannot be undone."
+          onConfirm={() => {}}
+        />,
+      ),
     );
     expect(screen.getByRole("heading", { name: "Delete the thing?" })).toBeInTheDocument();
     expect(screen.getByText("This cannot be undone.")).toBeInTheDocument();
@@ -68,14 +76,16 @@ describe("ConfirmDialog", () => {
 
   it("invokes onClose when the cancel button is clicked", () => {
     const onClose = vi.fn();
-    renderWithProviders(
-      <ConfirmDialog
-        open
-        onClose={onClose}
-        title="t"
-        description="d"
-        onConfirm={() => {}}
-      />,
+    render(
+      wrapConfirmDialog(
+        <ConfirmDialog
+          open
+          onClose={onClose}
+          title="t"
+          description="d"
+          onConfirm={() => {}}
+        />,
+      ),
     );
     fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -83,50 +93,41 @@ describe("ConfirmDialog", () => {
 
   it("invokes onConfirm when the confirm button is clicked", () => {
     const onConfirm = vi.fn();
-    renderWithProviders(
-      <ConfirmDialog
-        open
-        onClose={() => {}}
-        title="t"
-        description="d"
-        onConfirm={onConfirm}
-      />,
+    render(
+      wrapConfirmDialog(
+        <ConfirmDialog
+          open
+          onClose={() => {}}
+          title="t"
+          description="d"
+          onConfirm={onConfirm}
+        />,
+      ),
     );
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
   it("disables the confirm button and swaps the label when isPending is true", () => {
-    renderWithProviders(
-      <ConfirmDialog
-        open
-        onClose={() => {}}
-        title="t"
-        description="d"
-        onConfirm={() => {}}
-        isPending
-      />,
+    render(
+      wrapConfirmDialog(
+        <ConfirmDialog
+          open
+          onClose={() => {}}
+          title="t"
+          description="d"
+          onConfirm={() => {}}
+          isPending
+        />,
+      ),
     );
     const confirm = screen.getByRole("button", { name: /deleting/i });
     expect(confirm).toBeDisabled();
   });
-
-  it("fires onClose when Escape is pressed", async () => {
-    const onClose = vi.fn();
-    renderWithProviders(
-      <ConfirmDialog
-        open
-        onClose={onClose}
-        title="t"
-        description="d"
-        onConfirm={() => {}}
-      />,
-    );
-    fireEvent.keyDown(document.body, { key: "Escape" });
-    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
-  });
 });
 ```
+
+Four tests, not five. An earlier draft included an Escape-key test, but Radix's own keyboard-dismiss handling is already covered in Radix's own suite and testing it through our thin wrapper adds flakiness (document-level listeners, portal attach timing) for no wrapper-specific behavior. If a future non-delete `ConfirmDialog` caller relies on Escape semantics differently, add a targeted test then.
 
 - [ ] **Step 2: Run the test to verify it fails**
 
