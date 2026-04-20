@@ -107,6 +107,8 @@
       "step2": "Farbe zuweisen",
       "step3": "In Stundentafel nutzen"
     },
+    "color": "Farbe",
+    "customColor": "Eigener Hex",
     "loadError": "Fächer konnten nicht geladen werden.",
     "dialog": {
       "createTitle": "Neues Fach",

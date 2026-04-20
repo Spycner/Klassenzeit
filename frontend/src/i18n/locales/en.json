@@ -107,6 +107,8 @@
       "step2": "Assign a colour",
       "step3": "Use in a curriculum"
     },
+    "color": "Color",
+    "customColor": "Custom hex",
     "loadError": "Could not load subjects.",
     "dialog": {
       "createTitle": "New subject",
