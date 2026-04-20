@@ -94,7 +94,18 @@
     "nextStepsSub": "Ein paar Lücken vor dem Solver-Lauf.",
     "quickAdd": "Schnell anlegen",
     "recent": "Zuletzt bearbeitet",
-    "recentPlaceholder": "Die Liste erscheint, sobald das Backend updated_at liefert.",
+    "recentEntries": {
+      "empty": "Bearbeite einen Eintrag, um ihn hier zu sehen.",
+      "justNow": "Gerade eben",
+      "types": {
+        "subject": "Fach",
+        "room": "Raum",
+        "teacher": "Lehrkraft",
+        "weekScheme": "Wochenraster",
+        "schoolClass": "Klasse",
+        "stundentafel": "Stundentafel"
+      }
+    },
     "hint": {
       "noTeachers": "Noch keine Lehrkräfte",
       "noTeachersSub": "Lege das Kollegium an.",
