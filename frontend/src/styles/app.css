@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Fira+Code:wght@400;500;600&family=Special+Elite&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Fira+Code:wght@400;500;600&display=swap");
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -99,8 +99,6 @@
   --sidebar-border: oklch(0.3469 0.0102 73.5699);
   --sidebar-ring: oklch(0.7298 0.0667 143.5089);
 
-  --font-mono: "Special Elite", ui-serif, serif;
-
   --shadow-xs: 0px 8px 20px 0px hsl(0 0% 0% / 0.2);
   --shadow-sm: 0px 8px 20px 0px hsl(0 0% 0% / 0.4), 0px 1px 2px -1px hsl(0 0% 0% / 0.4);
   --shadow-md: 0px 8px 20px 0px hsl(0 0% 0% / 0.4), 0px 2px 4px -1px hsl(0 0% 0% / 0.4);
@@ -160,6 +158,12 @@ body {
   font-family: var(--font-sans);
   letter-spacing: var(--tracking-normal);
   -webkit-font-smoothing: antialiased;
+}
+
+*,
+::before,
+::after {
+  border-color: var(--color-border);
 }
 
 .kz-swatch {
