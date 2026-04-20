@@ -1,8 +1,10 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeAll, describe, expect, it } from "vitest";
+import { HttpResponse, http } from "msw";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { SchoolClassesPage } from "@/features/school-classes/school-classes-page";
 import i18n from "@/i18n/init";
+import { server } from "./msw-handlers";
 import { renderWithProviders } from "./render-helpers";
 
 describe("SchoolClassesPage", () => {
@@ -40,5 +42,54 @@ describe("SchoolClassesPage", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("SchoolClassesPage Generate-lessons toast", () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage("de");
+  });
+
+  beforeEach(() => {
+    vi.spyOn(window, "alert").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows a success toast with the interpolated lesson count", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SchoolClassesPage />);
+    await screen.findByText("1a");
+    const row = screen.getByText("1a").closest("tr");
+    if (!row) throw new Error("row for 1a not found");
+    await user.click(within(row).getByRole("button", { name: /unterricht erzeugen/i }));
+
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: /^erzeugen$/i }));
+
+    expect(await screen.findByText(/1 Stunde erzeugt/i)).toBeInTheDocument();
+    expect(window.alert).not.toHaveBeenCalled();
+  });
+
+  it("shows an info toast when the backend generated no lessons", async () => {
+    server.use(
+      http.post("http://localhost:3000/api/classes/:class_id/generate-lessons", () =>
+        HttpResponse.json([], { status: 201 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<SchoolClassesPage />);
+    await screen.findByText("1a");
+    const row = screen.getByText("1a").closest("tr");
+    if (!row) throw new Error("row for 1a not found");
+    await user.click(within(row).getByRole("button", { name: /unterricht erzeugen/i }));
+
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: /^erzeugen$/i }));
+
+    expect(await screen.findByText(/kein neuer unterricht erzeugt/i)).toBeInTheDocument();
+    expect(window.alert).not.toHaveBeenCalled();
   });
 });

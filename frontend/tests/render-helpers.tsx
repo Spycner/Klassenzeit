@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
+import { Toaster } from "@/components/ui/sonner";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -42,6 +43,7 @@ export function renderWithProviders(ui: ReactElement) {
     ...render(
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <Toaster />
       </QueryClientProvider>,
     ),
   };
