@@ -28,6 +28,7 @@ import {
   useRoomDetail,
   useUpdateRoomWithSuitability,
 } from "./hooks";
+import { RoomAvailabilityGrid } from "./room-availability-grid";
 import { RoomFormSchema, type RoomFormValues } from "./schema";
 
 interface RoomFormDialogProps {
@@ -185,6 +186,7 @@ export function RoomFormDialog({ open, onOpenChange, submitLabel, room }: RoomFo
             </DialogFooter>
           </form>
         </Form>
+        {room ? <RoomAvailabilityGrid roomId={room.id} /> : null}
       </DialogContent>
     </Dialog>
   );

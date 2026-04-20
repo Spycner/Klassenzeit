@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
 import {
+  roomAvailabilityByRoomId,
   roomSuitabilityByRoomId,
   server,
   stundentafelEntriesByTafelId,
@@ -50,6 +51,9 @@ beforeEach(() => {
   }
   for (const key of Object.keys(roomSuitabilityByRoomId)) {
     roomSuitabilityByRoomId[key] = [];
+  }
+  for (const key of Object.keys(roomAvailabilityByRoomId)) {
+    roomAvailabilityByRoomId[key] = [];
   }
   for (const key of Object.keys(timeBlocksBySchemeId)) {
     timeBlocksBySchemeId[key] = [];

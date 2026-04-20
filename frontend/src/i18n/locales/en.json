@@ -165,6 +165,14 @@
       "editDescription": "Update {{name}}.",
       "deleteTitle": "Delete room",
       "deleteDescription": "This will permanently delete \"{{name}}\"."
+    },
+    "availability": {
+      "sectionTitle": "Availability",
+      "noSchemes": "Create a week scheme first.",
+      "noBlocks": "No time blocks yet in this scheme.",
+      "cellAvailable": "Available at {{day}} period {{position}}",
+      "cellUnavailable": "Not available at {{day}} period {{position}}",
+      "save": "Save availability"
     }
   },
   "teachers": {

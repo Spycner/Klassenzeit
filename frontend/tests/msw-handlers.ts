@@ -101,6 +101,10 @@ export const roomSuitabilityByRoomId: Record<string, string[]> = {
   "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa": [],
 };
 
+export const roomAvailabilityByRoomId: Record<string, string[]> = {
+  "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa": [],
+};
+
 export const teacherQualsByTeacherId: Record<string, string[]> = {
   "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb": [],
 };
@@ -189,18 +193,32 @@ export const defaultHandlers = [
   http.get(`${BASE}/api/rooms/:room_id`, ({ params }) => {
     const id = String(params.room_id);
     const base = initialRooms.find((r) => r.id === id);
+    if (!base) {
+      return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    }
     const selectedIds = roomSuitabilityByRoomId[id] ?? [];
     const suitability_subjects = selectedIds
       .map((sid) => initialSubjects.find((s) => s.id === sid))
       .filter((s): s is (typeof initialSubjects)[number] => s !== undefined)
       .map((s) => ({ id: s.id, name: s.name, short_name: s.short_name }));
-    if (!base) {
-      return HttpResponse.json({ detail: "not found" }, { status: 404 });
-    }
+    const allBlocks = Object.values(timeBlocksBySchemeId).flat();
+    const availabilityIds = roomAvailabilityByRoomId[id] ?? [];
+    const availability = availabilityIds.flatMap((tbId) => {
+      const block = allBlocks.find((b) => b.id === tbId);
+      return block
+        ? [
+            {
+              time_block_id: tbId,
+              day_of_week: block.day_of_week,
+              position: block.position,
+            },
+          ]
+        : [];
+    });
     return HttpResponse.json({
       ...base,
       suitability_subjects,
-      availability: [],
+      availability,
     });
   }),
   http.put(`${BASE}/api/rooms/:room_id/suitability`, async ({ request, params }) => {
@@ -236,6 +254,31 @@ export const defaultHandlers = [
       ...base,
       suitability_subjects,
       availability: [],
+    });
+  }),
+  http.put(`${BASE}/api/rooms/:room_id/availability`, async ({ request, params }) => {
+    const id = String(params.room_id);
+    const body = (await request.json()) as { time_block_ids: string[] };
+    roomAvailabilityByRoomId[id] = [...body.time_block_ids];
+    const base = initialRooms.find((r) => r.id === id) ?? initialRooms[0];
+    if (!base) return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    const allBlocks = Object.values(timeBlocksBySchemeId).flat();
+    const availability = body.time_block_ids.flatMap((tbId) => {
+      const block = allBlocks.find((b) => b.id === tbId);
+      return block
+        ? [
+            {
+              time_block_id: tbId,
+              day_of_week: block.day_of_week,
+              position: block.position,
+            },
+          ]
+        : [];
+    });
+    return HttpResponse.json({
+      ...base,
+      suitability_subjects: [],
+      availability,
     });
   }),
   http.get(`${BASE}/api/teachers`, () => HttpResponse.json(initialTeachers)),

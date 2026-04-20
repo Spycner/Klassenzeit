@@ -165,6 +165,14 @@
       "editDescription": "{{name}} aktualisieren.",
       "deleteTitle": "Raum löschen",
       "deleteDescription": "„{{name}}“ wird dauerhaft gelöscht."
+    },
+    "availability": {
+      "sectionTitle": "Verfügbarkeit",
+      "noSchemes": "Zuerst ein Wochenschema anlegen.",
+      "noBlocks": "Noch keine Zeitblöcke in diesem Schema.",
+      "cellAvailable": "Verfügbar am {{day}}, Stunde {{position}}",
+      "cellUnavailable": "Nicht verfügbar am {{day}}, Stunde {{position}}",
+      "save": "Verfügbarkeit speichern"
     }
   },
   "teachers": {
