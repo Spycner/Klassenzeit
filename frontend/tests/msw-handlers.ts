@@ -67,6 +67,21 @@ export const initialStundentafeln = [
   },
 ];
 
+// Mutable per-test store so POST/PATCH/DELETE on entries see a consistent view.
+// Tests never share state across describe blocks; MSW handlers reset if you
+// mutate this between `beforeEach` runs.
+export const stundentafelEntriesByTafelId: Record<
+  string,
+  Array<{
+    id: string;
+    subject: { id: string; name: string; short_name: string };
+    hours_per_week: number;
+    preferred_block_size: number;
+  }>
+> = {
+  "99999999-9999-9999-9999-999999999999": [],
+};
+
 export const initialSchoolClasses = [
   {
     id: "88888888-8888-8888-8888-888888888888",
@@ -76,6 +91,31 @@ export const initialSchoolClasses = [
     week_scheme_id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
     created_at: "2026-04-17T00:00:00Z",
     updated_at: "2026-04-17T00:00:00Z",
+  },
+];
+
+export const initialLessons = [
+  {
+    id: "55555555-5555-5555-5555-555555555555",
+    school_class: {
+      id: "88888888-8888-8888-8888-888888888888",
+      name: "1a",
+    },
+    subject: {
+      id: "11111111-1111-1111-1111-111111111111",
+      name: "Mathematik",
+      short_name: "MA",
+    },
+    teacher: {
+      id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      first_name: "Anna",
+      last_name: "Schmidt",
+      short_code: "SCH",
+    },
+    hours_per_week: 4,
+    preferred_block_size: 1,
+    created_at: "2026-04-20T00:00:00Z",
+    updated_at: "2026-04-20T00:00:00Z",
   },
 ];
 
@@ -149,6 +189,102 @@ export const defaultHandlers = [
     );
   }),
   http.get(`${BASE}/api/stundentafeln`, () => HttpResponse.json(initialStundentafeln)),
+  http.post(`${BASE}/api/stundentafeln`, async ({ request }) => {
+    const body = (await request.json()) as { name: string; grade_level: number };
+    return HttpResponse.json(
+      {
+        id: "aaaa0000-0000-0000-0000-000000000099",
+        name: body.name,
+        grade_level: body.grade_level,
+        created_at: "2026-04-20T00:00:00Z",
+        updated_at: "2026-04-20T00:00:00Z",
+      },
+      { status: 201 },
+    );
+  }),
+  http.get(`${BASE}/api/stundentafeln/:tafel_id`, ({ params }) => {
+    const id = String(params.tafel_id);
+    const base = initialStundentafeln.find((s) => s.id === id) ?? initialStundentafeln[0];
+    if (!base) {
+      return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    }
+    return HttpResponse.json({
+      id: base.id,
+      name: base.name,
+      grade_level: base.grade_level,
+      entries: stundentafelEntriesByTafelId[base.id] ?? [],
+      created_at: base.created_at,
+      updated_at: base.updated_at,
+    });
+  }),
+  http.patch(`${BASE}/api/stundentafeln/:tafel_id`, async ({ request, params }) => {
+    const body = (await request.json()) as { name?: string; grade_level?: number };
+    const id = String(params.tafel_id);
+    const base = initialStundentafeln.find((s) => s.id === id) ?? initialStundentafeln[0];
+    if (!base) {
+      return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    }
+    return HttpResponse.json({
+      id: base.id,
+      name: body.name ?? base.name,
+      grade_level: body.grade_level ?? base.grade_level,
+      created_at: base.created_at,
+      updated_at: "2026-04-20T00:00:00Z",
+    });
+  }),
+  http.delete(`${BASE}/api/stundentafeln/:tafel_id`, () =>
+    HttpResponse.json(null, { status: 204 }),
+  ),
+  http.post(`${BASE}/api/stundentafeln/:tafel_id/entries`, async ({ request, params }) => {
+    const body = (await request.json()) as {
+      subject_id: string;
+      hours_per_week: number;
+      preferred_block_size: number;
+    };
+    const tafelId = String(params.tafel_id);
+    const subject = initialSubjects.find((s) => s.id === body.subject_id);
+    const entry = {
+      id: "eeee0000-0000-0000-0000-000000000001",
+      subject: subject
+        ? { id: subject.id, name: subject.name, short_name: subject.short_name }
+        : { id: body.subject_id, name: "Unknown subject", short_name: "??" },
+      hours_per_week: body.hours_per_week,
+      preferred_block_size: body.preferred_block_size,
+    };
+    const bucket = stundentafelEntriesByTafelId[tafelId] ?? [];
+    stundentafelEntriesByTafelId[tafelId] = [...bucket, entry];
+    return HttpResponse.json(entry, { status: 201 });
+  }),
+  http.patch(
+    `${BASE}/api/stundentafeln/:tafel_id/entries/:entry_id`,
+    async ({ request, params }) => {
+      const body = (await request.json()) as {
+        hours_per_week?: number;
+        preferred_block_size?: number;
+      };
+      const tafelId = String(params.tafel_id);
+      const entryId = String(params.entry_id);
+      const bucket = stundentafelEntriesByTafelId[tafelId] ?? [];
+      const existing = bucket.find((e) => e.id === entryId);
+      if (!existing) {
+        return HttpResponse.json({ detail: "not found" }, { status: 404 });
+      }
+      const updated = {
+        ...existing,
+        hours_per_week: body.hours_per_week ?? existing.hours_per_week,
+        preferred_block_size: body.preferred_block_size ?? existing.preferred_block_size,
+      };
+      stundentafelEntriesByTafelId[tafelId] = bucket.map((e) => (e.id === entryId ? updated : e));
+      return HttpResponse.json(updated);
+    },
+  ),
+  http.delete(`${BASE}/api/stundentafeln/:tafel_id/entries/:entry_id`, ({ params }) => {
+    const tafelId = String(params.tafel_id);
+    const entryId = String(params.entry_id);
+    const bucket = stundentafelEntriesByTafelId[tafelId] ?? [];
+    stundentafelEntriesByTafelId[tafelId] = bucket.filter((e) => e.id !== entryId);
+    return HttpResponse.json(null, { status: 204 });
+  }),
   http.get(`${BASE}/api/classes`, () => HttpResponse.json(initialSchoolClasses)),
   http.post(`${BASE}/api/classes`, async ({ request }) => {
     const body = (await request.json()) as {
@@ -167,6 +303,80 @@ export const defaultHandlers = [
       { status: 201 },
     );
   }),
+  http.get(`${BASE}/api/lessons`, () => HttpResponse.json(initialLessons)),
+  http.post(`${BASE}/api/lessons`, async ({ request }) => {
+    const body = (await request.json()) as {
+      school_class_id: string;
+      subject_id: string;
+      teacher_id: string | null;
+      hours_per_week: number;
+      preferred_block_size: number;
+    };
+    const schoolClass = initialSchoolClasses.find((c) => c.id === body.school_class_id);
+    const subject = initialSubjects.find((s) => s.id === body.subject_id);
+    const teacher =
+      body.teacher_id === null
+        ? null
+        : (initialTeachers.find((t) => t.id === body.teacher_id) ?? null);
+    return HttpResponse.json(
+      {
+        id: "66666666-6666-6666-6666-666666666666",
+        school_class: schoolClass
+          ? { id: schoolClass.id, name: schoolClass.name }
+          : { id: body.school_class_id, name: "Unknown class" },
+        subject: subject
+          ? { id: subject.id, name: subject.name, short_name: subject.short_name }
+          : { id: body.subject_id, name: "Unknown subject", short_name: "??" },
+        teacher: teacher
+          ? {
+              id: teacher.id,
+              first_name: teacher.first_name,
+              last_name: teacher.last_name,
+              short_code: teacher.short_code,
+            }
+          : null,
+        hours_per_week: body.hours_per_week,
+        preferred_block_size: body.preferred_block_size,
+        created_at: "2026-04-20T00:00:00Z",
+        updated_at: "2026-04-20T00:00:00Z",
+      },
+      { status: 201 },
+    );
+  }),
+  http.patch(`${BASE}/api/lessons/:lesson_id`, async ({ request, params }) => {
+    const body = (await request.json()) as {
+      teacher_id?: string | null;
+      hours_per_week?: number;
+      preferred_block_size?: number;
+    };
+    const [base] = initialLessons;
+    if (!base) {
+      return HttpResponse.json({ detail: "seed missing" }, { status: 500 });
+    }
+    return HttpResponse.json({
+      ...base,
+      id: String(params.lesson_id),
+      hours_per_week: body.hours_per_week ?? base.hours_per_week,
+      preferred_block_size: body.preferred_block_size ?? base.preferred_block_size,
+      teacher:
+        body.teacher_id === undefined
+          ? base.teacher
+          : body.teacher_id === null
+            ? null
+            : (() => {
+                const match = initialTeachers.find((t) => t.id === body.teacher_id);
+                return match
+                  ? {
+                      id: match.id,
+                      first_name: match.first_name,
+                      last_name: match.last_name,
+                      short_code: match.short_code,
+                    }
+                  : null;
+              })(),
+    });
+  }),
+  http.delete(`${BASE}/api/lessons/:lesson_id`, () => HttpResponse.json(null, { status: 204 })),
 ];
 
 export const server = setupServer(...defaultHandlers);
