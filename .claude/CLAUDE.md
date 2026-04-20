@@ -20,6 +20,18 @@ Keep things that are out of scope for a step, or that you notice as tech debt or
 
 **`/autopilot <topic>`** runs the full flow end-to-end (brainstorm, spec, plan, implementation, PR, green CI) without checking in at each step. See `.claude/commands/autopilot.md` for the exact sequence, its required-skill-invocations table, and the skill audit that runs before the PR opens. Use it whenever the user describes a feature or chore they'd otherwise expect you to walk through step-by-step.
 
+## Work selection: quality first, tidy first
+
+When picking the next item off `docs/superpowers/OPEN_THINGS.md` without a more specific directive from the user, prefer **tech debt and quality work over new user-facing features**. Follow Kent Beck's "Tidy First?" heuristic: small structural refactors that make subsequent feature work cheaper and safer come before the features themselves. Concretely:
+
+1. Read OPEN_THINGS.md top to bottom. Skim the "Product capabilities" section last.
+2. Pick the highest-impact item from the "CI / repo automation", "Testing", "Toolchain & build friction", "Auth maintenance", or "Production readiness" sections that is unblocked and fits a single PR.
+3. Structural refactors that remove duplication, collapse drift between near-identical call sites, or replace alert/ad-hoc patterns with shared primitives count as tidy-first and are preferred over feature work.
+4. A structural change and a behavioral change never ship in the same commit. If a tidy-first refactor uncovers a behavior bug, surface the bug and fix it in a separate commit with its own typed prefix (`fix(...)`), not folded into the refactor.
+5. Behavior must be preserved across a tidy commit: tests that passed before must pass after without modification, except where the only change is a test's import path or a mock signature rendered obsolete by the refactor.
+
+If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, fall back to the next feature item and note why in the PR body.
+
 ## Tooling
 
 ### Commands
