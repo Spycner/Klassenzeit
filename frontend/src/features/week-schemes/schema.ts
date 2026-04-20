@@ -6,3 +6,11 @@ export const WeekSchemeFormSchema = z.object({
 });
 
 export type WeekSchemeFormValues = z.infer<typeof WeekSchemeFormSchema>;
+
+export const TimeBlockFormSchema = z.object({
+  day_of_week: z.number().int().min(0).max(4),
+  position: z.number().int().min(1),
+  start_time: z.string().regex(/^[0-2][0-9]:[0-5][0-9]$/, "invalid_time"),
+  end_time: z.string().regex(/^[0-2][0-9]:[0-5][0-9]$/, "invalid_time"),
+});
+export type TimeBlockFormValues = z.infer<typeof TimeBlockFormSchema>;

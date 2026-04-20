@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { SubjectMultiPicker } from "@/features/subjects/subject-multi-picker";
 import { ApiError } from "@/lib/api-client";
 import {
   type Room,
@@ -27,8 +28,8 @@ import {
   useRoomDetail,
   useUpdateRoomWithSuitability,
 } from "./hooks";
+import { RoomAvailabilityGrid } from "./room-availability-grid";
 import { RoomFormSchema, type RoomFormValues } from "./schema";
-import { SubjectMultiPicker } from "./subject-multi-picker";
 
 interface RoomFormDialogProps {
   open: boolean;
@@ -185,6 +186,7 @@ export function RoomFormDialog({ open, onOpenChange, submitLabel, room }: RoomFo
             </DialogFooter>
           </form>
         </Form>
+        {room ? <RoomAvailabilityGrid roomId={room.id} /> : null}
       </DialogContent>
     </Dialog>
   );

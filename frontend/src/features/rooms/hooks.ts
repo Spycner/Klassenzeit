@@ -100,3 +100,26 @@ export function useDeleteRoom() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: roomsQueryKey }),
   });
 }
+
+export function useSaveRoomAvailability() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      timeBlockIds,
+    }: {
+      id: string;
+      timeBlockIds: string[];
+    }): Promise<RoomDetail> => {
+      const { data } = await client.PUT("/api/rooms/{room_id}/availability", {
+        params: { path: { room_id: id } },
+        body: { time_block_ids: timeBlockIds },
+      });
+      if (!data) throw new ApiError(500, null, "Empty response from PUT availability");
+      return data;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: roomDetailQueryKey(vars.id) });
+    },
+  });
+}

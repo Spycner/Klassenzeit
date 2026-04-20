@@ -21,6 +21,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { type Teacher, useCreateTeacher, useDeleteTeacher, useUpdateTeacher } from "./hooks";
 import { TeacherFormSchema, type TeacherFormValues } from "./schema";
+import { TeacherAvailabilityGrid } from "./teacher-availability-grid";
+import { TeacherQualificationsEditor } from "./teacher-qualifications-editor";
 
 interface TeacherFormDialogProps {
   open: boolean;
@@ -145,6 +147,12 @@ export function TeacherFormDialog({
             </DialogFooter>
           </form>
         </Form>
+        {teacher ? (
+          <>
+            <TeacherQualificationsEditor teacherId={teacher.id} />
+            <TeacherAvailabilityGrid teacherId={teacher.id} />
+          </>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

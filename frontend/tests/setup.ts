@@ -1,6 +1,14 @@
 import "@testing-library/jest-dom/vitest";
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
-import { roomSuitabilityByRoomId, server, stundentafelEntriesByTafelId } from "./msw-handlers";
+import {
+  roomAvailabilityByRoomId,
+  roomSuitabilityByRoomId,
+  server,
+  stundentafelEntriesByTafelId,
+  teacherAvailabilityByTeacherId,
+  teacherQualsByTeacherId,
+  timeBlocksBySchemeId,
+} from "./msw-handlers";
 
 // jsdom does not implement matchMedia; next-themes calls it during mount.
 if (!window.matchMedia) {
@@ -43,6 +51,18 @@ beforeEach(() => {
   }
   for (const key of Object.keys(roomSuitabilityByRoomId)) {
     roomSuitabilityByRoomId[key] = [];
+  }
+  for (const key of Object.keys(roomAvailabilityByRoomId)) {
+    roomAvailabilityByRoomId[key] = [];
+  }
+  for (const key of Object.keys(timeBlocksBySchemeId)) {
+    timeBlocksBySchemeId[key] = [];
+  }
+  for (const key of Object.keys(teacherQualsByTeacherId)) {
+    teacherQualsByTeacherId[key] = [];
+  }
+  for (const key of Object.keys(teacherAvailabilityByTeacherId)) {
+    teacherAvailabilityByTeacherId[key] = [];
   }
 });
 afterEach(() => server.resetHandlers());

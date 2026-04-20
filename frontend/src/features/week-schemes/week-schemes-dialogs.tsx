@@ -27,6 +27,7 @@ import {
   type WeekScheme,
 } from "./hooks";
 import { WeekSchemeFormSchema, type WeekSchemeFormValues } from "./schema";
+import { TimeBlocksTable } from "./time-blocks-table";
 
 interface WeekSchemeFormDialogProps {
   open: boolean;
@@ -120,6 +121,11 @@ export function WeekSchemeFormDialog({
             </DialogFooter>
           </form>
         </Form>
+        {scheme ? (
+          <div className="border-t pt-4">
+            <TimeBlocksTable schemeId={scheme.id} />
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { useStundentafeln } from "@/features/stundentafeln/hooks";
 import { useWeekSchemes } from "@/features/week-schemes/hooks";
+import { GenerateLessonsConfirmDialog } from "./generate-lessons-dialog";
 import { type SchoolClass, useSchoolClasses } from "./hooks";
 import { DeleteSchoolClassDialog, SchoolClassFormDialog } from "./school-classes-dialogs";
 
@@ -29,6 +30,7 @@ export function SchoolClassesPage() {
   const [creating, setCreating] = useState(() => search.create === "1");
   const [editing, setEditing] = useState<SchoolClass | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<SchoolClass | null>(null);
+  const [generateFor, setGenerateFor] = useState<SchoolClass | null>(null);
 
   const stundentafelNameById = new Map(
     (stundentafeln.data ?? []).map((entry) => [entry.id, entry.name]),
@@ -110,6 +112,13 @@ export function SchoolClassesPage() {
                       {weekSchemeNameById.get(schoolClass.week_scheme_id) ?? "—"}
                     </TableCell>
                     <TableCell className="space-x-2 py-1.5 text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setGenerateFor(schoolClass)}
+                      >
+                        {t("schoolClasses.generateLessons.action")}
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => setEditing(schoolClass)}>
                         {t("common.edit")}
                       </Button>
@@ -148,6 +157,20 @@ export function SchoolClassesPage() {
         <DeleteSchoolClassDialog
           schoolClass={confirmDelete}
           onClose={() => setConfirmDelete(null)}
+        />
+      ) : null}
+      {generateFor ? (
+        <GenerateLessonsConfirmDialog
+          schoolClass={generateFor}
+          onDone={(count) => {
+            setGenerateFor(null);
+            if (count < 0) return;
+            const msg =
+              count === 0
+                ? t("schoolClasses.generateLessons.noneCreated")
+                : t("schoolClasses.generateLessons.created", { count });
+            window.alert(msg);
+          }}
         />
       ) : null}
     </div>
