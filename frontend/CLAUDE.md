@@ -89,6 +89,12 @@ Run from repo root unless noted.
 - **Same translated string in two places breaks `getByText`.** When two i18n keys resolve to the same copy and both render on screen (e.g. `dashboard.stats.classes` and `sidebar.schoolClasses` both producing "School classes"), `findByText` throws "Found multiple elements". Disambiguate with `getAllByText` + a className / role filter, or rename one of the keys so the rendered labels diverge.
 - **Stacked Radix Dialogs count as multiple `role="dialog"` nodes.** When a parent dialog opens a nested Dialog (e.g. the curriculum edit dialog hosting the entry-form dialog), `screen.getAllByRole("dialog")` returns both. To assert the nested dialog closed while the parent stayed open, wait for the invalidation before counting: `await waitFor(() => expect(screen.getAllByRole("dialog")).toHaveLength(1))`, then re-query the surviving parent by its heading.
 - **Sub-resource MSW handlers need mutable per-test state.** When a test sequence is POST child, then GET parent detail (expected to include the new child), a static seed does not reflect the POST. Export a mutable `Record<parentId, Array<child>>` from `tests/msw-handlers.ts` (e.g. `stundentafelEntriesByTafelId`) and let the POST / PATCH / DELETE handlers mutate it. Tests reset it in `beforeEach` by iterating `Object.keys` and assigning `[]`.
+- **Test utilities live at `frontend/tests/render-helpers.tsx`.** Feature tests import `renderWithProviders` from `../../../tests/render-helpers` (or the equivalent relative path). There is no `@/test-utils/render` alias; snippets that reference one are stale.
+- **Component tests that query English labels must pin the locale.** i18next defaults to the user agent's language (jsdom reports `de-DE`), so `getByRole("button", { name: /save/i })` silently misses "Speichern". Add `import i18n from "@/i18n/config"; beforeAll(() => i18n.changeLanguage("en"));` at the top of any test whose assertions rely on English copy.
+
+## UX conventions
+
+- **No toast primitive in the app yet.** User-visible success / empty-result notifications fall back to `window.alert(...)` (see the Generate-lessons row action on SchoolClasses). Form errors still go through `form.setError("root", ...)`. When a shared toast lands (tracked in OPEN_THINGS), replace `alert` call sites in one pass rather than hand-rolling per feature.
 
 ## Bundle
 
