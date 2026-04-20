@@ -3,7 +3,9 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+COLOR_PATTERN = r"^(chart-(1[0-2]|[1-9])|#[0-9a-fA-F]{6})$"
 
 
 class SubjectCreate(BaseModel):
@@ -11,6 +13,7 @@ class SubjectCreate(BaseModel):
 
     name: str
     short_name: str
+    color: str = Field(pattern=COLOR_PATTERN)
 
 
 class SubjectUpdate(BaseModel):
@@ -18,6 +21,7 @@ class SubjectUpdate(BaseModel):
 
     name: str | None = None
     short_name: str | None = None
+    color: str | None = Field(default=None, pattern=COLOR_PATTERN)
 
 
 class SubjectResponse(BaseModel):
@@ -26,5 +30,6 @@ class SubjectResponse(BaseModel):
     id: uuid.UUID
     name: str
     short_name: str
+    color: str
     created_at: datetime
     updated_at: datetime
