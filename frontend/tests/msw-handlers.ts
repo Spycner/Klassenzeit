@@ -67,6 +67,21 @@ export const initialStundentafeln = [
   },
 ];
 
+// Mutable per-test store so POST/PATCH/DELETE on entries see a consistent view.
+// Tests never share state across describe blocks; MSW handlers reset if you
+// mutate this between `beforeEach` runs.
+export const stundentafelEntriesByTafelId: Record<
+  string,
+  Array<{
+    id: string;
+    subject: { id: string; name: string; short_name: string };
+    hours_per_week: number;
+    preferred_block_size: number;
+  }>
+> = {
+  "99999999-9999-9999-9999-999999999999": [],
+};
+
 export const initialSchoolClasses = [
   {
     id: "88888888-8888-8888-8888-888888888888",
@@ -174,6 +189,102 @@ export const defaultHandlers = [
     );
   }),
   http.get(`${BASE}/api/stundentafeln`, () => HttpResponse.json(initialStundentafeln)),
+  http.post(`${BASE}/api/stundentafeln`, async ({ request }) => {
+    const body = (await request.json()) as { name: string; grade_level: number };
+    return HttpResponse.json(
+      {
+        id: "aaaa0000-0000-0000-0000-000000000099",
+        name: body.name,
+        grade_level: body.grade_level,
+        created_at: "2026-04-20T00:00:00Z",
+        updated_at: "2026-04-20T00:00:00Z",
+      },
+      { status: 201 },
+    );
+  }),
+  http.get(`${BASE}/api/stundentafeln/:tafel_id`, ({ params }) => {
+    const id = String(params.tafel_id);
+    const base = initialStundentafeln.find((s) => s.id === id) ?? initialStundentafeln[0];
+    if (!base) {
+      return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    }
+    return HttpResponse.json({
+      id: base.id,
+      name: base.name,
+      grade_level: base.grade_level,
+      entries: stundentafelEntriesByTafelId[base.id] ?? [],
+      created_at: base.created_at,
+      updated_at: base.updated_at,
+    });
+  }),
+  http.patch(`${BASE}/api/stundentafeln/:tafel_id`, async ({ request, params }) => {
+    const body = (await request.json()) as { name?: string; grade_level?: number };
+    const id = String(params.tafel_id);
+    const base = initialStundentafeln.find((s) => s.id === id) ?? initialStundentafeln[0];
+    if (!base) {
+      return HttpResponse.json({ detail: "not found" }, { status: 404 });
+    }
+    return HttpResponse.json({
+      id: base.id,
+      name: body.name ?? base.name,
+      grade_level: body.grade_level ?? base.grade_level,
+      created_at: base.created_at,
+      updated_at: "2026-04-20T00:00:00Z",
+    });
+  }),
+  http.delete(`${BASE}/api/stundentafeln/:tafel_id`, () =>
+    HttpResponse.json(null, { status: 204 }),
+  ),
+  http.post(`${BASE}/api/stundentafeln/:tafel_id/entries`, async ({ request, params }) => {
+    const body = (await request.json()) as {
+      subject_id: string;
+      hours_per_week: number;
+      preferred_block_size: number;
+    };
+    const tafelId = String(params.tafel_id);
+    const subject = initialSubjects.find((s) => s.id === body.subject_id);
+    const entry = {
+      id: "eeee0000-0000-0000-0000-000000000001",
+      subject: subject
+        ? { id: subject.id, name: subject.name, short_name: subject.short_name }
+        : { id: body.subject_id, name: "Unknown subject", short_name: "??" },
+      hours_per_week: body.hours_per_week,
+      preferred_block_size: body.preferred_block_size,
+    };
+    const bucket = stundentafelEntriesByTafelId[tafelId] ?? [];
+    stundentafelEntriesByTafelId[tafelId] = [...bucket, entry];
+    return HttpResponse.json(entry, { status: 201 });
+  }),
+  http.patch(
+    `${BASE}/api/stundentafeln/:tafel_id/entries/:entry_id`,
+    async ({ request, params }) => {
+      const body = (await request.json()) as {
+        hours_per_week?: number;
+        preferred_block_size?: number;
+      };
+      const tafelId = String(params.tafel_id);
+      const entryId = String(params.entry_id);
+      const bucket = stundentafelEntriesByTafelId[tafelId] ?? [];
+      const existing = bucket.find((e) => e.id === entryId);
+      if (!existing) {
+        return HttpResponse.json({ detail: "not found" }, { status: 404 });
+      }
+      const updated = {
+        ...existing,
+        hours_per_week: body.hours_per_week ?? existing.hours_per_week,
+        preferred_block_size: body.preferred_block_size ?? existing.preferred_block_size,
+      };
+      stundentafelEntriesByTafelId[tafelId] = bucket.map((e) => (e.id === entryId ? updated : e));
+      return HttpResponse.json(updated);
+    },
+  ),
+  http.delete(`${BASE}/api/stundentafeln/:tafel_id/entries/:entry_id`, ({ params }) => {
+    const tafelId = String(params.tafel_id);
+    const entryId = String(params.entry_id);
+    const bucket = stundentafelEntriesByTafelId[tafelId] ?? [];
+    stundentafelEntriesByTafelId[tafelId] = bucket.filter((e) => e.id !== entryId);
+    return HttpResponse.json(null, { status: 204 });
+  }),
   http.get(`${BASE}/api/classes`, () => HttpResponse.json(initialSchoolClasses)),
   http.post(`${BASE}/api/classes`, async ({ request }) => {
     const body = (await request.json()) as {
