@@ -107,6 +107,8 @@
       "step2": "Assign a colour",
       "step3": "Use in a curriculum"
     },
+    "color": "Color",
+    "customColor": "Custom hex",
     "loadError": "Could not load subjects.",
     "dialog": {
       "createTitle": "New subject",
@@ -125,7 +127,7 @@
       "name": "Name",
       "shortName": "Short name",
       "capacity": "Capacity",
-      "mode": "Mode",
+      "subjects": "Subjects",
       "actions": "Actions"
     },
     "empty": {
@@ -136,10 +138,9 @@
       "step3": "Set availability"
     },
     "loadError": "Could not load rooms.",
-    "suitabilityModes": {
-      "general": "General",
-      "specialized": "Specialized"
-    },
+    "suitableSubjects": "Suitable subjects",
+    "suitableSubjectsEmpty": "Empty list means any subject may be scheduled here.",
+    "suitableSubjectsError": "Some subjects no longer exist. Please re-select.",
     "dialog": {
       "createTitle": "New room",
       "createDescription": "Create a new room.",

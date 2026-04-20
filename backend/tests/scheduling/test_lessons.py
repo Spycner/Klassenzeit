@@ -26,7 +26,9 @@ async def _create_subject(client: AsyncClient, name: str, short_name: str) -> st
     Returns:
         The UUID string of the created Subject.
     """
-    resp = await client.post("/api/subjects", json={"name": name, "short_name": short_name})
+    resp = await client.post(
+        "/api/subjects", json={"name": name, "short_name": short_name, "color": "chart-1"}
+    )
     assert resp.status_code == 201, resp.text
     return resp.json()["id"]
 

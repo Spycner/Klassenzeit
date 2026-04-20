@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { resolveSubjectColor } from "./color";
 import { type Subject, useSubjects } from "./hooks";
 import { DeleteSubjectDialog, SubjectFormDialog } from "./subjects-dialogs";
 
@@ -83,7 +84,7 @@ export function SubjectsPage() {
                       <span className="inline-flex items-center gap-2">
                         <span
                           className="kz-swatch"
-                          style={{ background: subjectColor(subject.id) }}
+                          style={{ background: resolveSubjectColor(subject.color) }}
                         />
                         {subject.name}
                       </span>
@@ -159,11 +160,4 @@ function SubjectsPageHead({
       </div>
     </div>
   );
-}
-
-function subjectColor(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  const idx = (Math.abs(hash) % 5) + 1;
-  return `var(--chart-${idx})`;
 }

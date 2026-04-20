@@ -29,7 +29,9 @@ async def test_create_subject(
     """
     await create_test_user(email="admin@test.com", role="admin")
     await login_as("admin@test.com", "testpassword123")
-    response = await client.post("/api/subjects", json={"name": "Mathematik", "short_name": "Ma"})
+    response = await client.post(
+        "/api/subjects", json={"name": "Mathematik", "short_name": "Ma", "color": "chart-1"}
+    )
     assert response.status_code == 201
     body = response.json()
     assert body["name"] == "Mathematik"
@@ -51,8 +53,12 @@ async def test_create_subject_duplicate_name(
     """
     await create_test_user(email="admin2@test.com", role="admin")
     await login_as("admin2@test.com", "testpassword123")
-    await client.post("/api/subjects", json={"name": "Deutsch", "short_name": "De"})
-    response = await client.post("/api/subjects", json={"name": "Deutsch", "short_name": "D2"})
+    await client.post(
+        "/api/subjects", json={"name": "Deutsch", "short_name": "De", "color": "chart-2"}
+    )
+    response = await client.post(
+        "/api/subjects", json={"name": "Deutsch", "short_name": "D2", "color": "chart-3"}
+    )
     assert response.status_code == 409
 
 
@@ -70,8 +76,12 @@ async def test_list_subjects(
     """
     await create_test_user(email="admin3@test.com", role="admin")
     await login_as("admin3@test.com", "testpassword123")
-    await client.post("/api/subjects", json={"name": "Englisch", "short_name": "En"})
-    await client.post("/api/subjects", json={"name": "Biologie", "short_name": "Bi"})
+    await client.post(
+        "/api/subjects", json={"name": "Englisch", "short_name": "En", "color": "chart-4"}
+    )
+    await client.post(
+        "/api/subjects", json={"name": "Biologie", "short_name": "Bi", "color": "chart-5"}
+    )
     response = await client.get("/api/subjects")
     assert response.status_code == 200
     body = response.json()
@@ -95,7 +105,9 @@ async def test_get_subject(
     """
     await create_test_user(email="admin4@test.com", role="admin")
     await login_as("admin4@test.com", "testpassword123")
-    create_resp = await client.post("/api/subjects", json={"name": "Chemie", "short_name": "Ch"})
+    create_resp = await client.post(
+        "/api/subjects", json={"name": "Chemie", "short_name": "Ch", "color": "chart-6"}
+    )
     subject_id = create_resp.json()["id"]
     response = await client.get(f"/api/subjects/{subject_id}")
     assert response.status_code == 200
@@ -136,7 +148,9 @@ async def test_update_subject(
     """
     await create_test_user(email="admin6@test.com", role="admin")
     await login_as("admin6@test.com", "testpassword123")
-    create_resp = await client.post("/api/subjects", json={"name": "Physik", "short_name": "Ph"})
+    create_resp = await client.post(
+        "/api/subjects", json={"name": "Physik", "short_name": "Ph", "color": "chart-7"}
+    )
     subject_id = create_resp.json()["id"]
     response = await client.patch(f"/api/subjects/{subject_id}", json={"name": "Physik neu"})
     assert response.status_code == 200
@@ -159,7 +173,9 @@ async def test_delete_subject(
     """
     await create_test_user(email="admin7@test.com", role="admin")
     await login_as("admin7@test.com", "testpassword123")
-    create_resp = await client.post("/api/subjects", json={"name": "Kunst", "short_name": "Ku"})
+    create_resp = await client.post(
+        "/api/subjects", json={"name": "Kunst", "short_name": "Ku", "color": "chart-8"}
+    )
     subject_id = create_resp.json()["id"]
     delete_resp = await client.delete(f"/api/subjects/{subject_id}")
     assert delete_resp.status_code == 204
@@ -199,7 +215,9 @@ async def test_delete_subject_referenced_by_lesson(
     """
     await create_test_user(email="admin@test.com", role="admin")
     await login_as("admin@test.com", "testpassword123")
-    subj_resp = await client.post("/api/subjects", json={"name": "Mathematik", "short_name": "Ma"})
+    subj_resp = await client.post(
+        "/api/subjects", json={"name": "Mathematik", "short_name": "Ma", "color": "chart-9"}
+    )
     subject_id = subj_resp.json()["id"]
     scheme_resp = await client.post("/api/week-schemes", json={"name": "Test Scheme"})
     tafel_resp = await client.post(
@@ -234,3 +252,46 @@ async def test_subject_requires_admin(client: AsyncClient) -> None:
     """
     response = await client.get("/api/subjects")
     assert response.status_code == 401
+
+
+async def test_create_subject_requires_color(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /subjects without color returns 422 Unprocessable Entity."""
+    await create_test_user(email="admin@color1.com", role="admin")
+    await login_as("admin@color1.com", "testpassword123")
+    response = await client.post("/api/subjects", json={"name": "NoColor", "short_name": "NC"})
+    assert response.status_code == 422
+
+
+async def test_create_subject_rejects_invalid_color(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /subjects with malformed color returns 422."""
+    await create_test_user(email="admin@color2.com", role="admin")
+    await login_as("admin@color2.com", "testpassword123")
+    response = await client.post(
+        "/api/subjects", json={"name": "Bad", "short_name": "BD", "color": "not-a-color"}
+    )
+    assert response.status_code == 422
+
+
+async def test_patch_subject_color(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """PATCH /subjects/{id} can update color alone."""
+    await create_test_user(email="admin@color3.com", role="admin")
+    await login_as("admin@color3.com", "testpassword123")
+    create = await client.post(
+        "/api/subjects", json={"name": "Color Me", "short_name": "CM", "color": "chart-3"}
+    )
+    subject_id = create.json()["id"]
+    response = await client.patch(f"/api/subjects/{subject_id}", json={"color": "#112233"})
+    assert response.status_code == 200
+    assert response.json()["color"] == "#112233"

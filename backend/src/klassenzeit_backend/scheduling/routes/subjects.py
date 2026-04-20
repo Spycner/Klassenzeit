@@ -49,7 +49,7 @@ async def create_subject_route(
     """Create a new subject.
 
     Args:
-        body: Name and short_name for the new subject.
+        body: Name, short_name, and color for the new subject.
         _admin: Injected admin user (enforces authentication).
         db: Injected async database session.
 
@@ -59,7 +59,7 @@ async def create_subject_route(
     Raises:
         HTTPException: 409 if name or short_name conflicts with an existing subject.
     """
-    subject = Subject(name=body.name, short_name=body.short_name)
+    subject = Subject(name=body.name, short_name=body.short_name, color=body.color)
     db.add(subject)
     try:
         await db.commit()
@@ -73,6 +73,7 @@ async def create_subject_route(
         id=subject.id,
         name=subject.name,
         short_name=subject.short_name,
+        color=subject.color,
         created_at=subject.created_at,
         updated_at=subject.updated_at,
     )
@@ -98,6 +99,7 @@ async def list_subjects(
             id=s.id,
             name=s.name,
             short_name=s.short_name,
+            color=s.color,
             created_at=s.created_at,
             updated_at=s.updated_at,
         )
@@ -129,6 +131,7 @@ async def get_subject(
         id=subject.id,
         name=subject.name,
         short_name=subject.short_name,
+        color=subject.color,
         created_at=subject.created_at,
         updated_at=subject.updated_at,
     )
@@ -141,7 +144,7 @@ async def update_subject(
     _admin: Annotated[User, Depends(require_admin)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> SubjectResponse:
-    """Partially update a subject's name or short_name.
+    """Partially update a subject's name, short_name, or color.
 
     Args:
         subject_id: UUID path parameter identifying the subject to patch.
@@ -161,6 +164,8 @@ async def update_subject(
         subject.name = body.name
     if body.short_name is not None:
         subject.short_name = body.short_name
+    if body.color is not None:
+        subject.color = body.color
     try:
         await db.commit()
     except IntegrityError as exc:
@@ -173,6 +178,7 @@ async def update_subject(
         id=subject.id,
         name=subject.name,
         short_name=subject.short_name,
+        color=subject.color,
         created_at=subject.created_at,
         updated_at=subject.updated_at,
     )

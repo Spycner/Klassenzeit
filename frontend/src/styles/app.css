@@ -31,6 +31,13 @@
   --chart-3: oklch(0.8052 0.1329 78.1498);
   --chart-4: oklch(0.652 0.1363 29.5653);
   --chart-5: oklch(0.6684 0.0684 316.8892);
+  --chart-6: oklch(0.685 0.15 30);     /* warm orange */
+  --chart-7: oklch(0.78 0.11 180);     /* teal */
+  --chart-8: oklch(0.65 0.17 10);      /* coral */
+  --chart-9: oklch(0.72 0.13 260);     /* indigo */
+  --chart-10: oklch(0.6 0.14 130);     /* moss */
+  --chart-11: oklch(0.78 0.09 50);     /* sand */
+  --chart-12: oklch(0.58 0.12 340);    /* plum */
 
   --sidebar: oklch(0.9579 0.0153 77.0712);
   --sidebar-foreground: oklch(0.3296 0.0122 62.2125);
@@ -89,6 +96,13 @@
   --chart-3: oklch(0.7507 0.1295 79.8494);
   --chart-4: oklch(0.5175 0.1062 29.4814);
   --chart-5: oklch(0.5849 0.0683 312.9161);
+  --chart-6: oklch(0.78 0.13 30);
+  --chart-7: oklch(0.83 0.1 180);
+  --chart-8: oklch(0.73 0.15 10);
+  --chart-9: oklch(0.8 0.11 260);
+  --chart-10: oklch(0.72 0.12 130);
+  --chart-11: oklch(0.85 0.08 50);
+  --chart-12: oklch(0.68 0.11 340);
 
   --sidebar: oklch(0.1965 0.0026 67.6778);
   --sidebar-foreground: oklch(0.9428 0.0153 77.0696);
@@ -140,6 +154,13 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-9: var(--chart-9);
+  --color-chart-10: var(--chart-10);
+  --color-chart-11: var(--chart-11);
+  --color-chart-12: var(--chart-12);
   --font-sans: var(--font-sans);
   --font-serif: var(--font-serif);
   --font-mono: var(--font-mono);

@@ -209,7 +209,9 @@ async def test_get_teacher_detail(
     teacher_id = teacher_resp.json()["id"]
 
     # Create a subject and assign as qualification
-    subj_resp = await client.post("/api/subjects", json={"name": "Biology", "short_name": "BIO"})
+    subj_resp = await client.post(
+        "/api/subjects", json={"name": "Biology", "short_name": "BIO", "color": "chart-5"}
+    )
     subject_id = subj_resp.json()["id"]
     await client.put(
         f"/api/teachers/{teacher_id}/qualifications", json={"subject_ids": [subject_id]}
@@ -343,8 +345,12 @@ async def test_replace_qualifications(
     teacher_id = teacher_resp.json()["id"]
 
     # Create two subjects
-    hist_resp = await client.post("/api/subjects", json={"name": "History", "short_name": "HIS"})
-    geo_resp = await client.post("/api/subjects", json={"name": "Geography", "short_name": "GEO"})
+    hist_resp = await client.post(
+        "/api/subjects", json={"name": "History", "short_name": "HIS", "color": "chart-6"}
+    )
+    geo_resp = await client.post(
+        "/api/subjects", json={"name": "Geography", "short_name": "GEO", "color": "chart-7"}
+    )
     hist_id = hist_resp.json()["id"]
     geo_id = geo_resp.json()["id"]
 

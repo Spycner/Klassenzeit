@@ -56,12 +56,14 @@ def create_subject(db_session: AsyncSession) -> CreateSubjectFn:
         *,
         name: str | None = None,
         short_name: str | None = None,
+        color: str = "chart-1",
     ) -> Subject:
         """Create and flush a Subject with auto-generated unique defaults.
 
         Args:
             name: Subject name; auto-generated if omitted.
             short_name: Short abbreviation; auto-generated if omitted.
+            color: Palette token or hex color; defaults to ``"chart-1"``.
 
         Returns:
             The newly created Subject ORM instance.
@@ -70,6 +72,7 @@ def create_subject(db_session: AsyncSession) -> CreateSubjectFn:
         subject = Subject(
             name=name if name is not None else f"Subject {n}",
             short_name=short_name if short_name is not None else f"S{n}",
+            color=color,
         )
         db_session.add(subject)
         await db_session.flush()
@@ -176,7 +179,6 @@ def create_room(db_session: AsyncSession) -> CreateRoomFn:
         name: str | None = None,
         short_name: str | None = None,
         capacity: int | None = None,
-        suitability_mode: str = "general",
     ) -> Room:
         """Create and flush a Room with auto-generated unique defaults.
 
@@ -184,7 +186,6 @@ def create_room(db_session: AsyncSession) -> CreateRoomFn:
             name: Room name; auto-generated if omitted.
             short_name: Short label; auto-generated if omitted.
             capacity: Optional seating capacity.
-            suitability_mode: Either ``"general"`` or ``"subject_specific"``.
 
         Returns:
             The newly created Room ORM instance.
@@ -194,7 +195,6 @@ def create_room(db_session: AsyncSession) -> CreateRoomFn:
             name=name if name is not None else f"Room {n}",
             short_name=short_name if short_name is not None else f"R{n}",
             capacity=capacity,
-            suitability_mode=suitability_mode,
         )
         db_session.add(room)
         await db_session.flush()
