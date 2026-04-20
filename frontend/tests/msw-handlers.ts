@@ -17,6 +17,7 @@ export const initialSubjects = [
     id: "11111111-1111-1111-1111-111111111111",
     name: "Mathematik",
     short_name: "MA",
+    color: "chart-3",
     created_at: "2026-04-17T00:00:00Z",
     updated_at: "2026-04-17T00:00:00Z",
   },
@@ -125,12 +126,13 @@ export const defaultHandlers = [
   http.post(`${BASE}/api/auth/logout`, () => HttpResponse.json(null, { status: 204 })),
   http.get(`${BASE}/api/subjects`, () => HttpResponse.json(initialSubjects)),
   http.post(`${BASE}/api/subjects`, async ({ request }) => {
-    const body = (await request.json()) as { name: string; short_name: string };
+    const body = (await request.json()) as { name: string; short_name: string; color: string };
     return HttpResponse.json(
       {
         id: "22222222-2222-2222-2222-222222222222",
         name: body.name,
         short_name: body.short_name,
+        color: body.color,
         created_at: "2026-04-17T00:00:00Z",
         updated_at: "2026-04-17T00:00:00Z",
       },

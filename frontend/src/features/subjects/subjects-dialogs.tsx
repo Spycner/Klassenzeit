@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { autoPickColor } from "./color";
+import { ColorPicker } from "./color-picker";
 import { type Subject, useCreateSubject, useDeleteSubject, useUpdateSubject } from "./hooks";
 import { SubjectFormSchema, type SubjectFormValues } from "./schema";
 
@@ -100,6 +101,19 @@ export function SubjectFormDialog({
                   <FormLabel>{t("subjects.columns.shortName")}</FormLabel>
                   <FormControl>
                     <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("subjects.color")}</FormLabel>
+                  <FormControl>
+                    <ColorPicker value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
