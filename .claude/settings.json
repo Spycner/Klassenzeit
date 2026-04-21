@@ -25,7 +25,8 @@
       "Bash(cargo check:*)",
       "Bash(cargo clippy:*)",
       "Bash(mise exec -- pnpm exec tsc --noEmit)",
-      "Bash(mise exec -- pnpm vitest run *)"
+      "Bash(mise exec -- pnpm vitest run *)",
+      "Bash(git fetch *)"
     ]
   }
 }
