@@ -50,7 +50,9 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 - **Entity coverage beyond Subjects.** Each remaining entity CRUD spec (Rooms, Teachers, WeekSchemes, SchoolClasses, Stundentafel, Lesson) should add its own Playwright flow when it lands.
 - **Cross-browser matrix.** Firefox and WebKit are disabled for now (Chromium only). Enable when external users appear.
 - **Accessibility audits inside Playwright.** `@axe-core/playwright` integration is deferred; track separately.
-- **Visual regression.** Percy / Chromatic / Playwright snapshot tooling. Defer until design churn slows.
+- **Visual regression, remaining approaches.** Approach 2 (computed-style diff across interaction states) shipped in `frontend/e2e/flows/computed-style-diff.spec.ts` and its supporting module; zero drift on current master. Two approaches remain for when design churn slows:
+  1. **Pixel-diff snapshots** (Playwright `toHaveScreenshot`, Percy, Chromatic). Catches any pixel change, noisy on intentional design tweaks. Fallback if design stabilises enough to make a baseline meaningful.
+  3. **Vision-LLM diff.** Crop before/after screenshots of the same element, pass both to a VLM with "do these shapes match, ignoring color and text". Fuzzier, catches emergent layout differences that don't trace to a single CSS property (pseudo-element sizing, child layout shift). Use as a follow-up when the computed-style diff says styles match but something still looks off.
 - **Parallel workers + per-worker DBs.** Currently Playwright runs single-worker against a shared DB. Move to per-worker schemas once CI time matters.
 - **Session cleanup in `/__test__/reset`.** The reset endpoint preserves the `sessions` table so storageState stays valid; revisit if tests start needing clean session state.
 - **Nightly extended run.** Slower flows, broader data scenarios. Add when the suite is large enough to justify tiering.

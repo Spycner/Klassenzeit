@@ -53,6 +53,7 @@ If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, f
 - `mise run test:py` — Python tests only (`uv run pytest`)
 - `mise run test:rust` — Rust tests only (`cargo nextest run`)
 - `mise run fe:test` — frontend Vitest only
+- `mise run e2e` / `mise run e2e:ui`: Playwright suite (starts DB, migrates, seeds the admin user, runs the suite); `mise run e2e:install` is the one-time Chromium install on a fresh clone
 - `mise run lint` — all linters (ruff, ty, vulture, clippy, machete, cargo fmt, biome, actionlint)
 - `mise run check:actions` — actionlint over `.github/workflows/*.yml` (also runs under `mise run lint`)
 - `mise run fmt` — auto-format everything
