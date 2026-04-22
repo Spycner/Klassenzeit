@@ -31,8 +31,41 @@ jobs:
   audit:
     name: Supply-chain audit
     runs-on: ubuntu-latest
+    # The failure-path steps below open or reuse an issue titled
+    # "CI: weekly supply-chain audit failing". That title is the dedup
+    # key for `JasonEtco/create-an-issue@v2` with `update_existing: true`.
+    # Do not change it in this workflow or in
+    # .github/audit-failure-issue.md without a migration plan.
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-mise
       - name: Run mise audit pipeline
         run: mise run audit
+
+      - name: Open or reuse tracking issue
+        id: tracking-issue
+        if: ${{ failure() && github.event_name == 'schedule' }}
+        uses: JasonEtco/create-an-issue@1b14a70e4d8dc185e5cc76d3bec9eab20257b2c5 # v2.9.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          TRIGGER_EVENT: ${{ github.event_name }}
+        with:
+          filename: .github/audit-failure-issue.md
+          update_existing: true
+
+      - name: Append run link as comment
+        if: ${{ failure() && github.event_name == 'schedule' && steps.tracking-issue.outputs.number != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ steps.tracking-issue.outputs.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          timestamp="$(date -u '+%Y-%m-%d %H:%M UTC')"
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "Scheduled audit failed again on ${timestamp}. Run: ${RUN_URL}"
