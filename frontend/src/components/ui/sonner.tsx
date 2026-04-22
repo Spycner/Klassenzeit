@@ -2,8 +2,6 @@ import { useTheme } from "next-themes";
 import { useEffect } from "react";
 import { Toaster as SonnerToaster, type ToasterProps, toast } from "sonner";
 
-const TOAST_DISMISS_DURATION_MS = 2000;
-
 export function Toaster(props: ToasterProps) {
   const { theme } = useTheme();
 
@@ -13,6 +11,10 @@ export function Toaster(props: ToasterProps) {
       if (!(target instanceof Element)) return;
       const toastEl = target.closest<HTMLElement>("[data-sonner-toast]");
       if (!toastEl) return;
+      // Let clicks on interactive children (action/cancel/close buttons, links)
+      // run their own handlers without dismissing the toast first.
+      const interactive = target.closest("button, a, [role='button']");
+      if (interactive && toastEl.contains(interactive)) return;
       const id = toastEl.dataset.id;
       if (id) toast.dismiss(id);
     }
@@ -23,7 +25,6 @@ export function Toaster(props: ToasterProps) {
   return (
     <SonnerToaster
       theme={(theme as ToasterProps["theme"]) ?? "system"}
-      duration={TOAST_DISMISS_DURATION_MS}
       className="toaster group"
       toastOptions={{
         classNames: {

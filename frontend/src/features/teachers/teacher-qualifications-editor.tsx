@@ -20,7 +20,7 @@ export function TeacherQualificationsEditor({ teacherId }: { teacherId: string }
       await save.mutateAsync({ id: teacherId, subjectIds: draft });
       toast.success(t("teachers.qualifications.saved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("teachers.qualifications.save"));
+      toast.error(err instanceof Error ? err.message : t("teachers.qualifications.saveError"));
     }
   }
 

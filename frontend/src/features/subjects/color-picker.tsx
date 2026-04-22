@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
@@ -35,9 +35,11 @@ function resolveHex(value: string): string {
   if (!ctx) return FALLBACK_HEX;
   ctx.fillStyle = cssValue;
   ctx.fillRect(0, 0, 1, 1);
-  const data = ctx.getImageData(0, 0, 1, 1).data;
+  const { data } = ctx.getImageData(0, 0, 1, 1);
+  const [r, g, b] = data;
+  if (r === undefined || g === undefined || b === undefined) return FALLBACK_HEX;
   const toHex = (n: number) => n.toString(16).padStart(2, "0");
-  return `#${toHex(data[0] ?? 0)}${toHex(data[1] ?? 0)}${toHex(data[2] ?? 0)}`;
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 interface ColorPickerProps {
@@ -47,12 +49,12 @@ interface ColorPickerProps {
 
 export function ColorPicker({ value, onChange }: ColorPickerProps) {
   const { t } = useTranslation();
-  const displayHex = resolveHex(value);
+  const displayHex = useMemo(() => resolveHex(value), [value]);
   const [draft, setDraft] = useState(displayHex);
-  const [syncedValue, setSyncedValue] = useState(value);
-  if (value !== syncedValue) {
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
     setDraft(displayHex);
-    setSyncedValue(value);
+    setPrevValue(value);
   }
 
   const customSelected = value.startsWith("#");

@@ -62,7 +62,7 @@ export function TeacherAvailabilityGrid({ teacherId }: { teacherId: string }) {
       await save.mutateAsync({ id: teacherId, entries });
       toast.success(t("teachers.availability.saved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("teachers.availability.save"));
+      toast.error(err instanceof Error ? err.message : t("teachers.availability.saveError"));
     }
   }
 

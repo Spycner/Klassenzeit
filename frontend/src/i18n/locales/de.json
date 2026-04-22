@@ -218,6 +218,7 @@
       "sectionTitle": "Qualifikationen",
       "save": "Qualifikationen speichern",
       "saved": "Qualifikationen gespeichert",
+      "saveError": "Qualifikationen konnten nicht gespeichert werden.",
       "empty": "Keine Fächer zugewiesen"
     },
     "availability": {
@@ -236,7 +237,8 @@
       },
       "cellLabel": "{{status}} am {{day}}, Stunde {{position}}",
       "save": "Verfügbarkeit speichern",
-      "saved": "Verfügbarkeit gespeichert"
+      "saved": "Verfügbarkeit gespeichert",
+      "saveError": "Verfügbarkeit konnte nicht gespeichert werden."
     }
   },
   "weekSchemes": {

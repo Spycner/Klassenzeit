@@ -218,6 +218,7 @@
       "sectionTitle": "Qualifications",
       "save": "Save qualifications",
       "saved": "Qualifications saved",
+      "saveError": "Could not save qualifications.",
       "empty": "No subjects assigned"
     },
     "availability": {
@@ -236,7 +237,8 @@
       },
       "cellLabel": "{{status}} at {{day}} period {{position}}",
       "save": "Save availability",
-      "saved": "Availability saved"
+      "saved": "Availability saved",
+      "saveError": "Could not save availability."
     }
   },
   "weekSchemes": {
