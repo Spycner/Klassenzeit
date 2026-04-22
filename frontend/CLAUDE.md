@@ -2,6 +2,10 @@
 
 Stack: Vite + React 19, TanStack Router + Query, shadcn/ui, React Hook Form + Zod, react-i18next, next-themes. Rules below are on top of `.claude/CLAUDE.md`, not a replacement.
 
+## Building new UI surfaces
+
+- **Invoke `frontend-design` via the `Skill` tool before writing UI.** When the task is "build a page", "redesign this component", "add this feature's UI", or similar, call the skill and let it return before producing markup. The skill steers toward distinctive, production-grade interfaces and away from the generic AI-assistant aesthetic. Skipping it and synthesizing the look freehand counts as a process violation per the root skills-discipline rule.
+
 ## Layout (`frontend/src/`)
 
 - `routes/` — TanStack Router file-based routes (`__root.tsx`, `_authed.tsx`, etc.). Route files are thin; they import page components from `features/`.
