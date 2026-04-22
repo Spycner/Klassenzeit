@@ -33,19 +33,21 @@ This repo uses [Conventional Commits](https://www.conventionalcommits.org/). A `
 
 **Allowed types:**
 
-| Type       | Use for                                             |
-|------------|-----------------------------------------------------|
-| `feat`     | A new feature (→ minor version bump)                |
-| `fix`      | A bug fix (→ patch version bump)                    |
-| `docs`     | Documentation-only changes                          |
-| `style`    | Formatting, missing semicolons, etc. — no code change |
+<!-- BEGIN GENERATED: commit-types -->
+| Type       | Use for                                                 |
+|------------|---------------------------------------------------------|
+| `feat`     | A new feature (minor version bump)                      |
+| `fix`      | A bug fix (patch version bump)                          |
+| `docs`     | Documentation-only changes                              |
+| `style`    | Formatting only, no code change                         |
 | `refactor` | Code change that neither fixes a bug nor adds a feature |
-| `perf`     | Performance improvement                             |
-| `test`     | Adding or correcting tests                          |
-| `build`    | Build system or external dependency changes        |
-| `ci`       | CI configuration changes                            |
-| `chore`    | Other changes that don't touch src or tests        |
-| `revert`   | Reverts a previous commit                           |
+| `perf`     | Performance improvement                                 |
+| `test`     | Adding or correcting tests                              |
+| `build`    | Build system or external dependency changes             |
+| `ci`       | CI configuration changes                                |
+| `chore`    | Other changes that don't touch src or tests             |
+| `revert`   | Reverts a previous commit                               |
+<!-- END GENERATED: commit-types -->
 
 **Breaking changes:** append `!` after the type/scope, e.g. `feat(api)!: drop support for X`, or add a `BREAKING CHANGE:` footer.
 

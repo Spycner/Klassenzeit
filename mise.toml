@@ -147,7 +147,7 @@ run = [
 
 [tasks.lint]
 description = "Run all linters"
-depends = ["lint:rust", "lint:py", "fe:lint"]
+depends = ["lint:rust", "lint:py", "fe:lint", "check:commit-types"]
 
 [tasks."gen:commit-types"]
 description = "Regenerate commit-types-derived sections in pr-title.yml and CONTRIBUTING.md"
