@@ -23,7 +23,7 @@ Run from repo root unless noted.
 - `mise run fe:cov:update-baseline` — rebaseline `.coverage-baseline-frontend` after an intentional coverage drop.
 - `mise run fe:types` — regenerate `src/lib/api-types.ts` from the backend OpenAPI schema.
 - `mise run fe:build` — production build into `frontend/dist/`.
-- `mise exec -- pnpm -C frontend add <pkg>` / `add -D <pkg>` — add a dep (never hand-edit `package.json`).
+- **Adding dependencies:** `mise exec -- pnpm -C frontend add <pkg>` (runtime) or `mise exec -- pnpm -C frontend add -D <pkg>` (dev). Don't hand-edit `frontend/package.json` dependency sections; pnpm is the source of truth.
 - **Single test file:** `cd frontend && mise exec -- pnpm vitest run <path>`. Don't use `mise exec -- pnpm -C frontend vitest ...`: pnpm treats `frontend` as a filter target, then can't find `vitest` in the recursive set. Don't use `mise run fe:test -- --run` either: the task body is a shell `if [ -f ... ]`, so positional args land in the `if` arg list and the shell errors.
 
 ## Hooks and state
