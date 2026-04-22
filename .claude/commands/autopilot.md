@@ -51,7 +51,13 @@ If a listed skill is unavailable in the current environment, say so explicitly i
 
 ### 2. Brainstorm (sequential, self-answered)
 
-**First action:** invoke `superpowers:brainstorming` via the `Skill` tool. Keep the skill's "one question at a time" rhythm, but self-answer each question instead of waiting for the user: autonomous mode removes the pause, not the sequencing.
+**First action:** wipe the scratch dir from any prior run, then invoke `superpowers:brainstorming` via the `Skill` tool. Keep the skill's "one question at a time" rhythm, but self-answer each question instead of waiting for the user: autonomous mode removes the pause, not the sequencing.
+
+```bash
+rm -rf /tmp/kz-brainstorm && mkdir -p /tmp/kz-brainstorm
+```
+
+The wipe prevents last run's `brainstorm.md` or `post_comments.py` from leaking into this one. Do this before writing the preamble.
 
 Work the Q&A incrementally:
 
@@ -124,7 +130,7 @@ Only after the audit passes:
 - `mise exec -- git push -u origin <branch>` (use `mise exec --` so the pinned lefthook runs, not whatever's on `PATH`).
 - `gh pr create --base master --head <branch> --title "<Conventional-Commits title>" --body "<body>"`.
 - PR body structure: `## Summary`, then scope/non-goals, `## Test plan` checklist, and links to spec + plan + ADR if present.
-- Post the brainstorm Q&A: one `gh pr comment` per Q&A block from `/tmp/kz-brainstorm/brainstorm.md`. Use a small Python script to split on `## Q` headings and loop `gh pr comment $PR --body "$section"`. Precede with a preamble comment explaining what the thread is.
+- Post the brainstorm Q&A: one `gh pr comment` per Q&A block from `/tmp/kz-brainstorm/brainstorm.md`. Use a small Python script to split on `## Q` headings and loop `gh pr comment $PR --body "$section"`. Precede with a preamble comment explaining what the thread is. The script takes the PR number as a required positional arg; never hardcode a fallback PR number (a stale default survived one previous run and was noisy to undo).
 
 ### 8. CI loop
 
