@@ -2,7 +2,14 @@
 
 #![deny(missing_docs)]
 
-/// Reverse the characters in a string.
+pub mod error;
+pub mod ids;
+
+pub use error::Error;
+pub use ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId};
+
+/// Reverse the characters in a string. Legacy stub; removed in sprint step 2 when
+/// `solve_json` replaces it as the `solver-py` entrypoint.
 pub fn reverse_chars(s: &str) -> String {
     s.chars().rev().collect()
 }
