@@ -20,6 +20,7 @@
       "Bash(uv run pytest)",
       "Bash(uv run vulture backend/src)",
       "Bash(lefthook run pre-commit)",
+      "Bash(lefthook run pre-push)",
       "Bash(cargo metadata *)",
       "Bash(cargo test:*)",
       "Bash(cargo check:*)",
