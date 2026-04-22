@@ -69,6 +69,7 @@ If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, f
 - **Unique function names globally.** Function names must be unique across the entire codebase, even across classes and files. `scripts/check_unique_fns.py` runs in pre-commit and walks TS/TSX too, so when duplicating a page skeleton across entities, rename helpers per feature: `RoomsPageHead` not `PageHead`, `handleRoomSubmit` not `onSubmit`, `confirmRoomDelete` not `confirm`.
 - **Dockerfile build context is the repo root.** `backend/Dockerfile` and `frontend/Dockerfile` are built from the repo root with `context: .` and `file: <subdir>/Dockerfile` (see `.github/workflows/deploy-images.yml`). Every `COPY` inside them is therefore written as `COPY backend/ backend/`, `COPY frontend/ ./`, etc. The matching `.dockerignore` lives next to each Dockerfile but its patterns are evaluated against the repo root.
 - **ADR titles skip the em-dash.** `docs/adr/template.md` renders `# NNNN — Title`, but the user's global preference forbids em- and en-dashes in new prose. Use a colon (`# NNNN: Title`) in new ADRs. Existing ADRs 0001-0008 stay as they are; ADRs are immutable per `docs/adr/README.md`.
+- **Commit types live in `.github/commit-types.yml`.** `.github/workflows/pr-title.yml` and `CONTRIBUTING.md` carry `BEGIN/END GENERATED: commit-types` regions rendered from the YAML. Edit the YAML, then `mise run gen:commit-types`. `mise run check:commit-types` runs inside `mise run lint` and catches drift.
 
 ## Commit messages
 

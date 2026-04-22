@@ -37,6 +37,8 @@ A school timetabling system with a FastAPI backend, a Rust solver exposed to Pyt
 | `mise run bench`    | Run solver-core benches. |
 | `mise run fe:build` | Production build of the frontend into `frontend/dist/`. |
 | `mise run fe:types` | Regenerate `frontend/src/lib/api-types.ts` from the backend's OpenAPI schema. |
+| `mise run gen:commit-types`   | Regenerate the commit-types sections in `pr-title.yml` and `CONTRIBUTING.md` from `.github/commit-types.yml`. |
+| `mise run check:commit-types` | Verify the two derived files match `.github/commit-types.yml` (also runs inside `mise run lint`). |
 
 ## Deployment
 
