@@ -1,0 +1,80 @@
+# Klassenzeit: Solver Rules
+
+Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes the cross-cutting rules in the root `/.claude/CLAUDE.md` (no bare catchalls, unique function names, no dynamic imports, Dockerfile context rules, SHA-pinned third-party actions, Conventional Commits).
+
+## Workspace layout
+
+- **`solver-core`**: pure Rust library. The scheduling algorithm, constraint model, and typed errors live here. No PyO3, no Python, no I/O beyond what callers pass in.
+- **`solver-py`**: `cdylib` crate that wraps `solver-core` via PyO3 (`0.28`) and is built by maturin into the `klassenzeit_solver` Python package. Thin wrappers only; no algorithm logic.
+- **Root `Cargo.toml`**: workspace root. Declares `edition = "2021"`, `rust-version = "1.85"`, `resolver = "2"`. Shared dev-dependency: `proptest = "1"`. Both crates inherit via `[workspace.package]` / `[workspace.dependencies]`.
+- **Root `pyproject.toml`**: uv workspace. `solver/solver-py` is a member; backend pulls it in via `klassenzeit-solver = { workspace = true }`.
+- **Hand-maintained `.pyi` stubs**: `solver/solver-py/python/klassenzeit_solver/*.pyi`. Updated in the same commit as a Rust binding change.
+
+## solver-core rules
+
+- **Errors use `thiserror`, one enum per logical boundary** (input parsing, constraint validation, scheduling). No `anyhow` in `solver-core`; a library erases type information when it boxes, and the backend wants to match on specific failure modes.
+
+    ```rust
+    #[derive(Debug, thiserror::Error)]
+    pub enum Error {
+        #[error("input: {0}")]
+        Input(String),
+        #[error("infeasible at step {step}: {reason}")]
+        Infeasible { step: &'static str, reason: String },
+    }
+    ```
+
+- **Deterministic under test.** No `std::time::SystemTime::now()` inside `solver-core`; no `rand::thread_rng()`. Any randomisation is seeded via a parameter on the public API so tests reproduce. Non-determinism here is silent (unit tests pass for a specific seed) and only surfaces as run-to-run timetable drift. `solver-py` is allowed to wrap the deterministic core with wall-clock timing for logging.
+- **Tests.** Inline `#[cfg(test)] mod tests` for unit, `solver-core/tests/*.rs` for integration (property tests, multi-step scenarios). When a shared fixtures module grows, add `solver-core/tests/common/mod.rs`.
+
+## solver-py rules
+
+- **Thin wrappers only.** Every `solver-core` public symbol exposed to Python goes through a `#[pyfunction]` / `#[pyclass]` in `solver-py/src/lib.rs`. The wrapper marshals arguments, forwards, marshals the result back. No algorithm logic in `solver-py`.
+- **Release the GIL on long calls.** Forgetting this serialises every caller behind the interpreter lock; the failure mode is invisible in single-threaded tests.
+
+    ```rust
+    #[pyfunction]
+    fn solve(py: Python<'_>, problem: &str) -> PyResult<String> {
+        py.allow_threads(|| solver_core::solve(problem))
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))
+    }
+    ```
+
+- **Errors map explicitly.** `solver_core::Error` to `PyValueError` for client mistakes (bad input shape), `PyRuntimeError` for solver-internal failures (infeasible, timeout, internal invariant violation). Use `From` impls or a small adapter; never `anyhow`.
+- **Python tests exercise the binding contract, not the algorithm.** Tests at `solver/solver-py/tests/test_*.py` cover encoding, GIL release, error conversion. Narrow exception: a regression test for a bug that is binding-specific (e.g., float NaN handling across PyO3).
+- **Maturin dev loop.**
+    - Source-only edit in `solver-core` or `solver-py/src/lib.rs`: `mise run solver:rebuild` (wraps `uvx maturin develop --uv -m solver/solver-py/Cargo.toml`, seconds).
+    - Edit touching `solver-py/pyproject.toml`, `Cargo.lock`, or the workspace `Cargo.toml`: `uv sync` (re-resolves the whole workspace, tens of seconds).
+
+## Clippy and allows policy
+
+- No `#![allow(...)]` at crate root, ever.
+- No `#[allow(...)]` at item scope unless one of:
+    1. A specific lint the contributor judges wrong in this block, with a sibling `// Reason: ...` comment naming why.
+    2. PyO3 macro expansion noise (e.g., `clippy::needless_pass_by_value` from `&Bound<'_, PyModule>` in `#[pymodule]` signatures). Allow locally on the wrapper.
+- No `#[allow(dead_code)]` outside `#[cfg(test)]`. If you think you need it, run `cargo machete` (already in `mise run lint:rust`); it often surfaces the dependency you actually want to remove.
+
+## Commit scopes
+
+Use the crate directory as Conventional Commits scope:
+
+- Good: `feat(solver-core): greedy first-fit placement`.
+- Bad: `feat(solver): greedy first-fit placement` (loses the which-crate signal when `solver-py` also gets a commit that week).
+
+Bare `solver` scope only when a paired change genuinely spans both crates (e.g., new public API in `solver-core` plus its binding in `solver-py` in one atomic commit). `.github/commit-types.yml` enforces commit *types*; scopes are free-form but a consistent convention keeps `git log` grep-friendly.
+
+## Testing-command map
+
+| Change | Command |
+| --- | --- |
+| Rust-only edit in one crate | `cargo nextest run -p <crate>` |
+| Rust-only edit, full workspace | `mise run test:rust` |
+| PyO3 signature or stub change | above + `uv run pytest solver/solver-py/tests` |
+| Any commit | `mise run lint` (pre-commit hook runs it anyway; fail fast locally) |
+| Algorithm change | `mise run bench` (placeholder today; criterion benches land with the MVP) |
+
+## Pointers
+
+- ADR 0001: monorepo with Cargo and uv workspaces.
+- ADR 0002: solver split into `solver-core` and `solver-py`.
+- `docs/superpowers/OPEN_THINGS.md`: current sprint items and cross-entity validation debate.
