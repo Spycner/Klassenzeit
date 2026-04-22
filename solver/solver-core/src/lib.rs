@@ -4,9 +4,15 @@
 
 pub mod error;
 pub mod ids;
+pub mod types;
 
 pub use error::Error;
 pub use ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId};
+pub use types::{
+    Lesson, Placement, Problem, Room, RoomBlockedTime, RoomSubjectSuitability, SchoolClass,
+    Solution, Subject, Teacher, TeacherBlockedTime, TeacherQualification, TimeBlock, Violation,
+    ViolationKind,
+};
 
 /// Reverse the characters in a string. Legacy stub; removed in sprint step 2 when
 /// `solve_json` replaces it as the `solver-py` entrypoint.
