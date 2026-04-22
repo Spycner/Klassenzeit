@@ -75,6 +75,8 @@ Ordered roughly in the sequence they need to land: data first, then access contr
   to compose-based test infra.** Revisit if onboarding friction
   emerges.
 - **Structured logging.** Every logger should emit JSON by default so downstream tooling (log aggregators, CLI viewers, debug agents) can parse and analyze output without regex. Choose the library, pick a schema, wire it into the FastAPI app and the backend's test output. Covers the backend for now; solver-py logging is a later concern.
+- **`solver/CLAUDE.md` once solver conventions accumulate.** The Rust workspace currently relies on the root `.claude/CLAUDE.md` for its rules (no-bare-catchalls with Rust framing lives there). Add a `solver/CLAUDE.md` when `solver-core` or `solver-py` grow their own conventions (fixture patterns, clippy escape-hatch policy, PyO3 binding style).
+- **Split `frontend/CLAUDE.md` into topic files under `.claude/rules/`.** The frontend file is currently 112 lines. When it exceeds ~150 lines or starts topic-mixing, split into `.claude/rules/frontend-hooks.md`, `frontend-forms.md`, `frontend-testing.md`, etc. with `paths: ["frontend/**/*"]` frontmatter. Not yet warranted for a project this size.
 
 ## Auth maintenance
 
