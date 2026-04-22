@@ -1,4 +1,4 @@
-import type { Locator, Page, TestInfo } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import {
   computeDiff,
   dedupeFindings,
@@ -7,6 +7,10 @@ import {
   type StateSnapshot,
   signatureOf,
 } from "./style-diff-helpers";
+
+// Budget per hover/focus attempt. Tighter than Playwright's default 30s so a
+// non-interactable element fails fast and the crawl can skip it.
+const INTERACTION_TIMEOUT_MS = 2_000;
 
 export const INTERACTIVE_SELECTOR = "button, a, [role=button], input, [tabindex]";
 
@@ -78,7 +82,7 @@ async function collectDescriptors(page: Page): Promise<ElementDescriptor[]> {
         el.getAttribute("aria-hidden") === "true" ||
         rect.width === 0 ||
         rect.height === 0 ||
-        (el as HTMLButtonElement).disabled === true;
+        ((el instanceof HTMLButtonElement || el instanceof HTMLInputElement) && el.disabled);
       return {
         index,
         tag: el.tagName,
@@ -126,15 +130,15 @@ async function captureStates(
   await resetInteractionState(page);
   const base = await snapshotStyle(descriptor.locator, STRUCTURAL_PROPERTIES);
 
-  await descriptor.locator.hover({ timeout: 2_000, trial: false });
+  await descriptor.locator.hover({ timeout: INTERACTION_TIMEOUT_MS });
   const hover = await snapshotStyle(descriptor.locator, STRUCTURAL_PROPERTIES);
 
   await resetInteractionState(page);
-  await descriptor.locator.focus({ timeout: 2_000 });
+  await descriptor.locator.focus({ timeout: INTERACTION_TIMEOUT_MS });
   const focus = await snapshotStyle(descriptor.locator, STRUCTURAL_PROPERTIES);
 
   await resetInteractionState(page);
-  await descriptor.locator.hover({ timeout: 2_000 });
+  await descriptor.locator.hover({ timeout: INTERACTION_TIMEOUT_MS });
   await page.mouse.down();
   const active = await snapshotStyle(descriptor.locator, STRUCTURAL_PROPERTIES);
   // Move the pointer off the element before releasing so the browser does not
@@ -148,11 +152,7 @@ async function captureStates(
   return { base, hover, focus, active };
 }
 
-export async function collectStyleDrift(
-  page: Page,
-  route: string,
-  _testInfo: TestInfo,
-): Promise<Finding[]> {
+export async function collectStyleDrift(page: Page, route: string): Promise<Finding[]> {
   await page.goto(route);
   await page.waitForLoadState("networkidle");
 
@@ -167,8 +167,14 @@ export async function collectStyleDrift(
     let states: Awaited<ReturnType<typeof captureStates>>;
     try {
       states = await captureStates(page, descriptor);
-    } catch {
-      continue;
+    } catch (err) {
+      // Elements that Playwright cannot hover/focus within the interaction
+      // budget (offscreen, covered, detached mid-crawl) are expected and
+      // survivable; we skip them. Anything else (selector-engine error,
+      // navigation mid-snapshot, evaluate rejection) is a real failure and
+      // must propagate so CI surfaces it.
+      if (err instanceof Error && err.name === "TimeoutError") continue;
+      throw err;
     }
 
     for (const state of ["hover", "focus", "active"] as const) {

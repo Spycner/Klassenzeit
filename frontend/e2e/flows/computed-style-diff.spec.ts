@@ -9,7 +9,7 @@ test.setTimeout(5 * 60 * 1000);
 test("no structural style drift across interaction states", async ({ page }, testInfo) => {
   const findings: Finding[] = [];
   for (const route of ROUTES_UNDER_TEST) {
-    findings.push(...(await collectStyleDrift(page, route, testInfo)));
+    findings.push(...(await collectStyleDrift(page, route)));
   }
 
   await testInfo.attach("drift.json", {
@@ -17,15 +17,19 @@ test("no structural style drift across interaction states", async ({ page }, tes
     contentType: "application/json",
   });
 
-  expect(findings, describeFindings(findings)).toEqual([]);
+  expect(findings, describeStyleDriftFindings(findings)).toEqual([]);
 });
 
-function describeFindings(findings: readonly Finding[]): string {
+function describeStyleDriftFindings(findings: readonly Finding[]): string {
   if (findings.length === 0) return "no drift";
-  const byRoute = new Map<string, number>();
-  for (const f of findings) byRoute.set(f.route, (byRoute.get(f.route) ?? 0) + 1);
-  const summary = Array.from(byRoute.entries())
-    .map(([route, count]) => `${route}=${count}`)
+  const byStateProperty = new Map<string, number>();
+  for (const f of findings) {
+    const key = `${f.state}::${f.property}`;
+    byStateProperty.set(key, (byStateProperty.get(key) ?? 0) + 1);
+  }
+  const summary = Array.from(byStateProperty.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, count]) => `${key}=${count}`)
     .join(", ");
   return `${findings.length} structural drift findings (${summary}); see drift.json attachment`;
 }
