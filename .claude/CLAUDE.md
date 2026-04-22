@@ -53,7 +53,8 @@ If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, f
 - `mise run test:py` — Python tests only (`uv run pytest`)
 - `mise run test:rust` — Rust tests only (`cargo nextest run`)
 - `mise run fe:test` — frontend Vitest only
-- `mise run lint` — all linters (ruff, ty, vulture, clippy, machete, cargo fmt, biome)
+- `mise run lint` — all linters (ruff, ty, vulture, clippy, machete, cargo fmt, biome, actionlint)
+- `mise run check:actions` — actionlint over `.github/workflows/*.yml` (also runs under `mise run lint`)
 - `mise run fmt` — auto-format everything
 - `mise run fe:types` — regenerate frontend OpenAPI types from the backend
 - `mise run db:up` / `db:stop` / `db:reset` / `db:migrate` — Postgres lifecycle
@@ -62,6 +63,7 @@ If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, f
 - **Git hook runner:** [Lefthook](https://github.com/evilmartians/lefthook). Config lives at `.config/lefthook.yaml` (lefthook auto-discovers this path).
 - **Commit message enforcement:** [Cocogitto](https://docs.cocogitto.io) (`cog`), installed via `cargo install cocogitto`. A `commit-msg` hook runs `cog verify` and rejects non-conventional messages.
 - **`gh` + `jq` are runtime prerequisites** for repo-automation tasks like `mise run repo:apply-settings`. Neither is pinned via mise; install from the system package manager (or `brew install gh jq`) on fresh clones.
+- **Ad-hoc YAML parsing in shell snippets.** The system `python3` does not ship with `pyyaml`. For one-off verification scripts (e.g., `import yaml; assert workflow["jobs"]["x"]["permissions"] == ...`), invoke via `uv run --with pyyaml python3 - <<'EOF' ... EOF` so the pinned `uv` provides the dep.
 
 ## Coding standards
 
@@ -71,6 +73,7 @@ If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, f
 - **Dockerfile build context is the repo root.** `backend/Dockerfile` and `frontend/Dockerfile` are built from the repo root with `context: .` and `file: <subdir>/Dockerfile` (see `.github/workflows/deploy-images.yml`). Every `COPY` inside them is therefore written as `COPY backend/ backend/`, `COPY frontend/ ./`, etc. The matching `.dockerignore` lives next to each Dockerfile but its patterns are evaluated against the repo root.
 - **ADR titles skip the em-dash.** `docs/adr/template.md` renders `# NNNN — Title`, but the user's global preference forbids em- and en-dashes in new prose. Use a colon (`# NNNN: Title`) in new ADRs. Existing ADRs 0001-0008 stay as they are; ADRs are immutable per `docs/adr/README.md`.
 - **Commit types live in `.github/commit-types.yml`.** `.github/workflows/pr-title.yml` and `CONTRIBUTING.md` carry `BEGIN/END GENERATED: commit-types` regions rendered from the YAML. Edit the YAML, then `mise run gen:commit-types`. `mise run check:commit-types` runs inside `mise run lint` and catches drift.
+- **SHA-pin third-party GitHub Actions.** `actions/*` and `github/*` can use `@vN`; everything else (community or single-maintainer actions like `JasonEtco/create-an-issue`, `amannn/action-semantic-pull-request`) pins to a full commit SHA with a trailing `# vX.Y.Z` comment for audit readability. Moving tags on third-party code are a supply-chain risk.
 
 ## Commit messages
 

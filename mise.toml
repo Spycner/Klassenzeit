@@ -8,6 +8,7 @@ node    = "22"
 "aqua:pnpm/pnpm"             = "latest"
 "cargo:cocogitto"            = "latest"
 "ubi:evilmartians/lefthook"  = "1.11.14"
+"ubi:rhysd/actionlint"       = "1.7.12"
 "cargo:cargo-nextest"        = "latest"
 "cargo:cargo-llvm-cov"       = "latest"
 "cargo:cargo-machete"        = "latest"
@@ -153,7 +154,7 @@ run = "bash scripts/apply-github-settings.sh"
 
 [tasks.lint]
 description = "Run all linters"
-depends = ["lint:rust", "lint:py", "fe:lint", "check:commit-types"]
+depends = ["lint:rust", "lint:py", "fe:lint", "check:commit-types", "check:actions"]
 
 [tasks."gen:commit-types"]
 description = "Regenerate commit-types-derived sections in pr-title.yml and CONTRIBUTING.md"
@@ -162,6 +163,10 @@ run = "uv run python scripts/gen_commit_types.py --write"
 [tasks."check:commit-types"]
 description = "Verify pr-title.yml and CONTRIBUTING.md match .github/commit-types.yml"
 run = "uv run python scripts/gen_commit_types.py"
+
+[tasks."check:actions"]
+description = "Lint GitHub Actions workflows with actionlint"
+run = "actionlint"
 
 [tasks."lint:rust"]
 run = [
