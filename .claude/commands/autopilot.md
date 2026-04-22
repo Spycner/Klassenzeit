@@ -130,7 +130,7 @@ Only after the audit passes:
 - `mise exec -- git push -u origin <branch>` (use `mise exec --` so the pinned lefthook runs, not whatever's on `PATH`).
 - `gh pr create --base master --head <branch> --title "<Conventional-Commits title>" --body "<body>"`.
 - PR body structure: `## Summary`, then scope/non-goals, `## Test plan` checklist, and links to spec + plan + ADR if present.
-- Post the brainstorm Q&A: one `gh pr comment` per Q&A block from `/tmp/kz-brainstorm/brainstorm.md`. Use a small Python script to split on `## Q` headings and loop `gh pr comment $PR --body "$section"`. Precede with a preamble comment explaining what the thread is. The script takes the PR number as a required positional arg; never hardcode a fallback PR number (a stale default survived one previous run and was noisy to undo).
+- Post the brainstorm Q&A: `python3 .claude/commands/post_brainstorm_comments.py <pr>`. The script reads `/tmp/kz-brainstorm/brainstorm.md`, posts a preamble comment, then one `gh pr comment` per `## Q…` / `## Decision` section. It fails with exit 2 if the PR number is missing. Do not regenerate a copy in `/tmp`; the checked-in version is the source of truth.
 
 ### 8. CI loop
 
