@@ -16,6 +16,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          # BEGIN GENERATED: commit-types
           types: |
             feat
             fix
@@ -28,6 +29,7 @@ jobs:
             ci
             chore
             revert
+          # END GENERATED: commit-types
           requireScope: false
           subjectPattern: ^[a-z].+$
           subjectPatternError: |
