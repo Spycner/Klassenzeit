@@ -68,6 +68,17 @@ refactor!: replace sync HTTP client with async
 - `cog changelog` generates `CHANGELOG.md` from the commit history.
 - `cog bump` performs semver version bumps based on commit types.
 
+### Applying repo settings
+
+The repo's GitHub-side configuration (merge strategies, required status checks, linear history) lives in two JSON files under `docs/superpowers/`. Apply them with:
+
+```bash
+mise run repo:apply-settings -- --dry-run   # recommended first run
+mise run repo:apply-settings                 # actually apply
+```
+
+The script reads branch protection back and exits non-zero on drift. See `docs/superpowers/specs/2026-04-22-apply-github-settings-script-design.md` for rationale.
+
 ## Authentication
 
 For how the session/cookie auth works, how to protect a route, and how to bootstrap the first admin, see [`docs/architecture/authentication.md`](docs/architecture/authentication.md).

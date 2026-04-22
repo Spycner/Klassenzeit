@@ -61,6 +61,7 @@ If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, f
 - **Rust toolchain** is a hard prerequisite (required for the PyO3 bindings and for the dev tools below).
 - **Git hook runner:** [Lefthook](https://github.com/evilmartians/lefthook). Config lives at `.config/lefthook.yaml` (lefthook auto-discovers this path).
 - **Commit message enforcement:** [Cocogitto](https://docs.cocogitto.io) (`cog`), installed via `cargo install cocogitto`. A `commit-msg` hook runs `cog verify` and rejects non-conventional messages.
+- **`gh` + `jq` are runtime prerequisites** for repo-automation tasks like `mise run repo:apply-settings`. Neither is pinned via mise; install from the system package manager (or `brew install gh jq`) on fresh clones.
 
 ## Coding standards
 
