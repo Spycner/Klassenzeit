@@ -1,0 +1,16 @@
+# Single source of truth for Conventional Commits types accepted by this repo.
+# Regenerate derived files with: mise run gen:commit-types
+# Drift between this file and .github/workflows/pr-title.yml or CONTRIBUTING.md
+# is caught by mise run check:commit-types in CI and pre-commit lint.
+types:
+  feat: "A new feature (minor version bump)"
+  fix: "A bug fix (patch version bump)"
+  docs: "Documentation-only changes"
+  style: "Formatting only, no code change"
+  refactor: "Code change that neither fixes a bug nor adds a feature"
+  perf: "Performance improvement"
+  test: "Adding or correcting tests"
+  build: "Build system or external dependency changes"
+  ci: "CI configuration changes"
+  chore: "Other changes that don't touch src or tests"
+  revert: "Reverts a previous commit"
