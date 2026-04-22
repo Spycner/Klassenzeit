@@ -4,6 +4,7 @@
 
 pub mod error;
 pub mod ids;
+pub(crate) mod index;
 pub mod types;
 pub mod validate;
 
