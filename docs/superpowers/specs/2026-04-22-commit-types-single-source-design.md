@@ -144,9 +144,9 @@ Chose Option B (generator + check) because OPEN_THINGS explicitly suggests this 
 
 Three commits:
 
-1. `build(scripts): add commit-types generator and source-of-truth config` introduces `.github/commit-types.yml`, `scripts/gen_commit_types.py`, the pytest test, and the two new `mise` tasks. No downstream file touches yet; this commit stands alone.
-2. `ci(pr-title): load allowed types from .github/commit-types.yml` adds the BEGIN/END markers in the workflow, regenerates the block, and adds `check:commit-types` to the lint chain.
-3. `docs(contributing): generate allowed-types table from commit-types.yml` adds markers in CONTRIBUTING.md, regenerates the table, and fixes the em-dash that sits in the `style` row today.
+1. `build(scripts): add commit-types generator and source-of-truth config` introduces `.github/commit-types.yml`, `scripts/gen_commit_types.py`, the pytest test, and the two new `mise` tasks. No downstream file touches yet, and `check:commit-types` is not yet part of `mise run lint`, so the commit is self-contained.
+2. `ci(pr-title): load allowed types from .github/commit-types.yml` adds the BEGIN/END markers in the workflow and regenerates the block.
+3. `docs(contributing): generate allowed-types table from commit-types.yml` adds markers in CONTRIBUTING.md, regenerates the table, fixes the em-dash in the `style` row, and wires `check:commit-types` into `mise run lint`. Wiring the lint dependency here (rather than in commit 2) avoids a lint failure between commits, because the check requires every configured target to have markers.
 
 Splitting the dedup targets into their own commits keeps each review diff obvious: commit 1 is the mechanism, commits 2 and 3 are the two consumers adopting it one at a time.
 
