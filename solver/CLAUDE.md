@@ -16,11 +16,10 @@ Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes 
 
     ```rust
     #[derive(Debug, thiserror::Error)]
+    #[non_exhaustive]
     pub enum Error {
         #[error("input: {0}")]
         Input(String),
-        #[error("infeasible at step {step}: {reason}")]
-        Infeasible { step: &'static str, reason: String },
     }
     ```
 
@@ -40,7 +39,7 @@ Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes 
     }
     ```
 
-- **Errors map explicitly.** `solver_core::Error` to `PyValueError` for client mistakes (bad input shape), `PyRuntimeError` for solver-internal failures (infeasible, timeout, internal invariant violation). Use `From` impls or a small adapter; never `anyhow`.
+- **Errors map explicitly.** `solver_core::Error` to `PyValueError` for client mistakes (bad input shape), `PyRuntimeError` for solver-internal failures (timeout, internal invariant violation). Placement failures are not errors: they come back as `Violation` entries inside the `Solution`, so the wrapper returns them as normal data and the Python caller decides how to surface them. Use `From` impls or a small adapter for error paths; never `anyhow`.
 - **Python tests exercise the binding contract, not the algorithm.** Tests at `solver/solver-py/tests/test_*.py` cover encoding, GIL release, error conversion. Narrow exception: a regression test for a bug that is binding-specific (e.g., float NaN handling across PyO3).
 - **Maturin dev loop.**
     - Source-only edit in `solver-core` or `solver-py/src/lib.rs`: `mise run solver:rebuild` (wraps `uvx maturin develop --uv -m solver/solver-py/Cargo.toml`, seconds).
