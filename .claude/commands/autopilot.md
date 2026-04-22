@@ -49,16 +49,23 @@ If a listed skill is unavailable in the current environment, say so explicitly i
 - If the local branch diverges from origin (e.g. after a squash merge), `git reset --hard origin/master`. Check with the user first if there are unpushed local commits.
 - Create a new branch: `git checkout -b <type>/<short-topic-slug>` (e.g. `feat/frontend-scaffolding`, `fix/cookie-refresh-bug`).
 
-### 2. Brainstorm (self-answered)
+### 2. Brainstorm (sequential, self-answered)
 
-**First action:** invoke `superpowers:brainstorming` via the `Skill` tool. Override its "ask questions one at a time" default: the user wants autonomous flow.
+**First action:** invoke `superpowers:brainstorming` via the `Skill` tool. Keep the skill's "one question at a time" rhythm, but self-answer each question instead of waiting for the user: autonomous mode removes the pause, not the sequencing.
 
-Then, guided by what the skill returned:
+Work the Q&A incrementally:
 
-- Write every question you would have asked the user.
-- Answer each yourself with your reasoning (options considered, decision, why).
-- Save the Q&A to `/tmp/kz-brainstorm/brainstorm.md`. These become PR comments later.
+- Start `/tmp/kz-brainstorm/brainstorm.md` with a short preamble (topic, autonomous-mode note) before the first question.
+- For each question, in order:
+  1. Formulate the question you would have asked the user. Make it multiple-choice when possible, open-ended only when needed.
+  2. Answer it yourself: list the options you considered, the decision, and the reasoning (what makes this the right call here, what you'd pick differently in a nearby context).
+  3. Append that one Q&A block to `/tmp/kz-brainstorm/brainstorm.md` as `## Q<n>. <question>` with the answer below.
+  4. Let the answer shape the next question. Later questions should build on earlier decisions; do not pre-commit to a batch of questions up front.
+- Keep going until the open space feels closed: scope, approach, file layout, commit split, risks, success criteria. When you are not uncovering anything new, stop.
+- End the file with a short `## Decision` block summarising the shape of the PR you're about to write.
 - If the topic is too big for one spec, stop and surface the decomposition for the user to pick a sub-topic.
+
+The sequential rhythm matters: it keeps each answer honest (you do not know the later question until the earlier one is decided) and it produces a readable per-question PR comment thread later.
 
 ### 3. Write the spec
 
