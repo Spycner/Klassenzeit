@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SubjectMultiPicker } from "@/features/subjects/subject-multi-picker";
 import { useSaveTeacherQualifications, useTeacherDetail } from "./hooks";
@@ -15,7 +16,12 @@ export function TeacherQualificationsEditor({ teacherId }: { teacherId: string }
   }, [detail.data]);
 
   async function handleTeacherQualificationsSave() {
-    await save.mutateAsync({ id: teacherId, subjectIds: draft });
+    try {
+      await save.mutateAsync({ id: teacherId, subjectIds: draft });
+      toast.success(t("teachers.qualifications.saved"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("teachers.qualifications.save"));
+    }
   }
 
   return (

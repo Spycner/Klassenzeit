@@ -82,7 +82,7 @@ export function WeekSchemeFormDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

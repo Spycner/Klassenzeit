@@ -308,7 +308,7 @@ export function StundentafelEditDialog({ stundentafel, onClose }: StundentafelEd
                           ? t("stundentafeln.fields.blockSizeDouble")
                           : t("stundentafeln.fields.blockSizeSingle")}
                       </TableCell>
-                      <TableCell className="space-x-2 py-1.5 text-right">
+                      <TableCell className="space-x-2 whitespace-nowrap py-1.5 text-right">
                         <Button
                           size="sm"
                           variant="outline"
@@ -511,6 +511,9 @@ function EntryFormDialog({ tafelId, mode, usedSubjectIds, onClose }: EntryFormDi
                       <SelectItem value="2">{t("stundentafeln.fields.blockSizeDouble")}</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {t("stundentafeln.fields.blockSizeHelp")}
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

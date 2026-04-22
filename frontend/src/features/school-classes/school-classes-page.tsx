@@ -84,7 +84,7 @@ export function SchoolClassesPage() {
               </span>
             }
           />
-          <div className="rounded-xl border bg-card">
+          <div className="overflow-hidden rounded-xl border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -112,7 +112,7 @@ export function SchoolClassesPage() {
                     <TableCell className="py-1.5">
                       {weekSchemeNameById.get(schoolClass.week_scheme_id) ?? "—"}
                     </TableCell>
-                    <TableCell className="space-x-2 py-1.5 text-right">
+                    <TableCell className="space-x-2 whitespace-nowrap py-1.5 text-right">
                       <Button
                         size="sm"
                         variant="outline"

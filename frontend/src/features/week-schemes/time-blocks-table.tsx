@@ -79,7 +79,7 @@ export function TimeBlocksTable({ schemeId }: { schemeId: string }) {
       ) : blocks.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("weekSchemes.timeBlocks.empty")}</p>
       ) : (
-        <div className="rounded-md border">
+        <div className="overflow-x-auto rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -89,7 +89,7 @@ export function TimeBlocksTable({ schemeId }: { schemeId: string }) {
                 </TableHead>
                 <TableHead className="py-2">{t("weekSchemes.timeBlocks.columns.start")}</TableHead>
                 <TableHead className="py-2">{t("weekSchemes.timeBlocks.columns.end")}</TableHead>
-                <TableHead className="w-40 py-2 text-right">
+                <TableHead className="py-2 text-right">
                   {t("weekSchemes.timeBlocks.columns.actions")}
                 </TableHead>
               </TableRow>
@@ -107,17 +107,23 @@ export function TimeBlocksTable({ schemeId }: { schemeId: string }) {
                     {block.start_time}
                   </TableCell>
                   <TableCell className="py-1.5 font-mono text-[12.5px]">{block.end_time}</TableCell>
-                  <TableCell className="space-x-2 py-1.5 text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setBlockDialogMode({ mode: "edit", block })}
-                    >
-                      {t("common.edit")}
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(block)}>
-                      {t("common.delete")}
-                    </Button>
+                  <TableCell className="py-1.5 text-right whitespace-nowrap">
+                    <div className="inline-flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setBlockDialogMode({ mode: "edit", block })}
+                      >
+                        {t("common.edit")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setConfirmDelete(block)}
+                      >
+                        {t("common.delete")}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

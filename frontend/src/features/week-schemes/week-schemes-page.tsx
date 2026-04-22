@@ -1,20 +1,16 @@
 import { useSearch } from "@tanstack/react-router";
 import { CalendarDays } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/empty-state";
 import { Toolbar } from "@/components/toolbar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useWeekSchemes, type WeekScheme } from "./hooks";
+import { type TimeBlock, useWeekSchemeDetail, useWeekSchemes, type WeekScheme } from "./hooks";
 import { DeleteWeekSchemeDialog, WeekSchemeFormDialog } from "./week-schemes-dialogs";
 
-const DEFAULT_DAYS = 5;
-const DEFAULT_PERIODS = 8;
-const PERIOD_SLOTS = Array.from({ length: DEFAULT_PERIODS }, (_, i) => `P${i + 1}`);
-
 export function WeekSchemesPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const schemes = useWeekSchemes();
   const search = useSearch({ strict: false }) as { create?: string; id?: string };
 
@@ -29,7 +25,6 @@ export function WeekSchemesPage() {
   );
   const active = rows.find((row) => row.id === activeId) ?? rows[0];
   const showEmpty = !schemes.isLoading && schemes.data && schemes.data.length === 0 && !q;
-  const days = dayLabels(i18n.language);
 
   return (
     <div className="space-y-4">
@@ -82,9 +77,11 @@ export function WeekSchemesPage() {
                   )}
                 >
                   <span className="text-sm font-semibold">{row.name}</span>
-                  <span className="font-mono text-[11px] text-muted-foreground">
-                    {DEFAULT_DAYS} × {DEFAULT_PERIODS}
-                  </span>
+                  {row.description ? (
+                    <span className="line-clamp-1 text-[11px] text-muted-foreground">
+                      {row.description}
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </div>
@@ -96,20 +93,7 @@ export function WeekSchemesPage() {
                     <p className="mt-1 text-sm text-muted-foreground">{active.description}</p>
                   ) : null}
                   <div className="mt-4">
-                    <div
-                      className="kz-ws-grid"
-                      style={{ gridTemplateColumns: `80px repeat(${DEFAULT_DAYS}, 1fr)` }}
-                    >
-                      <div className="kz-ws-cell" data-variant="header" />
-                      {days.map((day) => (
-                        <div key={day} className="kz-ws-cell" data-variant="header">
-                          {day}
-                        </div>
-                      ))}
-                      {PERIOD_SLOTS.map((slot, period) => (
-                        <WsRow key={slot} period={period} slot={slot} days={days} />
-                      ))}
-                    </div>
+                    <WeekSchemeGrid schemeId={active.id} />
                   </div>
                   <div className="mt-5 flex gap-2">
                     <Button onClick={() => setEditing(active)}>{t("common.edit")}</Button>
@@ -146,30 +130,82 @@ export function WeekSchemesPage() {
   );
 }
 
-function WsRow({ period, slot, days }: { period: number; slot: string; days: string[] }) {
+function WeekSchemeGrid({ schemeId }: { schemeId: string }) {
+  const { t } = useTranslation();
+  const detail = useWeekSchemeDetail(schemeId);
+
+  if (detail.isLoading) {
+    return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
+  }
+
+  const blocks = detail.data?.time_blocks ?? [];
+  if (blocks.length === 0) {
+    return <p className="text-sm text-muted-foreground">{t("weekSchemes.detail.emptyBlocks")}</p>;
+  }
+
+  const daysPresent = Array.from(new Set(blocks.map((b) => b.day_of_week))).sort((a, b) => a - b);
+  const positions = Array.from(new Set(blocks.map((b) => b.position))).sort((a, b) => a - b);
+  const byKey = new Map<string, TimeBlock>();
+  for (const block of blocks) {
+    byKey.set(`${block.day_of_week}:${block.position}`, block);
+  }
+
   return (
-    <>
-      <div className="kz-ws-cell" data-variant="time">
-        {formatTime(period)}
-      </div>
-      {days.map((day) => (
-        <div key={`${slot}-${day}`} className="kz-ws-cell" data-variant="period">
-          {slot}
+    <div
+      className="kz-ws-grid"
+      style={{ gridTemplateColumns: `56px repeat(${daysPresent.length}, 1fr)` }}
+    >
+      <div className="kz-ws-cell" data-variant="header" />
+      {daysPresent.map((day) => (
+        <div key={day} className="kz-ws-cell" data-variant="header">
+          {t(`common.daysShort.${day as 0 | 1 | 2 | 3 | 4}`)}
         </div>
       ))}
-    </>
+      {positions.map((position) => (
+        <WeekSchemeGridRow
+          key={position}
+          position={position}
+          daysPresent={daysPresent}
+          byKey={byKey}
+        />
+      ))}
+    </div>
   );
 }
 
-function formatTime(period: number) {
-  const hour = 8 + Math.floor(period * 0.75);
-  const minute = period % 2 === 0 ? "00" : "45";
-  return `${hour}:${minute}`;
-}
-
-function dayLabels(lang: string): string[] {
-  if (lang.startsWith("de")) return ["Mo", "Di", "Mi", "Do", "Fr"];
-  return ["Mo", "Tu", "We", "Th", "Fr"];
+function WeekSchemeGridRow({
+  position,
+  daysPresent,
+  byKey,
+}: {
+  position: number;
+  daysPresent: number[];
+  byKey: Map<string, TimeBlock>;
+}) {
+  return (
+    <Fragment>
+      <div className="kz-ws-cell" data-variant="time">
+        P{position}
+      </div>
+      {daysPresent.map((day) => {
+        const block = byKey.get(`${day}:${position}`);
+        return (
+          <div
+            key={`${day}:${position}`}
+            className="kz-ws-cell"
+            {...(block ? { "data-variant": "period" } : {})}
+          >
+            {block ? (
+              <div className="flex flex-col leading-tight">
+                <span>{block.start_time.slice(0, 5)}</span>
+                <span className="opacity-60">{block.end_time.slice(0, 5)}</span>
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </Fragment>
+  );
 }
 
 function WeekSchemesPageHead({

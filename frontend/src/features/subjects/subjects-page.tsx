@@ -66,7 +66,7 @@ export function SubjectsPage() {
               </span>
             }
           />
-          <div className="rounded-xl border bg-card">
+          <div className="overflow-hidden rounded-xl border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -92,7 +92,7 @@ export function SubjectsPage() {
                     <TableCell className="py-1.5 font-mono text-[12.5px]">
                       {subject.short_name}
                     </TableCell>
-                    <TableCell className="space-x-2 py-1.5 text-right">
+                    <TableCell className="space-x-2 whitespace-nowrap py-1.5 text-right">
                       <Button size="sm" variant="outline" onClick={() => setEditing(subject)}>
                         {t("common.edit")}
                       </Button>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useWeekSchemeDetail, useWeekSchemes } from "@/features/week-schemes/hooks";
 import { cn } from "@/lib/utils";
@@ -57,7 +58,12 @@ export function TeacherAvailabilityGrid({ teacherId }: { teacherId: string }) {
     for (const [id, status] of statuses) {
       entries.push({ time_block_id: id, status });
     }
-    await save.mutateAsync({ id: teacherId, entries });
+    try {
+      await save.mutateAsync({ id: teacherId, entries });
+      toast.success(t("teachers.availability.saved"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("teachers.availability.save"));
+    }
   }
 
   return (
