@@ -43,7 +43,12 @@ def main() -> int:
     text = BRAINSTORM.read_text()
     first_heading = HEADING_RE.search(text)
     if not first_heading:
-        print("no '## Q' or '## Decision' sections found", file=sys.stderr)
+        print(
+            f"no '## Q<n>. <question>' or '## Decision' headings found in {BRAINSTORM}; "
+            "brainstorm.md must use '## Q1. <question>' style top-level headings, one "
+            "per answered question, with a trailing '## Decision' block.",
+            file=sys.stderr,
+        )
         return 1
     preamble = text[: first_heading.start()].rstrip()
 
