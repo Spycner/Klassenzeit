@@ -105,6 +105,8 @@ Run from repo root unless noted.
 - **`vi.useFakeTimers()` without a `toFake` filter hangs `waitFor` / `findBy*`.** Vitest 4 fakes `setTimeout` too, which RTL's polling relies on, so asserts time out at 5s. When a test needs a deterministic `new Date()` for a component (e.g. the recently-edited tile's relative-time formatter), use `vi.useFakeTimers({ toFake: ["Date"] })` and leave `setTimeout` real.
 - **Frontend coverage ratchet.** CI fails if `total.lines.pct` from `vitest --coverage` drops below `.coverage-baseline-frontend` (at repo root) or below the absolute 50% floor. After an intentional drop, run `mise run fe:cov:update-baseline` and commit the new baseline.
 - **MSW handlers required for every endpoint.** `tests/setup.ts` starts `setupServer(...defaultHandlers)` with `onUnhandledRequest: "error"`. Adding a page that calls a new endpoint requires an entry in `tests/msw-handlers.ts` (seed data + GET/POST/PATCH/DELETE stubs) before the test can pass.
+- **Vitest excludes `e2e/**`.** `vitest.config.ts` drops everything under `frontend/e2e/` from collection. If a Playwright helper has pure logic worth unit-testing, put the module at `frontend/e2e/support/<name>.ts` and the Vitest file at `frontend/tests/<name>.test.ts`: the tests can import across the boundary, but `.test.ts` files inside `e2e/` are silently ignored.
+- **Playwright `:active` capture fires a real click.** `page.mouse.down()` → snapshot → `page.mouse.up()` dispatches a click on release, so a crawl that hits the admin logout button kills the shared storage-state cookie and every later test in the worker fails. Break the click with a pointer move: `mouse.down` → snapshot → `mouse.move(0, 0)` → `mouse.up`.
 
 ## UX conventions
 

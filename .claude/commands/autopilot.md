@@ -73,6 +73,15 @@ Work the Q&A incrementally:
 
 The sequential rhythm matters: it keeps each answer honest (you do not know the later question until the earlier one is decided) and it produces a readable per-question PR comment thread later.
 
+**Format verify gate.** Before leaving step 2, confirm the file parses as the PR-comment script expects it to. Run:
+
+```bash
+grep -c '^## Q' /tmp/kz-brainstorm/brainstorm.md
+grep -c '^## Decision' /tmp/kz-brainstorm/brainstorm.md
+```
+
+The first count must be greater than zero and match the number of questions you answered; the second must be exactly 1. If either check fails, you wrote the Q&A with inline `Q1:` / `**Q1.**` style instead of top-level `## Q<n>. <question>` / `## Decision` headings; fix the file now. `.claude/commands/post_brainstorm_comments.py` splits on those headings, so mis-formatting surfaces only at step 7 (after the PR is already open) and forces a mid-PR reformat.
+
 ### 3. Write the spec
 
 - Use the spec template that `superpowers:brainstorming` surfaced in step 2. Do not hand-roll a spec layout from memory.
