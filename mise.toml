@@ -143,6 +143,12 @@ run = [
   "uvx pip-audit",
 ]
 
+# ─── GitHub repo config ─────────────────────────────────────────────────────
+
+[tasks."repo:apply-settings"]
+description = "Apply GitHub repo + branch-protection settings from docs/superpowers/*.json"
+run = "bash scripts/apply-github-settings.sh"
+
 # ─── Lint & format ──────────────────────────────────────────────────────────
 
 [tasks.lint]
