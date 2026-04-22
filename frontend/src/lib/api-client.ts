@@ -14,11 +14,49 @@ export class ApiError extends Error {
   readonly data: unknown;
 
   constructor(status: number, data: unknown, message?: string) {
-    super(message ?? `API error ${status}`);
+    super(message ?? formatApiDetail(data) ?? `API error ${status}`);
     this.name = "ApiError";
     this.status = status;
     this.data = data;
   }
+}
+
+interface ValidationItem {
+  loc: unknown[];
+  msg: string;
+}
+
+function isValidationItem(value: unknown): value is ValidationItem {
+  if (typeof value !== "object" || value === null) return false;
+  const item = value as { loc?: unknown; msg?: unknown };
+  return Array.isArray(item.loc) && typeof item.msg === "string";
+}
+
+function formatValidationItem(item: ValidationItem): string {
+  const [head, ...rest] = item.loc;
+  const parts = head === "body" || head === "query" || head === "path" ? rest : item.loc;
+  const field = parts.map(String).join(".");
+  return field ? `${field}: ${item.msg}` : item.msg;
+}
+
+/**
+ * Derives a human-readable string from a FastAPI error body.
+ *
+ * Handles: plain strings, `{ detail: "..." }`, and `{ detail: [{ loc, msg }, ...] }`
+ * (the Pydantic 422 shape). Returns `null` when the shape is unrecognised so
+ * callers can fall back to a generic message.
+ */
+export function formatApiDetail(data: unknown): string | null {
+  if (typeof data === "string") return data.length > 0 ? data : null;
+  if (typeof data !== "object" || data === null) return null;
+  if (!("detail" in data)) return null;
+  const detail = (data as { detail: unknown }).detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const items = detail.filter(isValidationItem).map(formatValidationItem);
+    return items.length > 0 ? items.join("; ") : null;
+  }
+  return null;
 }
 
 const throwOnError: Middleware = {

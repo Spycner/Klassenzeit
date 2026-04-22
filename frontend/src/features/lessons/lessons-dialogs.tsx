@@ -274,6 +274,9 @@ export function LessonFormDialog({
                       <SelectItem value="2">{t("lessons.fields.blockSizeDouble")}</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {t("lessons.fields.blockSizeHelp")}
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

@@ -75,7 +75,7 @@ export function StundentafelnPage() {
               </span>
             }
           />
-          <div className="rounded-xl border bg-card">
+          <div className="overflow-x-auto rounded-xl border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -95,7 +95,7 @@ export function StundentafelnPage() {
                     <TableCell className="py-1.5 text-right font-mono text-[12.5px]">
                       {tafel.grade_level}
                     </TableCell>
-                    <TableCell className="space-x-2 py-1.5 text-right">
+                    <TableCell className="space-x-2 whitespace-nowrap py-1.5 text-right">
                       <Button size="sm" variant="outline" onClick={() => setEditing(tafel)}>
                         {t("common.edit")}
                       </Button>

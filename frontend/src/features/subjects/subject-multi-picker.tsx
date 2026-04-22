@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { resolveSubjectColor } from "@/features/subjects/color";
 import { useSubjects } from "@/features/subjects/hooks";
 import { cn } from "@/lib/utils";
@@ -71,7 +72,7 @@ export function SubjectMultiPicker({ value, onChange }: SubjectMultiPickerProps)
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
-      <div className="max-h-40 overflow-y-auto rounded-md border border-border/60">
+      <ScrollArea className="h-40 rounded-md border border-border/60">
         {unselected.length === 0 ? (
           <div className="p-2 text-xs text-muted-foreground">{t("common.noResults")}</div>
         ) : (
@@ -94,7 +95,7 @@ export function SubjectMultiPicker({ value, onChange }: SubjectMultiPickerProps)
             </button>
           ))
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 }

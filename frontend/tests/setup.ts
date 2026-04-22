@@ -44,6 +44,16 @@ if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = vi.fn();
 }
 
+// jsdom does not implement ResizeObserver; Radix ScrollArea observes viewport
+// size changes and throws on mount without this stub.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 beforeEach(() => {
   for (const key of Object.keys(stundentafelEntriesByTafelId)) {
