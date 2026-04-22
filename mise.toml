@@ -147,7 +147,15 @@ run = [
 
 [tasks.lint]
 description = "Run all linters"
-depends = ["lint:rust", "lint:py", "fe:lint"]
+depends = ["lint:rust", "lint:py", "fe:lint", "check:commit-types"]
+
+[tasks."gen:commit-types"]
+description = "Regenerate commit-types-derived sections in pr-title.yml and CONTRIBUTING.md"
+run = "uv run python scripts/gen_commit_types.py --write"
+
+[tasks."check:commit-types"]
+description = "Verify pr-title.yml and CONTRIBUTING.md match .github/commit-types.yml"
+run = "uv run python scripts/gen_commit_types.py"
 
 [tasks."lint:rust"]
 run = [
