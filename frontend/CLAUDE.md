@@ -2,6 +2,10 @@
 
 Stack: Vite + React 19, TanStack Router + Query, shadcn/ui, React Hook Form + Zod, react-i18next, next-themes. Rules below are on top of `.claude/CLAUDE.md`, not a replacement.
 
+## Building new UI surfaces
+
+- **Invoke `frontend-design` via the `Skill` tool before writing UI.** When the task is "build a page", "redesign this component", "add this feature's UI", or similar, call the skill and let it return before producing markup. The skill steers toward distinctive, production-grade interfaces and away from the generic AI-assistant aesthetic. Skipping it and synthesizing the look freehand counts as a process violation per the root skills-discipline rule.
+
 ## Layout (`frontend/src/`)
 
 - `routes/` — TanStack Router file-based routes (`__root.tsx`, `_authed.tsx`, etc.). Route files are thin; they import page components from `features/`.
@@ -23,8 +27,10 @@ Run from repo root unless noted.
 - `mise run fe:cov:update-baseline` — rebaseline `.coverage-baseline-frontend` after an intentional coverage drop.
 - `mise run fe:types` — regenerate `src/lib/api-types.ts` from the backend OpenAPI schema.
 - `mise run fe:build` — production build into `frontend/dist/`.
-- `mise exec -- pnpm -C frontend add <pkg>` / `add -D <pkg>` — add a dep (never hand-edit `package.json`).
+- **Adding dependencies:** `mise exec -- pnpm -C frontend add <pkg>` (runtime) or `mise exec -- pnpm -C frontend add -D <pkg>` (dev). Don't hand-edit `frontend/package.json` dependency sections; pnpm is the source of truth.
 - **Single test file:** `cd frontend && mise exec -- pnpm vitest run <path>`. Don't use `mise exec -- pnpm -C frontend vitest ...`: pnpm treats `frontend` as a filter target, then can't find `vitest` in the recursive set. Don't use `mise run fe:test -- --run` either: the task body is a shell `if [ -f ... ]`, so positional args land in the `if` arg list and the shell errors.
+- **TanStack Router: build before typecheck.** Adding a new `src/routes/*.tsx` file makes `tsc --noEmit` fail with `"/path" is not assignable to keyof FileRoutesByPath` until the Router Vite plugin regenerates `src/routeTree.gen.ts`. Run `mise exec -- pnpm -C frontend build` (or start `fe:dev`) before typechecking locally. CI already runs `fe:build` before `tsc`.
+- **CI `tsc --noEmit` is stricter than `fe:build`.** `mise run fe:build` only runs `vite build`, which skips `noUncheckedIndexedAccess` enforcement; CI's follow-on `tsc --noEmit` catches it (e.g. `initialLessons[0]` → TS18048 "possibly undefined"). Run `cd frontend && mise exec -- pnpm exec tsc --noEmit` locally before pushing when touching array indexing or narrowing.
 
 ## Hooks and state
 
@@ -41,6 +47,7 @@ Run from repo root unless noted.
 - **No local state for filter / sort / page / selection** that a user would want to share or refresh. Put it in TanStack Router search params via `useSearch` with a Zod `validateSearch`.
 - **No `useNavigate` for in-app links.** Use `<Link>` so keyboard and middle-click work.
 - **Page components that consume search params should use `useSearch({ strict: false })`** with a typed cast, not `useSearch({ from: "/_authed/foo" })`. The test harness (`renderWithProviders`) mounts components at `/` with no route tree for the real path; strict matching throws at render.
+- **No direct `fetch`.** Use the typed `client` from `@/lib/api-client`, which wraps `openapi-fetch` over generated types. Error responses throw `ApiError`; inspect `err.status` and `err.data` in mutation `onError`.
 
 ## Forms (RHF + Zod)
 
@@ -48,6 +55,8 @@ Run from repo root unless noted.
 - **No submit button without `disabled={isPending}`** and a pending label (`t("common.saving")` etc.).
 - **No Zod `.email("msg")` literals for user-facing errors.** Go through `t("…")`; if the message needs to update on locale switch, move the message lookup into the render path (`FormMessage` children), not the schema.
 - **No Zod `.uuid()` for FK form fields.** Zod v4's `.uuid()` enforces RFC 4122 version/variant bits, so pattern-UUIDs like `11111111-…-111111111111` (seed / test data) fail validation. Use `z.string().min(1)` for FK IDs; the backend validates UUID format anyway.
+- **No raw input boxes.** Always use shadcn/ui primitives in `frontend/src/components/ui/`. Forms go through React Hook Form + Zod with the shadcn `Form` wrapper.
+- **Keep Zod schemas flat for RHF forms.** `@hookform/resolvers` v5 + `react-hook-form` v7 + `zod` v4 fail to type-check when a field uses `z.coerce`, `z.union`, `.transform(...)`, or `.default(...)` because the Resolver's input and output types diverge. Keep schemas plain (`z.number().int().min(1).optional()`), and do coercion or empty-string handling in the form `onChange` and submit handlers.
 
 ## Styling
 
@@ -76,7 +85,7 @@ Run from repo root unless noted.
 
 - **No `as Foo` assertions** where a type guard or discriminated union would narrow. Assertions rot silently when shapes drift.
 - **No `any`.** Prefer `unknown` with a guard, or refine the generic.
-- Root `.claude/CLAUDE.md` covers `erasableSyntaxOnly` (no `enum`, no parameter properties, no namespaces, no `import =`). Those apply here too.
+- **`erasableSyntaxOnly` only.** `tsconfig.json` sets `erasableSyntaxOnly: true`: no enums, no parameter properties, no namespaces, no `import =`. Types must be fully erasable so the output is plain JS.
 
 ## Testing
 
@@ -94,6 +103,8 @@ Run from repo root unless noted.
 - **Component tests that query English labels must pin the locale.** i18next defaults to the user agent's language (jsdom reports `de-DE`), so `getByRole("button", { name: /save/i })` silently misses "Speichern". Add `import i18n from "@/i18n/init"; beforeAll(() => i18n.changeLanguage("en"));` at the top of any test whose assertions rely on English copy. (`@/i18n/config` only exports locale constants, not the i18n instance.)
 - **`renderWithProviders` is async; use a local wrapper for sync queries.** The shared helper in `frontend/tests/render-helpers.tsx` wraps the tree in a TanStack Router `RouterProvider`, which mounts asynchronously. Sync `screen.getByRole(...)` immediately after it sees an empty DOM and throws. For components that do not need Router (most pure-UI primitives), use a local `QueryClientProvider` wrapper and `render` directly, mirroring `frontend/src/features/rooms/rooms-dialogs.test.tsx`'s `wrapRoomDialog`. Reach for `renderWithProviders` only when the component under test uses `useNavigate` / `useSearch` / TanStack Router hooks, and even then prefer `findBy*` / `waitFor` over sync queries.
 - **`vi.useFakeTimers()` without a `toFake` filter hangs `waitFor` / `findBy*`.** Vitest 4 fakes `setTimeout` too, which RTL's polling relies on, so asserts time out at 5s. When a test needs a deterministic `new Date()` for a component (e.g. the recently-edited tile's relative-time formatter), use `vi.useFakeTimers({ toFake: ["Date"] })` and leave `setTimeout` real.
+- **Frontend coverage ratchet.** CI fails if `total.lines.pct` from `vitest --coverage` drops below `.coverage-baseline-frontend` (at repo root) or below the absolute 50% floor. After an intentional drop, run `mise run fe:cov:update-baseline` and commit the new baseline.
+- **MSW handlers required for every endpoint.** `tests/setup.ts` starts `setupServer(...defaultHandlers)` with `onUnhandledRequest: "error"`. Adding a page that calls a new endpoint requires an entry in `tests/msw-handlers.ts` (seed data + GET/POST/PATCH/DELETE stubs) before the test can pass.
 
 ## UX conventions
 
