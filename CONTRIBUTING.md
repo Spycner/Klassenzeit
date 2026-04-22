@@ -17,6 +17,8 @@ mise run test             # confirm everything works
 
 After this, `mise run test`, `mise run lint`, and `mise run dev` all work. See [`README.md`](README.md) for the full task table.
 
+`mise run lint` also runs `actionlint` against `.github/workflows/*.yml` so YAML or expression errors in workflows surface locally before CI catches them.
+
 ## Commit messages
 
 This repo uses [Conventional Commits](https://www.conventionalcommits.org/). A `commit-msg` hook runs `cog verify` and will reject non-conforming messages.
