@@ -50,7 +50,12 @@ Ordered roughly in the sequence they need to land: data first, then access contr
 - **Entity coverage beyond Subjects.** Each remaining entity CRUD spec (Rooms, Teachers, WeekSchemes, SchoolClasses, Stundentafel, Lesson) should add its own Playwright flow when it lands.
 - **Cross-browser matrix.** Firefox and WebKit are disabled for now (Chromium only). Enable when external users appear.
 - **Accessibility audits inside Playwright.** `@axe-core/playwright` integration is deferred; track separately.
-- **Visual regression.** Percy / Chromatic / Playwright snapshot tooling. Defer until design churn slows.
+- **Visual regression.** Three approaches worth comparing when design churn slows:
+  1. **Pixel-diff snapshots** (Playwright `toHaveScreenshot`, Percy, Chromatic). Catches any pixel change, noisy on intentional design tweaks.
+  2. **Computed-style diff across interaction states.** Crawl interactive elements (`button, a, [role=button], input, [tabindex]`) on each route, capture `getComputedStyle()` in base / `:hover` / `:focus` / `:active`, flag structural deltas (`border-radius`, `width`, `height`, `padding`, `margin`, `transform`, `outline-offset`, `clip-path`) between states. Dedupe by DOM class signature so shadcn variants collapse to one finding. Deterministic and cheap: fixed rule set of ~10 properties, runs per route not per component, catches the "hover shape drifted from base shape" class of bug.
+  3. **Vision-LLM diff.** Crop before/after screenshots of the same element, pass both to a VLM with "do these shapes match, ignoring color and text". Fuzzier, catches emergent layout differences that don't trace to a single CSS property (pseudo-element sizing, child layout shift). Use as a follow-up when (2) says styles match but something still looks off.
+
+  Build order: (2) first because it's the cheapest and deterministic, (3) later as an optional second pass. Pixel-diff SaaS is the fallback if design stabilizes enough to make a baseline meaningful.
 - **Parallel workers + per-worker DBs.** Currently Playwright runs single-worker against a shared DB. Move to per-worker schemas once CI time matters.
 - **Session cleanup in `/__test__/reset`.** The reset endpoint preserves the `sessions` table so storageState stays valid; revisit if tests start needing clean session state.
 - **Nightly extended run.** Slower flows, broader data scenarios. Add when the suite is large enough to justify tiering.
