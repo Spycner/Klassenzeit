@@ -5,6 +5,7 @@
 pub mod error;
 pub mod ids;
 pub mod types;
+pub mod validate;
 
 pub use error::Error;
 pub use ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId};
