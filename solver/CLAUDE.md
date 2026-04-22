@@ -12,6 +12,7 @@ Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes 
 
 ## solver-core rules
 
+- **`#![deny(missing_docs)]` is on at the crate root.** Every new `pub` item, including struct fields, enum variants, and macro-generated newtypes, needs a `///` rustdoc line or the crate refuses to compile. Plans that paste ready-to-compile code must include the doc comments.
 - **Errors use `thiserror`, one enum per logical boundary** (input parsing, constraint validation, scheduling). No `anyhow` in `solver-core`; a library erases type information when it boxes, and the backend wants to match on specific failure modes.
 
     ```rust
@@ -76,4 +77,5 @@ Bare `solver` scope only when a paired change genuinely spans both crates (e.g.,
 
 - ADR 0001: monorepo with Cargo and uv workspaces.
 - ADR 0002: solver split into `solver-core` and `solver-py`.
+- Branch `archive/v2` (not merged) holds a prior scheduler iteration under `scheduler/` with LAHC local search, construction + optimisation phases, and a richer violation taxonomy (`ViolationKind::TeacherConflict`, `TeacherGap`, etc.). Useful reference for follow-ups: First-Fit Decreasing ordering, optimisation phase, structured violation names.
 - `docs/superpowers/OPEN_THINGS.md`: current sprint items and cross-entity validation debate.
