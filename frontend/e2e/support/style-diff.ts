@@ -137,6 +137,11 @@ async function captureStates(
   await descriptor.locator.hover({ timeout: 2_000 });
   await page.mouse.down();
   const active = await snapshotStyle(descriptor.locator, STRUCTURAL_PROPERTIES);
+  // Move the pointer off the element before releasing so the browser does not
+  // fire a click event. Snapshotting :active would otherwise trigger navigation
+  // (anchors), form submission (buttons inside a form), or destructive handlers
+  // like logout, and break subsequent tests that share this browser context.
+  await page.mouse.move(0, 0);
   await page.mouse.up();
 
   await resetInteractionState(page);
