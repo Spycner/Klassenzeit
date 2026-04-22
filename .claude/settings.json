@@ -25,13 +25,16 @@
       "Bash(cargo test:*)",
       "Bash(cargo check:*)",
       "Bash(cargo clippy:*)",
+      "Bash(cargo nextest:*)",
       "Bash(mise exec -- pnpm exec tsc --noEmit)",
       "Bash(mise exec -- pnpm vitest run *)",
       "Bash(mise exec -- actionlint)",
       "Bash(mise exec -- actionlint *)",
       "Bash(mise run check:actions)",
       "Bash(mise run check:commit-types)",
-      "Bash(git fetch *)"
+      "Bash(mise tasks)",
+      "Bash(git fetch *)",
+      "Bash(python3 .claude/commands/post_brainstorm_comments.py *)"
     ]
   }
 }
