@@ -2,7 +2,26 @@
 
 #![deny(missing_docs)]
 
-/// Reverse the characters in a string.
+pub mod error;
+pub mod ids;
+pub(crate) mod index;
+pub mod json;
+pub mod solve;
+pub mod types;
+pub mod validate;
+
+pub use error::Error;
+pub use ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId};
+pub use json::{error_envelope_json, solve_json};
+pub use solve::solve;
+pub use types::{
+    Lesson, Placement, Problem, Room, RoomBlockedTime, RoomSubjectSuitability, SchoolClass,
+    Solution, Subject, Teacher, TeacherBlockedTime, TeacherQualification, TimeBlock, Violation,
+    ViolationKind,
+};
+
+/// Reverse the characters in a string. Legacy stub; removed in sprint step 2 when
+/// `solve_json` replaces it as the `solver-py` entrypoint.
 pub fn reverse_chars(s: &str) -> String {
     s.chars().rev().collect()
 }

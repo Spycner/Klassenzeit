@@ -12,15 +12,15 @@ Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes 
 
 ## solver-core rules
 
+- **`#![deny(missing_docs)]` is on at the crate root.** Every new `pub` item, including struct fields, enum variants, and macro-generated newtypes, needs a `///` rustdoc line or the crate refuses to compile. Plans that paste ready-to-compile code must include the doc comments.
 - **Errors use `thiserror`, one enum per logical boundary** (input parsing, constraint validation, scheduling). No `anyhow` in `solver-core`; a library erases type information when it boxes, and the backend wants to match on specific failure modes.
 
     ```rust
     #[derive(Debug, thiserror::Error)]
+    #[non_exhaustive]
     pub enum Error {
         #[error("input: {0}")]
         Input(String),
-        #[error("infeasible at step {step}: {reason}")]
-        Infeasible { step: &'static str, reason: String },
     }
     ```
 
@@ -40,7 +40,7 @@ Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes 
     }
     ```
 
-- **Errors map explicitly.** `solver_core::Error` to `PyValueError` for client mistakes (bad input shape), `PyRuntimeError` for solver-internal failures (infeasible, timeout, internal invariant violation). Use `From` impls or a small adapter; never `anyhow`.
+- **Errors map explicitly.** `solver_core::Error` to `PyValueError` for client mistakes (bad input shape), `PyRuntimeError` for solver-internal failures (timeout, internal invariant violation). Placement failures are not errors: they come back as `Violation` entries inside the `Solution`, so the wrapper returns them as normal data and the Python caller decides how to surface them. Use `From` impls or a small adapter for error paths; never `anyhow`.
 - **Python tests exercise the binding contract, not the algorithm.** Tests at `solver/solver-py/tests/test_*.py` cover encoding, GIL release, error conversion. Narrow exception: a regression test for a bug that is binding-specific (e.g., float NaN handling across PyO3).
 - **Maturin dev loop.**
     - Source-only edit in `solver-core` or `solver-py/src/lib.rs`: `mise run solver:rebuild` (wraps `uvx maturin develop --uv -m solver/solver-py/Cargo.toml`, seconds).
@@ -77,4 +77,5 @@ Bare `solver` scope only when a paired change genuinely spans both crates (e.g.,
 
 - ADR 0001: monorepo with Cargo and uv workspaces.
 - ADR 0002: solver split into `solver-core` and `solver-py`.
+- Branch `archive/v2` (not merged) holds a prior scheduler iteration under `scheduler/` with LAHC local search, construction + optimisation phases, and a richer violation taxonomy (`ViolationKind::TeacherConflict`, `TeacherGap`, etc.). Useful reference for follow-ups: First-Fit Decreasing ordering, optimisation phase, structured violation names.
 - `docs/superpowers/OPEN_THINGS.md`: current sprint items and cross-entity validation debate.
