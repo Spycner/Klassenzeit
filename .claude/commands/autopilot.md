@@ -33,7 +33,7 @@ Every `/autopilot` run must call the `Skill` tool, not read a skill file, not re
 | 6 | `claude-md-management:claude-md-improver` | Audit the CLAUDE.md files after revision |
 | 10 | `claude-md-management:revise-claude-md` | Capture post-CI learnings that step 6 couldn't see |
 | 10 | `claude-md-management:claude-md-improver` | Second audit pass |
-| 10 | `less-permission-prompts` | Scan the transcript, tighten `.claude/settings.json` |
+| 10 | `fewer-permission-prompts` | Scan the transcript, tighten `.claude/settings.json` |
 
 If a listed skill is unavailable in the current environment, say so explicitly in the end-of-turn summary and skip only that entry. Never silently drop a row.
 
@@ -157,7 +157,7 @@ Only after the audit passes:
 
 ### 10. Self-review + improvement pass
 
-**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`, then `less-permission-prompts`. All three via the `Skill` tool. Let each skill do its own work; do not pre-synthesize what they would say.
+**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`, then `fewer-permission-prompts`. All three via the `Skill` tool. Let each skill do its own work; do not pre-synthesize what they would say. If `fewer-permission-prompts` edits `.claude/settings.json`, that edit must be committed — not left in the working tree. Stage it on a fresh `chore/...` branch off master (not the feature branch the user is about to merge), commit as `chore(settings): allowlist <...>`, and open a separate PR. Same rule applies to the autopilot.md edits below.
 
 After that, reflect:
 
