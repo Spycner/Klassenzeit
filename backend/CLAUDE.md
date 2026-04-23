@@ -23,6 +23,8 @@ Stack: FastAPI + SQLAlchemy async, Alembic, Pydantic. Served under `klassenzeit_
 ## Data access
 
 - **No raw SQL outside the abstraction layer.** All queries go through SQLAlchemy (or whatever repository layer lands later). If raw SQL is unavoidable, it lives inside the data-access module, never in route handlers or business logic.
+- **Alembic autogenerate style drift.** `alembic revision --autogenerate` emits `typing.Sequence` and `typing.Union[X, Y]` imports. Repo style is `collections.abc.Sequence` + PEP 604 unions (`X | Y`). Tidy the new revision file before committing; `ruff` does not flag it.
+- **`AsyncSession.execute(delete/update).rowcount`.** `ty` sees the return as `Result[Any]`; `.rowcount` only exists on runtime `CursorResult`. Access it via `int(getattr(result, "rowcount", 0) or 0)`. Pattern in `auth/sessions.py:66-76`.
 
 ## Testing
 

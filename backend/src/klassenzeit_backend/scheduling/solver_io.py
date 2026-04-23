@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from klassenzeit_backend.db.models.lesson import Lesson
 from klassenzeit_backend.db.models.room import (
@@ -22,6 +22,7 @@ from klassenzeit_backend.db.models.room import (
     RoomAvailability,
     RoomSubjectSuitability,
 )
+from klassenzeit_backend.db.models.scheduled_lesson import ScheduledLesson
 from klassenzeit_backend.db.models.school_class import SchoolClass
 from klassenzeit_backend.db.models.subject import Subject
 from klassenzeit_backend.db.models.teacher import (
@@ -30,6 +31,7 @@ from klassenzeit_backend.db.models.teacher import (
     TeacherQualification,
 )
 from klassenzeit_backend.db.models.week_scheme import TimeBlock
+from klassenzeit_backend.scheduling.schemas.schedule import PlacementResponse
 from klassenzeit_solver import solve_json as _solve_json
 
 if TYPE_CHECKING:
@@ -282,3 +284,95 @@ async def run_solve(problem_json: str, school_class_id: UUID, input_counts: dict
         },
     )
     return solution
+
+
+async def persist_solution_for_class(
+    db: AsyncSession,
+    class_id: UUID,
+    filtered: dict,
+) -> None:
+    """Replace this class's persisted placements with the filtered solver output.
+
+    Deletes every ``scheduled_lessons`` row whose ``lesson_id`` belongs to the
+    class, then inserts one row per placement in ``filtered["placements"]``.
+    Runs inside the caller's transaction; does not commit.
+
+    Args:
+        db: The ambient async session (committed by the route handler on
+            successful exit).
+        class_id: UUID of the class whose placements are being replaced.
+        filtered: The solver output already narrowed to this class via
+            :func:`filter_solution_for_class`. Only ``filtered["placements"]``
+            is read; violations are ignored.
+    """
+    lesson_ids_subquery = select(Lesson.id).where(Lesson.school_class_id == class_id)
+    delete_result = await db.execute(
+        delete(ScheduledLesson).where(ScheduledLesson.lesson_id.in_(lesson_ids_subquery))
+    )
+    # rowcount is available on CursorResult returned by DML statements;
+    # ty sees Result[Any] (the base class), so we access it via getattr.
+    deleted_count = int(getattr(delete_result, "rowcount", 0) or 0)
+
+    new_rows = [
+        ScheduledLesson(
+            lesson_id=UUID(p["lesson_id"]),
+            time_block_id=UUID(p["time_block_id"]),
+            room_id=UUID(p["room_id"]),
+        )
+        for p in filtered["placements"]
+    ]
+    if new_rows:
+        db.add_all(new_rows)
+
+    logger.info(
+        "schedule.persist.done",
+        extra={
+            "school_class_id": str(class_id),
+            "rows_deleted": deleted_count,
+            "rows_inserted": len(new_rows),
+        },
+    )
+
+
+async def read_schedule_for_class(
+    db: AsyncSession,
+    class_id: UUID,
+) -> list[PlacementResponse]:
+    """Return the class's persisted placements, raising 404 if the class is missing.
+
+    Args:
+        db: The ambient async session.
+        class_id: UUID of the class to read.
+
+    Returns:
+        A list of :class:`PlacementResponse` values; empty if the class has no
+        persisted schedule yet.
+
+    Raises:
+        HTTPException: 404 if the class doesn't exist. The empty-schedule case
+            is distinguished by returning an empty list.
+    """
+    cls = await db.get(SchoolClass, class_id)
+    if cls is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
+
+    rows = (
+        (
+            await db.execute(
+                select(ScheduledLesson)
+                .join(Lesson, Lesson.id == ScheduledLesson.lesson_id)
+                .where(Lesson.school_class_id == class_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    return [
+        PlacementResponse(
+            lesson_id=row.lesson_id,
+            time_block_id=row.time_block_id,
+            room_id=row.room_id,
+        )
+        for row in rows
+    ]
