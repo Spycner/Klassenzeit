@@ -33,7 +33,7 @@ Every `/autopilot` run must call the `Skill` tool, not read a skill file, not re
 | 6 | `claude-md-management:claude-md-improver` | Audit the CLAUDE.md files after revision |
 | 10 | `claude-md-management:revise-claude-md` | Capture post-CI learnings that step 6 couldn't see |
 | 10 | `claude-md-management:claude-md-improver` | Second audit pass |
-| 10 | `less-permission-prompts` | Scan the transcript, tighten `.claude/settings.json` |
+| 10 | `fewer-permission-prompts` | Scan the transcript, tighten `.claude/settings.json` |
 
 If a listed skill is unavailable in the current environment, say so explicitly in the end-of-turn summary and skip only that entry. Never silently drop a row.
 
