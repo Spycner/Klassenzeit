@@ -9,6 +9,7 @@ autogenerate.
 from klassenzeit_backend.db.models.class_group import ClassGroup
 from klassenzeit_backend.db.models.lesson import Lesson
 from klassenzeit_backend.db.models.room import Room, RoomAvailability, RoomSubjectSuitability
+from klassenzeit_backend.db.models.scheduled_lesson import ScheduledLesson
 from klassenzeit_backend.db.models.school_class import SchoolClass
 from klassenzeit_backend.db.models.session import UserSession
 from klassenzeit_backend.db.models.stundentafel import Stundentafel, StundentafelEntry
@@ -23,6 +24,7 @@ __all__ = [
     "Room",
     "RoomAvailability",
     "RoomSubjectSuitability",
+    "ScheduledLesson",
     "SchoolClass",
     "Stundentafel",
     "StundentafelEntry",
