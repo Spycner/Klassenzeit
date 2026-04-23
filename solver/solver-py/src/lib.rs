@@ -2,18 +2,22 @@
 
 #![deny(missing_docs)]
 
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
-/// Reverse the characters in a string (PyO3 wrapper).
+/// Solve a timetable problem supplied as a JSON string and return the resulting
+/// Solution as a JSON string. Releases the GIL during the call so parallel
+/// Python threads are not serialised behind the interpreter lock.
 #[pyfunction]
-#[pyo3(name = "reverse_chars")]
-fn py_reverse_chars(s: &str) -> String {
-    solver_core::reverse_chars(s)
+#[pyo3(name = "solve_json")]
+fn py_solve_json(py: Python<'_>, problem_json: &str) -> PyResult<String> {
+    py.detach(|| solver_core::solve_json(problem_json))
+        .map_err(|e| PyValueError::new_err(e.to_string()))
 }
 
 /// Python module exposing solver-core functions.
 #[pymodule]
 fn _rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(py_reverse_chars, m)?)?;
+    m.add_function(wrap_pyfunction!(py_solve_json, m)?)?;
     Ok(())
 }

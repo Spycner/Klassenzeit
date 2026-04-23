@@ -1,5 +1,5 @@
 """Python bindings for the Klassenzeit constraint solver."""
 
-from ._rust import reverse_chars
+from ._rust import solve_json
 
-__all__ = ["reverse_chars"]
+__all__ = ["solve_json"]

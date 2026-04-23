@@ -1,23 +1,99 @@
-"""Smoke tests for the klassenzeit_solver PyO3 bindings.
+"""Contract tests for the klassenzeit_solver PyO3 binding.
 
-These tests assert the binding contract (types, values, error propagation),
-not solver logic. Solver logic is tested in Rust via solver-core.
+These exercise the wrapper layer: JSON marshalling, error conversion, and GIL
+release. They are intentionally thin — the algorithm is covered by
+`solver-core`'s Rust tests.
 """
 
-from klassenzeit_solver import reverse_chars
+import json
+import threading
+import time
+import uuid
+
+import pytest
+
+from klassenzeit_solver import solve_json
 
 
-def test_reverse_chars_basic() -> None:
-    assert reverse_chars("hello") == "olleh"
+def _uuid(n: int) -> str:
+    return str(uuid.UUID(bytes=bytes([n]) * 16))
 
 
-def test_reverse_chars_empty() -> None:
-    assert reverse_chars("") == ""
+def _minimal_problem() -> dict:
+    tb = _uuid(10)
+    teacher = _uuid(20)
+    room = _uuid(30)
+    subject = _uuid(40)
+    class_id = _uuid(50)
+    lesson = _uuid(60)
+    return {
+        "time_blocks": [{"id": tb, "day_of_week": 0, "position": 0}],
+        "teachers": [{"id": teacher, "max_hours_per_week": 5}],
+        "rooms": [{"id": room}],
+        "subjects": [{"id": subject}],
+        "school_classes": [{"id": class_id}],
+        "lessons": [
+            {
+                "id": lesson,
+                "school_class_id": class_id,
+                "subject_id": subject,
+                "teacher_id": teacher,
+                "hours_per_week": 1,
+            }
+        ],
+        "teacher_qualifications": [{"teacher_id": teacher, "subject_id": subject}],
+        "teacher_blocked_times": [],
+        "room_blocked_times": [],
+        "room_subject_suitabilities": [],
+    }
 
 
-def test_reverse_chars_unicode() -> None:
-    assert reverse_chars("äöü") == "üöä"
+def test_solve_json_minimal_problem_round_trips() -> None:
+    result = json.loads(solve_json(json.dumps(_minimal_problem())))
+    assert len(result["placements"]) == 1
+    assert result["violations"] == []
 
 
-def test_reverse_chars_returns_str() -> None:
-    assert isinstance(reverse_chars("abc"), str)
+def test_solve_json_raises_value_error_on_malformed_json() -> None:
+    with pytest.raises(ValueError):
+        solve_json("not json")
+
+
+def test_solve_json_raises_value_error_on_empty_time_blocks() -> None:
+    problem = _minimal_problem()
+    problem["time_blocks"] = []
+    with pytest.raises(ValueError):
+        solve_json(json.dumps(problem))
+
+
+def test_solve_json_releases_gil() -> None:
+    """Two threads solving in parallel should not serialise on the GIL."""
+
+    problem_json = json.dumps(_minimal_problem())
+
+    def _solve_once() -> None:
+        # Iteration count chosen so solve work dominates thread-spawn overhead
+        # (single-solve is ~55us on the minimal problem; 2000 iterations gives
+        # ~100ms of measurable work per thread, well above scheduler jitter).
+        for _ in range(2000):
+            solve_json(problem_json)
+
+    # Warm up to exclude maturin/binding import overhead.
+    _solve_once()
+
+    single_start = time.perf_counter()
+    _solve_once()
+    single_duration = time.perf_counter() - single_start
+
+    parallel_start = time.perf_counter()
+    threads = [threading.Thread(target=_solve_once) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    parallel_duration = time.perf_counter() - parallel_start
+
+    assert parallel_duration < 1.7 * single_duration, (
+        f"parallel solves took {parallel_duration:.3f}s vs single {single_duration:.3f}s; "
+        "GIL likely not released"
+    )

@@ -18,7 +18,6 @@ from klassenzeit_backend.core.settings import get_settings
 from klassenzeit_backend.db.engine import build_engine
 from klassenzeit_backend.scheduling.routes import scheduling_router
 from klassenzeit_backend.testing.mount import include_testing_router_if_enabled
-from klassenzeit_solver import reverse_chars
 
 
 @asynccontextmanager
@@ -55,8 +54,8 @@ health_router = APIRouter(tags=["health"])
 
 @health_router.get("/health")
 async def health() -> dict[str, str]:
-    """Return a simple health-check response with a solver smoke test."""
-    return {"status": "ok", "solver_check": reverse_chars("ok")}
+    """Return a simple health-check response."""
+    return {"status": "ok"}
 
 
 app.include_router(auth_router, prefix="/api")
