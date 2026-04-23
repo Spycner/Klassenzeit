@@ -30,16 +30,18 @@ Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes 
 ## solver-py rules
 
 - **Thin wrappers only.** Every `solver-core` public symbol exposed to Python goes through a `#[pyfunction]` / `#[pyclass]` in `solver-py/src/lib.rs`. The wrapper marshals arguments, forwards, marshals the result back. No algorithm logic in `solver-py`.
-- **Release the GIL on long calls.** Forgetting this serialises every caller behind the interpreter lock; the failure mode is invisible in single-threaded tests.
+- **Release the GIL on long calls.** Forgetting this serialises every caller behind the interpreter lock; the failure mode is invisible in single-threaded tests. PyO3 0.28 renamed `Python::allow_threads` to `Python::detach`; older snippets on the web still show `allow_threads` and no longer compile.
 
     ```rust
     #[pyfunction]
-    fn solve(py: Python<'_>, problem: &str) -> PyResult<String> {
-        py.allow_threads(|| solver_core::solve(problem))
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))
+    #[pyo3(name = "solve_json")]
+    fn py_solve_json(py: Python<'_>, problem: &str) -> PyResult<String> {
+        py.detach(|| solver_core::solve_json(problem))
+            .map_err(|e| PyValueError::new_err(e.to_string()))
     }
     ```
 
+- **Disambiguate the Rust fn name from the Python-facing name** when the Python name already exists as a `solver-core` symbol. `scripts/check_unique_fns.py` in pre-commit rejects two `fn solve_json` definitions across the workspace; the PyO3 attribute `#[pyo3(name = "solve_json")]` on a differently-named Rust wrapper (`py_solve_json`) keeps the Python surface stable without colliding.
 - **Errors map explicitly.** `solver_core::Error` to `PyValueError` for client mistakes (bad input shape), `PyRuntimeError` for solver-internal failures (timeout, internal invariant violation). Placement failures are not errors: they come back as `Violation` entries inside the `Solution`, so the wrapper returns them as normal data and the Python caller decides how to surface them. Use `From` impls or a small adapter for error paths; never `anyhow`.
 - **Python tests exercise the binding contract, not the algorithm.** Tests at `solver/solver-py/tests/test_*.py` cover encoding, GIL release, error conversion. Narrow exception: a regression test for a bug that is binding-specific (e.g., float NaN handling across PyO3).
 - **Maturin dev loop.**
@@ -69,6 +71,7 @@ Bare `solver` scope only when a paired change genuinely spans both crates (e.g.,
 | --- | --- |
 | Rust-only edit in one crate | `cargo nextest run -p <crate>` |
 | Rust-only edit, full workspace | `mise run test:rust` |
+| Targeted check for `solver-py` | `cargo nextest run -p solver-py --no-tests=pass` (crate has no Rust-side tests; nextest exits 1 on empty-run otherwise) |
 | PyO3 signature or stub change | above + `uv run pytest solver/solver-py/tests` |
 | Any commit | `mise run lint` (pre-commit hook runs it anyway; fail fast locally) |
 | Algorithm change | `mise run bench` (placeholder today; criterion benches land with the MVP) |

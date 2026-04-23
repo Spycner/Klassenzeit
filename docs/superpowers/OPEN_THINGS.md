@@ -8,13 +8,14 @@ Items trace back to the specs that introduced them: the [project scaffolding des
 
 Goal: user logs in, enters a small Hessen Grundschule, clicks Generate, sees a timetable. Ordered so each step unblocks the next. Scoped as hard constraints only; soft constraints and heuristics are a later concern.
 
-1. **PyO3 binding + backend endpoint.** `solver-py` exposes `solve(problem_json) -> result_json`; backend adds `POST /api/school-classes/{id}/schedule` that loads entities, shapes them into the solver's input, runs the solver off the event loop (`asyncio.to_thread`), and returns the placement. No persistence yet; just round-trip.
-2. **Placement persistence.** Add a `scheduled_lesson` table (or extend `lesson` with `time_block_id` / `room_id` columns, depending on whether schedule history should survive re-solves); wire `POST /schedule` to upsert; add `GET /api/school-classes/{id}/schedule`.
-3. **Schedule view in the frontend.** New `/schedule` route (or a tab on the class detail) showing a week grid with class / teacher / room filters. Reuses the `kz-ws-grid` CSS that WeekSchemes already uses. Renders a skeleton or empty state until the backend returns a placement; no placeholder data that looks real (see `frontend/CLAUDE.md`).
-4. **Realistic Hessen Grundschule seed.** A one-shot `uv run python -m klassenzeit_backend.seed.demo_grundschule` that creates the week scheme, Stundentafeln for grades 1 to 4, plausible teachers / rooms, and a pair of classes ready to generate lessons + schedule. Also feeds the Playwright E2E. Reference figures captured below.
-5. **E2E smoke test.** One Playwright spec that hits `/login`, runs the seed via a test-only endpoint, clicks through generate-lessons + generate-schedule, and asserts the grid renders.
+Step 1 (PyO3 binding + `POST /api/classes/{id}/schedule` compute endpoint) shipped in the solver-schedule-endpoint PR (April 2026). Remaining steps:
 
-### Hessen Grundschule reference data (for step 4)
+1. **Placement persistence.** Add a `scheduled_lesson` table (or extend `lesson` with `time_block_id` / `room_id` columns, depending on whether schedule history should survive re-solves); wire `POST /schedule` to upsert; add `GET /api/classes/{id}/schedule`.
+2. **Schedule view in the frontend.** New `/schedule` route (or a tab on the class detail) showing a week grid with class / teacher / room filters. Reuses the `kz-ws-grid` CSS that WeekSchemes already uses. Renders a skeleton or empty state until the backend returns a placement; no placeholder data that looks real (see `frontend/CLAUDE.md`).
+3. **Realistic Hessen Grundschule seed.** A one-shot `uv run python -m klassenzeit_backend.seed.demo_grundschule` that creates the week scheme, Stundentafeln for grades 1 to 4, plausible teachers / rooms, and a pair of classes ready to generate lessons + schedule. Also feeds the Playwright E2E. Reference figures captured below.
+4. **E2E smoke test.** One Playwright spec that hits `/login`, runs the seed via a test-only endpoint, clicks through generate-lessons + generate-schedule, and asserts the grid renders.
+
+### Hessen Grundschule reference data (for step 3)
 
 Researched 2026-04-22. Mirrors the actual hessische Stundentafel so screenshots, E2E flows, and demos feel grounded rather than random.
 
@@ -29,8 +30,7 @@ Researched 2026-04-22. Mirrors the actual hessische Stundentafel so screenshots,
 
 Debt the sprint itself will touch, so cheaper to pay upfront than retrofit.
 
-- **Extract `dayShortKey(n: number)` helper before step 4.** Multiple features (`week-schemes-page.tsx`, `teacher-availability-grid.tsx`, `time-blocks-table.tsx`) cast a numeric day index back to a `0 | 1 | 2 | 3 | 4` literal to satisfy typed i18n. Move the cast into a single helper (e.g. `i18n/day-keys.ts` exporting `dayShortKey(n: number)` returning the typed literal or throwing on out-of-range) so the new schedule view uses it from day one instead of adding a fourth cast, and the `frontend/CLAUDE.md` "No `as Foo` assertions" rule holds at call sites. Surfaced during PR #116 review.
-- **Structured logging around the solve boundary.** Not the whole backend this sprint, but wrap the solver call with `logger.info` entries that capture input shape, runtime, and outcome. A solver that silently fails or times out with no trace is the single worst thing to ship, and the fix is two lines. The broader JSON-logging initiative stays deferred under Toolchain below.
+- **Extract `dayShortKey(n: number)` helper before step 3.** Multiple features (`week-schemes-page.tsx`, `teacher-availability-grid.tsx`, `time-blocks-table.tsx`) cast a numeric day index back to a `0 | 1 | 2 | 3 | 4` literal to satisfy typed i18n. Move the cast into a single helper (e.g. `i18n/day-keys.ts` exporting `dayShortKey(n: number)` returning the typed literal or throwing on out-of-range) so the new schedule view uses it from day one instead of adding a fourth cast, and the `frontend/CLAUDE.md` "No `as Foo` assertions" rule holds at call sites. Surfaced during PR #116 review.
 
 ## Acknowledged, not in scope this sprint
 
@@ -114,7 +114,6 @@ Gated on sprint step 4 (`demo_grundschule` seed) so evaluation and weight tuning
 
 ### Toolchain & build friction
 
-- **Remove `reverse_chars` from `solver-core` and `solver-py`.** Step 1 of the sprint (`solver-py` PyO3 binding + FastAPI endpoint) supersedes it. Do the cleanup in that PR: the `/healthz` smoke check in `backend/main.py`, the `.pyi` stubs in `solver-py/python/klassenzeit_solver/`, the stub Python re-export, and the proptest at `solver/solver-core/tests/proptest_reverse.rs` all go with the binding.
 - **`ty` preview status.** Astral's type checker is pre-1.0; spec uses it anyway to keep the Python toolchain Astral-consistent. Revisit if it proves unstable.
 - **`pytest-xdist` parallelization for DB tests.** Sub-millisecond rollback teardown makes sequential runs fine at current suite size. Worker-ID-keyed test databases become worthwhile once the suite is big enough to matter.
 - **`pytest-postgresql` or `testcontainers-python` as an alternative to compose-based test infra.** Revisit if onboarding friction emerges.
@@ -136,3 +135,8 @@ Gated on sprint step 4 (`demo_grundschule` seed) so evaluation and weight tuning
 ### Project metadata
 
 - **License.** Deferred. No `license` field in `Cargo.toml`, no `LICENSE` file. Revisit when the project's distribution model (open source vs proprietary vs SaaS) is clearer.
+
+### User Tooling
+Chat interface with Agent that can help with creations, modifications and deletions of entities. As well as see problems with the schedule and suggest fixes.
+
+And of course in general help with the application.
