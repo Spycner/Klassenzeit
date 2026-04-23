@@ -29,7 +29,7 @@ Researched 2026-04-22. Mirrors the actual hessische Stundentafel so screenshots,
 
 Debt the sprint itself will touch, so cheaper to pay upfront than retrofit.
 
-- **Extract `dayShortKey(n: number)` helper before step 1.** Multiple features (`week-schemes-page.tsx`, `teacher-availability-grid.tsx`, `time-blocks-table.tsx`) cast a numeric day index back to a `0 | 1 | 2 | 3 | 4` literal to satisfy typed i18n. Move the cast into a single helper (e.g. `i18n/day-keys.ts` exporting `dayShortKey(n: number)` returning the typed literal or throwing on out-of-range) so the new schedule view uses it from day one instead of adding a fourth cast, and the `frontend/CLAUDE.md` "No `as Foo` assertions" rule holds at call sites. Surfaced during PR #116 review.
+_Nothing currently queued._
 
 ## Acknowledged, not in scope this sprint
 

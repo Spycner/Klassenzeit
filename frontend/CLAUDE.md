@@ -72,7 +72,7 @@ Run from repo root unless noted.
 - **No hardcoded user-visible English or German.** Every JSX text node, `aria-label`, placeholder, toast, and error string goes through `t("…")` with entries in both `en.json` and `de.json`.
 - **No date or number formatting with `toString()`.** Use `Intl.DateTimeFormat` / `Intl.NumberFormat` seeded from `i18n.language`.
 - **`t()` keys are typed against `en.json`** (via `src/i18n/types.d.ts`). Changing a key's shape (string → object, or renaming) breaks every call site at type-check time. Migrate call sites in one pass.
-- **No template-literal keys.** `` t(`prefix.${var}`) `` does not typecheck. Build an array of `{ key, label }` objects where `label` is resolved with a literal key: `t("prefix.foo")`, then render from `label`.
+- **No template-literal keys at call sites.** `` t(`prefix.${var}`) `` with an untyped `var` does not typecheck. Either build an array of `{ key, label }` objects where `label` is resolved with a literal key: `t("prefix.foo")`, or, for a bounded integer domain, extract a helper under `src/i18n/` that returns a template-literal *type* (see `src/i18n/day-keys.ts`'s `dayShortKey` / `dayLongKey`). The helper's internal `as` narrowing is fine because the runtime check proves membership.
 
 ## Accessibility
 

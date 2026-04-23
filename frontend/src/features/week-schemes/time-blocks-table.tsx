@@ -35,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { dayLongKey } from "@/i18n/day-keys";
 import { ApiError } from "@/lib/api-client";
 import {
   type TimeBlock,
@@ -44,15 +45,6 @@ import {
   useWeekSchemeDetail,
 } from "./hooks";
 import { TimeBlockFormSchema, type TimeBlockFormValues } from "./schema";
-
-const DAY_KEYS = ["0", "1", "2", "3", "4"] as const;
-
-type DayKey = (typeof DAY_KEYS)[number];
-
-function longDayKey(day: number): `common.daysLong.${DayKey}` {
-  const key = String(day) as DayKey;
-  return `common.daysLong.${key}`;
-}
 
 export function TimeBlocksTable({ schemeId }: { schemeId: string }) {
   const { t } = useTranslation();
@@ -98,7 +90,7 @@ export function TimeBlocksTable({ schemeId }: { schemeId: string }) {
               {blocks.map((block) => (
                 <TableRow key={block.id}>
                   <TableCell className="py-1.5 font-medium">
-                    {t(longDayKey(block.day_of_week))}
+                    {t(dayLongKey(block.day_of_week))}
                   </TableCell>
                   <TableCell className="py-1.5 text-right font-mono text-[12.5px]">
                     {block.position}
@@ -225,9 +217,9 @@ function TimeBlockFormDialog({ schemeId, mode, onClose }: TimeBlockFormDialogPro
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {DAY_KEYS.map((key) => (
-                        <SelectItem key={key} value={key}>
-                          {t(`common.daysLong.${key}`)}
+                      {[0, 1, 2, 3, 4].map((day) => (
+                        <SelectItem key={day} value={String(day)}>
+                          {t(dayLongKey(day))}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -322,7 +314,7 @@ function DeleteTimeBlockDialog({ schemeId, block, onClose }: DeleteTimeBlockDial
           <DialogTitle>{t("weekSchemes.timeBlocks.deleteTitle")}</DialogTitle>
           <DialogDescription>
             {t("weekSchemes.timeBlocks.deleteDescription", {
-              day: t(longDayKey(block.day_of_week)),
+              day: t(dayLongKey(block.day_of_week)),
               position: block.position,
             })}
           </DialogDescription>
