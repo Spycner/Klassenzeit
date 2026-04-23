@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/empty-state";
 import { Toolbar } from "@/components/toolbar";
 import { Button } from "@/components/ui/button";
+import { dayShortKey } from "@/i18n/day-keys";
 import { cn } from "@/lib/utils";
 import { type TimeBlock, useWeekSchemeDetail, useWeekSchemes, type WeekScheme } from "./hooks";
 import { DeleteWeekSchemeDialog, WeekSchemeFormDialog } from "./week-schemes-dialogs";
@@ -158,7 +159,7 @@ function WeekSchemeGrid({ schemeId }: { schemeId: string }) {
       <div className="kz-ws-cell" data-variant="header" />
       {daysPresent.map((day) => (
         <div key={day} className="kz-ws-cell" data-variant="header">
-          {t(`common.daysShort.${day as 0 | 1 | 2 | 3 | 4}`)}
+          {t(dayShortKey(day))}
         </div>
       ))}
       {positions.map((position) => (

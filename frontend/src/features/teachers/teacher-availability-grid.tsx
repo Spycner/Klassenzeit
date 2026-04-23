@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useWeekSchemeDetail, useWeekSchemes } from "@/features/week-schemes/hooks";
+import { dayLongKey, dayShortKey } from "@/i18n/day-keys";
 import { cn } from "@/lib/utils";
 import {
   type TeacherAvailabilityEntry,
@@ -131,7 +132,7 @@ function TeacherAvailabilitySchemeSection({
             <th className="w-16 p-1 text-left font-medium">{t("common.position")}</th>
             {days.map((d) => (
               <th key={d} className="p-1 text-left font-medium">
-                {t(`common.daysShort.${d}` as "common.daysShort.0")}
+                {t(dayShortKey(d))}
               </th>
             ))}
           </tr>
@@ -144,7 +145,7 @@ function TeacherAvailabilitySchemeSection({
                 const block = byKey.get(`${d}-${p}`);
                 if (!block) return <td key={d} className="p-1" aria-hidden="true" />;
                 const current = statuses.get(block.id) ?? "available";
-                const dayName = t(`common.daysLong.${d}` as "common.daysLong.0");
+                const dayName = t(dayLongKey(d));
                 return (
                   <td key={d} className="p-1">
                     <div className="flex gap-0.5">
