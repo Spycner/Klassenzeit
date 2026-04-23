@@ -14,6 +14,8 @@
       "Bash(mise run db:up)",
       "Bash(mise run db:stop)",
       "Bash(mise run db:migrate)",
+      "Bash(mise run solver:rebuild)",
+      "Bash(mise run e2e)",
       "Bash(uv run ruff check)",
       "Bash(uv run ruff format --check)",
       "Bash(uv run ty check)",
