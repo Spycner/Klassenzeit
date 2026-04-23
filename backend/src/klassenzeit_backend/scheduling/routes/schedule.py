@@ -11,7 +11,7 @@ from klassenzeit_backend.auth.dependencies import require_admin
 from klassenzeit_backend.db.models.user import User
 from klassenzeit_backend.db.session import get_session
 from klassenzeit_backend.scheduling import solver_io
-from klassenzeit_backend.scheduling.schemas.schedule import ScheduleResponse
+from klassenzeit_backend.scheduling.schemas.schedule import ScheduleReadResponse, ScheduleResponse
 
 router = APIRouter(tags=["schedule"])
 logger = logging.getLogger(__name__)
@@ -51,3 +51,27 @@ async def generate_schedule_for_class(
     )
     await solver_io.persist_solution_for_class(db, class_id, filtered)
     return ScheduleResponse.model_validate(filtered)
+
+
+@router.get("/classes/{class_id}/schedule")
+async def read_schedule_for_class_route(
+    class_id: uuid.UUID,
+    _admin: Annotated[User, Depends(require_admin)],
+    db: Annotated[AsyncSession, Depends(get_session)],
+) -> ScheduleReadResponse:
+    """Return the persisted placements for this class.
+
+    Args:
+        class_id: UUID path parameter identifying the school class.
+        _admin: Injected admin user (enforces authentication).
+        db: Injected async database session.
+
+    Returns:
+        ``ScheduleReadResponse`` with the class's persisted placements. Empty
+        ``placements`` means the class exists but has never been scheduled.
+
+    Raises:
+        HTTPException: 404 if the class doesn't exist.
+    """
+    placements = await solver_io.read_schedule_for_class(db, class_id)
+    return ScheduleReadResponse(placements=placements)

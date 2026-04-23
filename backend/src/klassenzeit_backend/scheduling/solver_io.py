@@ -31,6 +31,7 @@ from klassenzeit_backend.db.models.teacher import (
     TeacherQualification,
 )
 from klassenzeit_backend.db.models.week_scheme import TimeBlock
+from klassenzeit_backend.scheduling.schemas.schedule import PlacementResponse
 from klassenzeit_solver import solve_json as _solve_json
 
 if TYPE_CHECKING:
@@ -331,3 +332,47 @@ async def persist_solution_for_class(
             "rows_inserted": len(new_rows),
         },
     )
+
+
+async def read_schedule_for_class(
+    db: AsyncSession,
+    class_id: UUID,
+) -> list[PlacementResponse]:
+    """Return the class's persisted placements, raising 404 if the class is missing.
+
+    Args:
+        db: The ambient async session.
+        class_id: UUID of the class to read.
+
+    Returns:
+        A list of :class:`PlacementResponse` values; empty if the class has no
+        persisted schedule yet.
+
+    Raises:
+        HTTPException: 404 if the class doesn't exist. The empty-schedule case
+            is distinguished by returning an empty list.
+    """
+    cls = await db.get(SchoolClass, class_id)
+    if cls is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
+
+    rows = (
+        (
+            await db.execute(
+                select(ScheduledLesson)
+                .join(Lesson, Lesson.id == ScheduledLesson.lesson_id)
+                .where(Lesson.school_class_id == class_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    return [
+        PlacementResponse(
+            lesson_id=row.lesson_id,
+            time_block_id=row.time_block_id,
+            room_id=row.room_id,
+        )
+        for row in rows
+    ]

@@ -8,12 +8,17 @@ test_schedule_route.py; those tests run after Task 3 adds the GET endpoint.
 import uuid
 from datetime import time
 
+import pytest
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.db.models.lesson import Lesson
 from klassenzeit_backend.db.models.scheduled_lesson import ScheduledLesson
-from klassenzeit_backend.scheduling.solver_io import persist_solution_for_class
+from klassenzeit_backend.scheduling.solver_io import (
+    persist_solution_for_class,
+    read_schedule_for_class,
+)
 
 
 async def _seed_class_with_lesson(
@@ -241,3 +246,100 @@ async def test_persist_class_a_does_not_touch_class_b_rows(
     rows = (await db_session.execute(select(ScheduledLesson))).scalars().all()
     assert len(rows) == 1
     assert rows[0].lesson_id == lesson_b_id
+
+
+async def test_read_returns_empty_list_for_never_scheduled_class(
+    db_session: AsyncSession,
+    create_subject,
+    create_week_scheme,
+    create_time_block,
+    create_room,
+    create_teacher,
+    create_stundentafel,
+    create_school_class,
+) -> None:
+    class_id, _lesson_id, _tb_id, _room_id = await _seed_class_with_lesson(
+        db_session,
+        create_subject,
+        create_week_scheme,
+        create_time_block,
+        create_room,
+        create_teacher,
+        create_stundentafel,
+        create_school_class,
+        class_name="1a-read-empty",
+    )
+    result = await read_schedule_for_class(db_session, class_id)
+    assert result == []
+
+
+async def test_read_returns_only_rows_for_requested_class(
+    db_session: AsyncSession,
+    create_subject,
+    create_week_scheme,
+    create_time_block,
+    create_room,
+    create_teacher,
+    create_stundentafel,
+    create_school_class,
+) -> None:
+    class_a_id, lesson_a_id, tb_a_id, room_a_id = await _seed_class_with_lesson(
+        db_session,
+        create_subject,
+        create_week_scheme,
+        create_time_block,
+        create_room,
+        create_teacher,
+        create_stundentafel,
+        create_school_class,
+        class_name="1a-read-scope-A",
+    )
+    class_b_id, lesson_b_id, tb_b_id, room_b_id = await _seed_class_with_lesson(
+        db_session,
+        create_subject,
+        create_week_scheme,
+        create_time_block,
+        create_room,
+        create_teacher,
+        create_stundentafel,
+        create_school_class,
+        class_name="1b-read-scope-B",
+    )
+    await persist_solution_for_class(
+        db_session,
+        class_a_id,
+        {
+            "placements": [
+                {
+                    "lesson_id": str(lesson_a_id),
+                    "time_block_id": str(tb_a_id),
+                    "room_id": str(room_a_id),
+                },
+            ],
+            "violations": [],
+        },
+    )
+    await persist_solution_for_class(
+        db_session,
+        class_b_id,
+        {
+            "placements": [
+                {
+                    "lesson_id": str(lesson_b_id),
+                    "time_block_id": str(tb_b_id),
+                    "room_id": str(room_b_id),
+                },
+            ],
+            "violations": [],
+        },
+    )
+    await db_session.flush()
+    result_a = await read_schedule_for_class(db_session, class_a_id)
+    assert len(result_a) == 1
+    assert result_a[0].lesson_id == lesson_a_id
+
+
+async def test_read_raises_404_for_missing_class(db_session: AsyncSession) -> None:
+    with pytest.raises(HTTPException) as excinfo:
+        await read_schedule_for_class(db_session, uuid.uuid4())
+    assert excinfo.value.status_code == 404

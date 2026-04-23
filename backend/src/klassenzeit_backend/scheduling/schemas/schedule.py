@@ -32,3 +32,14 @@ class ScheduleResponse(BaseModel):
 
     placements: list[PlacementResponse]
     violations: list[ViolationResponse]
+
+
+class ScheduleReadResponse(BaseModel):
+    """Persisted placements for `GET /api/classes/{id}/schedule`.
+
+    Deliberately omits ``violations``: they are per-solve diagnostics and are
+    not persisted, so returning an empty list here would misrepresent the
+    absence of storage.
+    """
+
+    placements: list[PlacementResponse]
