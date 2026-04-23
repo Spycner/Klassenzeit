@@ -1,0 +1,550 @@
+"""Tests for solver_io.py — Problem building, solve runner, per-class filter."""
+
+import json
+import logging
+import uuid
+from collections.abc import Awaitable, Callable
+from datetime import time
+from typing import NamedTuple
+from uuid import UUID, uuid4
+
+import pytest
+from fastapi import HTTPException
+from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from klassenzeit_backend.db.models.lesson import Lesson
+from klassenzeit_backend.db.models.room import Room, RoomAvailability
+from klassenzeit_backend.db.models.school_class import SchoolClass
+from klassenzeit_backend.db.models.stundentafel import Stundentafel
+from klassenzeit_backend.db.models.subject import Subject
+from klassenzeit_backend.db.models.teacher import (
+    Teacher,
+    TeacherAvailability,
+    TeacherQualification,
+)
+from klassenzeit_backend.db.models.week_scheme import TimeBlock, WeekScheme
+from klassenzeit_backend.scheduling.solver_io import (
+    build_problem_json,
+    filter_solution_for_class,
+    run_solve,
+)
+
+# Type aliases matching the factory fixtures defined in conftest.py
+type CreateSubjectFn = Callable[..., Awaitable[Subject]]
+type CreateWeekSchemeFn = Callable[..., Awaitable[WeekScheme]]
+type CreateTimeBlockFn = Callable[..., Awaitable[TimeBlock]]
+type CreateRoomFn = Callable[..., Awaitable[Room]]
+type CreateTeacherFn = Callable[..., Awaitable[Teacher]]
+type CreateStundentafelFn = Callable[..., Awaitable[Stundentafel]]
+type CreateSchoolClassFn = Callable[..., Awaitable[SchoolClass]]
+
+
+def test_filter_solution_for_class_keeps_only_class_lessons() -> None:
+    class_lesson = uuid4()
+    other_lesson = uuid4()
+    solution = {
+        "placements": [
+            {
+                "lesson_id": str(class_lesson),
+                "time_block_id": str(uuid4()),
+                "room_id": str(uuid4()),
+            },
+            {
+                "lesson_id": str(other_lesson),
+                "time_block_id": str(uuid4()),
+                "room_id": str(uuid4()),
+            },
+        ],
+        "violations": [],
+    }
+    filtered = filter_solution_for_class(solution, {class_lesson})
+    assert len(filtered["placements"]) == 1
+    assert UUID(filtered["placements"][0]["lesson_id"]) == class_lesson
+
+
+def test_filter_solution_for_class_drops_violations_for_other_classes() -> None:
+    class_lesson = uuid4()
+    other_lesson = uuid4()
+    solution = {
+        "placements": [],
+        "violations": [
+            {
+                "kind": "unplaced_lesson",
+                "lesson_id": str(class_lesson),
+                "hour_index": 0,
+                "message": "x",
+            },
+            {
+                "kind": "unplaced_lesson",
+                "lesson_id": str(other_lesson),
+                "hour_index": 0,
+                "message": "y",
+            },
+        ],
+    }
+    filtered = filter_solution_for_class(solution, {class_lesson})
+    assert len(filtered["violations"]) == 1
+    assert UUID(filtered["violations"][0]["lesson_id"]) == class_lesson
+
+
+def test_filter_solution_for_class_empty_input() -> None:
+    filtered = filter_solution_for_class({"placements": [], "violations": []}, set())
+    assert filtered == {"placements": [], "violations": []}
+
+
+# ─── build_problem_json tests ──────────────────────────────────────────────
+
+
+class _SeededSchool(NamedTuple):
+    """Bundle of ORM instances returned by ``_seed_minimal_school``."""
+
+    subject: Subject
+    scheme: WeekScheme
+    block: TimeBlock
+    room: Room
+    teacher: Teacher
+    tafel: Stundentafel
+    cls: SchoolClass
+    lesson: Lesson
+
+
+async def _seed_minimal_school(
+    db_session: AsyncSession,
+    *,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> _SeededSchool:
+    """Seed one of each solver entity, wire up a single lesson + qualification."""
+    subject = await create_subject()
+    scheme = await create_week_scheme()
+    block = await create_time_block(week_scheme_id=scheme.id, position=1)
+    room = await create_room()
+    teacher = await create_teacher()
+    tafel = await create_stundentafel()
+    cls = await create_school_class(stundentafel_id=tafel.id, week_scheme_id=scheme.id)
+    lesson = Lesson(
+        school_class_id=cls.id,
+        subject_id=subject.id,
+        teacher_id=teacher.id,
+        hours_per_week=1,
+        preferred_block_size=1,
+    )
+    db_session.add(lesson)
+    await db_session.flush()
+    qualification = TeacherQualification(teacher_id=teacher.id, subject_id=subject.id)
+    db_session.add(qualification)
+    await db_session.flush()
+    return _SeededSchool(
+        subject=subject,
+        scheme=scheme,
+        block=block,
+        room=room,
+        teacher=teacher,
+        tafel=tafel,
+        cls=cls,
+        lesson=lesson,
+    )
+
+
+async def test_build_problem_json_returns_populated_shape(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    seeded = await _seed_minimal_school(
+        db_session,
+        create_subject=create_subject,
+        create_week_scheme=create_week_scheme,
+        create_time_block=create_time_block,
+        create_room=create_room,
+        create_teacher=create_teacher,
+        create_stundentafel=create_stundentafel,
+        create_school_class=create_school_class,
+    )
+    cls = seeded.cls
+    lesson = seeded.lesson
+
+    problem_json, class_lesson_ids, counts = await build_problem_json(db_session, cls.id)
+
+    problem = json.loads(problem_json)
+    expected_keys = {
+        "time_blocks",
+        "teachers",
+        "rooms",
+        "subjects",
+        "school_classes",
+        "lessons",
+        "teacher_qualifications",
+        "teacher_blocked_times",
+        "room_blocked_times",
+        "room_subject_suitabilities",
+    }
+    assert set(problem.keys()) == expected_keys
+
+    assert len(problem["time_blocks"]) == 1
+    assert len(problem["teachers"]) == 1
+    assert len(problem["rooms"]) == 1
+    assert len(problem["subjects"]) == 1
+    assert len(problem["school_classes"]) == 1
+    assert len(problem["lessons"]) == 1
+    assert len(problem["teacher_qualifications"]) == 1
+    assert problem["teacher_blocked_times"] == []
+    assert problem["room_blocked_times"] == []
+    assert problem["room_subject_suitabilities"] == []
+
+    assert class_lesson_ids == {lesson.id}
+
+    assert counts == {
+        "time_blocks": 1,
+        "teachers": 1,
+        "rooms": 1,
+        "subjects": 1,
+        "school_classes": 1,
+        "lessons": 1,
+        "teacher_qualifications": 1,
+        "teacher_blocked_times": 0,
+        "room_blocked_times": 0,
+        "room_subject_suitabilities": 0,
+    }
+
+
+async def test_build_problem_json_raises_404_for_unknown_class(
+    db_session: AsyncSession,
+) -> None:
+    with pytest.raises(HTTPException) as excinfo:
+        await build_problem_json(db_session, uuid.uuid4())
+    assert excinfo.value.status_code == 404
+
+
+async def test_build_problem_json_raises_422_when_week_scheme_has_no_time_blocks(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    seeded = await _seed_minimal_school(
+        db_session,
+        create_subject=create_subject,
+        create_week_scheme=create_week_scheme,
+        create_time_block=create_time_block,
+        create_room=create_room,
+        create_teacher=create_teacher,
+        create_stundentafel=create_stundentafel,
+        create_school_class=create_school_class,
+    )
+    cls = seeded.cls
+    scheme = seeded.scheme
+
+    # Drop the only TimeBlock for this scheme.
+    await db_session.execute(delete(TimeBlock).where(TimeBlock.week_scheme_id == scheme.id))
+    await db_session.flush()
+
+    with pytest.raises(HTTPException) as excinfo:
+        await build_problem_json(db_session, cls.id)
+    assert excinfo.value.status_code == 422
+    assert "time_blocks" in excinfo.value.detail.lower()
+
+
+async def test_build_problem_json_raises_422_when_rooms_table_empty(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    seeded = await _seed_minimal_school(
+        db_session,
+        create_subject=create_subject,
+        create_week_scheme=create_week_scheme,
+        create_time_block=create_time_block,
+        create_room=create_room,
+        create_teacher=create_teacher,
+        create_stundentafel=create_stundentafel,
+        create_school_class=create_school_class,
+    )
+    cls = seeded.cls
+
+    # Clear Room table (cascade handles RoomSubjectSuitability / RoomAvailability).
+    await db_session.execute(delete(Room))
+    await db_session.flush()
+
+    with pytest.raises(HTTPException) as excinfo:
+        await build_problem_json(db_session, cls.id)
+    assert excinfo.value.status_code == 422
+    assert "rooms" in excinfo.value.detail.lower()
+
+
+async def test_build_problem_json_raises_422_on_mixed_week_schemes(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    # Base seed gives class A on scheme X with a lesson.
+    seeded = await _seed_minimal_school(
+        db_session,
+        create_subject=create_subject,
+        create_week_scheme=create_week_scheme,
+        create_time_block=create_time_block,
+        create_room=create_room,
+        create_teacher=create_teacher,
+        create_stundentafel=create_stundentafel,
+        create_school_class=create_school_class,
+    )
+    cls_a = seeded.cls
+    teacher = seeded.teacher
+    tafel = seeded.tafel
+
+    # Seed class B on a different week-scheme Y, with its own subject + lesson.
+    scheme_y = await create_week_scheme()
+    await create_time_block(week_scheme_id=scheme_y.id, position=1)
+    cls_b = await create_school_class(stundentafel_id=tafel.id, week_scheme_id=scheme_y.id)
+    subject_b = await create_subject()
+    lesson_b = Lesson(
+        school_class_id=cls_b.id,
+        subject_id=subject_b.id,
+        teacher_id=teacher.id,
+        hours_per_week=1,
+        preferred_block_size=1,
+    )
+    db_session.add(lesson_b)
+    await db_session.flush()
+
+    with pytest.raises(HTTPException) as excinfo:
+        await build_problem_json(db_session, cls_a.id)
+    assert excinfo.value.status_code == 422
+    assert "week_scheme" in excinfo.value.detail
+
+
+async def test_build_problem_json_transforms_teacher_availability_status_blocked(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    seeded = await _seed_minimal_school(
+        db_session,
+        create_subject=create_subject,
+        create_week_scheme=create_week_scheme,
+        create_time_block=create_time_block,
+        create_room=create_room,
+        create_teacher=create_teacher,
+        create_stundentafel=create_stundentafel,
+        create_school_class=create_school_class,
+    )
+    cls = seeded.cls
+    teacher = seeded.teacher
+    block = seeded.block
+
+    db_session.add(
+        TeacherAvailability(teacher_id=teacher.id, time_block_id=block.id, status="blocked")
+    )
+    await db_session.flush()
+
+    problem_json, _, _ = await build_problem_json(db_session, cls.id)
+    problem = json.loads(problem_json)
+
+    assert len(problem["teacher_blocked_times"]) == 1
+    entry = problem["teacher_blocked_times"][0]
+    assert entry == {
+        "teacher_id": str(teacher.id),
+        "time_block_id": str(block.id),
+    }
+
+
+async def test_build_problem_json_teacher_availability_available_is_not_blocked(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    seeded = await _seed_minimal_school(
+        db_session,
+        create_subject=create_subject,
+        create_week_scheme=create_week_scheme,
+        create_time_block=create_time_block,
+        create_room=create_room,
+        create_teacher=create_teacher,
+        create_stundentafel=create_stundentafel,
+        create_school_class=create_school_class,
+    )
+    cls = seeded.cls
+    teacher = seeded.teacher
+    block = seeded.block
+
+    db_session.add(
+        TeacherAvailability(teacher_id=teacher.id, time_block_id=block.id, status="available")
+    )
+    await db_session.flush()
+
+    problem_json, _, _ = await build_problem_json(db_session, cls.id)
+    problem = json.loads(problem_json)
+
+    assert problem["teacher_blocked_times"] == []
+
+
+async def test_build_problem_json_transforms_room_availability_whitelist(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    # Base seed: one TimeBlock at position 1 already. Add two more at positions 2 and 3.
+    seeded = await _seed_minimal_school(
+        db_session,
+        create_subject=create_subject,
+        create_week_scheme=create_week_scheme,
+        create_time_block=create_time_block,
+        create_room=create_room,
+        create_teacher=create_teacher,
+        create_stundentafel=create_stundentafel,
+        create_school_class=create_school_class,
+    )
+    cls = seeded.cls
+    room = seeded.room
+    scheme = seeded.scheme
+    block_p1 = seeded.block
+
+    block_p2 = await create_time_block(
+        week_scheme_id=scheme.id,
+        position=2,
+        start_time=time(8, 45),
+        end_time=time(9, 30),
+    )
+    block_p3 = await create_time_block(
+        week_scheme_id=scheme.id,
+        position=3,
+        start_time=time(9, 30),
+        end_time=time(10, 15),
+    )
+
+    # Whitelist the room for position 1 only.
+    db_session.add(RoomAvailability(room_id=room.id, time_block_id=block_p1.id))
+    await db_session.flush()
+
+    problem_json, _, _ = await build_problem_json(db_session, cls.id)
+    problem = json.loads(problem_json)
+
+    blocked = problem["room_blocked_times"]
+    assert len(blocked) == 2
+    blocked_time_block_ids = {entry["time_block_id"] for entry in blocked}
+    assert blocked_time_block_ids == {str(block_p2.id), str(block_p3.id)}
+    for entry in blocked:
+        assert entry["room_id"] == str(room.id)
+
+
+async def test_build_problem_json_room_without_whitelist_is_unblocked(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    seeded = await _seed_minimal_school(
+        db_session,
+        create_subject=create_subject,
+        create_week_scheme=create_week_scheme,
+        create_time_block=create_time_block,
+        create_room=create_room,
+        create_teacher=create_teacher,
+        create_stundentafel=create_stundentafel,
+        create_school_class=create_school_class,
+    )
+    cls = seeded.cls
+
+    problem_json, _, _ = await build_problem_json(db_session, cls.id)
+    problem = json.loads(problem_json)
+
+    assert problem["room_blocked_times"] == []
+
+
+# ─── run_solve tests ───────────────────────────────────────────────────────
+
+
+def _minimal_runnable_problem() -> dict:
+    teacher = str(uuid4())
+    tb = str(uuid4())
+    subject = str(uuid4())
+    room = str(uuid4())
+    klass = str(uuid4())
+    lesson = str(uuid4())
+    return {
+        "time_blocks": [{"id": tb, "day_of_week": 0, "position": 0}],
+        "teachers": [{"id": teacher, "max_hours_per_week": 5}],
+        "rooms": [{"id": room}],
+        "subjects": [{"id": subject}],
+        "school_classes": [{"id": klass}],
+        "lessons": [
+            {
+                "id": lesson,
+                "school_class_id": klass,
+                "subject_id": subject,
+                "teacher_id": teacher,
+                "hours_per_week": 1,
+            }
+        ],
+        "teacher_qualifications": [{"teacher_id": teacher, "subject_id": subject}],
+        "teacher_blocked_times": [],
+        "room_blocked_times": [],
+        "room_subject_suitabilities": [],
+    }
+
+
+async def test_run_solve_round_trips_and_logs(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.INFO, logger="klassenzeit_backend.scheduling.solver_io")
+    class_id = uuid4()
+    solution = await run_solve(
+        json.dumps(_minimal_runnable_problem()), class_id, {"lessons": 1, "time_blocks": 1}
+    )
+    assert len(solution["placements"]) == 1
+    assert solution["violations"] == []
+
+    messages = [r.message for r in caplog.records]
+    assert "solver.solve.start" in messages
+    assert "solver.solve.done" in messages
+
+
+async def test_run_solve_logs_error_and_reraises(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.ERROR, logger="klassenzeit_backend.scheduling.solver_io")
+    class_id = uuid4()
+    with pytest.raises(ValueError):
+        await run_solve("not json", class_id, {"lessons": 0})
+    messages = [r.message for r in caplog.records]
+    assert "solver.solve.error" in messages
