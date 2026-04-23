@@ -8,14 +8,13 @@ Items trace back to the specs that introduced them: the [project scaffolding des
 
 Goal: user logs in, enters a small Hessen Grundschule, clicks Generate, sees a timetable. Ordered so each step unblocks the next. Scoped as hard constraints only; soft constraints and heuristics are a later concern.
 
-Step 1 (PyO3 binding + `POST /api/classes/{id}/schedule` compute endpoint) shipped in the solver-schedule-endpoint PR (April 2026). Remaining steps:
+Steps 1 (PyO3 binding + `POST /api/classes/{id}/schedule` compute endpoint) and 2 (placement persistence: `scheduled_lessons` table, per-class upsert on POST, `GET /api/classes/{id}/schedule`) shipped. Remaining steps:
 
-1. **Placement persistence.** Add a `scheduled_lesson` table (or extend `lesson` with `time_block_id` / `room_id` columns, depending on whether schedule history should survive re-solves); wire `POST /schedule` to upsert; add `GET /api/classes/{id}/schedule`.
-2. **Schedule view in the frontend.** New `/schedule` route (or a tab on the class detail) showing a week grid with class / teacher / room filters. Reuses the `kz-ws-grid` CSS that WeekSchemes already uses. Renders a skeleton or empty state until the backend returns a placement; no placeholder data that looks real (see `frontend/CLAUDE.md`).
-3. **Realistic Hessen Grundschule seed.** A one-shot `uv run python -m klassenzeit_backend.seed.demo_grundschule` that creates the week scheme, Stundentafeln for grades 1 to 4, plausible teachers / rooms, and a pair of classes ready to generate lessons + schedule. Also feeds the Playwright E2E. Reference figures captured below.
-4. **E2E smoke test.** One Playwright spec that hits `/login`, runs the seed via a test-only endpoint, clicks through generate-lessons + generate-schedule, and asserts the grid renders.
+1. **Schedule view in the frontend.** New `/schedule` route (or a tab on the class detail) showing a week grid with class / teacher / room filters. Reuses the `kz-ws-grid` CSS that WeekSchemes already uses. Renders a skeleton or empty state until the backend returns a placement; no placeholder data that looks real (see `frontend/CLAUDE.md`).
+2. **Realistic Hessen Grundschule seed.** A one-shot `uv run python -m klassenzeit_backend.seed.demo_grundschule` that creates the week scheme, Stundentafeln for grades 1 to 4, plausible teachers / rooms, and a pair of classes ready to generate lessons + schedule. Also feeds the Playwright E2E. Reference figures captured below.
+3. **E2E smoke test.** One Playwright spec that hits `/login`, runs the seed via a test-only endpoint, clicks through generate-lessons + generate-schedule, and asserts the grid renders.
 
-### Hessen Grundschule reference data (for step 3)
+### Hessen Grundschule reference data (for step 2)
 
 Researched 2026-04-22. Mirrors the actual hessische Stundentafel so screenshots, E2E flows, and demos feel grounded rather than random.
 
@@ -30,15 +29,18 @@ Researched 2026-04-22. Mirrors the actual hessische Stundentafel so screenshots,
 
 Debt the sprint itself will touch, so cheaper to pay upfront than retrofit.
 
-- **Extract `dayShortKey(n: number)` helper before step 3.** Multiple features (`week-schemes-page.tsx`, `teacher-availability-grid.tsx`, `time-blocks-table.tsx`) cast a numeric day index back to a `0 | 1 | 2 | 3 | 4` literal to satisfy typed i18n. Move the cast into a single helper (e.g. `i18n/day-keys.ts` exporting `dayShortKey(n: number)` returning the typed literal or throwing on out-of-range) so the new schedule view uses it from day one instead of adding a fourth cast, and the `frontend/CLAUDE.md` "No `as Foo` assertions" rule holds at call sites. Surfaced during PR #116 review.
+- **Extract `dayShortKey(n: number)` helper before step 1.** Multiple features (`week-schemes-page.tsx`, `teacher-availability-grid.tsx`, `time-blocks-table.tsx`) cast a numeric day index back to a `0 | 1 | 2 | 3 | 4` literal to satisfy typed i18n. Move the cast into a single helper (e.g. `i18n/day-keys.ts` exporting `dayShortKey(n: number)` returning the typed literal or throwing on out-of-range) so the new schedule view uses it from day one instead of adding a fourth cast, and the `frontend/CLAUDE.md` "No `as Foo` assertions" rule holds at call sites. Surfaced during PR #116 review.
 
 ## Acknowledged, not in scope this sprint
 
 Items the sprint will brush against but deliberately leaves alone.
 
-- **Repository / unit-of-work layer.** Routes currently take `AsyncSession` directly. Step 2's handler will load 7 to 8 entity types in one call and probably duplicate some of the existing CRUD queries. The earlier guidance ("add when it hurts") still applies; if step 2's handler grows past ~80 lines, file the pain as a follow-up rather than detouring mid-sprint.
+- **Repository / unit-of-work layer.** Routes currently take `AsyncSession` directly. Step 1's handler will load 7 to 8 entity types in one call and probably duplicate some of the existing CRUD queries. The earlier guidance ("add when it hurts") still applies; if step 1's handler grows past ~80 lines, file the pain as a follow-up rather than detouring mid-sprint.
 - **`active` flag on WeekScheme.** Matters only if a school has multiple week schemes with one "live" scheme. For the prototype, a class points at one `week_scheme_id` directly, which is enough. Revisit when the readiness checklist or a schedule-switcher needs it.
 - **Auto-infer WeekScheme time-block position + validate ordering.** UX polish that does not affect the solver or the schedule view. Today the time-blocks form asks users to type a period number, and nothing prevents overlapping or out-of-order periods on the same day. Change to: drop the `position` input; backend assigns `position` as the chronological rank (by `start_time`) among blocks on the same day, renumbering siblings in one transaction on insert/edit; validate that consecutive pairs on the same day sorted by `start_time` satisfy `start_time >= previous end_time`, returning 422 on overlap. Frontend mirrors the check and maps 422 to a form root error, following the existing 409-duplicate pattern. DB column and `(day, position)` uniqueness stay as-is. Reported during frontend small-fixups session.
+- **Whole-school cross-class consistency.** `POST /api/classes/{id}/schedule` writes only placements for the requested class. Sibling classes' persisted placements are not fed back into the solver's input, so a per-class solve can legitimately produce placements that overlap a persisted sibling's `(time_block, room)` pair. Add persisted-schedule ingestion into `build_problem_json` when a "whole-school generate" view lands, or when demos surface the overlap as user-visible breakage. Reported during placement-persistence work.
+- **Persist solver violations or surface them on GET.** Violations are returned by `POST /api/classes/{id}/schedule` but not persisted. `GET /api/classes/{id}/schedule` returns placements only. If the schedule view needs a persistent "why is this incomplete?" diagnostic, either add a `schedule_violations` table or teach the GET endpoint to re-run the solver and surface fresh violations on demand. Reported during placement-persistence work.
+- **Advisory lock on concurrent POSTs for the same class.** Current guard is Postgres row-level locks inside the delete-then-insert transaction (last writer wins). An explicit `pg_advisory_xact_lock(hashtext(class_id::text))` would prevent wasted parallel solves when demo users click Generate twice. Add if traffic shows interleaving. Reported during placement-persistence work.
 
 ## Backlog
 
@@ -74,7 +76,7 @@ Everything below is queued for later. Ordered roughly by importance within each 
 
 ### Solver algorithm (queued for after the Grundschule seed)
 
-Gated on sprint step 4 (`demo_grundschule` seed) so evaluation and weight tuning happen against realistic Hessen Grundschule inputs, not the synthetic proptest generators.
+Gated on sprint step 2 (`demo_grundschule` seed) so evaluation and weight tuning happen against realistic Hessen Grundschule inputs, not the synthetic proptest generators.
 
 - **First-Fit Decreasing ordering for the greedy solver.** Pure input-order greedy emits `UnplacedLesson` violations for lessons whose slots were claimed by less-constrained lessons earlier in the input. Sort lessons by eligibility count (slots × rooms × subject/qualification filters) most-constrained first, with a stable tiebreaker on `lesson.id` for determinism. Still no backtracking. Measurable win on synthetic densely-constrained inputs; confirm the delta against the seed before landing.
 - **`preferred_block_size > 1` (Doppelstunden) support.** Hessen Grundschule uses Doppelstunden for Sport (Schwimmen), Werken, sometimes Kunst. The MVP rejects any lesson with `preferred_block_size > 1`. Extend: a lesson with `preferred_block_size: n` and `hours_per_week: h` needs `h / n` contiguous n-block windows on the same day, no day-boundary crossing, no gaps inside the window. Add a contiguous-window search step inside the greedy, and a new `ViolationKind::UnplacedBlock { size }`. Wait for the seed so the fixture exercises Doppelstunden realistically before shipping.
@@ -95,7 +97,7 @@ Gated on sprint step 4 (`demo_grundschule` seed) so evaluation and weight tuning
 
 #### E2E (Playwright)
 
-- **Entity coverage beyond Subjects.** Each remaining entity CRUD spec (Rooms, Teachers, WeekSchemes, SchoolClasses, Stundentafel, Lesson) should add its own Playwright flow when it lands. The prototype sprint's step 6 adds one end-to-end schedule flow; per-entity specs remain deferred.
+- **Entity coverage beyond Subjects.** Each remaining entity CRUD spec (Rooms, Teachers, WeekSchemes, SchoolClasses, Stundentafel, Lesson) should add its own Playwright flow when it lands. The prototype sprint's step 3 adds one end-to-end schedule flow; per-entity specs remain deferred.
 - **Cross-browser matrix.** Firefox and WebKit are disabled for now (Chromium only). Enable when external users appear.
 - **Accessibility audits inside Playwright.** `@axe-core/playwright` integration is deferred; track separately.
 - **Visual regression, remaining approaches.** Approach 2 (computed-style diff across interaction states) shipped in `frontend/e2e/flows/computed-style-diff.spec.ts` and its supporting module; zero drift on current master. Two approaches remain for when design churn slows:
