@@ -157,7 +157,7 @@ Only after the audit passes:
 
 ### 10. Self-review + improvement pass
 
-**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`, then `less-permission-prompts`. All three via the `Skill` tool. Let each skill do its own work; do not pre-synthesize what they would say.
+**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`, then `fewer-permission-prompts`. All three via the `Skill` tool. Let each skill do its own work; do not pre-synthesize what they would say. If `fewer-permission-prompts` edits `.claude/settings.json`, that edit must be committed — not left in the working tree. Stage it on a fresh `chore/...` branch off master (not the feature branch the user is about to merge), commit as `chore(settings): allowlist <...>`, and open a separate PR. Same rule applies to the autopilot.md edits below.
 
 After that, reflect:
 

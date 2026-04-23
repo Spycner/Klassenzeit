@@ -36,7 +36,10 @@
       "Bash(mise run check:commit-types)",
       "Bash(mise tasks)",
       "Bash(git fetch *)",
-      "Bash(python3 .claude/commands/post_brainstorm_comments.py *)"
+      "Bash(python3 .claude/commands/post_brainstorm_comments.py *)",
+      "Bash(python3 /home/pascal/Code/Klassenzeit/.claude/commands/post_brainstorm_comments.py *)",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_snapshot"
     ]
   }
 }
