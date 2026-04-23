@@ -1,0 +1,243 @@
+"""Tests for the persist_solution_for_class helper.
+
+Exercises the DB-side replace-then-insert semantics directly against the
+shared per-test session. Route-level integration lives in
+test_schedule_route.py; those tests run after Task 3 adds the GET endpoint.
+"""
+
+import uuid
+from datetime import time
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from klassenzeit_backend.db.models.lesson import Lesson
+from klassenzeit_backend.db.models.scheduled_lesson import ScheduledLesson
+from klassenzeit_backend.scheduling.solver_io import persist_solution_for_class
+
+
+async def _seed_class_with_lesson(
+    db_session: AsyncSession,
+    create_subject,
+    create_week_scheme,
+    create_time_block,
+    create_room,
+    create_teacher,
+    create_stundentafel,
+    create_school_class,
+    *,
+    class_name: str,
+) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID]:
+    """Seed one class with one lesson, one time_block, one room.
+
+    Returns ``(class_id, lesson_id, time_block_id, room_id)``.
+    """
+    subject = await create_subject()
+    week_scheme = await create_week_scheme()
+    tb = await create_time_block(
+        week_scheme_id=week_scheme.id,
+        position=0,
+        start_time=time(8, 0),
+        end_time=time(8, 45),
+    )
+    room = await create_room()
+    teacher = await create_teacher()
+    tafel = await create_stundentafel()
+    cls = await create_school_class(
+        name=class_name,
+        stundentafel_id=tafel.id,
+        week_scheme_id=week_scheme.id,
+    )
+    lesson = Lesson(
+        school_class_id=cls.id,
+        subject_id=subject.id,
+        teacher_id=teacher.id,
+        hours_per_week=1,
+        preferred_block_size=1,
+    )
+    db_session.add(lesson)
+    await db_session.flush()
+    return cls.id, lesson.id, tb.id, room.id
+
+
+async def test_persist_writes_rows_for_placements(
+    db_session: AsyncSession,
+    create_subject,
+    create_week_scheme,
+    create_time_block,
+    create_room,
+    create_teacher,
+    create_stundentafel,
+    create_school_class,
+) -> None:
+    class_id, lesson_id, tb_id, room_id = await _seed_class_with_lesson(
+        db_session,
+        create_subject,
+        create_week_scheme,
+        create_time_block,
+        create_room,
+        create_teacher,
+        create_stundentafel,
+        create_school_class,
+        class_name="1a-persist-writes",
+    )
+    filtered = {
+        "placements": [
+            {"lesson_id": str(lesson_id), "time_block_id": str(tb_id), "room_id": str(room_id)},
+        ],
+        "violations": [],
+    }
+    await persist_solution_for_class(db_session, class_id, filtered)
+    await db_session.flush()
+    rows = (await db_session.execute(select(ScheduledLesson))).scalars().all()
+    assert len(rows) == 1
+    assert rows[0].lesson_id == lesson_id
+    assert rows[0].time_block_id == tb_id
+    assert rows[0].room_id == room_id
+
+
+async def test_persist_replaces_existing_rows_for_class(
+    db_session: AsyncSession,
+    create_subject,
+    create_week_scheme,
+    create_time_block,
+    create_room,
+    create_teacher,
+    create_stundentafel,
+    create_school_class,
+) -> None:
+    class_id, lesson_id, tb_id, room_id = await _seed_class_with_lesson(
+        db_session,
+        create_subject,
+        create_week_scheme,
+        create_time_block,
+        create_room,
+        create_teacher,
+        create_stundentafel,
+        create_school_class,
+        class_name="1a-persist-replace",
+    )
+    other_room = await create_room()
+    first = {
+        "placements": [
+            {"lesson_id": str(lesson_id), "time_block_id": str(tb_id), "room_id": str(room_id)},
+        ],
+        "violations": [],
+    }
+    second = {
+        "placements": [
+            {
+                "lesson_id": str(lesson_id),
+                "time_block_id": str(tb_id),
+                "room_id": str(other_room.id),
+            },
+        ],
+        "violations": [],
+    }
+    await persist_solution_for_class(db_session, class_id, first)
+    await db_session.flush()
+    await persist_solution_for_class(db_session, class_id, second)
+    await db_session.flush()
+    rows = (await db_session.execute(select(ScheduledLesson))).scalars().all()
+    assert len(rows) == 1
+    assert rows[0].room_id == other_room.id
+
+
+async def test_persist_empty_result_clears_rows(
+    db_session: AsyncSession,
+    create_subject,
+    create_week_scheme,
+    create_time_block,
+    create_room,
+    create_teacher,
+    create_stundentafel,
+    create_school_class,
+) -> None:
+    class_id, lesson_id, tb_id, room_id = await _seed_class_with_lesson(
+        db_session,
+        create_subject,
+        create_week_scheme,
+        create_time_block,
+        create_room,
+        create_teacher,
+        create_stundentafel,
+        create_school_class,
+        class_name="1a-persist-empty",
+    )
+    filtered_first = {
+        "placements": [
+            {"lesson_id": str(lesson_id), "time_block_id": str(tb_id), "room_id": str(room_id)},
+        ],
+        "violations": [],
+    }
+    filtered_empty = {"placements": [], "violations": []}
+    await persist_solution_for_class(db_session, class_id, filtered_first)
+    await db_session.flush()
+    await persist_solution_for_class(db_session, class_id, filtered_empty)
+    await db_session.flush()
+    rows = (await db_session.execute(select(ScheduledLesson))).scalars().all()
+    assert rows == []
+
+
+async def test_persist_class_a_does_not_touch_class_b_rows(
+    db_session: AsyncSession,
+    create_subject,
+    create_week_scheme,
+    create_time_block,
+    create_room,
+    create_teacher,
+    create_stundentafel,
+    create_school_class,
+) -> None:
+    class_a_id, lesson_a_id, tb_a_id, room_a_id = await _seed_class_with_lesson(
+        db_session,
+        create_subject,
+        create_week_scheme,
+        create_time_block,
+        create_room,
+        create_teacher,
+        create_stundentafel,
+        create_school_class,
+        class_name="1a-persist-isolate-A",
+    )
+    class_b_id, lesson_b_id, tb_b_id, room_b_id = await _seed_class_with_lesson(
+        db_session,
+        create_subject,
+        create_week_scheme,
+        create_time_block,
+        create_room,
+        create_teacher,
+        create_stundentafel,
+        create_school_class,
+        class_name="1b-persist-isolate-B",
+    )
+    filtered_a = {
+        "placements": [
+            {
+                "lesson_id": str(lesson_a_id),
+                "time_block_id": str(tb_a_id),
+                "room_id": str(room_a_id),
+            },
+        ],
+        "violations": [],
+    }
+    filtered_b = {
+        "placements": [
+            {
+                "lesson_id": str(lesson_b_id),
+                "time_block_id": str(tb_b_id),
+                "room_id": str(room_b_id),
+            },
+        ],
+        "violations": [],
+    }
+    await persist_solution_for_class(db_session, class_a_id, filtered_a)
+    await db_session.flush()
+    await persist_solution_for_class(db_session, class_b_id, filtered_b)
+    await db_session.flush()
+    # Replace A with empty. B must survive.
+    await persist_solution_for_class(db_session, class_a_id, {"placements": [], "violations": []})
+    await db_session.flush()
+    rows = (await db_session.execute(select(ScheduledLesson))).scalars().all()
+    assert len(rows) == 1
+    assert rows[0].lesson_id == lesson_b_id

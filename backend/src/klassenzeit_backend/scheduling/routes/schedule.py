@@ -23,7 +23,7 @@ async def generate_schedule_for_class(
     _admin: Annotated[User, Depends(require_admin)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> ScheduleResponse:
-    """Run the solver for the given class and return per-class placements and violations.
+    """Run the solver for the given class, persist the placements, and return them.
 
     Args:
         class_id: UUID path parameter identifying the school class.
@@ -49,4 +49,5 @@ async def generate_schedule_for_class(
             "violations_for_class": len(filtered["violations"]),
         },
     )
+    await solver_io.persist_solution_for_class(db, class_id, filtered)
     return ScheduleResponse.model_validate(filtered)
