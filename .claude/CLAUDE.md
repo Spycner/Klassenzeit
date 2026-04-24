@@ -51,7 +51,7 @@ If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, f
 - `mise run dev` — start backend with auto-reload
 - `mise run fe:dev` — start frontend dev server on `:5173` (proxies API to `:8000`)
 - `mise run test` — run all tests (Rust + Python + frontend)
-- `mise run test:py` — Python tests only (`uv run pytest`)
+- `mise run test:py` — Python tests only (`uv run pytest`); path filters must be relative to the repo root, e.g. `mise run test:py -- backend/tests/seed/test_x.py::test_name -v` (not `tests/seed/...`).
 - `mise run test:rust` — Rust tests only (`cargo nextest run`)
 - `mise run fe:test` — frontend Vitest only
 - `mise run e2e` / `mise run e2e:ui`: Playwright suite (starts DB, migrates, seeds the admin user, runs the suite); `mise run e2e:install` is the one-time Chromium install on a fresh clone
