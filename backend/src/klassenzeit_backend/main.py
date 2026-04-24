@@ -41,14 +41,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await engine.dispose()
 
 
-app = FastAPI(
-    title="Klassenzeit",
-    lifespan=lifespan,
-    openapi_url="/api/openapi.json",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-)
-
 health_router = APIRouter(tags=["health"])
 
 
@@ -58,14 +50,37 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-app.include_router(auth_router, prefix="/api")
-app.include_router(scheduling_router, prefix="/api")
-app.include_router(health_router, prefix="/api")
+def build_app(env: str | None) -> FastAPI:
+    """Construct the FastAPI app with env-gated routes.
+
+    Staging and production both run with ``KZ_ENV=prod``; the OpenAPI
+    schema, Swagger UI, and ReDoc endpoints are disabled there to
+    reduce API-shape recon for unauthenticated attackers. Dev and test
+    environments keep them mounted at the usual paths.
+
+    ``dump_openapi.py`` reads ``app.openapi()`` directly in-process and
+    is unaffected by ``openapi_url=None``: the schema generator runs
+    off the registered routes, not the HTTP endpoint.
+    """
+    is_prod = env == "prod"
+    new_app = FastAPI(
+        title="Klassenzeit",
+        lifespan=lifespan,
+        openapi_url=None if is_prod else "/api/openapi.json",
+        docs_url=None if is_prod else "/api/docs",
+        redoc_url=None if is_prod else "/api/redoc",
+    )
+    new_app.include_router(auth_router, prefix="/api")
+    new_app.include_router(scheduling_router, prefix="/api")
+    new_app.include_router(health_router, prefix="/api")
+    include_testing_router_if_enabled(new_app, env)
+    return new_app
+
 
 # Routing decisions happen at import time. Reading ``KZ_ENV`` directly from
 # ``os.environ`` avoids constructing a full ``Settings`` at module load: the
 # ``dump_openapi`` script and CI type regeneration import this module without
-# a ``KZ_DATABASE_URL`` available. The runtime check here only needs the env
-# name, so the lighter dependency is appropriate.
+# a ``KZ_DATABASE_URL`` available. The factory only needs the env name, so
+# the lighter dependency is appropriate.
 
-include_testing_router_if_enabled(app, os.environ.get("KZ_ENV"))
+app = build_app(os.environ.get("KZ_ENV"))
