@@ -66,7 +66,7 @@ If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, f
 - **Commit message enforcement:** [Cocogitto](https://docs.cocogitto.io) (`cog`), installed via `cargo install cocogitto`. A `commit-msg` hook runs `cog verify` and rejects non-conventional messages.
 - **Pre-push runs the full test suite.** `.config/lefthook.yaml`'s `pre-push` runs `cargo nextest run --workspace`, `uv run pytest` (with coverage), and the frontend Vitest suite before the push goes to origin. Even a docs-only push pays the ~30s; this is by design so broken builds never reach the remote. Use `mise exec -- git push` so the pinned lefthook runs.
 - **`gh` + `jq` are runtime prerequisites** for repo-automation tasks like `mise run repo:apply-settings`. Neither is pinned via mise; install from the system package manager (or `brew install gh jq`) on fresh clones.
-- **Ad-hoc YAML parsing in shell snippets.** The system `python3` does not ship with `pyyaml`. For one-off verification scripts (e.g., `import yaml; assert workflow["jobs"]["x"]["permissions"] == ...`), invoke via `uv run --with pyyaml python3 - <<'EOF' ... EOF` so the pinned `uv` provides the dep.
+- **Ad-hoc Python snippets with third-party deps.** The system `python3` has no `pyyaml`, `coloraide`, or similar. For one-off verification or conversion scripts (YAML diffs of workflow permissions, OKLCH to sRGB hex conversion for `frontend/DESIGN.md` updates, etc.), invoke via `uv run --with <pkg1> --with <pkg2> python3 - <<'EOF' ... EOF` so the pinned `uv` provides the dep. Recurring pairs: `--with pyyaml` (YAML parsing), `--with coloraide` (OKLCH ↔ sRGB hex for DESIGN.md / app.css work).
 
 ## Coding standards
 
