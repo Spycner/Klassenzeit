@@ -22,13 +22,9 @@ async def test_seed_rolls_back_on_duplicate_subject_name(
     db_session.add(pre_existing)
     await db_session.flush()
 
-    await db_session.begin_nested()
-    try:
-        with pytest.raises(IntegrityError):
+    with pytest.raises(IntegrityError):
+        async with db_session.begin_nested():
             await seed_demo_grundschule(db_session)
-            await db_session.flush()
-    finally:
-        await db_session.rollback()
 
     subject_count = int(
         (await db_session.execute(select(func.count()).select_from(Subject))).scalar_one()
