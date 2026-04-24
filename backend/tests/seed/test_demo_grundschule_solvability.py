@@ -38,7 +38,6 @@ TEACHER_ASSIGNMENTS: dict[tuple[str, str], str] = {
     ("1a", "SU"): "MUE",
     ("1a", "RE"): "BEC",
     ("1a", "KU"): "MUE",
-    ("1a", "WE"): "SCH",
     ("1a", "MU"): "BEC",
     ("1a", "SP"): "HOF",
     ("1a", "FÖ"): "BEC",
@@ -46,8 +45,7 @@ TEACHER_ASSIGNMENTS: dict[tuple[str, str], str] = {
     ("2a", "M"): "SCH",
     ("2a", "SU"): "SCH",
     ("2a", "RE"): "BEC",
-    ("2a", "KU"): "MUE",
-    ("2a", "WE"): "SCH",
+    ("2a", "KU"): "SCH",
     ("2a", "MU"): "BEC",
     ("2a", "SP"): "HOF",
     ("2a", "FÖ"): "BEC",
@@ -56,8 +54,7 @@ TEACHER_ASSIGNMENTS: dict[tuple[str, str], str] = {
     ("3a", "SU"): "WEB",
     ("3a", "E"): "WEB",
     ("3a", "RE"): "BEC",
-    ("3a", "KU"): "HOF",
-    ("3a", "WE"): "SCH",
+    ("3a", "KU"): "MUE",
     ("3a", "MU"): "BEC",
     ("3a", "SP"): "HOF",
     ("3a", "FÖ"): "HOF",
@@ -66,8 +63,7 @@ TEACHER_ASSIGNMENTS: dict[tuple[str, str], str] = {
     ("4a", "SU"): "FIS",
     ("4a", "E"): "FIS",
     ("4a", "RE"): "BEC",
-    ("4a", "KU"): "HOF",
-    ("4a", "WE"): "SCH",
+    ("4a", "KU"): "SCH",
     ("4a", "MU"): "BEC",
     ("4a", "SP"): "HOF",
     ("4a", "FÖ"): "HOF",
@@ -126,7 +122,7 @@ async def test_seeded_grundschule_solves_with_zero_violations(
         gen_resp = await client.post(f"/api/classes/{school_class.id}/generate-lessons")
         assert gen_resp.status_code == 201, gen_resp.text
         lessons = gen_resp.json()
-        assert len(lessons) in (9, 10), (school_class.name, len(lessons))
+        assert len(lessons) in (8, 9), (school_class.name, len(lessons))
 
     await _assign_teachers_for_demo_grundschule_lessons(db_session)
     await db_session.flush()

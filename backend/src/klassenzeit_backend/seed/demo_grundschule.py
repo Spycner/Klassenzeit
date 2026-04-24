@@ -62,20 +62,22 @@ _SUBJECTS: tuple[_SubjectSpec, ...] = (
     _SubjectSpec("Religion / Ethik", "RE", "chart-4"),
     _SubjectSpec("Englisch", "E", "chart-5"),
     _SubjectSpec("Kunst", "KU", "chart-1"),
-    _SubjectSpec("Werken", "WE", "chart-2"),
     _SubjectSpec("Musik", "MU", "chart-3"),
     _SubjectSpec("Sport", "SP", "chart-4"),
     _SubjectSpec("Förderunterricht", "FÖ", "chart-5"),
 )
 
 
+# Hessen Grundschule groups Kunst/Werken/Musik as "Ästhetische Erziehung"
+# (3h in grades 1/2, 4h in grades 3/4). The seed keeps Kunst and Musik
+# as separate subjects and rolls Werken's hours into Kunst so the demo
+# has only subjects that real Grundschule timetables treat as standalone.
 _GRADE_1_2_HOURS: dict[str, int] = {
     "D": 6,
     "M": 5,
     "SU": 2,
     "RE": 2,
-    "KU": 1,
-    "WE": 1,
+    "KU": 2,
     "MU": 1,
     "SP": 3,
     "FÖ": 2,
@@ -87,8 +89,7 @@ _GRADE_3_4_HOURS: dict[str, int] = {
     "SU": 4,
     "E": 2,
     "RE": 2,
-    "KU": 1,
-    "WE": 1,
+    "KU": 2,
     "MU": 1,
     "SP": 3,
     "FÖ": 2,
@@ -105,7 +106,7 @@ class _TeacherSpec(NamedTuple):
 
 _TEACHERS: tuple[_TeacherSpec, ...] = (
     _TeacherSpec("Anna", "Müller", "MUE", 28, ("D", "M", "SU", "KU")),
-    _TeacherSpec("Beate", "Schmidt", "SCH", 28, ("D", "M", "SU", "WE")),
+    _TeacherSpec("Beate", "Schmidt", "SCH", 28, ("D", "M", "SU", "KU")),
     _TeacherSpec("Carsten", "Weber", "WEB", 28, ("D", "M", "SU", "E")),
     _TeacherSpec("Dana", "Fischer", "FIS", 28, ("D", "M", "SU", "E")),
     _TeacherSpec("Eva", "Becker", "BEC", 18, ("RE", "MU", "FÖ")),
@@ -129,7 +130,7 @@ _ROOMS: tuple[_RoomSpec, ...] = (
     _RoomSpec("Klasse 4a", "4a", 25, _KLASSENRAUM_SUITABLE_SUBJECTS),
     _RoomSpec("Turnhalle", "TH", None, ("SP",)),
     _RoomSpec("Musikraum", "MU-R", 30, ("MU",)),
-    _RoomSpec("Werkraum", "WE-R", 20, ("KU", "WE")),
+    _RoomSpec("Kunstraum", "KU-R", 20, ("KU",)),
 )
 
 

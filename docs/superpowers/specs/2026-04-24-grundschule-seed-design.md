@@ -44,7 +44,7 @@ backend/src/klassenzeit_backend/seed/
   demo_grundschule.py  # constants + seed_demo_grundschule coroutine
 ```
 
-Single-file module. Expected size roughly 220 to 260 lines (30-ish for the TimeBlock grid, 10 subjects, 20 Stundentafel entries × 2 distinct, 6 teachers + qualification tuples, 7 rooms + 28 suitability tuples, plus the orchestrating coroutine). When a second seed arrives, extract shared helpers; until then flat is fine.
+Single-file module. Expected size roughly 220 to 260 lines (30-ish for the TimeBlock grid, 9 subjects, 17 Stundentafel entries × 2 distinct, 6 teachers + qualification tuples, 7 rooms + 27 suitability tuples, plus the orchestrating coroutine). When a second seed arrives, extract shared helpers; until then flat is fine.
 
 ### Data shape
 
@@ -69,7 +69,7 @@ Hofpausen 09:30 to 09:50 (after period 2) and 11:20 to 11:35 (after period 4) ar
 
 #### Subjects
 
-10 subjects. `short_name` stays two characters where possible, three for collision (MU vs M):
+9 subjects. `short_name` stays two characters where possible, three for collision (MU vs M):
 
 | Name | short_name | color (token) |
 |---|---|---|
@@ -79,12 +79,11 @@ Hofpausen 09:30 to 09:50 (after period 2) and 11:20 to 11:35 (after period 4) ar
 | Religion / Ethik | RE | chart-4 |
 | Englisch | E | chart-5 |
 | Kunst | KU | chart-1 |
-| Werken | WE | chart-2 |
 | Musik | MU | chart-3 |
 | Sport | SP | chart-4 |
 | Förderunterricht | FÖ | chart-5 |
 
-Color assignment cycles through the five palette tokens to keep the schedule view visually varied; no constraint encoded here.
+Color assignment cycles through the five palette tokens to keep the schedule view visually varied; no constraint encoded here. Werken is not modelled as a separate subject: the Hessen Stundentafel groups Kunst / Werken / Musik as "Ästhetische Erziehung", and Grundschule timetables in practice list Kunst and Musik as standalone subjects while rolling Werken's hours into Kunst (captured as +1h on Kunst in each Stundentafel).
 
 #### Stundentafeln
 
@@ -98,8 +97,7 @@ Four Stundentafeln, one per grade level. Entries per tafel:
 | Mathematik | 5 |
 | Sachunterricht | 2 |
 | Religion/Ethik | 2 |
-| Kunst | 1 |
-| Werken | 1 |
+| Kunst | 2 |
 | Musik | 1 |
 | Sport | 3 |
 | Förderunterricht | 2 |
@@ -113,13 +111,12 @@ Four Stundentafeln, one per grade level. Entries per tafel:
 | Sachunterricht | 4 |
 | Englisch | 2 |
 | Religion/Ethik | 2 |
-| Kunst | 1 |
-| Werken | 1 |
+| Kunst | 2 |
 | Musik | 1 |
 | Sport | 3 |
 | Förderunterricht | 2 |
 
-38 total StundentafelEntry rows (9 per grade 1-2 tafel + 10 per grade 3-4 tafel, the grade 3-4 tafeln add Englisch). All entries use `preferred_block_size = 1`.
+34 total StundentafelEntry rows (8 per grade 1-2 tafel + 9 per grade 3-4 tafel, the grade 3-4 tafeln add Englisch). All entries use `preferred_block_size = 1`. Kunst carries 2h in every grade so the Hessen "Kunst/Werken/Musik" 3h-or-4h grouping is reflected as Kunst 2h + Musik 1h in grades 1/2 and Kunst 2h + Musik 1h + 1h implicit inside other subjects in grades 3/4.
 
 Grade 1 and grade 2 share content; grade 3 and grade 4 share content. Four separate rows rather than two keyed by "grade range" because `Stundentafel.grade_level` is `SmallInteger`, not a range.
 
@@ -134,7 +131,7 @@ Six teachers. Column `Qualified in` lists subject short_names:
 | First / last name | short_code | max_hours_per_week | Qualified in |
 |---|---|---|---|
 | Anna Müller | MUE | 28 | D, M, SU, KU |
-| Beate Schmidt | SCH | 28 | D, M, SU, WE |
+| Beate Schmidt | SCH | 28 | D, M, SU, KU |
 | Carsten Weber | WEB | 28 | D, M, SU, E |
 | Dana Fischer | FIS | 28 | D, M, SU, E |
 | Eva Becker | BEC | 18 | RE, MU, FÖ |
@@ -144,8 +141,8 @@ All teachers `is_active = true`. `teacher_availabilities` stays empty (zero rows
 
 Qualification pattern:
 
-- Every Klassenlehrer is qualified in D, M, SU (the Klassenlehrer-Prinzip) plus one secondary (KU, WE, or E) so the solver has slack.
-- Only one teacher qualifies for each specialty (Becker for RE and MU; Hoffmann for SP; both for FÖ). This narrows the solver's search and makes the demo produce obvious-looking assignments.
+- Every Klassenlehrer is qualified in D, M, SU (the Klassenlehrer-Prinzip) plus one secondary (KU or E) so the solver has slack.
+- Only one teacher qualifies for each specialty that must stay single-source (Becker for RE and MU; Hoffmann for SP; Müller/Schmidt/Hoffmann share KU; Becker/Hoffmann share FÖ). This narrows the solver's search while keeping enough alternatives that the greedy first-fit finds a feasible schedule.
 
 #### Rooms and suitabilities
 
@@ -159,11 +156,11 @@ Seven rooms:
 | Klasse 4a | 4a | 25 |
 | Turnhalle | TH | null |
 | Musikraum | MU-R | 30 |
-| Werkraum | WE-R | 20 |
+| Kunstraum | KU-R | 20 |
 
-Short names use distinct tokens to avoid collision with subject short names (`MU-R` not `MU`).
+Short names use distinct tokens to avoid collision with subject short names (`MU-R` not `MU`, `KU-R` not `KU`).
 
-28 `room_subject_suitabilities` rows. Because the solver interprets "zero entries on a room = suits every subject" (see `solver-core/src/index.rs:12` and `types.rs:127`), the seed lists suitabilities explicitly on every room so that specialty subjects can only land in specialty rooms:
+27 `room_subject_suitabilities` rows. Because the solver interprets "zero entries on a room = suits every subject" (see `solver-core/src/index.rs:12` and `types.rs:127`), the seed lists suitabilities explicitly on every room so that specialty subjects can only land in specialty rooms:
 
 | Room | Suitable subjects |
 |---|---|
@@ -173,7 +170,7 @@ Short names use distinct tokens to avoid collision with subject short names (`MU
 | Klasse 4a | D, M, SU, RE, E, FÖ (6 rows) |
 | Turnhalle | SP (1 row) |
 | Musikraum | MU (1 row) |
-| Werkraum | KU, WE (2 rows) |
+| Kunstraum | KU (1 row) |
 
 `room_availabilities` stays empty on every room (zero rows = universally available).
 
@@ -221,11 +218,11 @@ Typer subcommand name auto-resolves from the Python function name (`seed_grundsc
 `seed_demo_grundschule(session: AsyncSession)` inserts in FK-topological order with `await session.flush()` at each layer so primary-key UUIDs are available for the next wave:
 
 1. WeekScheme, flush, then 30 TimeBlocks referencing it, flush.
-2. All 10 Subjects, flush.
+2. All 9 Subjects, flush.
 3. Four Stundentafeln, flush, then 40 StundentafelEntry rows, flush.
 4. Four SchoolClasses referencing Stundentafeln + WeekScheme, flush.
 5. Six Teachers, flush, then TeacherQualification rows (M:N into Subjects) for the matrix above, flush.
-6. Seven Rooms, flush, then 28 RoomSubjectSuitability rows, flush.
+6. Seven Rooms, flush, then 27 RoomSubjectSuitability rows, flush.
 
 No `session.commit()` inside the coroutine. The caller commits once at the end; any exception anywhere rolls back the entire transaction.
 
@@ -236,7 +233,7 @@ Helpers named with the `demo_grundschule_` prefix to satisfy the "unique functio
 Three test files under `backend/tests/seed/`:
 
 - `backend/tests/seed/__init__.py`: empty.
-- `backend/tests/seed/test_demo_grundschule_shape.py`: asserts entity counts (10 subjects, 4 Stundentafeln, 38 StundentafelEntries, 4 SchoolClasses, 6 Teachers, 22 TeacherQualifications, 7 Rooms, 28 RoomSubjectSuitabilities, 1 WeekScheme, 30 TimeBlocks), FK integrity (each SchoolClass's Stundentafel has the same `grade_level`; every StundentafelEntry's `subject_id` exists; every TeacherQualification references an existing teacher + subject), and per-tafel hour sums (23 for grades 1-2, 26 for grades 3-4).
+- `backend/tests/seed/test_demo_grundschule_shape.py`: asserts entity counts (9 subjects, 4 Stundentafeln, 34 StundentafelEntries, 4 SchoolClasses, 6 Teachers, 22 TeacherQualifications, 7 Rooms, 27 RoomSubjectSuitabilities, 1 WeekScheme, 35 TimeBlocks), FK integrity (each SchoolClass's Stundentafel has the same `grade_level`; every StundentafelEntry's `subject_id` exists; every TeacherQualification references an existing teacher + subject), and per-tafel hour sums (23 for grades 1-2, 26 for grades 3-4).
 - `backend/tests/seed/test_demo_grundschule_rollback.py`: pre-inserts a Subject named `Deutsch`, calls `seed_demo_grundschule(session)` inside a nested transaction, expects `IntegrityError`, then asserts `select count(*)` for Subject stays at 1 (the pre-existing row).
 - `backend/tests/seed/test_demo_grundschule_solvability.py`: calls `seed_demo_grundschule(session)` + `session.commit()`, then for each SchoolClass invokes the existing generate-lessons helper that the API route uses (located in `scheduling/routes/lessons.py` or similar; exact import resolved during plan), then invokes the existing solve helper (also from `scheduling/routes`), asserts that every solve returns zero `violations`. Marked with a comment noting it is the slowest seed test; no xfail or skip.
 
@@ -274,7 +271,7 @@ Captured so the seed is traceable back to source without re-doing the research e
 | Teilzeit (14/28, 18/28, 21/28) | Partially | Becker 18h, Hoffmann 21h. No 14h teacher; not pedagogically load-bearing. |
 | Klassenlehrer-Prinzip (D, M, SU) | Partially | Qualification matrix concentrates D/M/SU in Klassenlehrer, but not pinned on Lesson (seed stops before Lessons). |
 | Fachlehrer-Einsatz (RE, MU, SP, E, KU) | Encoded | Becker + Hoffmann cover specialty subjects. |
-| Raumtypen (Turnhalle, Musikraum, Werkraum, Klassenraum) | Encoded | 7 rooms with explicit suitability rows. |
+| Raumtypen (Turnhalle, Musikraum, Kunstraum, Klassenraum) | Encoded | 7 rooms with explicit suitability rows. Werkraum is not modelled; Grundschule Werken happens in the Kunstraum or the Klassenraum in practice. |
 | Klassengröße / Klassenobergrenze | Not encoded | Schema has no headcount field. |
 | Schwimmen Klasse 3 (Doppelstunde, auswärtige Halle) | Not encoded | Requires Doppelstunden + external-location concept. Deferred. |
 | Religion/Ethik parallel (ev/kath/Ethik) | Not encoded | No "parallel lesson group" concept. Collapsed to one subject. |
@@ -289,7 +286,7 @@ Every "Not encoded" row traces back to an existing OPEN_THINGS bullet under "Ack
 
 ## Risks
 
-- **Becker / Hoffmann capacity pinch.** Becker has 18h to cover 8h RE + 4h MU + some FÖ = 12h+. Hoffmann has 21h to cover 12h SP + 4h KU + some FÖ = 16h+. FÖ total demand is 8h; Becker residual 6h, Hoffmann residual 5h. Capacity 11h vs demand 8h. Tight but feasible. The solvability test is the canary.
+- **Becker / Hoffmann capacity pinch.** Becker has 18h to cover 8h RE + 4h MU + some FÖ = 12h+. Hoffmann has 21h to cover 12h SP + some KU + some FÖ. KU total is 8h (2h × 4 classes) and Müller/Schmidt split the primary grades' KU with Hoffmann covering none or a subset of grades 3-4; FÖ total is 8h. Becker residual 6h, Hoffmann residual 9h after SP. Both capacities comfortably cover demand with slack. The solvability test is the canary.
 - **Schema drift.** If `teacher_qualifications` grows a new column or `stundentafel_entries` gains a `preferred_block_size` server default change before this PR lands, seed constants may fail to insert. Mitigation: plan step `mise run db:reset` + `mise run db:migrate` dry run before committing feat.
 - **Day-of-week convention drift.** Backend schema pins `day_of_week: int = Field(ge=0, le=4)` (Monday = 0), frontend `dayShortKey` / `dayLongKey` consume the same 0 to 4 range. The seed's TimeBlocks use 0 through 4 accordingly. If any helper in the plan accidentally emits 1 to 5, the schema's `Field(ge=0, le=4)` will fail on insert and the plan's shape tests will catch it.
 - **Subject name collisions with existing dev data.** If a developer already has a Subject named `Deutsch` in their local DB, seed aborts cleanly (Q4 fail-fast). Rollback test locks in this behaviour.
