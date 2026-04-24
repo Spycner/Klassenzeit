@@ -113,6 +113,11 @@ description = "Idempotently seed the fixed e2e admin user"
 dir = "{{config_root}}/backend"
 run = "uv run klassenzeit-backend seed-e2e-admin"
 
+[tasks."seed:grundschule"]
+description = "Seed a demo Hessen Grundschule (refuses in KZ_ENV=prod)"
+dir = "{{config_root}}/backend"
+run = "uv run klassenzeit-backend seed-grundschule"
+
 # ─── Coverage (separate from `test` — slower, for reports not TDD) ──────────
 
 [tasks.cov]

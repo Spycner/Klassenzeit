@@ -40,6 +40,7 @@ A school timetabling system with a FastAPI backend, a Rust solver exposed to Pyt
 | `mise run fe:types` | Regenerate `frontend/src/lib/api-types.ts` from the backend's OpenAPI schema. |
 | `mise run gen:commit-types`   | Regenerate the commit-types sections in `pr-title.yml` and `CONTRIBUTING.md` from `.github/commit-types.yml`. |
 | `mise run check:commit-types` | Verify the two derived files match `.github/commit-types.yml` (also runs inside `mise run lint`). |
+| `mise run seed:grundschule` | Seed a demo Hessen Grundschule (4 classes, 6 teachers, 7 rooms). Refuses in `KZ_ENV=prod`. |
 
 ## Deployment
 
