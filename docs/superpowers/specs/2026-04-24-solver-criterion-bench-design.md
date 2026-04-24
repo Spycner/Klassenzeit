@@ -52,7 +52,7 @@ scripts/
 
 The bench file contains, in order:
 
-1. A `grundschule_fixture()` function that builds a `solver_core::types::Problem` exactly the shape `tests/grundschule_smoke.rs::grundschule()` builds (2 classes, 8 teachers, 5 rooms, 8 subjects, one lesson per (class, subject) with non-zero hours, gym suitable for Sport only). Prose comment at the top points at the test file as the source of truth and mentions sprint item #6.
+1. A `grundschule_fixture()` function that builds a `solver_core::types::Problem` exactly the shape `tests/grundschule_smoke.rs::grundschule()` builds (2 classes, 8 teachers, 5 rooms, 8 subjects, one lesson per (class, subject) with non-zero hours = 15 lessons totalling 45 hours across both classes, gym suitable for Sport only). Prose comment at the top points at the test file as the source of truth and mentions sprint item #6.
 2. A `compute_percentiles(samples: &mut [Duration]) -> (Duration, Duration, Duration)` helper that sorts in place and indexes at `(0.01, 0.50, 0.99) * N`. No external stats crate.
 3. A `bench_grundschule(c: &mut Criterion)` criterion entry point. Uses `BenchmarkGroup` with `sample_size(200)` and `SamplingMode::Flat`, `iter_custom` closure, collects per-iteration `Duration`s, then after `group.finish()` computes the percentiles and prints a block of the following shape to stderr:
 
