@@ -8,11 +8,10 @@ Items trace back to the specs that introduced them: the [project scaffolding des
 
 Goal: user logs in, enters a small Hessen Grundschule, clicks Generate, sees a timetable. Ordered so each step unblocks the next. Scoped as hard constraints only; soft constraints and heuristics are a later concern.
 
-Steps 1 (PyO3 binding + `POST /api/classes/{id}/schedule` compute endpoint) and 2 (placement persistence: `scheduled_lessons` table, per-class upsert on POST, `GET /api/classes/{id}/schedule`) shipped. Remaining steps:
+Steps 1 (PyO3 binding + `POST /api/classes/{id}/schedule` compute endpoint), 2 (placement persistence: `scheduled_lessons` table, per-class upsert on POST, `GET /api/classes/{id}/schedule`), and 3 (frontend `/schedule` route with class picker, `kz-ws-grid` week grid, and Generate action) shipped. Remaining steps:
 
-1. **Schedule view in the frontend.** New `/schedule` route (or a tab on the class detail) showing a week grid with class / teacher / room filters. Reuses the `kz-ws-grid` CSS that WeekSchemes already uses. Renders a skeleton or empty state until the backend returns a placement; no placeholder data that looks real (see `frontend/CLAUDE.md`).
-2. **Realistic Hessen Grundschule seed.** A one-shot `uv run python -m klassenzeit_backend.seed.demo_grundschule` that creates the week scheme, Stundentafeln for grades 1 to 4, plausible teachers / rooms, and a pair of classes ready to generate lessons + schedule. Also feeds the Playwright E2E. Reference figures captured below.
-3. **E2E smoke test.** One Playwright spec that hits `/login`, runs the seed via a test-only endpoint, clicks through generate-lessons + generate-schedule, and asserts the grid renders.
+1. **Realistic Hessen Grundschule seed.** A one-shot `uv run python -m klassenzeit_backend.seed.demo_grundschule` that creates the week scheme, Stundentafeln for grades 1 to 4, plausible teachers / rooms, and a pair of classes ready to generate lessons + schedule. Also feeds the Playwright E2E. Reference figures captured below.
+2. **E2E smoke test.** One Playwright spec that hits `/login`, runs the seed via a test-only endpoint, clicks through generate-lessons + generate-schedule, and asserts the grid renders.
 
 ### Hessen Grundschule reference data (for step 2)
 
@@ -49,6 +48,9 @@ Everything below is queued for later. Ordered roughly by importance within each 
 ### Product capabilities
 
 - **Deep-linked entity edit.** The Dashboard "Recently edited" tile links to the entity's list page without opening the edit dialog for that row. Add a `?edit=<id>` search param (validated by Zod in `validateSearch`) on each CRUD page, and teach the list component to open the matching dialog on mount. Defer until a second use case demands bookmarkable edits.
+- **Teacher-centric schedule view.** Today `/schedule` shows one class at a time. A teacher-centric view answers "where is Frau Müller all week" and needs either a new `GET /api/teachers/{id}/schedule` endpoint or frontend aggregation across all classes a teacher has qualifications for. Ship after a demo reveals the need; the per-class view is enough for the prototype. Surfaced during the schedule-view PR.
+- **Room-centric schedule view.** Mirror of the teacher view; "what happens in Room 101 all week". Same trade-off, same follow-up timing. Surfaced during the schedule-view PR.
+- **Persist violations so `GET /schedule` surfaces them.** The schedule view currently shows violations only from the most recent POST response, plus a derived `expectedHours - placements.length` counter on GET-only loads. When the view needs a stable "why is this incomplete?" diagnostic across page refreshes, add the `schedule_violations` table already noted under "Acknowledged, not in scope this sprint" and teach the frontend to render typed violations on GET. Today the derived counter is the only cross-refresh signal. Surfaced during the schedule-view PR.
 - **Duplicate a Stundentafel.** Creating a variant means re-adding every subject entry by hand, which is tedious. Add `POST /stundentafeln/{id}/duplicate` that clones the tafel plus all entries in one transaction, auto-suffixing the name (`"{orig} (Kopie)"`, then `"(Kopie 2)"`, `"(Kopie 3)"` on collision). Frontend: a "Duplizieren" / "Duplicate" button in the row's action cell next to Edit/Delete; on success toast + navigate to edit the new tafel. Reported during frontend small-fixups session.
 - **Extract a shared `EntityListTable` primitive.** Every entity page (Subjects, Rooms, Teachers, SchoolClasses, Stundentafeln, Lessons) duplicates the same `<div className="overflow-x-auto rounded-xl border bg-card"><Table>…` shell with Name/... columns and Edit/Delete action cell. PR #116's code review caught that an `overflow-hidden` wrapper clipped action buttons on narrow viewports and needed the same fix applied to all six pages. Collapsing to `<EntityListTable columns={…} rows={…} renderRow={…} actions={…} />` would let cross-entity polish (mobile overflow, sticky headers, hover states, keyboard navigation) land once instead of six times. Surfaced during PR #116 review.
 - **Lint rule for `useEffect` derived-state syncs.** `frontend/CLAUDE.md` forbids `useEffect(() => setX(fromProp), [fromProp])` for derived state, but the rule is enforced by review discipline only. `teacher-availability-grid.tsx` and `teacher-qualifications-editor.tsx` still ship the forbidden pattern (seeding a draft state from `detail.data`). Write a tiny Biome plugin, eslint-plugin-react-hooks rule, or a bespoke `scripts/check_use_effect_sync.ts` that flags `useEffect` bodies that are pure `setState(f(dep))`. Surfaced during PR #116 review.
@@ -142,3 +144,7 @@ Gated on sprint step 2 (`demo_grundschule` seed) so evaluation and weight tuning
 Chat interface with Agent that can help with creations, modifications and deletions of entities. As well as see problems with the schedule and suggest fixes.
 
 And of course in general help with the application.
+
+### Design
+
+https://github.com/google-labs-code/design.md evaluate and implement if found good.

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import {
   BookOpen,
+  Calendar,
   CalendarDays,
   ClipboardList,
   DoorOpen,
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 
 type NavLabelKey =
   | "nav.dashboard"
+  | "nav.schedule"
   | "nav.subjects"
   | "nav.rooms"
   | "nav.teachers"
@@ -45,7 +47,10 @@ interface NavGroup {
 const NAV_GROUPS: NavGroup[] = [
   {
     labelKey: "sidebar.main",
-    items: [{ to: "/", labelKey: "nav.dashboard", icon: LayoutDashboard }],
+    items: [
+      { to: "/", labelKey: "nav.dashboard", icon: LayoutDashboard },
+      { to: "/schedule", labelKey: "nav.schedule", icon: Calendar },
+    ],
   },
   {
     labelKey: "sidebar.data",

@@ -33,6 +33,7 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "schedule": "Schedule",
     "subjects": "Subjects",
     "rooms": "Rooms",
     "teachers": "Teachers",
@@ -289,6 +290,45 @@
         "invalidTime": "Time must be HH:MM."
       }
     }
+  },
+  "schedule": {
+    "title": "Schedule",
+    "subtitle": "Review and regenerate a class's schedule.",
+    "picker": {
+      "label": "Class",
+      "placeholder": "Select a class",
+      "none": "Pick a class to view its schedule."
+    },
+    "generate": {
+      "action": "Generate schedule",
+      "replaceBanner_one": "This will replace 1 placement.",
+      "replaceBanner_other": "This will replace {{count}} placements.",
+      "confirmReplace": "Generate anyway",
+      "cancel": "Cancel",
+      "successToast_one": "Schedule generated. 1 placement saved.",
+      "successToast_other": "Schedule generated. {{count}} placements saved.",
+      "errorToast": "Failed to generate schedule."
+    },
+    "empty": {
+      "title": "No schedule yet",
+      "body": "Run the solver to produce a weekly plan for this class.",
+      "step1": "Confirm the class has lessons",
+      "step2": "Run the solver",
+      "step3": "Review violations if any"
+    },
+    "loadError": "Failed to load schedule.",
+    "retry": "Retry",
+    "stats": {
+      "placements_one": "1 placement",
+      "placements_other": "{{count}} placements",
+      "unplaced_one": "1 hour unplaced",
+      "unplaced_other": "{{count}} hours unplaced"
+    },
+    "violations": {
+      "title": "Unplaced hours",
+      "item": "{{subject}} (hour {{hour}}): {{message}}"
+    },
+    "cellDeletedLesson": "(deleted lesson)"
   },
   "schoolClasses": {
     "title": "School classes",
