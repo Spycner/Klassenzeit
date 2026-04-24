@@ -14,7 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.db.base import Base
 from klassenzeit_backend.db.session import get_session
-from klassenzeit_backend.seed.demo_grundschule import seed_demo_grundschule
+from klassenzeit_backend.seed.demo_grundschule import (
+    assign_teachers_for_demo_grundschule_lessons,
+    seed_demo_grundschule,
+)
 
 testing_router = APIRouter(prefix="/__test__", tags=["testing"])
 
@@ -57,5 +60,20 @@ async def testing_seed_grundschule(
     twice without a reset in between will raise ``IntegrityError``.
     """
     await seed_demo_grundschule(session)
+    await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@testing_router.post("/assign-teachers-grundschule", status_code=status.HTTP_204_NO_CONTENT)
+async def testing_assign_teachers_grundschule(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> Response:
+    """Apply ``TEACHER_ASSIGNMENTS`` to every Lesson currently in the DB.
+
+    Returns 204 with no body. No-op if no lessons exist. The caller is
+    expected to have seeded via ``/__test__/seed-grundschule`` and called
+    ``POST /api/classes/{id}/generate-lessons`` first.
+    """
+    await assign_teachers_for_demo_grundschule_lessons(session)
     await session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
