@@ -33,6 +33,7 @@
   },
   "nav": {
     "dashboard": "Übersicht",
+    "schedule": "Stundenplan",
     "subjects": "Fächer",
     "rooms": "Räume",
     "teachers": "Lehrkräfte",
@@ -289,6 +290,45 @@
         "invalidTime": "Zeit muss im Format HH:MM sein."
       }
     }
+  },
+  "schedule": {
+    "title": "Stundenplan",
+    "subtitle": "Stundenplan einer Klasse überprüfen und neu generieren.",
+    "picker": {
+      "label": "Klasse",
+      "placeholder": "Klasse auswählen",
+      "none": "Wähle eine Klasse, um ihren Stundenplan zu sehen."
+    },
+    "generate": {
+      "action": "Stundenplan generieren",
+      "replaceBanner_one": "Dadurch wird 1 Eintrag überschrieben.",
+      "replaceBanner_other": "Dadurch werden {{count}} Einträge überschrieben.",
+      "confirmReplace": "Trotzdem generieren",
+      "cancel": "Abbrechen",
+      "successToast_one": "Stundenplan erstellt. 1 Eintrag gespeichert.",
+      "successToast_other": "Stundenplan erstellt. {{count}} Einträge gespeichert.",
+      "errorToast": "Stundenplan konnte nicht erstellt werden."
+    },
+    "empty": {
+      "title": "Noch kein Stundenplan",
+      "body": "Lass den Solver einen Wochenplan für diese Klasse erzeugen.",
+      "step1": "Sicherstellen, dass die Klasse Unterrichtsstunden hat",
+      "step2": "Solver ausführen",
+      "step3": "Verletzungen prüfen, falls vorhanden"
+    },
+    "loadError": "Stundenplan konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "stats": {
+      "placements_one": "1 Eintrag",
+      "placements_other": "{{count}} Einträge",
+      "unplaced_one": "1 Stunde nicht eingeplant",
+      "unplaced_other": "{{count}} Stunden nicht eingeplant"
+    },
+    "violations": {
+      "title": "Nicht eingeplante Stunden",
+      "item": "{{subject}} (Stunde {{hour}}): {{message}}"
+    },
+    "cellDeletedLesson": "(gelöschte Unterrichtsstunde)"
   },
   "schoolClasses": {
     "title": "Klassen",
