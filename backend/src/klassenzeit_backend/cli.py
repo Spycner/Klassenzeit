@@ -8,6 +8,7 @@ import asyncio
 
 import typer
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from klassenzeit_backend.auth.passwords import (
@@ -18,6 +19,7 @@ from klassenzeit_backend.auth.passwords import (
 from klassenzeit_backend.auth.sessions import cleanup_expired_sessions
 from klassenzeit_backend.core.settings import get_settings
 from klassenzeit_backend.db.models.user import User
+from klassenzeit_backend.seed.demo_grundschule import seed_demo_grundschule
 
 cli = typer.Typer(no_args_is_help=True)
 
@@ -140,6 +142,43 @@ def seed_e2e_admin() -> None:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(f"Admin user created: {E2E_ADMIN_EMAIL}")
+
+
+async def _run_seed_grundschule() -> None:
+    settings = get_settings()
+    engine = create_async_engine(str(settings.database_url))
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with factory() as session:
+            await seed_demo_grundschule(session)
+            await session.commit()
+    finally:
+        await engine.dispose()
+
+
+@cli.command()
+def seed_grundschule() -> None:
+    """Seed a demo Hessen Grundschule (4 classes, 6 teachers, 7 rooms).
+
+    Refuses to run when ``KZ_ENV=prod``. On unique-name conflicts the seed
+    aborts atomically and prints a reset hint.
+    """
+    settings = get_settings()
+    if settings.env == "prod":
+        typer.echo("seed-grundschule is disabled in production", err=True)
+        raise typer.Exit(code=1)
+    try:
+        asyncio.run(_run_seed_grundschule())
+    except IntegrityError as exc:
+        typer.echo(
+            f"Seed aborted (integrity error): {exc.orig}\n"
+            "The database already contains conflicting rows. "
+            "Reset with `mise run db:reset` (dev) or the /__test__/reset "
+            "endpoint (test) and try again.",
+            err=True,
+        )
+        raise typer.Exit(code=1) from exc
+    typer.echo("Grundschule demo seeded successfully.")
 
 
 def main() -> None:
