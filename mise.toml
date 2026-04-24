@@ -154,7 +154,7 @@ run = "bash scripts/apply-github-settings.sh"
 
 [tasks.lint]
 description = "Run all linters"
-depends = ["lint:rust", "lint:py", "fe:lint", "check:commit-types", "check:actions"]
+depends = ["lint:rust", "lint:py", "fe:lint", "lint:design", "check:commit-types", "check:actions"]
 
 [tasks."gen:commit-types"]
 description = "Regenerate commit-types-derived sections in pr-title.yml and CONTRIBUTING.md"
@@ -184,6 +184,10 @@ run = [
   "uv run vulture backend/src",
   "uv run python scripts/check_unique_fns.py",
 ]
+
+[tasks."lint:design"]
+description = "Lint frontend/DESIGN.md against the @google/design.md format"
+run = "if [ -f frontend/node_modules/@google/design.md/package.json ]; then pnpm -C frontend exec design.md lint DESIGN.md; else echo 'frontend deps not installed, skipping'; fi"
 
 [tasks.fmt]
 description = "Auto-format everything"
