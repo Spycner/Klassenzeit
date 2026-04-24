@@ -65,6 +65,7 @@ Run from repo root unless noted.
 - **No Tailwind arbitrary values** (`bg-[#e5e7eb]`, `text-[oklch(...)]`) except for one-off spacing where no token fits.
 - **No `!important`.** Solve with selector order or by adding a token.
 - **No `style={{...}}` for colors or spacing.** Tailwind class or token CSS var only.
+- **Canonical design tokens live in `frontend/DESIGN.md`.** Load that file (YAML frontmatter + prose) when you need the PK palette, typography, or component recipes. Runtime source of truth is `frontend/src/styles/app.css` (OKLCH, dark mode). When you change a semantic token (primary/secondary/tertiary/neutral/accent/destructive, a typography level, a radius, or a documented component role) in `app.css`, update `frontend/DESIGN.md` in the same commit. Implementation-detail tokens (chart-N, sidebar-*) are CSS-only and do not need to be mirrored.
 
 ## i18n
 

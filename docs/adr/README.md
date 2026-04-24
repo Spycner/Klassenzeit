@@ -34,3 +34,5 @@ sections, and add the new entry to the index below.
 | 0008 | [Frontend theming, i18n, and coverage ratchet](0008-frontend-theming-i18n-ratchet.md) | Accepted |
 | 0009 | [Deployment topology for the staging tier](0009-deployment-topology.md) | Accepted |
 | 0010 | [Uniform `/api` prefix on the backend](0010-api-prefix.md) | Accepted |
+| 0011 | [Subject color and simplified room suitability](0011-subject-color-and-simplified-suitability.md) | Accepted |
+| 0012 | [DESIGN.md as canonical design artifact](0012-design-md-canonical-artifact.md) | Accepted |
