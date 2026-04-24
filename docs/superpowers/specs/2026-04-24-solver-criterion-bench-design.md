@@ -126,7 +126,7 @@ Refresh only when the PR intentionally changes solver performance; an accidental
 
 - **Bench compiles and runs.** `cargo bench -p solver-core --bench solver_grundschule` exits zero and prints the fenced block. Verified by running `scripts/record_solver_bench.sh` end-to-end in the PR branch.
 - **Percentile helper.** Unit-tested in `#[cfg(test)] mod tests` inside the bench file itself (criterion benches are binary crates; `#[cfg(test)]` works the same as in a lib target). Cases: empty slice (panics by contract, not exercised), single sample (all three percentiles equal), sorted three-sample slice, unsorted ten-sample slice, 200-sample synthetic slice with known p1/p50/p99 positions.
-- **Fixture build.** The bench's `grundschule_fixture()` asserts the resulting `Problem` has 40 lessons (same invariant the test fixture holds). Cheap invariant check, catches copy-paste drift while the duplicate exists.
+- **Fixture build.** The bench's `grundschule_fixture()` asserts the resulting `Problem` has exactly 15 lessons totalling 45 placements (21 from class 1/2 + 24 from class 3/4). Cheap invariant check, catches copy-paste drift while the duplicate exists.
 - **Record-script stability.** Manual: run `mise run bench:record` twice, verify the only diff on `BASELINE.md` is number-shaped (not structural). Documented in the plan checklist.
 
 ### What we deliberately do not test
