@@ -633,6 +633,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/classes/{class_id}/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Schedule For Class Route
+         * @description Return the persisted placements for this class.
+         *
+         *     Args:
+         *         class_id: UUID path parameter identifying the school class.
+         *         _admin: Injected admin user (enforces authentication).
+         *         db: Injected async database session.
+         *
+         *     Returns:
+         *         ``ScheduleReadResponse`` with the class's persisted placements. Empty
+         *         ``placements`` means the class exists but has never been scheduled.
+         *
+         *     Raises:
+         *         HTTPException: 404 if the class doesn't exist.
+         */
+        get: operations["read_schedule_for_class_route_api_classes__class_id__schedule_get"];
+        put?: never;
+        /**
+         * Generate Schedule For Class
+         * @description Run the solver for the given class, persist the placements, and return them.
+         *
+         *     Args:
+         *         class_id: UUID path parameter identifying the school class.
+         *         _admin: Injected admin user (enforces authentication).
+         *         db: Injected async database session.
+         *
+         *     Returns:
+         *         ``ScheduleResponse`` with placements and violations scoped to this class.
+         *
+         *     Raises:
+         *         HTTPException: 404 if the class doesn't exist; 422 if the class's
+         *             week_scheme has no time_blocks, if other classes in the solve use a
+         *             different week_scheme, or if the rooms table is empty.
+         */
+        post: operations["generate_schedule_for_class_api_classes__class_id__schedule_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teachers": {
         parameters: {
             query?: never;
@@ -1243,7 +1292,7 @@ export interface paths {
         };
         /**
          * Health
-         * @description Return a simple health-check response with a solver smoke test.
+         * @description Return a simple health-check response.
          */
         get: operations["health_api_health_get"];
         put?: never;
@@ -1506,6 +1555,27 @@ export interface components {
             force_password_change: boolean;
         };
         /**
+         * PlacementResponse
+         * @description One placed lesson-hour: which lesson, in which time block, in which room.
+         */
+        PlacementResponse: {
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /**
+             * Time Block Id
+             * Format: uuid
+             */
+            time_block_id: string;
+            /**
+             * Room Id
+             * Format: uuid
+             */
+            room_id: string;
+        };
+        /**
          * QualificationResponse
          * @description Subject in a teacher's qualification list.
          */
@@ -1617,6 +1687,28 @@ export interface components {
             short_name?: string | null;
             /** Capacity */
             capacity?: number | null;
+        };
+        /**
+         * ScheduleReadResponse
+         * @description Persisted placements for `GET /api/classes/{id}/schedule`.
+         *
+         *     Deliberately omits ``violations``: they are per-solve diagnostics and are
+         *     not persisted, so returning an empty list here would misrepresent the
+         *     absence of storage.
+         */
+        ScheduleReadResponse: {
+            /** Placements */
+            placements: components["schemas"]["PlacementResponse"][];
+        };
+        /**
+         * ScheduleResponse
+         * @description Per-class filtered solver output for `POST /api/classes/{id}/schedule`.
+         */
+        ScheduleResponse: {
+            /** Placements */
+            placements: components["schemas"]["PlacementResponse"][];
+            /** Violations */
+            violations: components["schemas"]["ViolationResponse"][];
         };
         /**
          * SchoolClassCreate
@@ -2065,6 +2157,26 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /**
+         * ViolationResponse
+         * @description One hard-constraint violation emitted by the solver.
+         */
+        ViolationResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "no_qualified_teacher" | "unplaced_lesson";
+            /**
+             * Lesson Id
+             * Format: uuid
+             */
+            lesson_id: string;
+            /** Hour Index */
+            hour_index: number;
+            /** Message */
+            message: string;
         };
         /**
          * WeekSchemeCreate
@@ -3121,6 +3233,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoomDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_schedule_for_class_route_api_classes__class_id__schedule_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                class_id: string;
+            };
+            cookie?: {
+                kz_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleReadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_schedule_for_class_api_classes__class_id__schedule_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                class_id: string;
+            };
+            cookie?: {
+                kz_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleResponse"];
                 };
             };
             /** @description Validation Error */
