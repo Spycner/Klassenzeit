@@ -1,10 +1,11 @@
 """Integration tests for the test-only router."""
 
 from httpx import AsyncClient
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from klassenzeit_backend.db.models import Subject, User
+from klassenzeit_backend.db.models import Room as _Room
+from klassenzeit_backend.db.models import SchoolClass, Subject, Teacher, User
 
 
 async def test_health_returns_ok(client: AsyncClient) -> None:
@@ -60,3 +61,26 @@ async def test_reset_preserves_users_and_sessions(
     db_session.expire_all()
     result = await db_session.execute(select(User).where(User.email == "keep@test.com"))
     assert result.scalar_one_or_none() is not None
+
+
+async def test_seed_grundschule_creates_expected_rows(
+    client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    """POST /__test__/seed-grundschule seeds a Hessen Grundschule."""
+    response = await client.post("/__test__/seed-grundschule")
+    assert response.status_code == 204
+
+    db_session.expire_all()
+
+    class_count = (
+        await db_session.execute(select(func.count()).select_from(SchoolClass))
+    ).scalar_one()
+    teacher_count = (
+        await db_session.execute(select(func.count()).select_from(Teacher))
+    ).scalar_one()
+    room_count = (await db_session.execute(select(func.count()).select_from(_Room))).scalar_one()
+
+    assert class_count == 4
+    assert teacher_count == 6
+    assert room_count == 7

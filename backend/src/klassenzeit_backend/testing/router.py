@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.db.base import Base
 from klassenzeit_backend.db.session import get_session
+from klassenzeit_backend.seed.demo_grundschule import seed_demo_grundschule
 
 testing_router = APIRouter(prefix="/__test__", tags=["testing"])
 
@@ -42,4 +43,19 @@ async def testing_reset(session: Annotated[AsyncSession, Depends(get_session)]) 
         names = ", ".join(f'"{t.name}"' for t in tables)
         await session.execute(text(f"TRUNCATE {names} RESTART IDENTITY CASCADE"))
         await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@testing_router.post("/seed-grundschule", status_code=status.HTTP_204_NO_CONTENT)
+async def testing_seed_grundschule(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> Response:
+    """Seed a Hessen Grundschule into the current session and commit.
+
+    Returns 204 with no body. The caller (Playwright fixture) is expected
+    to truncate first via ``/__test__/reset``; calling this endpoint
+    twice without a reset in between will raise ``IntegrityError``.
+    """
+    await seed_demo_grundschule(session)
+    await session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
