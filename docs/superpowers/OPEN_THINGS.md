@@ -75,6 +75,7 @@ Everything below is queued for later. Ordered roughly by importance within each 
 - **OAuth / OIDC / social login.** Not needed for closed system.
 - **Self-service registration.** Not needed for closed system.
 - **Bulk import/export.** CSV or JSON import for teachers, rooms, subjects. Useful but not needed for MVP.
+- **WCAG AA contrast for light-mode primary/secondary buttons.** `@google/design.md lint frontend/DESIGN.md` surfaces `contrast-ratio` warnings on `button-primary` (`#608c5e` on `#ffffff` = 3.88:1, below 4.5:1 AA; passes AA for large text at 3:1) and `button-secondary` (`#7ba8bc` on `#ffffff` = 2.57:1, below AA at any size). Fix options: darken the moss/blue primaries, switch to a dark textColor on those buttons, or restrict them to large-text usage. Decide when light-mode accessibility audit is on the roadmap; until then the warnings stay visible in every `mise run lint` run. Surfaced during DESIGN.md adoption.
 
 ### Solver algorithm (queued for after the Grundschule seed)
 
@@ -144,7 +145,3 @@ Gated on sprint step 2 (`demo_grundschule` seed) so evaluation and weight tuning
 Chat interface with Agent that can help with creations, modifications and deletions of entities. As well as see problems with the schedule and suggest fixes.
 
 And of course in general help with the application.
-
-### Design
-
-https://github.com/google-labs-code/design.md evaluate and implement if found good.
