@@ -113,6 +113,8 @@ How to dispatch:
 
 Each subagent prompt must include: the plan task it owns (paste the checkbox block), which files to touch, the relevant commits that preceded it, and the acceptance criteria (tests to run, lint to pass). The main session reviews the agent's diff and commits; the agent should not commit on its own.
 
+**If a subagent errors mid-run (e.g. "Overloaded"):** it may have written files without committing. Before dispatching a continuation, run `git status` + `git diff` from the main session to see what partial work survived the failure. Continuing in the main session is usually cheaper than redispatching when the agent already did the heavy edit; include a brief "Continuing from subagent state" note in the next commit's body so the review trail is legible.
+
 Then:
 
 - Commit in logical chunks with Conventional Commits scopes matching the module (e.g. `feat(frontend): ...`, `build(mise): ...`, `test(scripts): ...`).
