@@ -26,6 +26,7 @@ Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes 
 
 - **Deterministic under test.** No `std::time::SystemTime::now()` inside `solver-core`; no `rand::thread_rng()`. Any randomisation is seeded via a parameter on the public API so tests reproduce. Non-determinism here is silent (unit tests pass for a specific seed) and only surfaces as run-to-run timetable drift. `solver-py` is allowed to wrap the deterministic core with wall-clock timing for logging.
 - **Tests.** Inline `#[cfg(test)] mod tests` for unit, `solver-core/tests/*.rs` for integration (property tests, multi-step scenarios). When a shared fixtures module grows, add `solver-core/tests/common/mod.rs`.
+- **Bench targets cannot host libtest tests.** A `[[bench]] harness = false` binary (criterion's requirement) runs criterion's `main()`, not libtest; inline `#[cfg(test)] mod tests { #[test] fn ... }` inside the bench compiles but its `#[test]` functions never execute. Put the helper plus its tests in a dedicated `benches/<name>.rs`, then `#[path]`-include that file from both the bench target and a one-line `tests/bench_<name>.rs` integration binary so libtest picks the tests up (`solver-core/benches/percentile.rs` + `solver-core/tests/bench_percentile.rs` are the template).
 
 ## solver-py rules
 
