@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
+import type { components } from "@/lib/api-types";
 
 // jsdom's default window.location.origin is http://localhost:3000, which is
 // what the api-client resolves its baseUrl against during tests.
@@ -126,6 +127,12 @@ export const initialSchoolClasses = [
     updated_at: "2026-04-17T00:00:00Z",
   },
 ];
+
+// Mutable per-test store for schedule placements and violations. Tests
+// assign the arrays they want the GET / POST handlers to return, and reset
+// them in `beforeEach` by iterating `Object.keys`.
+export const scheduleByClassId: Record<string, components["schemas"]["PlacementResponse"][]> = {};
+export const violationsByClassId: Record<string, components["schemas"]["ViolationResponse"][]> = {};
 
 export const initialLessons = [
   {
@@ -664,6 +671,22 @@ export const defaultHandlers = [
     });
   }),
   http.delete(`${BASE}/api/lessons/:lesson_id`, () => HttpResponse.json(null, { status: 204 })),
+  http.get(`${BASE}/api/classes/:classId/schedule`, ({ params }) => {
+    const classId = String(params.classId);
+    if (classId === "deadbeef-dead-beef-dead-beefdeadbeef") {
+      return HttpResponse.json({ detail: "Class not found" }, { status: 404 });
+    }
+    return HttpResponse.json({ placements: scheduleByClassId[classId] ?? [] });
+  }),
+  http.post(`${BASE}/api/classes/:classId/schedule`, ({ params }) => {
+    const classId = String(params.classId);
+    if (classId === "deadbeef-dead-beef-dead-beefdeadbeef") {
+      return HttpResponse.json({ detail: "Class not found" }, { status: 404 });
+    }
+    const placements = scheduleByClassId[classId] ?? [];
+    const violations = violationsByClassId[classId] ?? [];
+    return HttpResponse.json({ placements, violations });
+  }),
 ];
 
 export const server = setupServer(...defaultHandlers);
