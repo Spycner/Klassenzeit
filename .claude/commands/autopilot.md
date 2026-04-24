@@ -123,6 +123,8 @@ Then:
 
 **First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`. Both via the `Skill` tool. The revisions those passes produce are the canonical CLAUDE.md changes for this run; do not hand-edit CLAUDE.md instead of running them.
 
+**Autonomous mode: apply the skills' proposed CLAUDE.md edits directly. Do not pause to ask the user for approval; running `/autopilot` is the approval.** If a skill's default behavior is to ask ("Apply these changes? y/n"), answer for the user and proceed. Briefly report the edits in the end-of-turn summary so the user can see what landed without having blocked on it.
+
 Then:
 
 - Update `docs/architecture/overview.md` if subsystems changed.
@@ -157,7 +159,7 @@ Only after the audit passes:
 
 ### 10. Self-review + improvement pass
 
-**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`, then `fewer-permission-prompts`. All three via the `Skill` tool. Let each skill do its own work; do not pre-synthesize what they would say. If `fewer-permission-prompts` edits `.claude/settings.json`, that edit must be committed — not left in the working tree. Stage it on a fresh `chore/...` branch off master (not the feature branch the user is about to merge), commit as `chore(settings): allowlist <...>`, and open a separate PR. Same rule applies to the autopilot.md edits below.
+**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`, then `fewer-permission-prompts`. All three via the `Skill` tool. Let each skill do its own work; do not pre-synthesize what they would say. **Autonomous mode: apply every skill's proposed edits directly without pausing for approval.** If `fewer-permission-prompts` edits `.claude/settings.json`, that edit must be committed, not left in the working tree. Stage it on a fresh `chore/...` branch off master (not the feature branch the user is about to merge), commit as `chore(settings): allowlist <...>`, and open a separate PR. Same rule applies to the autopilot.md edits below.
 
 After that, reflect:
 
