@@ -185,13 +185,14 @@ run = [
 ]
 
 [tasks."lint:py"]
-description = "Lint, format-check, type-check, and dead-code scan Python"
+description = "Lint, format-check, type-check, dead-code scan Python; plus cross-language lint scripts"
 run = [
   "uv run ruff check",
   "uv run ruff format --check",
   "uv run ty check",
   "uv run vulture backend/src",
   "uv run python scripts/check_unique_fns.py",
+  "uv run python scripts/check_use_effect_sync.py",
 ]
 
 [tasks."lint:design"]

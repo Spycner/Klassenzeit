@@ -1,23 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useWeekSchemeDetail, useWeekSchemes } from "@/features/week-schemes/hooks";
 import { dayLongKey, dayShortKey } from "@/i18n/day-keys";
 import { cn } from "@/lib/utils";
-import { useRoomDetail, useSaveRoomAvailability } from "./hooks";
+import { type RoomDetail, useRoomDetail, useSaveRoomAvailability } from "./hooks";
 
 export function RoomAvailabilityGrid({ roomId }: { roomId: string }) {
-  const { t } = useTranslation();
   const detail = useRoomDetail(roomId);
+  if (!detail.isSuccess) return null;
+  return <RoomAvailabilityGridLoaded room={detail.data} />;
+}
+
+function RoomAvailabilityGridLoaded({ room }: { room: RoomDetail }) {
+  const { t } = useTranslation();
   const schemes = useWeekSchemes();
   const save = useSaveRoomAvailability();
 
-  const persisted = useMemo(
-    () => new Set((detail.data?.availability ?? []).map((a) => a.time_block_id)),
-    [detail.data],
+  const [selected, setSelected] = useState<Set<string>>(
+    () => new Set(room.availability.map((a) => a.time_block_id)),
   );
-  const [selected, setSelected] = useState<Set<string>>(persisted);
-  useEffect(() => setSelected(persisted), [persisted]);
 
   function toggleRoomAvailabilityCell(id: string) {
     setSelected((prev) => {
@@ -29,7 +31,7 @@ export function RoomAvailabilityGrid({ roomId }: { roomId: string }) {
   }
 
   async function handleRoomAvailabilitySave() {
-    await save.mutateAsync({ id: roomId, timeBlockIds: Array.from(selected) });
+    await save.mutateAsync({ id: room.id, timeBlockIds: Array.from(selected) });
   }
 
   return (

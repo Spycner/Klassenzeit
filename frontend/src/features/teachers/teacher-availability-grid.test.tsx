@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import i18n from "@/i18n/init";
 import { teacherAvailabilityByTeacherId, timeBlocksBySchemeId } from "../../../tests/msw-handlers";
 import { renderWithProviders } from "../../../tests/render-helpers";
+import { teacherDetailQueryKey } from "./hooks";
 import { TeacherAvailabilityGrid } from "./teacher-availability-grid";
 
 const teacherId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
@@ -55,5 +56,42 @@ describe("TeacherAvailabilityGrid", () => {
       { time_block_id: "tb-mon-1", status: "preferred" },
       { time_block_id: "tb-mon-2", status: "unavailable" },
     ]);
+  });
+
+  it("preserves preferred markers when the detail query refetches in the background", async () => {
+    timeBlocksBySchemeId[schemeId] = [
+      {
+        id: "tb-mon-1",
+        day_of_week: 0,
+        position: 1,
+        start_time: "08:00:00",
+        end_time: "08:45:00",
+      },
+    ];
+    teacherAvailabilityByTeacherId[teacherId] = [];
+    const user = userEvent.setup();
+    const { queryClient } = renderWithProviders(<TeacherAvailabilityGrid teacherId={teacherId} />);
+
+    const preferredButtons = await screen.findAllByRole("button", { name: /^Preferred/i });
+    const firstPreferred = preferredButtons[0];
+    if (!firstPreferred) throw new Error("missing preferred button");
+    await user.click(firstPreferred);
+    expect(firstPreferred).toHaveAttribute("aria-pressed", "true");
+
+    // Simulate a sibling-tab change: a different availability set was persisted,
+    // then the detail query is invalidated to trigger a background refetch.
+    teacherAvailabilityByTeacherId[teacherId] = [
+      { time_block_id: "tb-some-other-block", status: "unavailable" },
+    ];
+    await queryClient.invalidateQueries({ queryKey: teacherDetailQueryKey(teacherId) });
+
+    // Wait for the refetch to settle.
+    await screen.findAllByRole("button", { name: /^Preferred/i });
+
+    // The user's in-progress preferred toggle must survive the background refetch.
+    const preferredAfter = screen.getAllByRole("button", { name: /^Preferred/i });
+    const firstPreferredAfter = preferredAfter[0];
+    if (!firstPreferredAfter) throw new Error("missing preferred button after refetch");
+    expect(firstPreferredAfter).toHaveAttribute("aria-pressed", "true");
   });
 });
