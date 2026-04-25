@@ -35,7 +35,7 @@ Run from repo root unless noted.
 
 ## Hooks and state
 
-- **No `useEffect` for derived state.** Compute during render. For syncing to props, use `key` to remount or derive inline.
+- **No `useEffect` for derived state.** Compute during render. For syncing to props, use `key` to remount or derive inline. Enforced by `mise run lint` via `scripts/check_use_effect_sync.py`; multi-statement effect bodies are out of scope for now (documented in the script).
 - **No `useState` for data you can recompute** from other state, props, or route search params.
 - **No defensive `useMemo`/`useCallback`.** Add only when profiling shows wasted work, or when reference stability is required by a dep array or memoized child.
 - **No `forwardRef` in new components.** React 19 treats `ref` as a plain prop. When touching shadcn primitives (e.g. `button.tsx`), clean up in passing.
