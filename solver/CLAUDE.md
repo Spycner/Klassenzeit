@@ -26,6 +26,7 @@ Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes 
 
 - **Deterministic under test.** No `std::time::SystemTime::now()` inside `solver-core`; no `rand::thread_rng()`. Any randomisation is seeded via a parameter on the public API so tests reproduce. Non-determinism here is silent (unit tests pass for a specific seed) and only surfaces as run-to-run timetable drift. `solver-py` is allowed to wrap the deterministic core with wall-clock timing for logging.
 - **Tests.** Inline `#[cfg(test)] mod tests` for unit, `solver-core/tests/*.rs` for integration (property tests, multi-step scenarios). When a shared fixtures module grows, add `solver-core/tests/common/mod.rs`.
+- **Bench targets cannot host libtest tests.** A `[[bench]] harness = false` binary (criterion's requirement) runs criterion's `main()`, not libtest; inline `#[cfg(test)] mod tests { #[test] fn ... }` inside the bench compiles but its `#[test]` functions never execute. Put the helper plus its tests in a dedicated `benches/<name>.rs`, then `#[path]`-include that file from both the bench target and a one-line `tests/bench_<name>.rs` integration binary so libtest picks the tests up (`solver-core/benches/percentile.rs` + `solver-core/tests/bench_percentile.rs` are the template).
 
 ## solver-py rules
 
@@ -74,7 +75,15 @@ Bare `solver` scope only when a paired change genuinely spans both crates (e.g.,
 | Targeted check for `solver-py` | `cargo nextest run -p solver-py --no-tests=pass` (crate has no Rust-side tests; nextest exits 1 on empty-run otherwise) |
 | PyO3 signature or stub change | above + `uv run pytest solver/solver-py/tests` |
 | Any commit | `mise run lint` (pre-commit hook runs it anyway; fail fast locally) |
-| Algorithm change | `mise run bench` (placeholder today; criterion benches land with the MVP) |
+| Algorithm change | `mise run bench` and compare against the committed baseline; refresh with `mise run bench:record` if the PR intentionally changes perf |
+
+## Bench workflow
+
+- **`mise run bench`** runs the criterion bench (`cargo bench -p solver-core --bench solver_grundschule`). Use for the "am I faster than yesterday?" inner loop; the second run's criterion output shows deltas against the first.
+- **`mise run bench:record`** re-runs the bench and overwrites `solver/solver-core/benches/BASELINE.md`. Run this if and only if the PR intentionally changes solver performance. The 20% regression budget from `docs/superpowers/OPEN_THINGS.md` (active sprint) applies against the committed file, not a personal baseline.
+- **The bench does not run in CI** (shared runners are too noisy for a 20% budget). Algorithm-phase PRs cite the `BASELINE.md` diff in the PR body.
+- **Host sensitivity.** The committed numbers anchor to the recording host; when a maintainer refreshes them they should do so on comparable hardware. The footer in `BASELINE.md` records CPU, kernel, and rustc version so reviewers can judge whether a drift is plausible.
+- **Fixture:** today one Grundschule-shaped fixture (2 classes, 8 teachers, 5 rooms, 15 lessons, 45 placements). Sprint item 6 on `OPEN_THINGS.md` adds zweizuegig and Gesamtschule fixtures.
 
 ## Pointers
 
