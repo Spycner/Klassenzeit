@@ -126,7 +126,10 @@ fn assert_total_hours_accounted_for(p: &Problem, s: &Solution) {
         .filter(|v| {
             matches!(
                 v.kind,
-                ViolationKind::UnplacedLesson | ViolationKind::NoQualifiedTeacher
+                ViolationKind::NoQualifiedTeacher
+                    | ViolationKind::TeacherOverCapacity
+                    | ViolationKind::NoFreeTimeBlock
+                    | ViolationKind::NoSuitableRoom
             )
         })
         .count() as u32;

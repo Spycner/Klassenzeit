@@ -1,7 +1,8 @@
 //! Greedy first-fit timetable solver. Iterates lessons, hours, time blocks, rooms
 //! in caller-provided order; commits the first candidate that satisfies every hard
-//! constraint. Placement failures become `UnplacedLesson` violations inside
-//! `Solution`; `Err(Error::Input)` is reserved for structural input errors.
+//! constraint. Placement failures become typed violations (`TeacherOverCapacity`,
+//! `NoFreeTimeBlock`, `NoSuitableRoom`) inside `Solution`; `Err(Error::Input)` is
+//! reserved for structural input errors.
 
 use std::collections::{HashMap, HashSet};
 
@@ -53,19 +54,17 @@ pub fn solve(problem: &Problem) -> Result<Solution, Error> {
             );
             if !placed {
                 solution.violations.push(Violation {
-                    kind: ViolationKind::UnplacedLesson,
-                    lesson_id: lesson.id,
-                    hour_index,
-                    message: unplaced_reason(
+                    kind: unplaced_kind(
                         problem,
                         lesson,
                         &idx,
                         &teacher_max,
                         &used_teacher,
                         &used_class,
-                        &used_room,
                         &hours_by_teacher,
                     ),
+                    lesson_id: lesson.id,
+                    hour_index,
                 });
             }
         }
@@ -131,27 +130,22 @@ fn try_place_hour(
     false
 }
 
-#[allow(clippy::too_many_arguments)] // Reason: diagnostic-only helper; arguments mirror try_place_hour for parity
-fn unplaced_reason(
+fn unplaced_kind(
     problem: &Problem,
     lesson: &Lesson,
     idx: &Indexed,
     teacher_max: &HashMap<TeacherId, u8>,
     used_teacher: &HashSet<(TeacherId, TimeBlockId)>,
     used_class: &HashSet<(SchoolClassId, TimeBlockId)>,
-    used_room: &HashSet<(RoomId, TimeBlockId)>,
     hours_by_teacher: &HashMap<TeacherId, u8>,
-) -> String {
+) -> ViolationKind {
     let current = hours_by_teacher
         .get(&lesson.teacher_id)
         .copied()
         .unwrap_or(0);
     let max = teacher_max.get(&lesson.teacher_id).copied().unwrap_or(0);
     if current >= max {
-        return format!(
-            "teacher {} already at max_hours_per_week ({})",
-            lesson.teacher_id.0, max
-        );
+        return ViolationKind::TeacherOverCapacity;
     }
 
     let any_slot_open = problem.time_blocks.iter().any(|tb| {
@@ -160,19 +154,9 @@ fn unplaced_reason(
             && !idx.teacher_blocked(lesson.teacher_id, tb.id)
     });
     if !any_slot_open {
-        return "no free time_block for teacher and class".to_string();
+        return ViolationKind::NoFreeTimeBlock;
     }
-    let any_room_open = problem.time_blocks.iter().any(|tb| {
-        problem.rooms.iter().any(|room| {
-            !used_room.contains(&(room.id, tb.id))
-                && idx.room_suits_subject(room.id, lesson.subject_id)
-                && !idx.room_blocked(room.id, tb.id)
-        })
-    });
-    if !any_room_open {
-        return "no suitable room available at any time_block".to_string();
-    }
-    "no viable (time_block, room) combination".to_string()
+    ViolationKind::NoSuitableRoom
 }
 
 #[cfg(test)]
@@ -279,7 +263,7 @@ mod tests {
         let s = solve(&p).unwrap();
         assert!(s.placements.is_empty());
         assert_eq!(s.violations.len(), 1);
-        assert_eq!(s.violations[0].kind, ViolationKind::UnplacedLesson);
+        assert_eq!(s.violations[0].kind, ViolationKind::NoSuitableRoom);
     }
 
     #[test]
@@ -295,14 +279,43 @@ mod tests {
     }
 
     #[test]
-    fn teacher_max_hours_cap_emits_unplaced_violation() {
+    fn teacher_max_hours_cap_emits_teacher_over_capacity() {
         let mut p = base_problem();
         p.teachers[0].max_hours_per_week = 0;
         let s = solve(&p).unwrap();
         assert!(s.placements.is_empty());
         assert_eq!(s.violations.len(), 1);
-        assert_eq!(s.violations[0].kind, ViolationKind::UnplacedLesson);
-        assert!(s.violations[0].message.contains("max_hours_per_week"));
+        assert_eq!(s.violations[0].kind, ViolationKind::TeacherOverCapacity);
+    }
+
+    #[test]
+    fn no_free_time_block_when_class_slots_are_filled_blocks_second_lesson() {
+        let mut p = base_problem();
+        // base_problem has 2 time_blocks. Add a second subject + lesson whose teacher is
+        // qualified for both subjects, then block the teacher in time_block 1 to leave only
+        // time_block 0 free; the first lesson takes block 0, the second cannot place.
+        p.subjects.push(Subject {
+            id: SubjectId(solve_uuid(41)),
+        });
+        p.teacher_qualifications.push(TeacherQualification {
+            teacher_id: TeacherId(solve_uuid(20)),
+            subject_id: SubjectId(solve_uuid(41)),
+        });
+        p.lessons.push(Lesson {
+            id: LessonId(solve_uuid(61)),
+            school_class_id: SchoolClassId(solve_uuid(50)),
+            subject_id: SubjectId(solve_uuid(41)),
+            teacher_id: TeacherId(solve_uuid(20)),
+            hours_per_week: 1,
+        });
+        p.teacher_blocked_times.push(TeacherBlockedTime {
+            teacher_id: TeacherId(solve_uuid(20)),
+            time_block_id: TimeBlockId(solve_uuid(11)),
+        });
+        let s = solve(&p).unwrap();
+        assert_eq!(s.placements.len(), 1);
+        assert_eq!(s.violations.len(), 1);
+        assert_eq!(s.violations[0].kind, ViolationKind::NoFreeTimeBlock);
     }
 
     #[test]
