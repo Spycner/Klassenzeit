@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { dayLongKey, dayShortKey } from "@/i18n/day-keys";
 import { cn } from "@/lib/utils";
 import {
   type TeacherAvailabilityEntry,
+  type TeacherDetail,
   useSaveTeacherAvailability,
   useTeacherDetail,
 } from "./hooks";
@@ -24,14 +25,19 @@ function isTeacherAvailabilityStatus(value: string): value is TeacherAvailabilit
 }
 
 export function TeacherAvailabilityGrid({ teacherId }: { teacherId: string }) {
-  const { t } = useTranslation();
   const detail = useTeacherDetail(teacherId);
+  if (!detail.isSuccess) return null;
+  return <TeacherAvailabilityGridLoaded teacher={detail.data} />;
+}
+
+function TeacherAvailabilityGridLoaded({ teacher }: { teacher: TeacherDetail }) {
+  const { t } = useTranslation();
   const schemes = useWeekSchemes();
   const save = useSaveTeacherAvailability();
 
-  const persisted = useMemo(() => {
+  const [statuses, setStatuses] = useState<Map<string, TeacherAvailabilityStatus>>(() => {
     const map = new Map<string, TeacherAvailabilityStatus>();
-    for (const entry of detail.data?.availability ?? []) {
+    for (const entry of teacher.availability) {
       if (
         isTeacherAvailabilityStatus(entry.status) &&
         (entry.status === "preferred" || entry.status === "unavailable")
@@ -40,10 +46,7 @@ export function TeacherAvailabilityGrid({ teacherId }: { teacherId: string }) {
       }
     }
     return map;
-  }, [detail.data]);
-
-  const [statuses, setStatuses] = useState<Map<string, TeacherAvailabilityStatus>>(persisted);
-  useEffect(() => setStatuses(persisted), [persisted]);
+  });
 
   function setTeacherAvailabilityStatus(blockId: string, next: TeacherAvailabilityStatus) {
     setStatuses((prev) => {
@@ -60,7 +63,7 @@ export function TeacherAvailabilityGrid({ teacherId }: { teacherId: string }) {
       entries.push({ time_block_id: id, status });
     }
     try {
-      await save.mutateAsync({ id: teacherId, entries });
+      await save.mutateAsync({ id: teacher.id, entries });
       toast.success(t("teachers.availability.saved"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("teachers.availability.saveError"));
