@@ -3,16 +3,10 @@ import { Layers } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/empty-state";
+import { type EntityColumn, EntityListTable } from "@/components/entity-list-table";
+import { EntityPageHead } from "@/components/entity-page-head";
 import { Toolbar } from "@/components/toolbar";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { type Lesson, useLessons } from "./hooks";
 import { DeleteLessonDialog, LessonFormDialog } from "./lessons-dialogs";
 
@@ -38,9 +32,59 @@ export function LessonsPage() {
   });
   const showEmpty = !lessons.isLoading && lessons.data && lessons.data.length === 0 && !q;
 
+  const lessonColumns: EntityColumn<Lesson>[] = [
+    {
+      key: "schoolClass",
+      header: t("lessons.columns.schoolClass"),
+      cell: (lesson) => lesson.school_class.name,
+      cellClassName: "font-medium",
+    },
+    {
+      key: "subject",
+      header: t("lessons.columns.subject"),
+      cell: (lesson) => (
+        <>
+          {lesson.subject.name}{" "}
+          <span className="text-muted-foreground">· {lesson.subject.short_name}</span>
+        </>
+      ),
+    },
+    {
+      key: "teacher",
+      header: t("lessons.columns.teacher"),
+      cell: (lesson) => (
+        <span
+          title={
+            lesson.teacher
+              ? `${lesson.teacher.first_name} ${lesson.teacher.last_name}`
+              : t("lessons.fields.teacherUnassigned")
+          }
+        >
+          {lesson.teacher ? lesson.teacher.short_code : "—"}
+        </span>
+      ),
+      cellClassName: "font-mono text-[12.5px]",
+    },
+    {
+      key: "hoursPerWeek",
+      header: t("lessons.columns.hoursPerWeek"),
+      cell: (lesson) => lesson.hours_per_week,
+      className: "text-right",
+      cellClassName: "font-mono text-[12.5px]",
+    },
+    {
+      key: "blockSize",
+      header: t("lessons.columns.blockSize"),
+      cell: (lesson) =>
+        lesson.preferred_block_size === 2
+          ? t("lessons.fields.blockSizeDouble")
+          : t("lessons.fields.blockSizeSingle"),
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <LessonsPageHead
+      <EntityPageHead
         title={t("lessons.title")}
         subtitle={t("lessons.subtitle")}
         onCreate={() => setCreating(true)}
@@ -72,65 +116,22 @@ export function LessonsPage() {
               </span>
             }
           />
-          <div className="overflow-x-auto rounded-xl border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="py-2">{t("lessons.columns.schoolClass")}</TableHead>
-                  <TableHead className="py-2">{t("lessons.columns.subject")}</TableHead>
-                  <TableHead className="py-2">{t("lessons.columns.teacher")}</TableHead>
-                  <TableHead className="py-2 text-right">
-                    {t("lessons.columns.hoursPerWeek")}
-                  </TableHead>
-                  <TableHead className="py-2">{t("lessons.columns.blockSize")}</TableHead>
-                  <TableHead className="w-40 py-2 text-right">
-                    {t("lessons.columns.actions")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((lesson) => (
-                  <TableRow key={lesson.id}>
-                    <TableCell className="py-1.5 font-medium">{lesson.school_class.name}</TableCell>
-                    <TableCell className="py-1.5">
-                      {lesson.subject.name}{" "}
-                      <span className="text-muted-foreground">· {lesson.subject.short_name}</span>
-                    </TableCell>
-                    <TableCell
-                      className="py-1.5 font-mono text-[12.5px]"
-                      title={
-                        lesson.teacher
-                          ? `${lesson.teacher.first_name} ${lesson.teacher.last_name}`
-                          : t("lessons.fields.teacherUnassigned")
-                      }
-                    >
-                      {lesson.teacher ? lesson.teacher.short_code : "—"}
-                    </TableCell>
-                    <TableCell className="py-1.5 text-right font-mono text-[12.5px]">
-                      {lesson.hours_per_week}
-                    </TableCell>
-                    <TableCell className="py-1.5">
-                      {lesson.preferred_block_size === 2
-                        ? t("lessons.fields.blockSizeDouble")
-                        : t("lessons.fields.blockSizeSingle")}
-                    </TableCell>
-                    <TableCell className="space-x-2 whitespace-nowrap py-1.5 text-right">
-                      <Button size="sm" variant="outline" onClick={() => setEditing(lesson)}>
-                        {t("common.edit")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => setConfirmDelete(lesson)}
-                      >
-                        {t("common.delete")}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <EntityListTable<Lesson>
+            rows={rows}
+            rowKey={(lesson) => lesson.id}
+            columns={lessonColumns}
+            actions={(lesson) => (
+              <>
+                <Button size="sm" variant="outline" onClick={() => setEditing(lesson)}>
+                  {t("common.edit")}
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(lesson)}>
+                  {t("common.delete")}
+                </Button>
+              </>
+            )}
+            actionsHeader={t("lessons.columns.actions")}
+          />
         </>
       )}
 
@@ -152,34 +153,6 @@ export function LessonsPage() {
       {confirmDelete ? (
         <DeleteLessonDialog lesson={confirmDelete} onClose={() => setConfirmDelete(null)} />
       ) : null}
-    </div>
-  );
-}
-
-function LessonsPageHead({
-  title,
-  subtitle,
-  onCreate,
-  createLabel,
-}: {
-  title: string;
-  subtitle: string;
-  onCreate: () => void;
-  createLabel: string;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div className="flex flex-wrap items-end justify-between gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" disabled title={t("sidebar.comingSoon")}>
-          {t("common.import")}
-        </Button>
-        <Button onClick={onCreate}>{createLabel}</Button>
-      </div>
     </div>
   );
 }
