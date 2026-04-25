@@ -1,23 +1,24 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SubjectMultiPicker } from "@/features/subjects/subject-multi-picker";
-import { useSaveTeacherQualifications, useTeacherDetail } from "./hooks";
+import { type TeacherDetail, useSaveTeacherQualifications, useTeacherDetail } from "./hooks";
 
 export function TeacherQualificationsEditor({ teacherId }: { teacherId: string }) {
-  const { t } = useTranslation();
   const detail = useTeacherDetail(teacherId);
+  if (!detail.isSuccess) return null;
+  return <TeacherQualificationsEditorLoaded teacher={detail.data} />;
+}
+
+function TeacherQualificationsEditorLoaded({ teacher }: { teacher: TeacherDetail }) {
+  const { t } = useTranslation();
   const save = useSaveTeacherQualifications();
-  const persisted = detail.data?.qualifications.map((q) => q.id) ?? [];
-  const [draft, setDraft] = useState<string[]>(persisted);
-  useEffect(() => {
-    setDraft(detail.data?.qualifications.map((q) => q.id) ?? []);
-  }, [detail.data]);
+  const [draft, setDraft] = useState<string[]>(() => teacher.qualifications.map((q) => q.id));
 
   async function handleTeacherQualificationsSave() {
     try {
-      await save.mutateAsync({ id: teacherId, subjectIds: draft });
+      await save.mutateAsync({ id: teacher.id, subjectIds: draft });
       toast.success(t("teachers.qualifications.saved"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("teachers.qualifications.saveError"));
