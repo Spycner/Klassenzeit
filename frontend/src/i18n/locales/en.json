@@ -325,8 +325,11 @@
       "unplaced_other": "{{count}} hours unplaced"
     },
     "violations": {
-      "title": "Unplaced hours",
-      "item": "{{subject}} (hour {{hour}}): {{message}}"
+      "title": "Issues",
+      "noQualifiedTeacher": "{{subject}} (hour {{hour}}): {{teacher}} is not qualified for this subject.",
+      "teacherOverCapacity": "{{subject}} (hour {{hour}}): {{teacher}} would exceed their max weekly hours.",
+      "noFreeTimeBlock": "{{subject}} (hour {{hour}}): no free slot for {{teacher}} and {{class}}.",
+      "noSuitableRoom": "{{subject}} (hour {{hour}}): no suitable room is available."
     },
     "cellDeletedLesson": "(deleted lesson)"
   },

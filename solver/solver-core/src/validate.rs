@@ -154,10 +154,6 @@ pub fn pre_solve_violations(problem: &Problem) -> Vec<Violation> {
                 kind: ViolationKind::NoQualifiedTeacher,
                 lesson_id: lesson.id,
                 hour_index,
-                message: format!(
-                    "teacher {} is not qualified for subject {}",
-                    lesson.teacher_id.0, lesson.subject_id.0
-                ),
             });
         }
     }

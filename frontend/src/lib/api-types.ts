@@ -2167,7 +2167,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "no_qualified_teacher" | "unplaced_lesson";
+            kind: "no_qualified_teacher" | "teacher_over_capacity" | "no_free_time_block" | "no_suitable_room";
             /**
              * Lesson Id
              * Format: uuid
@@ -2175,8 +2175,6 @@ export interface components {
             lesson_id: string;
             /** Hour Index */
             hour_index: number;
-            /** Message */
-            message: string;
         };
         /**
          * WeekSchemeCreate

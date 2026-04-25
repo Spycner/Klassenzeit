@@ -325,8 +325,11 @@
       "unplaced_other": "{{count}} Stunden nicht eingeplant"
     },
     "violations": {
-      "title": "Nicht eingeplante Stunden",
-      "item": "{{subject}} (Stunde {{hour}}): {{message}}"
+      "title": "Probleme",
+      "noQualifiedTeacher": "{{subject}} (Stunde {{hour}}): {{teacher}} ist für dieses Fach nicht qualifiziert.",
+      "teacherOverCapacity": "{{subject}} (Stunde {{hour}}): {{teacher}} würde die Wochenhöchststundenzahl überschreiten.",
+      "noFreeTimeBlock": "{{subject}} (Stunde {{hour}}): kein freier Slot für {{teacher}} und {{class}}.",
+      "noSuitableRoom": "{{subject}} (Stunde {{hour}}): kein passender Raum verfügbar."
     },
     "cellDeletedLesson": "(gelöschte Unterrichtsstunde)"
   },

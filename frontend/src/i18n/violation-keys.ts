@@ -1,0 +1,22 @@
+import type { components } from "@/lib/api-types";
+
+type ViolationKind = components["schemas"]["ViolationResponse"]["kind"];
+
+export function violationItemKey(
+  kind: ViolationKind,
+):
+  | "schedule.violations.noQualifiedTeacher"
+  | "schedule.violations.teacherOverCapacity"
+  | "schedule.violations.noFreeTimeBlock"
+  | "schedule.violations.noSuitableRoom" {
+  switch (kind) {
+    case "no_qualified_teacher":
+      return "schedule.violations.noQualifiedTeacher";
+    case "teacher_over_capacity":
+      return "schedule.violations.teacherOverCapacity";
+    case "no_free_time_block":
+      return "schedule.violations.noFreeTimeBlock";
+    case "no_suitable_room":
+      return "schedule.violations.noSuitableRoom";
+  }
+}

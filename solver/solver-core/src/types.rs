@@ -158,7 +158,7 @@ pub struct Placement {
 }
 
 /// A single hard-constraint violation recorded by the solver.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Violation {
     /// Kind of violation.
@@ -167,8 +167,6 @@ pub struct Violation {
     pub lesson_id: LessonId,
     /// Zero-based hour index within the lesson.
     pub hour_index: u8,
-    /// Human-readable diagnostic.
-    pub message: String,
 }
 
 /// Discriminator for `Violation`.
@@ -177,8 +175,12 @@ pub struct Violation {
 pub enum ViolationKind {
     /// The lesson's assigned teacher lacks the subject qualification.
     NoQualifiedTeacher,
-    /// No valid `(time_block, room)` combination was available for this hour.
-    UnplacedLesson,
+    /// Placing this hour would push the teacher past `max_hours_per_week`.
+    TeacherOverCapacity,
+    /// No time block has both the (teacher, class) pair free.
+    NoFreeTimeBlock,
+    /// No room is suitable for the subject and free in any free time block.
+    NoSuitableRoom,
 }
 
 #[cfg(test)]
@@ -216,8 +218,16 @@ mod tests {
             "\"no_qualified_teacher\""
         );
         assert_eq!(
-            serde_json::to_string(&ViolationKind::UnplacedLesson).unwrap(),
-            "\"unplaced_lesson\""
+            serde_json::to_string(&ViolationKind::TeacherOverCapacity).unwrap(),
+            "\"teacher_over_capacity\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ViolationKind::NoFreeTimeBlock).unwrap(),
+            "\"no_free_time_block\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ViolationKind::NoSuitableRoom).unwrap(),
+            "\"no_suitable_room\""
         );
     }
 
@@ -246,10 +256,9 @@ mod tests {
                 room_id: RoomId(Uuid::nil()),
             }],
             violations: vec![Violation {
-                kind: ViolationKind::UnplacedLesson,
+                kind: ViolationKind::TeacherOverCapacity,
                 lesson_id: lesson_id(),
                 hour_index: 0,
-                message: "teacher busy".to_string(),
             }],
         };
         let json = serde_json::to_string(&solution).unwrap();
