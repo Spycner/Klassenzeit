@@ -21,10 +21,14 @@ class PlacementResponse(BaseModel):
 class ViolationResponse(BaseModel):
     """One hard-constraint violation emitted by the solver."""
 
-    kind: Literal["no_qualified_teacher", "unplaced_lesson"]
+    kind: Literal[
+        "no_qualified_teacher",
+        "teacher_over_capacity",
+        "no_free_time_block",
+        "no_suitable_room",
+    ]
     lesson_id: UUID
     hour_index: int = Field(ge=0)
-    message: str
 
 
 class ScheduleResponse(BaseModel):

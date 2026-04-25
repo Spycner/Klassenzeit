@@ -70,16 +70,14 @@ def test_filter_solution_for_class_drops_violations_for_other_classes() -> None:
         "placements": [],
         "violations": [
             {
-                "kind": "unplaced_lesson",
+                "kind": "teacher_over_capacity",
                 "lesson_id": str(class_lesson),
                 "hour_index": 0,
-                "message": "x",
             },
             {
-                "kind": "unplaced_lesson",
+                "kind": "no_suitable_room",
                 "lesson_id": str(other_lesson),
                 "hour_index": 0,
-                "message": "y",
             },
         ],
     }
