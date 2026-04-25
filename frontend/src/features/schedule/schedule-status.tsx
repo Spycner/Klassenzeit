@@ -1,19 +1,21 @@
 import { AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { Lesson } from "@/features/lessons/hooks";
+import { violationItemKey } from "@/i18n/violation-keys";
 import type { Violation } from "./hooks";
 
 interface ScheduleStatusProps {
   placementsCount: number;
   expectedHours: number;
   violations: Violation[] | undefined;
-  subjectNameByLessonId: Map<string, string>;
+  lessonById: Map<string, Lesson>;
 }
 
 export function ScheduleStatus({
   placementsCount,
   expectedHours,
   violations,
-  subjectNameByLessonId,
+  lessonById,
 }: ScheduleStatusProps) {
   const { t } = useTranslation();
   const derivedUnplaced = Math.max(0, expectedHours - placementsCount);
@@ -35,16 +37,20 @@ export function ScheduleStatus({
             {t("schedule.violations.title")}
           </div>
           <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-            {violations?.map((v) => (
-              <li key={`${v.lesson_id}:${v.hour_index}:${v.kind}`}>
-                {t("schedule.violations.item", {
-                  subject:
-                    subjectNameByLessonId.get(v.lesson_id) ?? t("schedule.cellDeletedLesson"),
-                  hour: v.hour_index + 1,
-                  message: v.message,
-                })}
-              </li>
-            ))}
+            {violations?.map((v) => {
+              const lesson = lessonById.get(v.lesson_id);
+              const fallback = t("schedule.cellDeletedLesson");
+              return (
+                <li key={`${v.lesson_id}:${v.hour_index}:${v.kind}`}>
+                  {t(violationItemKey(v.kind), {
+                    subject: lesson?.subject.name ?? fallback,
+                    hour: v.hour_index + 1,
+                    teacher: lesson?.teacher?.last_name ?? fallback,
+                    class: lesson?.school_class.name ?? fallback,
+                  })}
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}

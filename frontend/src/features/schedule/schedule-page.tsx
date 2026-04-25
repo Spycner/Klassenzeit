@@ -94,9 +94,6 @@ export function SchedulePage() {
 
   const classLessons = (lessons.data ?? []).filter((l) => l.school_class.id === classId);
   const expectedHours = classLessons.reduce((sum, l) => sum + l.hours_per_week, 0);
-  const subjectNameByLessonId = new Map(
-    classLessons.map((l) => [l.id, l.subject.name ?? t("schedule.cellDeletedLesson")]),
-  );
 
   const cells: ScheduleCell[] = placements
     .map((p): ScheduleCell | undefined => {
@@ -167,7 +164,7 @@ export function SchedulePage() {
             placementsCount={placements.length}
             expectedHours={expectedHours}
             violations={postViolations}
-            subjectNameByLessonId={subjectNameByLessonId}
+            lessonById={lessonById}
           />
           <ScheduleGrid cells={cells} daysPresent={daysPresent} positions={positions} />
         </>
