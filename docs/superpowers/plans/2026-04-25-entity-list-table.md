@@ -161,7 +161,7 @@ const columns: EntityColumn<Row>[] = [
     key: "name",
     header: "Name",
     cell: (row) => row.name,
-    cellClassName: "font-medium",
+    cellClassName: "font-bold",
   },
   {
     key: "code",
@@ -220,12 +220,15 @@ describe("EntityListTable", () => {
   });
 
   it("applies cellClassName to <td> only", () => {
+    // `font-bold` chosen so it does not collide with shadcn's <TableHead> base
+    // class, which bakes in `font-medium`. Using `font-medium` here would pass
+    // on the cell but surface a false negative on the header.
     render(<EntityListTable rows={rows} rowKey={(r) => r.id} columns={columns} />);
     const nameHeader = screen.getAllByRole("columnheader")[0]!;
-    expect(nameHeader.className).not.toContain("font-medium");
+    expect(nameHeader.className).not.toContain("font-bold");
     const dataRows = screen.getAllByRole("row").slice(1);
     const nameCell = within(dataRows[0]!).getAllByRole("cell")[0]!;
-    expect(nameCell.className).toContain("font-medium");
+    expect(nameCell.className).toContain("font-bold");
   });
 
   it("applies headerClassName to <th> only", () => {
