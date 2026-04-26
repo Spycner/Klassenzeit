@@ -113,6 +113,8 @@ Each subagent prompt must include: the plan task it owns (paste the checkbox blo
 
 **If a subagent errors mid-run (e.g. "Overloaded"):** it may have written files without committing. Before dispatching a continuation, run `git status` + `git diff` from the main session to see what partial work survived the failure. Continuing in the main session is usually cheaper than redispatching when the agent already did the heavy edit; include a brief "Continuing from subagent state" note in the next commit's body so the review trail is legible.
 
+**If a subagent reports `DONE_WITH_CONCERNS` and the concern is in-scope** (perf-budget regression on a solver task, an unfixed lint, a missing test the spec required), fix it before committing, either in the main session or by re-dispatching with the gap added to the acceptance criteria. Do not carry the concern into the PR. For algorithm-phase work specifically, include the BASELINE.md 20% regression budget as an explicit acceptance criterion in the subagent prompt so the agent knows to optimise within its own task rather than surface the breach.
+
 Then:
 
 - Commit in logical chunks with Conventional Commits scopes matching the module (e.g. `feat(frontend): ...`, `build(mise): ...`, `test(scripts): ...`).

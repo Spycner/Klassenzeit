@@ -13,6 +13,7 @@ Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes 
 ## solver-core rules
 
 - **`#![deny(missing_docs)]` is on at the crate root.** Every new `pub` item, including struct fields, enum variants, and macro-generated newtypes, needs a `///` rustdoc line or the crate refuses to compile. Plans that paste ready-to-compile code must include the doc comments.
+- **`clippy::doc_lazy_continuation` flags `+` at the start of a `///` continuation line** as a Markdown bullet against the previous line and fails the `-D warnings` build. Use `and` / `plus` instead, or indent the continuation by two spaces.
 - **Errors use `thiserror`, one enum per logical boundary** (input parsing, constraint validation, scheduling). No `anyhow` in `solver-core`; a library erases type information when it boxes, and the backend wants to match on specific failure modes.
 
     ```rust
@@ -84,7 +85,7 @@ Bare `solver` scope only when a paired change genuinely spans both crates (e.g.,
 - **The bench does not run in CI** (shared runners are too noisy for a 20% budget). Algorithm-phase PRs cite the `BASELINE.md` diff in the PR body.
 - **Host sensitivity.** The committed numbers anchor to the recording host; when a maintainer refreshes them they should do so on comparable hardware. The footer in `BASELINE.md` records CPU, kernel, and rustc version so reviewers can judge whether a drift is plausible.
 - **Fixtures:** two sizes inside one criterion group — `grundschule` (2 classes, 15 lessons, 45 placements) and `zweizuegig` (8 classes, 68 lessons, 196 placements). Each is hand-coded in `solver-core/benches/solver_fixtures.rs` and mirrors a Python seed in `backend/.../seed/demo_*.py`; drift is caught by `assert_eq!(lessons.len(), N)` against literals shared with the matching Python solvability test. The third size (`gesamtschule`) is tracked under `OPEN_THINGS.md` "Acknowledged deferrals".
-- **Bench global-solve is sensitive to lesson input order; Python solvability is not.** The bench calls `solve(&problem)` once for the whole school, which runs the MVP greedy first-fit in input-Vec order. The Python solvability test calls `POST /api/classes/{id}/schedule` per class, so each class is solved against a fresh, full timetable. A fixture that pins per-class Klassenlehrer first and cross-class specialists last (the natural authoring order) solves cleanly under the per-class flow but produces violations in the global flow because the last-processed class hits saturated specialist slots. Encode lessons in scarcity-first subject order in the Rust fixture (`zweizuegig_fixture` in `solver_fixtures.rs` is the template) so the MVP solver succeeds on the global solve. Future solvers that sort internally (PR 7 FFD, PR 9 LAHC) will be invariant to this and can drop the workaround.
+- **FFD is invariant to lesson input order.** Both bench fixtures iterate subjects in the natural authoring order; `ordering::ffd_order` inside `solve_with_config` sorts lessons by eligibility before placement so the global solve succeeds regardless of input permutation.
 
 ## Pointers
 

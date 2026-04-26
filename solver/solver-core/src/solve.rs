@@ -1,19 +1,27 @@
-//! Greedy first-fit timetable solver. Iterates lessons, hours, time blocks, rooms
-//! in caller-provided order; commits the first candidate that satisfies every hard
-//! constraint. Placement failures become typed violations (`TeacherOverCapacity`,
-//! `NoFreeTimeBlock`, `NoSuitableRoom`) inside `Solution`; `Err(Error::Input)` is
-//! reserved for structural input errors.
+//! First Fit Decreasing greedy timetable solver. Sorts lessons by
+//! eligibility (most constrained first) via `ordering::ffd_order`, then
+//! commits the first hard-constraint-satisfying (time block, room) for each
+//! lesson-hour. Placement failures become typed violations
+//! (`TeacherOverCapacity`, `NoFreeTimeBlock`, `NoSuitableRoom`) inside
+//! `Solution`; `Err(Error::Input)` is reserved for structural input errors.
 
 use std::collections::{HashMap, HashSet};
 
 use crate::error::Error;
 use crate::ids::{RoomId, SchoolClassId, TeacherId, TimeBlockId};
 use crate::index::Indexed;
-use crate::types::{Lesson, Placement, Problem, Solution, Violation, ViolationKind};
+use crate::types::{Lesson, Placement, Problem, Solution, SolveConfig, Violation, ViolationKind};
 use crate::validate::{pre_solve_violations, validate_structural};
 
 /// Solve the timetable problem using greedy first-fit placement.
 pub fn solve(problem: &Problem) -> Result<Solution, Error> {
+    solve_with_config(problem, &SolveConfig::default())
+}
+
+/// Solve the timetable problem with explicit configuration. Today's pass
+/// reads the config's struct presence but not its fields; later passes
+/// consume `weights`, `seed`, and `deadline`.
+pub fn solve_with_config(problem: &Problem, _config: &SolveConfig) -> Result<Solution, Error> {
     validate_structural(problem)?;
 
     let idx = Indexed::new(problem);
@@ -33,7 +41,9 @@ pub fn solve(problem: &Problem) -> Result<Solution, Error> {
         .map(|t| (t.id, t.max_hours_per_week))
         .collect();
 
-    for lesson in &problem.lessons {
+    let order = crate::ordering::ffd_order(problem, &idx);
+    for &lesson_idx in &order {
+        let lesson = &problem.lessons[lesson_idx];
         // Skip placements for lessons with pre-solve violations; `pre_solve_violations`
         // already recorded one violation per hour.
         if !idx.teacher_qualified(lesson.teacher_id, lesson.subject_id) {
