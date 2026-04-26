@@ -20,6 +20,9 @@ from klassenzeit_backend.auth.sessions import cleanup_expired_sessions
 from klassenzeit_backend.core.settings import get_settings
 from klassenzeit_backend.db.models.user import User
 from klassenzeit_backend.seed.demo_grundschule import seed_demo_grundschule
+from klassenzeit_backend.seed.demo_grundschule_zweizuegig import (
+    seed_demo_grundschule_zweizuegig,
+)
 
 cli = typer.Typer(no_args_is_help=True)
 
@@ -179,6 +182,43 @@ def seed_grundschule() -> None:
         )
         raise typer.Exit(code=1) from exc
     typer.echo("Grundschule demo seeded successfully.")
+
+
+async def _run_seed_grundschule_zweizuegig() -> None:
+    settings = get_settings()
+    engine = create_async_engine(str(settings.database_url))
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with factory() as session:
+            await seed_demo_grundschule_zweizuegig(session)
+            await session.commit()
+    finally:
+        await engine.dispose()
+
+
+@cli.command()
+def seed_grundschule_zweizuegig() -> None:
+    """Seed a zweizuegige Hessen Grundschule (8 classes, 12 teachers, 12 rooms).
+
+    Refuses to run when ``KZ_ENV=prod``. On unique-name conflicts the seed
+    aborts atomically and prints a reset hint.
+    """
+    settings = get_settings()
+    if settings.env == "prod":
+        typer.echo("seed-grundschule-zweizuegig is disabled in production", err=True)
+        raise typer.Exit(code=1)
+    try:
+        asyncio.run(_run_seed_grundschule_zweizuegig())
+    except IntegrityError as exc:
+        typer.echo(
+            f"Seed aborted (integrity error): {exc.orig}\n"
+            "The database already contains conflicting rows. "
+            "Reset with `mise run db:reset` (dev) or the /__test__/reset "
+            "endpoint (test) and try again.",
+            err=True,
+        )
+        raise typer.Exit(code=1) from exc
+    typer.echo("Grundschule (zweizuegig) demo seeded successfully.")
 
 
 def main() -> None:
