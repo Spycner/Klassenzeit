@@ -4,7 +4,8 @@
 
 | Fixture | Samples | p1 (µs) | p50 (µs) | p99 (µs) | Placements/sec | Placements | Hard violations | Soft score |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| grundschule | 242671 | 40 | 41 | 57 | 1058449 | 45 | 0 | 0 |
+| grundschule | 241871 | 40 | 41 | 56 | 1065164 | 45 | 0 | 0 |
+| zweizuegig | 43183 | 169 | 172 | 233 | 1114117 | 196 | 0 | 0 |
 
 Refreshed 2026-04-26 on AMD Ryzen 7 3700X 8-Core Processor, Linux 6.8.0-90-generic, rustc 1.93.1 (01f6ddf75 2026-02-11).
 
