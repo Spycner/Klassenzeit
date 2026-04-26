@@ -40,6 +40,8 @@
       "Bash(cargo nextest:*)",
       "Bash(mise exec -- pnpm exec tsc --noEmit)",
       "Bash(mise exec -- pnpm vitest run *)",
+      "Bash(mise exec -- pnpm biome check)",
+      "Bash(mise exec -- pnpm biome check .)",
       "Bash(mise exec -- actionlint)",
       "Bash(mise exec -- actionlint *)",
       "Bash(mise run check:actions)",
