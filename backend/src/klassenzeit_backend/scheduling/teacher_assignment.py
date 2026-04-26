@@ -1,10 +1,13 @@
 """Heuristic teacher assignment for newly generated lessons.
 
-Today's heuristic: walk lessons in their input order; for each, pick the
-first qualified active teacher (ordered by ``(short_code, id)``) whose
-remaining weekly capacity covers the lesson's ``hours_per_week``. The
-function is pure: callers load the snapshot from the DB, pass it in, and
-apply the returned assignments themselves.
+Today's heuristic: process lessons in scarcity order (subjects with the
+fewest qualified teachers first, then input order as a stable tiebreak)
+and for each pick the first qualified active teacher (ordered by
+``(short_code, id)``) whose remaining weekly capacity covers the lesson's
+``hours_per_week``. Scarcity-first ensures subjects with a single
+qualified teacher claim that teacher's capacity before broader subjects
+fill it greedily. The function is pure: callers load the snapshot from
+the DB, pass it in, and apply the returned assignments themselves.
 
 The richer pre-pass referenced by the active-sprint algorithm phase
 (FFD ordering plus soft-constraint LAHC) will replace this walk; the
@@ -30,10 +33,15 @@ def auto_assign_teachers_for_lessons(
     ``{lesson_id: teacher_id}`` for the lessons that received an assignment.
     Lessons with no eligible candidate are absent from the returned dict.
 
+    Lessons are processed in ascending order of qualified-teacher count
+    for the lesson's subject, with a stable tiebreak on input order. This
+    lets a subject with a single qualified teacher claim that teacher's
+    capacity before broader subjects fill it greedily.
+
     Args:
-        lessons: New lessons to assign. Iteration order is significant:
-            assignments run in this order, so ordering controls priority
-            on tight capacity.
+        lessons: New lessons to assign. Input order is preserved as the
+            stable tiebreak when two lessons have the same qualified-
+            teacher count.
         teachers: Active teachers, pre-ordered by ``(short_code, id)``.
             Inactive teachers must be filtered out by the caller.
         qualified_teacher_ids_by_subject: For each lesson's ``subject_id``,
@@ -49,7 +57,11 @@ def auto_assign_teachers_for_lessons(
     """
     used = dict(capacity_used_by_teacher)
     assignments: dict[uuid.UUID, uuid.UUID] = {}
-    for lesson in lessons:
+    ordered_lessons = sorted(
+        lessons,
+        key=lambda lesson: len(qualified_teacher_ids_by_subject.get(lesson.subject_id, set())),
+    )
+    for lesson in ordered_lessons:
         qualified_ids = qualified_teacher_ids_by_subject.get(lesson.subject_id, set())
         if not qualified_ids:
             continue

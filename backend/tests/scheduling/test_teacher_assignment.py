@@ -208,3 +208,32 @@ def test_auto_assign_stable_tiebreak_on_id() -> None:
     )
 
     assert assignments == {lesson.id: teacher_low.id}
+
+
+def test_auto_assign_scarce_subject_claims_shared_teacher_first() -> None:
+    """Subject with one qualified teacher claims that teacher's capacity before
+    a broader subject sharing the teacher fills it greedily."""
+    scarce_subject = uuid.uuid4()
+    broad_subject = uuid.uuid4()
+    shared_teacher = _teacher("AAA", 4)
+    backup_teacher = _teacher("BBB", 28)
+    scarce_lesson = _lesson(scarce_subject, 2)
+    broad_lesson_filling_first = _lesson(broad_subject, 4)
+
+    assignments = auto_assign_teachers_for_lessons(
+        # Input order has the broad lesson first; without scarcity-priority
+        # the shared teacher would be filled by the broad lesson and the
+        # scarce lesson would have no qualified teacher with spare capacity.
+        lessons=[broad_lesson_filling_first, scarce_lesson],
+        teachers=[shared_teacher, backup_teacher],
+        qualified_teacher_ids_by_subject={
+            scarce_subject: {shared_teacher.id},
+            broad_subject: {shared_teacher.id, backup_teacher.id},
+        },
+        capacity_used_by_teacher={shared_teacher.id: 0, backup_teacher.id: 0},
+    )
+
+    assert assignments == {
+        scarce_lesson.id: shared_teacher.id,
+        broad_lesson_filling_first.id: backup_teacher.id,
+    }
