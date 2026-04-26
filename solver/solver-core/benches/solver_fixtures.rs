@@ -193,15 +193,46 @@ fn bench_grundschule(c: &mut Criterion) {
     };
 
     eprintln!("---SOLVER-BENCH-BASELINE---");
-    eprintln!("fixture\tgrundschule");
-    eprintln!("samples\t{}", total_samples);
-    eprintln!("p1_us\t{}", p1.as_micros());
-    eprintln!("p50_us\t{}", p50.as_micros());
-    eprintln!("p99_us\t{}", p99.as_micros());
-    eprintln!("placements_per_sec\t{}", placements_per_sec);
-    eprintln!("total_placements\t{}", expected_hours);
-    eprintln!("total_hard_violations\t0");
+    eprint_bench_header();
+    eprint_bench_row(
+        "grundschule",
+        total_samples,
+        p1,
+        p50,
+        p99,
+        placements_per_sec,
+        expected_hours,
+        0,
+        0,
+    );
     eprintln!("---END---");
+}
+
+fn eprint_bench_header() {
+    eprintln!(
+        "fixture\tsamples\tp1_us\tp50_us\tp99_us\tplacements_per_sec\ttotal_placements\ttotal_hard_violations\tsoft_score"
+    );
+}
+
+// Reason: every column is a named scalar; a wrapper struct would not improve clarity.
+#[allow(clippy::too_many_arguments)]
+fn eprint_bench_row(
+    fixture: &str,
+    samples: usize,
+    p1: std::time::Duration,
+    p50: std::time::Duration,
+    p99: std::time::Duration,
+    placements_per_sec: u64,
+    total_placements: u32,
+    hard_violations: u32,
+    soft_score: u32,
+) {
+    eprintln!(
+        "{fixture}\t{samples}\t{p1}\t{p50}\t{p99}\t{placements_per_sec}\t{total_placements}\t{hard_violations}\t{soft_score}",
+        p1 = p1.as_micros(),
+        p50 = p50.as_micros(),
+        p99 = p99.as_micros(),
+    );
 }
 
 criterion_group!(benches, bench_grundschule);
