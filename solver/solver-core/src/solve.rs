@@ -9,11 +9,18 @@ use std::collections::{HashMap, HashSet};
 use crate::error::Error;
 use crate::ids::{RoomId, SchoolClassId, TeacherId, TimeBlockId};
 use crate::index::Indexed;
-use crate::types::{Lesson, Placement, Problem, Solution, Violation, ViolationKind};
+use crate::types::{Lesson, Placement, Problem, Solution, SolveConfig, Violation, ViolationKind};
 use crate::validate::{pre_solve_violations, validate_structural};
 
 /// Solve the timetable problem using greedy first-fit placement.
 pub fn solve(problem: &Problem) -> Result<Solution, Error> {
+    solve_with_config(problem, &SolveConfig::default())
+}
+
+/// Solve the timetable problem with explicit configuration. Today's pass
+/// reads the config's struct presence but not its fields; later passes
+/// consume `weights`, `seed`, and `deadline`.
+pub fn solve_with_config(problem: &Problem, _config: &SolveConfig) -> Result<Solution, Error> {
     validate_structural(problem)?;
 
     let idx = Indexed::new(problem);

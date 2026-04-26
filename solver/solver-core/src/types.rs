@@ -4,6 +4,29 @@
 use serde::{Deserialize, Serialize};
 
 use crate::ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId};
+use std::time::Duration;
+
+/// Tunables for one solver invocation. Pass via [`crate::solve_with_config`];
+/// the no-config [`crate::solve`] entry point uses [`SolveConfig::default`].
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SolveConfig {
+    /// Optional wall-clock budget. `None` means "no budget enforced". The
+    /// greedy first-fit pass ignores this; a future local-search pass will
+    /// honour it.
+    pub deadline: Option<Duration>,
+    /// Seed for any randomised tiebreak inside the solver. The greedy pass
+    /// is deterministic without it; a future local-search pass will use it
+    /// for reproducible swaps.
+    pub seed: u64,
+    /// Weights that govern the soft-constraint scoring function.
+    pub weights: ConstraintWeights,
+}
+
+/// Soft-constraint weights. Currently empty; populated by the soft-constraint
+/// and local-search PR. Empty curly-brace form (not a unit struct) so adding
+/// fields later is non-breaking.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ConstraintWeights {}
 
 /// Complete solver input. Flat `Vec`s of relation pairs mirror the backend's SQL
 /// join tables so serialisation is a 1:1 shape match with the API payload.
