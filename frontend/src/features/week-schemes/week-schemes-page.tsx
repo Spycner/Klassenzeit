@@ -3,6 +3,7 @@ import { CalendarDays } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/empty-state";
+import { EntityPageHead } from "@/components/entity-page-head";
 import { Toolbar } from "@/components/toolbar";
 import { Button } from "@/components/ui/button";
 import { dayShortKey } from "@/i18n/day-keys";
@@ -29,7 +30,7 @@ export function WeekSchemesPage() {
 
   return (
     <div className="space-y-4">
-      <WeekSchemesPageHead
+      <EntityPageHead
         title={t("weekSchemes.title")}
         subtitle={t("weekSchemes.subtitle")}
         onCreate={() => setCreating(true)}
@@ -206,33 +207,5 @@ function WeekSchemeGridRow({
         );
       })}
     </Fragment>
-  );
-}
-
-function WeekSchemesPageHead({
-  title,
-  subtitle,
-  onCreate,
-  createLabel,
-}: {
-  title: string;
-  subtitle: string;
-  onCreate: () => void;
-  createLabel: string;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div className="flex flex-wrap items-end justify-between gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" disabled title={t("sidebar.comingSoon")}>
-          {t("common.import")}
-        </Button>
-        <Button onClick={onCreate}>{createLabel}</Button>
-      </div>
-    </div>
   );
 }
