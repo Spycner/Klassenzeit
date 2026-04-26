@@ -147,7 +147,7 @@ Only after the audit passes:
 
 ### 8. CI loop
 
-- Poll `gh pr checks <pr>` with `Monitor` (or `run_in_background` + polling) until every check resolves.
+- Poll with `Monitor` (or `run_in_background` + polling) until every check resolves. `gh pr checks <pr>` is human-readable; for programmatic polling use `gh pr view <pr> --json statusCheckRollup -q '.statusCheckRollup[] | "\(.status):\(.conclusion // "")"'` (the `--json` flag does NOT exist on `gh pr checks`). Loop until no row's status differs from `COMPLETED` and no `conclusion` is `FAILURE` / `CANCELLED` / `TIMED_OUT`.
 - If a check fails: open the failed job log with `gh run view <run-id> --log-failed | tail -200`, diagnose, commit the fix, push. Repeat until green.
 - Common early failures to expect:
   - Generated files missing in CI (route trees, generated types). Build or codegen must run before the check that needs them.
