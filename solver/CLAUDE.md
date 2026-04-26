@@ -13,6 +13,7 @@ Applies to the `solver/` Cargo workspace (`solver-core` + `solver-py`). Assumes 
 ## solver-core rules
 
 - **`#![deny(missing_docs)]` is on at the crate root.** Every new `pub` item, including struct fields, enum variants, and macro-generated newtypes, needs a `///` rustdoc line or the crate refuses to compile. Plans that paste ready-to-compile code must include the doc comments.
+- **`clippy::doc_lazy_continuation` flags `+` at the start of a `///` continuation line** as a Markdown bullet against the previous line and fails the `-D warnings` build. Use `and` / `plus` instead, or indent the continuation by two spaces.
 - **Errors use `thiserror`, one enum per logical boundary** (input parsing, constraint validation, scheduling). No `anyhow` in `solver-core`; a library erases type information when it boxes, and the backend wants to match on specific failure modes.
 
     ```rust
