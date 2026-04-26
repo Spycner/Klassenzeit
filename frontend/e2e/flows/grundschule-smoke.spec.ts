@@ -36,11 +36,6 @@ test.describe("Grundschule smoke", () => {
     // Sonner toast confirms the lesson-generate mutation resolved.
     await expect(page.getByText(/\d+ lessons? created/i)).toBeVisible();
 
-    // Back-channel: pin teacher_id on every generated lesson in one request so the
-    // solver sees a fully-specified problem on the upcoming POST /schedule.
-    const assignResp = await request.post(`${BACKEND_URL}/__test__/assign-teachers-grundschule`);
-    expect(assignResp.ok(), await assignResp.text()).toBeTruthy();
-
     // Fetch the 1a class ID so we can deep-link the schedule page and skip the
     // Radix Select class picker entirely.
     const classesResp = await request.get(`${BACKEND_URL}/api/classes`);

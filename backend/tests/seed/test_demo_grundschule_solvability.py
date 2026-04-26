@@ -12,15 +12,13 @@ nested savepoint restarts, rolled back at test teardown.
 from collections.abc import Awaitable, Callable
 
 from httpx import AsyncClient
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from klassenzeit_backend.db.models.lesson import Lesson
 from klassenzeit_backend.db.models.school_class import SchoolClass
 from klassenzeit_backend.db.models.user import User
-from klassenzeit_backend.seed.demo_grundschule import (
-    assign_teachers_for_demo_grundschule_lessons,
-    seed_demo_grundschule,
-)
+from klassenzeit_backend.seed.demo_grundschule import seed_demo_grundschule
 
 CreateUserFn = Callable[..., Awaitable[tuple[User, str]]]
 LoginFn = Callable[[str, str], Awaitable[None]]
@@ -55,8 +53,12 @@ async def test_seeded_grundschule_solves_with_zero_violations(
         lessons = gen_resp.json()
         assert len(lessons) in (8, 9), (school_class.name, len(lessons))
 
-    await assign_teachers_for_demo_grundschule_lessons(db_session)
-    await db_session.flush()
+    unassigned_count = (
+        await db_session.execute(
+            select(func.count()).select_from(Lesson).where(Lesson.teacher_id.is_(None))
+        )
+    ).scalar_one()
+    assert unassigned_count == 0, "auto-assign left some lessons unassigned"
 
     for school_class in class_rows:
         sched_resp = await client.post(f"/api/classes/{school_class.id}/schedule")

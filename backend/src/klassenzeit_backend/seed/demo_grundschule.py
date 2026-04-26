@@ -13,10 +13,8 @@ by the ``generate-lessons`` and ``POST /schedule`` routes respectively.
 from datetime import time
 from typing import NamedTuple
 
-from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from klassenzeit_backend.db.models.lesson import Lesson
 from klassenzeit_backend.db.models.room import Room, RoomSubjectSuitability
 from klassenzeit_backend.db.models.school_class import SchoolClass
 from klassenzeit_backend.db.models.stundentafel import Stundentafel, StundentafelEntry
@@ -258,78 +256,3 @@ async def seed_demo_grundschule(session: AsyncSession) -> None:
                 )
             )
     await session.flush()
-
-
-TEACHER_ASSIGNMENTS: dict[tuple[str, str], str] = {
-    ("1a", "D"): "MUE",
-    ("1a", "M"): "MUE",
-    ("1a", "SU"): "MUE",
-    ("1a", "RE"): "BEC",
-    ("1a", "KU"): "MUE",
-    ("1a", "MU"): "BEC",
-    ("1a", "SP"): "HOF",
-    ("1a", "FÖ"): "BEC",
-    ("2a", "D"): "SCH",
-    ("2a", "M"): "SCH",
-    ("2a", "SU"): "SCH",
-    ("2a", "RE"): "BEC",
-    ("2a", "KU"): "SCH",
-    ("2a", "MU"): "BEC",
-    ("2a", "SP"): "HOF",
-    ("2a", "FÖ"): "BEC",
-    ("3a", "D"): "WEB",
-    ("3a", "M"): "WEB",
-    ("3a", "SU"): "WEB",
-    ("3a", "E"): "WEB",
-    ("3a", "RE"): "BEC",
-    ("3a", "KU"): "MUE",
-    ("3a", "MU"): "BEC",
-    ("3a", "SP"): "HOF",
-    ("3a", "FÖ"): "HOF",
-    ("4a", "D"): "FIS",
-    ("4a", "M"): "FIS",
-    ("4a", "SU"): "FIS",
-    ("4a", "E"): "FIS",
-    ("4a", "RE"): "BEC",
-    ("4a", "KU"): "SCH",
-    ("4a", "MU"): "BEC",
-    ("4a", "SP"): "HOF",
-    ("4a", "FÖ"): "HOF",
-}
-"""Valid greedy teacher assignment for the seeded Grundschule.
-
-Each (class, subject) maps to one qualified teacher whose aggregate hours
-stay within ``max_hours_per_week``. If the seed's teacher qualifications
-or hour caps change, regenerate this mapping against the feasibility
-analysis in ``docs/superpowers/specs/2026-04-24-grundschule-seed-design.md``.
-"""
-
-
-async def assign_teachers_for_demo_grundschule_lessons(session: AsyncSession) -> None:
-    """Pin ``teacher_id`` on every seeded Lesson per ``TEACHER_ASSIGNMENTS``.
-
-    The solver treats lessons with ``teacher_id IS NULL`` as absent from the
-    problem (see ``scheduling/solver_io.py``). The production demo flow
-    expects the user to assign teachers manually between ``generate-lessons``
-    and ``POST /schedule``; this helper does the equivalent for tests and
-    the test-only HTTP endpoint.
-
-    The caller owns the transaction; this coroutine only mutates the session.
-    """
-    rows = (
-        await session.execute(
-            select(Lesson.id, SchoolClass.name, Subject.short_name)
-            .join(SchoolClass, SchoolClass.id == Lesson.school_class_id)
-            .join(Subject, Subject.id == Lesson.subject_id)
-        )
-    ).all()
-    teacher_id_by_short_code = {
-        row[0]: row[1]
-        for row in (await session.execute(select(Teacher.short_code, Teacher.id))).all()
-    }
-    for lesson_id, class_name, subject_short in rows:
-        short_code = TEACHER_ASSIGNMENTS[(class_name, subject_short)]
-        teacher_id = teacher_id_by_short_code[short_code]
-        await session.execute(
-            update(Lesson).where(Lesson.id == lesson_id).values(teacher_id=teacher_id)
-        )
