@@ -547,6 +547,44 @@ async def test_generate_lessons_skips_existing(
     assert body[0]["subject"]["id"] == subj2_id
 
 
+async def test_generate_lessons_assigns_qualified_teacher(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /classes/{id}/generate-lessons pins a qualified teacher with spare capacity.
+
+    Args:
+        client: The async test HTTP client.
+        create_test_user: Factory fixture for inserting a User into the DB.
+        login_as: Factory fixture for authenticating via /auth/login.
+    """
+    await create_test_user(email="admin@les-aa1.com", role="admin")
+    await login_as("admin@les-aa1.com", "testpassword123")
+
+    subject_id = await _create_subject(client, "Mathematik-AA", "MaAA")
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme LAA1")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel LAA1", 5)
+    await client.post(
+        f"/api/stundentafeln/{tafel_id}/entries",
+        json={"subject_id": subject_id, "hours_per_week": 4, "preferred_block_size": 1},
+    )
+    class_id = await _create_school_class(client, "5a-LAA1", 5, tafel_id, scheme_id)
+    teacher_id = await _create_teacher(client, "Anna", "Auto", "AUT1")
+    qual_resp = await client.put(
+        f"/api/teachers/{teacher_id}/qualifications",
+        json={"subject_ids": [subject_id]},
+    )
+    assert qual_resp.status_code == 200, qual_resp.text
+
+    resp = await client.post(f"/api/classes/{class_id}/generate-lessons")
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert len(body) == 1
+    assert body[0]["teacher"] is not None
+    assert body[0]["teacher"]["id"] == teacher_id
+
+
 async def test_lesson_requires_admin(client: AsyncClient) -> None:
     """GET /lessons without authentication returns 401 Unauthorized.
 
