@@ -11,7 +11,7 @@ This command runs end-to-end without checking in at every step. The user has opt
 
 ## Non-negotiables
 
-- **Never merge the PR.** End on a green CI and ping the user.
+- **Set automerge once CI is green.** Run `gh pr merge <pr> --auto --squash` so the platform merges the PR when required checks pass. Do not call `gh pr merge` synchronously. After the merge resolves, refresh local master and delete the feature branch (see step 9). Every fix produced during the run lands on the feature branch as additional commits, never as a separate chore PR.
 - **Never skip hooks** (`--no-verify`, `--no-gpg-sign`, `LEFTHOOK=0`). If a hook fails, investigate and fix the underlying issue.
 - **Never add AI attribution** to commits, PRs, or code. No "Generated with", no "Co-Authored-By: Claude".
 - **Every commit must be Conventional Commits compliant** (`feat`, `fix`, `docs`, `build`, `ci`, `chore`, `test`, `refactor`, `perf`, `style`, `revert`). `cog` enforces this.
@@ -31,9 +31,7 @@ Every `/autopilot` run must call the `Skill` tool, not read a skill file, not re
 | 5 | `superpowers:subagent-driven-development` | Always. Dispatch every plan task to a fresh subagent (sequentially if they share state, in parallel when they don't), so the main session keeps context lean. |
 | 6 | `claude-md-management:revise-claude-md` | Capture session learnings into CLAUDE.md files |
 | 6 | `claude-md-management:claude-md-improver` | Audit the CLAUDE.md files after revision |
-| 10 | `claude-md-management:revise-claude-md` | Capture post-CI learnings that step 6 couldn't see |
-| 10 | `claude-md-management:claude-md-improver` | Second audit pass |
-| 10 | `fewer-permission-prompts` | Scan the transcript, tighten `.claude/settings.json` |
+| 6 | `fewer-permission-prompts` | Scan the transcript, tighten `.claude/settings.json` |
 
 If a listed skill is unavailable in the current environment, say so explicitly in the end-of-turn summary and skip only that entry. Never silently drop a row.
 
@@ -121,11 +119,13 @@ Then:
 - Run `mise run lint` and relevant `mise run test:*` before each commit. The pre-commit hook also enforces lint.
 - If you discover repo-level issues that block progress (broken hooks, wrong default-branch assumptions, flaky scripts), fix them in the same branch with their own typed commit (`build`, `ci`, `fix(scripts)`, etc.). Don't paper over with skips.
 
-### 6. Finalize docs
+### 6. Finalize docs + improvement pass
 
-**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`. Both via the `Skill` tool. The revisions those passes produce are the canonical CLAUDE.md changes for this run; do not hand-edit CLAUDE.md instead of running them.
+**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`, then `fewer-permission-prompts`. All three via the `Skill` tool. The revisions those passes produce are the canonical CLAUDE.md and settings changes for this run; do not hand-edit those files instead of running the skills.
 
-**Autonomous mode: apply the skills' proposed CLAUDE.md edits directly. Do not pause to ask the user for approval; running `/autopilot` is the approval.** If a skill's default behavior is to ask ("Apply these changes? y/n"), answer for the user and proceed. Briefly report the edits in the end-of-turn summary so the user can see what landed without having blocked on it.
+**Autonomous mode: apply every skill's proposed edits directly. Do not pause to ask the user for approval; running `/autopilot` is the approval.** If a skill's default behavior is to ask ("Apply these changes? y/n"), answer for the user and proceed. Briefly report the edits in the end-of-turn summary so the user can see what landed without having blocked on it.
+
+**All edits land on the feature branch in this run.** Settings tweaks from `fewer-permission-prompts`, autopilot.md improvements from this step, CLAUDE.md edits, ADRs, OPEN_THINGS updates, auto-memory updates: every one of those goes into a commit on the current feature branch with a Conventional Commits type that matches the change (`chore(settings):`, `docs(autopilot):`, `docs:`, etc.). No follow-up chore PRs.
 
 Then:
 
@@ -133,6 +133,8 @@ Then:
 - Add an ADR at `docs/adr/NNNN-<short-title>.md` for load-bearing decisions (new dep, new subsystem, new toolchain). Index in `docs/adr/README.md`.
 - Update `README.md` commands table if new `mise run` tasks landed.
 - Update `docs/superpowers/OPEN_THINGS.md`: remove resolved items, add follow-ups ordered by importance.
+- **Workflow improvements.** If the run surfaced anything that should change `.claude/commands/autopilot.md` or any other workflow doc, edit it now and commit on the feature branch. Reflect on: decisions that weren't captured anywhere, surprising failure modes, points where the skills didn't fire when they should have. Keep changes minimal and concrete; one sentence per learning.
+- **Auto-memory updates.** Refresh `/home/pascal/.claude/projects/-home-pascal-Code-Klassenzeit/memory/` entries (roadmap status, feedback, references) so the next session starts from the current truth.
 
 ### 7. Skill audit, then open the PR
 
@@ -154,23 +156,39 @@ Only after the audit passes:
   - Tool-version drift between local and CI. Verify the pinned versions in `mise.toml` resolve the same in `jdx/mise-action`.
   - Hook/script false positives on new file types. Tighten the script, don't relax the rule.
 
-### 9. DO NOT MERGE
+### 9. Set automerge, wait for merge, refresh master
 
-- When all checks are green, **stop**. Report the PR URL to the user.
-- Do not run `gh pr merge` unless the user explicitly asks.
+When step 8 reports the PR fully green:
 
-### 10. Self-review + improvement pass
+1. **Set automerge:**
 
-**First actions, in order:** invoke `claude-md-management:revise-claude-md`, then `claude-md-management:claude-md-improver`, then `fewer-permission-prompts`. All three via the `Skill` tool. Let each skill do its own work; do not pre-synthesize what they would say. **Autonomous mode: apply every skill's proposed edits directly without pausing for approval.** If `fewer-permission-prompts` edits `.claude/settings.json`, that edit must be committed, not left in the working tree. Stage it on a fresh `chore/...` branch off master (not the feature branch the user is about to merge), commit as `chore(settings): allowlist <...>`, and open a separate PR. Same rule applies to the autopilot.md edits below.
+    ```bash
+    gh pr merge <pr> --auto --squash
+    ```
 
-After that, reflect:
+    `--auto` queues the merge so the platform completes it as soon as required checks pass. The repo's master commit history shows squash merges (one commit per PR with the `(#NNN)` suffix), so `--squash` is the canonical style; only deviate if a specific PR needs commit-history preservation, and explain why in the end-of-turn summary.
 
-- **What decisions got made that weren't captured anywhere?** The CLAUDE.md skills above are responsible for this; don't duplicate their work freehand.
-- **What workflow improvements emerged?** Edit this file (`.claude/commands/autopilot.md`) to bake them in. Commit as `docs(autopilot): note <lesson>` in a follow-up PR; do not push to the branch the user is about to merge.
-- **What auto-memory is stale?** Update `/home/pascal/.claude/projects/-home-pascal-Code-Klassenzeit/memory/` entries (roadmap status, feedback, references).
-- **Were any OPEN_THINGS resolved?** Already handled in step 6, double-check.
+2. **Wait for the merge to resolve.** Poll with `Monitor` (or `run_in_background` + polling) on the PR's `state` field:
 
-Keep self-review short: one sentence per learning, only record non-obvious ones (code-derivable facts don't belong in memory or CLAUDE.md).
+    ```bash
+    gh pr view <pr> --json state -q .state
+    ```
+
+    until it returns `MERGED`. If it returns `CLOSED` without merging, GitHub rejected the merge (e.g. branch protection blocked it); investigate and surface the reason to the user instead of retrying.
+
+3. **Refresh local master:**
+
+    ```bash
+    git checkout master
+    git pull origin master
+    git branch -d <feature-branch>
+    ```
+
+    The `-d` (lowercase) refuses to delete an unmerged branch; it's the safety net. If `-d` fails, the merge probably did not include all local commits (e.g. a hook stripped them); inspect before forcing.
+
+4. **Report the merged commit hash + PR URL** in the end-of-turn summary.
+
+If the user explicitly says "don't merge" before or during the run, set automerge to off-ramp: `gh pr ready <pr>` plus a request-for-review note, and skip steps 2-4. That escape hatch is for one-off cases; the default is automerge.
 
 ## Tone and reporting
 
