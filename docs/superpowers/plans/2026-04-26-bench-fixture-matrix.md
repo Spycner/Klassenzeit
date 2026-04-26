@@ -2,7 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add `demo_grundschule_zweizuegig` (8 classes, 196 placements) and `demo_gesamtschule` (24 classes, ~720 placements) seed packages and matching Rust bench fixtures so the algorithm-phase PRs (FFD / Doppelstunden / LAHC) can measure scaling against three fixture sizes instead of one.
+> **Scope reduction (2026-04-26 post-planning).** This PR ships Tasks 1, 2, 3, 4, 7, 8 only. Tasks 5 and 6 (Gesamtschule seed + bench fixture) are deferred to a follow-up PR. The spec captures the rationale; in short, the 50-teacher / 240-entry assignment table plus the MVP-solver-might-not-solve-cleanly risk make the cost / risk asymmetry unfavourable for an autonomous one-PR run. The follow-up PR reuses every artifact this PR ships (renamed bench file, multi-fixture TSV format, the `solver_fixtures.rs` shape, the `_TEACHER_ASSIGNMENTS_<NAME>` pattern, the dual-language drift assertion).
+
+**Goal:** Add `demo_grundschule_zweizuegig` (8 classes, 196 placements) seed package and a matching Rust bench fixture so the algorithm-phase PRs (FFD / Doppelstunden / LAHC) can measure scaling against two fixture sizes instead of one. Multi-fixture infrastructure ships once and amortises across the deferred Gesamtschule follow-up.
 
 **Architecture:** Two new Python seed modules under `backend/src/klassenzeit_backend/seed/`, mirrored as hand-coded Rust fixture builders inside a renamed `solver/solver-core/benches/solver_fixtures.rs`. The bench harness loops over a `[(name, fixture)]` slice and emits row-per-fixture TSV inside the existing `---SOLVER-BENCH-BASELINE---` fence; `scripts/record_solver_bench.sh` parses rows and renders multi-row markdown into `BASELINE.md`. Pre-assigned `teacher_id` per Lesson is authored as literal `(grade, Zug, subject) → teacher_index` lookup tables. New Typer CLI commands `seed-grundschule-zweizuegig` and `seed-gesamtschule` mirror the existing `seed-grundschule`. No `/__test__/` endpoints (no e2e consumer yet); no synthetic generator (deferred).
 
@@ -1073,7 +1075,9 @@ EOF
 
 ---
 
-## Task 5: Add `demo_gesamtschule` Python seed
+## Task 5: Add `demo_gesamtschule` Python seed (DEFERRED to follow-up PR)
+
+> Deferred from this PR per the scope-reduction note at the top of the plan. The task content below is preserved verbatim so the follow-up PR can pick it up unchanged.
 
 Same shape as Task 3 but at Sek I scale (24 classes / 50 teachers / 31 rooms / ~720 placements).
 
@@ -1290,7 +1294,9 @@ EOF
 
 ---
 
-## Task 6: Add `gesamtschule_fixture` to the Rust bench
+## Task 6: Add `gesamtschule_fixture` to the Rust bench (DEFERRED to follow-up PR)
+
+> Deferred from this PR per the scope-reduction note at the top of the plan. The task content below is preserved verbatim.
 
 Mirror Task 4 at Sek I scale. Add a third `bench_function` to the criterion group; emit a third TSV row.
 
@@ -1436,9 +1442,9 @@ EOF
 
 ---
 
-## Task 7: Record bench baseline across three fixtures
+## Task 7: Record bench baseline across two fixtures
 
-Run `mise run bench:record` on the recording host (AMD Ryzen 7 3700X) to populate `BASELINE.md` with empirical numbers for all three fixtures.
+Run `mise run bench:record` on the recording host (AMD Ryzen 7 3700X) to populate `BASELINE.md` with empirical numbers for both shipped fixtures (grundschule + zweizuegig). The third row (gesamtschule) lands with the deferred follow-up PR.
 
 **Files:**
 
@@ -1449,7 +1455,7 @@ Run `mise run bench:record` on the recording host (AMD Ryzen 7 3700X) to populat
 - [ ] **Step 1: Run `mise run bench:record`.**
 
 Run: `mise run bench:record`
-Expected: `solver/solver-core/benches/BASELINE.md` updated with three data rows. Each row's `Hard violations` and `Soft score` columns must be `0`. Each row's `Placements` column must match the literal asserted in its fixture (45, 196, 704). Each row's `p1`, `p50`, `p99` should be plausible (microsecond range; gesamtschule expected 1 to 2 ms p50 if scaling is roughly linear).
+Expected: `solver/solver-core/benches/BASELINE.md` updated with two data rows. Each row's `Hard violations` and `Soft score` columns must be `0`. Each row's `Placements` column must match the literal asserted in its fixture (45, 196). Each row's `p1`, `p50`, `p99` should be plausible (microsecond range).
 
 If a Placements value is wrong, the fixture and seed have drifted; debug rather than just re-recording.
 
@@ -1457,24 +1463,24 @@ If a Placements value is wrong, the fixture and seed have drifted; debug rather 
 
 Run: `cat solver/solver-core/benches/BASELINE.md`
 Confirm:
-- Three data rows with the right Placements numbers.
+- Two data rows with the right Placements numbers (45 and 196).
 - Footer mentions AMD Ryzen 7 3700X (the same host used for the einzügig baseline; substitute whatever `/proc/cpuinfo` reports if the recording host has changed).
 - `Soft score` column present and `0` everywhere.
 
 - [ ] **Step 3: Sanity check that grundschule numbers haven't regressed.**
 
-Compare the new grundschule row against the pre-PR `BASELINE.md` row (in the git history at HEAD~7 from this point). The `p50` and `Placements/sec` should be within 5% (host-noise tolerance). If they aren't, investigate (a fixture rebuild path that changed the bench setup is a common culprit).
+Compare the new grundschule row against the pre-PR `BASELINE.md` row (in the git history at HEAD~5 from this point). The `p50` and `Placements/sec` should be within 5% (host-noise tolerance). If they aren't, investigate (a fixture rebuild path that changed the bench setup is a common culprit).
 
 - [ ] **Step 4: Commit the baseline.**
 
 ```bash
 git add solver/solver-core/benches/BASELINE.md
 git commit -m "$(cat <<'EOF'
-chore(solver-core): record bench baseline across three fixtures
+chore(solver-core): record bench baseline across two fixtures
 
 mise run bench:record on AMD Ryzen 7 3700X. Grundschule numbers within
-5% of pre-PR baseline (host-noise tolerance); zweizuegig and
-gesamtschule populated with their first measurements.
+5% of pre-PR baseline (host-noise tolerance); zweizuegig populated
+with its first measurement.
 EOF
 )"
 ```
@@ -1485,21 +1491,26 @@ EOF
 
 Documentation passes from `/autopilot` step 6 (revise-claude-md, claude-md-improver, fewer-permission-prompts) ride along on whatever commit is open at finalization, with `docs:` or `chore(settings):` types. This task is the autopilot-step-6 catch-all: OPEN_THINGS update, ADR check, README check, OPEN_THINGS resolved-items prune, and any workflow doc improvements.
 
-- [ ] **Step 1: Mark sprint item 6 as shipped in `docs/superpowers/OPEN_THINGS.md`.**
+- [ ] **Step 1: Update sprint item 6 in `docs/superpowers/OPEN_THINGS.md` (partial-ship form).**
 
-Edit the active-sprint section. The line currently reads:
+The line currently reads:
 
 ```markdown
 6. **Benchmark-fixture matrix.** `[P2]` The single einzügige-Grundschule seed (4 classes, 6 teachers, ~33 lessons) is too small to measure scaling behaviour. Add `demo_grundschule_zweizuegig` ...
 ```
 
-Replace with a `✅ Shipped 2026-04-26` line analogous to items 1, 2, 4, 5 already in the file. Note: `[P2]` and the Grundschule-zweizügig + Gesamtschule shapes shipped; the synthetic generator is preserved as a follow-up entry under "Acknowledged deferrals" or a new BACKLOG row.
+Rewrite as a partial-ship entry that records the zweizuegig leg shipped and explicitly carries the Gesamtschule leg forward as a follow-up:
 
-- [ ] **Step 2: Add the synthetic-generator follow-up to OPEN_THINGS.md.**
+```markdown
+6. **Benchmark-fixture matrix.** `[P2]` Partially shipped 2026-04-26 (PR #<num>): adds `demo_grundschule_zweizuegig` (8 classes, 12 teachers, 11 rooms, 196 placements, pre-assigned teacher_ids) plus the multi-fixture bench infrastructure (renamed `solver_fixtures.rs`, row-per-fixture TSV, `soft_score` column reserved). Remaining: `demo_gesamtschule` (24 classes, 50 teachers, 31 rooms, ~700 placements) plus the optional synthetic generator. Both deferred to follow-ups; tracked under "Acknowledged deferrals" below.
+```
 
-Append under the `Active sprint` section's Tidy-phase tail or under `Acknowledged deferrals`:
+- [ ] **Step 2: Add the Gesamtschule follow-up + synthetic-generator follow-up to OPEN_THINGS.md.**
 
-> - **Synthetic bench fixture generator.** A parametric `gen_synthetic_problem(num_classes, num_teachers, num_subjects, num_rooms)` producing a deterministic `Problem` JSON for stress tests at 100+ classes. Deferred from sprint item 6 PR. Revisit when items 7 to 9 (FFD / Doppelstunden / LAHC) surface a concrete need that the existing three-fixture matrix cannot answer.
+Append under `Acknowledged deferrals` (two new entries):
+
+> - **`demo_gesamtschule` bench fixture (sprint item 6, gesamtschule leg).** 24 classes (Sek I, grades 5-10, four Züge), 50 teachers, 31 rooms, ~700 placements; pre-assigned teacher_ids; matched Rust mirror in `solver/solver-core/benches/solver_fixtures.rs`. Plan and infrastructure to receive it ship in PR #<num> (zweizuegig leg). Deferred because the seed authoring (50-teacher pool, 240-entry `_TEACHER_ASSIGNMENTS_GESAMTSCHULE` dict) and the risk that the MVP greedy solver cannot solve cleanly without seed iteration make the cost asymmetric for an autonomous PR. Revisit after items 7 to 9 (FFD / LAHC) ship and the third size's measurement value is concrete.
+> - **Synthetic bench fixture generator (sprint item 6, optional leg).** A parametric `gen_synthetic_problem(num_classes, num_teachers, num_subjects, num_rooms)` producing a deterministic `Problem` JSON for stress tests at 100+ classes. Deferred from sprint item 6 PR. Revisit when items 7 to 9 surface a concrete need that the named-fixture matrix cannot answer.
 
 - [ ] **Step 3: Update the sprint header note.**
 
@@ -1507,7 +1518,7 @@ The active-sprint header currently reads:
 
 > Goal: graduate the solver from "produces a schedule" to "produces a *good* schedule" against a broader fixture set, ...
 
-If all six tidy items are now shipped, add a short header line: "Tidy phase complete; next up: algorithm phase (PRs 7 to 9)."
+Tidy items 1, 2, 3, 4, 5 are shipped; item 6 is now partially shipped (zweizuegig leg). Don't claim "tidy phase complete" while the gesamtschule leg is still open, but note the milestone: "Tidy phase mostly complete; remaining: gesamtschule bench fixture and the optional synthetic generator (both deferred). Algorithm phase (PRs 7 to 9) is unblocked because two-size scaling signal is enough to read FFD / LAHC against."
 
 - [ ] **Step 4: Confirm no ADR is needed.**
 
@@ -1527,13 +1538,13 @@ The Bench-workflow section's Fixture line currently reads:
 
 Update to:
 
-> **Fixtures:** three sizes — grundschule (2 classes, 15 lessons, 45 placements), zweizuegig (8 classes, 68 lessons, 196 placements), gesamtschule (24 classes, 304 lessons, 704 placements). Each is hand-coded in `solver-core/benches/solver_fixtures.rs` and mirrors a Python seed in `backend/.../seed/demo_*.py`.
+> **Fixtures:** two sizes — grundschule (2 classes, 15 lessons, 45 placements) and zweizuegig (8 classes, 68 lessons, 196 placements). Each is hand-coded in `solver-core/benches/solver_fixtures.rs` and mirrors a Python seed in `backend/.../seed/demo_*.py`. The third size (gesamtschule) is tracked under `OPEN_THINGS.md` "Acknowledged deferrals".
 
 - [ ] **Step 7: Run the auto-memory updates.**
 
 These come from `/autopilot` step 6 (revise-claude-md, claude-md-improver, fewer-permission-prompts). Roadmap-status memory needs:
 
-- "solver-quality sprint tidy items 1, 2, 3, 4, 5, 6 shipped". Algorithm phase next.
+- "solver-quality sprint tidy items 1, 2, 3, 4, 5 shipped; item 6 partially shipped (zweizuegig leg, PR #<num>). Remaining: gesamtschule fixture + synthetic generator (both deferred under Acknowledged deferrals). Algorithm phase (PRs 7-9) unblocked."
 
 - [ ] **Step 8: Commit the documentation updates.**
 

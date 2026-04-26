@@ -3,6 +3,8 @@
 **Date:** 2026-04-26
 **Status:** Design approved (brainstorm `/tmp/kz-brainstorm/brainstorm.md`), plan pending.
 
+**Scope adjustment after planning (2026-04-26):** Ship the `demo_grundschule_zweizuegig` fixture and the multi-fixture bench infrastructure (rename, row-per-fixture TSV, `soft_score` column) in this PR. Defer `demo_gesamtschule` to a discrete follow-up PR. The original brainstorm Q1 picked "one PR with both fixtures"; the writing-plans phase quantified the cost (50-teacher / 240-entry assignment table, plus the matched Rust mirror, plus risk that the MVP greedy solver cannot solve a Sek I-scale instance cleanly without iteration) and made the cost / risk asymmetric enough to split. The infrastructure ships once and amortises across this PR and the Gesamtschule follow-up; the zweizügige fixture (8 classes, 196 placements) is enough on its own to give items 7 to 9 a second size to read against.
+
 ## Problem
 
 The solver-quality sprint (active in `docs/superpowers/OPEN_THINGS.md`) has shipped tidy items 1, 2, 4, 5, and now 3 (auto-assign teachers, PR #137). Item 6 is the last tidy item before the algorithm phase (PRs 7 to 9: FFD ordering, Doppelstunden, soft constraints + LAHC).
@@ -19,15 +21,15 @@ This PR closes that gap by adding two larger fixtures, mirroring them in the Pyt
 
 One PR that:
 
-1. Adds Python seed packages `demo_grundschule_zweizuegig` (8 classes / 12 teachers / 11 rooms / 196 placements) and `demo_gesamtschule` (24 classes, 6 grades × 4 Züge, ~50 teachers, 31 rooms, ~720 placements). Each fixture ships pre-assigned `teacher_id` per Lesson as authored data.
-2. Adds Typer CLI commands `seed-grundschule-zweizuegig` and `seed-gesamtschule` mirroring the existing `seed-grundschule` shape; rejects `settings.env == "prod"`.
-3. Adds Rust bench fixture builders mirroring the Python data shape, registered as additional `bench_function` calls inside the existing criterion group.
+1. Adds Python seed package `demo_grundschule_zweizuegig` (8 classes / 12 teachers / 11 rooms / 196 placements) with pre-assigned `teacher_id` per Lesson as authored data.
+2. Adds Typer CLI command `seed-grundschule-zweizuegig` mirroring the existing `seed-grundschule` shape; rejects `settings.env == "prod"`.
+3. Adds a Rust bench fixture builder for zweizügig, registered as a second `bench_function` inside the existing criterion group.
 4. Renames the bench file `solver_grundschule.rs` → `solver_fixtures.rs` and updates the matching `[[bench]] name` and the `--bench` flag in `scripts/record_solver_bench.sh`.
 5. Reshapes the bench's stderr emission from key/value lines (one fixture) to TSV header + rows (N fixtures) inside the same `---SOLVER-BENCH-BASELINE---` fence; `record_solver_bench.sh` parses rows and renders one markdown row each.
 6. Adds a `soft_score` column reserved at value `0` for the MVP solver (PR 9 fills it in).
-7. Refreshes `BASELINE.md` on the recording host (AMD Ryzen 7 3700X) so the committed numbers reflect the multi-fixture truth.
+7. Refreshes `BASELINE.md` on the recording host (AMD Ryzen 7 3700X) so the committed numbers reflect grundschule + zweizuegig measurements.
 
-After this PR, `mise run bench:record` produces a three-row baseline; the algorithm-phase PRs (7 to 9) read against three points of measurement instead of one; and the OPEN_THINGS sprint section shows item 6 shipped with all six tidy items behind us.
+After this PR, `mise run bench:record` produces a two-row baseline; the algorithm-phase PRs (7 to 9) read against two points of measurement instead of one; and the OPEN_THINGS sprint section shows item 6 partially shipped (zweizuegig leg done, gesamtschule leg open as a follow-up).
 
 ## Non-goals
 
@@ -58,23 +60,16 @@ After this PR, `mise run bench:record` produces a three-row baseline; the algori
 - 12 teachers: 8 Klassenlehrer (each qualified for D, M, SU, plus one of {KU, E}) + 4 specialists (RE/MU split, SP, KU/FÖ, FÖ-only). `max_hours_per_week`: mostly 28, two Halbtags-specialists at 14 and 18.
 - Expected lessons after `generate-lessons`: 68 rows (4 grade-1/2 classes × 8 subjects each + 4 grade-3/4 classes × 9 subjects each; grades 3/4 add Englisch). Total `hours_per_week` summed = **196 placements** (4 × 23 + 4 × 26).
 
-**`demo_gesamtschule` (Python + Rust mirror).**
+**`demo_gesamtschule` (deferred to follow-up PR).** Originally in scope; planning revealed the cost (50-teacher pool, 240-entry assignment table, matched Rust mirror) and the risk (MVP greedy may not solve cleanly without seed iteration) outweigh shipping in this PR. Tracked as a follow-up OPEN_THINGS item once items 7 to 9 (FFD / LAHC) start consuming the bench output and the value of a third size becomes concrete.
 
-- 24 classes: 5a/b/c/d, 6a/b/c/d, 7a/b/c/d, 8a/b/c/d, 9a/b/c/d, 10a/b/c/d. Six new Stundentafeln (one per grade).
-- 14 subjects: D, M, E, F (grade 7+), Bio, Ch (grade 7+), Ph (grade 7+), Geo, G, Pol, Rel/Eth, Mu, Ku, Sp.
-- 31 rooms: 24 Klassenräume + 2 Turnhallen + 1 Bio-Lab + 1 Ch-Lab + 1 Ph-Lab + 1 Musikraum + 1 Kunstraum.
-- 50 teachers: ~24 generalists qualified for 3 to 4 of {D, M, E, Geo, G, Pol}; ~12 science specialists qualified for 1 to 2 of {Bio, Ch, Ph}; ~6 language specialists for {F}; ~4 aesthetic teachers for {Mu, Ku}; ~4 Sport teachers. Mostly `max_hours_per_week = 26`; Teilzeit at 14, 18, 21 sprinkled.
-- Expected total placements: ~720 (24 classes × ~30 hours/week).
-- WeekScheme grid: 5 days × 8 periods (8 to 15:30 with breaks), giving 40 time-blocks × 31 rooms = 1240 (room, time) slots, comfortable headroom for 720 placements.
-
-**Pre-assigned teacher_ids.** Both fixtures carry literal `teacher_id` per Lesson encoded as `(grade, Zug, subject) → teacher_index` lookup tables at module load. Authored deterministically via the scarcity-first heuristic from `auto_assign_teachers_for_lessons` (subjects with the fewest qualified teachers claim capacity first), but the result is hard-coded so bench results stay stable as `auto_assign_teachers_for_lessons` evolves.
+**Pre-assigned teacher_ids.** The zweizügige fixture carries literal `teacher_id` per Lesson encoded as a `(class_name, subject_short) → teacher_short_code` lookup dict at module load. Authored deterministically via the scarcity-first heuristic (subjects with the fewest qualified teachers claim capacity first), but the result is hard-coded so bench numbers stay stable as `auto_assign_teachers_for_lessons` evolves.
 
 ### Rust bench mirror
 
 - Rename `solver/solver-core/benches/solver_grundschule.rs` → `solver/solver-core/benches/solver_fixtures.rs`. Update `[[bench]] name` in `solver/solver-core/Cargo.toml` and `--bench` flag in `scripts/record_solver_bench.sh`.
-- Each fixture builder (`grundschule_fixture`, `zweizuegig_fixture`, `gesamtschule_fixture`) returns a `Problem`. Compact tables (hours per (grade, subject), teacher allocations, room suitabilities) drive nested-loop construction; the existing `assert_eq!(lessons.len(), N)` line per fixture catches drift against the matching Python literal.
-- Bench harness loops over `[("grundschule", grundschule_fixture()), ("zweizuegig", zweizuegig_fixture()), ("gesamtschule", gesamtschule_fixture())]`, calling `group.bench_function(name, ...)` per fixture. Single criterion group, single `iter_custom`-collected `Mutex<HashMap<&str, Vec<Duration>>>` keyed by fixture name.
-- Sample size 200 per fixture (current default). Fall back to a per-fixture override if Gesamtschule's per-iter cost blows the budget; document the asymmetry in `BASELINE.md` if it does.
+- Two fixture builders ship in this PR (`grundschule_fixture`, `zweizuegig_fixture`); the file is named `solver_fixtures.rs` so the Gesamtschule follow-up adds a third builder without another rename. Each returns a `Problem`; compact tables (hours per class index, teacher allocations, room suitabilities) drive nested-loop construction. The existing `assert_eq!(lessons.len(), N)` line per fixture catches drift against the matching Python literal.
+- Bench harness loops over `[("grundschule", grundschule_fixture()), ("zweizuegig", zweizuegig_fixture())]`, calling `group.bench_function(name, ...)` per fixture. Single criterion group, single `iter_custom`-collected `Mutex<HashMap<&str, Vec<Duration>>>` keyed by fixture name.
+- Sample size 200 per fixture (current default). Zweizügige's per-iter cost is ~196 µs at 1M placements/sec, comfortable at 200 samples.
 
 ### Output format
 
@@ -84,7 +79,6 @@ After this PR, `mise run bench:record` produces a three-row baseline; the algori
 fixture\tsamples\tp1_us\tp50_us\tp99_us\tplacements_per_sec\ttotal_placements\ttotal_hard_violations\tsoft_score
 grundschule\t200\t40\t41\t51\t1077999\t45\t0\t0
 zweizuegig\t200\tXXX\tXXX\tXXX\tXXX\t196\t0\t0
-gesamtschule\t200\tXXX\tXXX\tXXX\tXXX\t720\t0\t0
 ```
 
 **`record_solver_bench.sh`.** Read the fenced block, take the first line as header, the rest as data rows. Render one markdown row per data row. Footer (host, kernel, rustc, date) unchanged.
@@ -93,10 +87,8 @@ gesamtschule\t200\tXXX\tXXX\tXXX\tXXX\t720\t0\t0
 
 ### Tests
 
-- `backend/tests/seed/test_demo_grundschule_zweizuegig_shape.py`: entity counts (12 teachers, 11 rooms, 8 classes, 4 reused Stundentafeln, 11 + 5 + 5 + ... time-blocks), FK integrity (every Klassenlehrer's qualifications cover their assigned class's Stundentafel), spot checks (each Klassenraum suits exactly the einzügige `_KLASSENRAUM_SUITABLE_SUBJECTS` set).
-- `backend/tests/seed/test_demo_grundschule_zweizuegig_solvability.py`: seed → assign-teachers no-op (already pre-assigned) → run solver via `solver_io.solve_problem` → assert `len(placements) == 196` and `hard_violations == 0`.
-- `backend/tests/seed/test_demo_gesamtschule_shape.py`: analogous, with cross-grade qualification spot checks.
-- `backend/tests/seed/test_demo_gesamtschule_solvability.py`: analogous; the literal placement count is the source of truth for both this test and the Rust bench's `assert_eq!`.
+- `backend/tests/seed/test_demo_grundschule_zweizuegig_shape.py`: entity counts (12 teachers, 11 rooms, 8 classes, 4 reused Stundentafeln, 35 time-blocks), FK integrity (every Klassenlehrer's qualifications cover D + M + SU), spot checks (each Klassenraum suits exactly the einzügige `_KLASSENRAUM_SUITABLE_SUBJECTS` set).
+- `backend/tests/seed/test_demo_grundschule_zweizuegig_solvability.py`: seed → generate-lessons per class → pin teacher_id from `_TEACHER_ASSIGNMENTS_ZWEIZUEGIG` → run solver via `solver_io.solve_problem` → assert `len(placements) == 196` and `hard_violations == 0`. The literal 196 is shared with the Rust bench's `assert_eq!`.
 - Rollback test: not duplicated. The savepoint discipline tested in `test_demo_grundschule_rollback.py` is a session-fixture property, generic to any seed.
 
 ### Drift detection
@@ -107,20 +99,17 @@ gesamtschule\t200\tXXX\tXXX\tXXX\tXXX\t720\t0\t0
 
 ### CLI surface
 
-- `klassenzeit-backend seed-grundschule-zweizuegig` (analogous to existing).
-- `klassenzeit-backend seed-gesamtschule` (analogous to existing).
-- Both reject `settings.env == "prod"` via the existing `_check_not_prod` helper.
+- `klassenzeit-backend seed-grundschule-zweizuegig` (analogous to existing). Rejects `settings.env == "prod"` via the existing `_check_not_prod` helper.
+- `seed-gesamtschule` ships with the deferred Gesamtschule fixture in the follow-up PR.
 
 ## Risks and mitigations
 
 | Risk | Likelihood | Mitigation |
 | --- | --- | --- |
-| MVP solver cannot solve `demo_gesamtschule` cleanly under greedy-first-fit | Medium | Tighten / loosen teacher allocation in the seed until MVP yields zero hard violations. If still infeasible, replace the strict assertion with `hard_violations < threshold` and document the gap. Worst case: defer Gesamtschule to a follow-up PR, ship zweizügig only. |
+| MVP solver cannot solve `demo_grundschule_zweizuegig` cleanly | Low | Zweizügige is structurally the einzügige fixture doubled; einzügige solves cleanly, headroom is ~33%. If a violation surfaces, rebalance one teacher's qualification mix. |
 | Bench numbers shift across recording-host changes | Inherent | Existing convention: footer in `BASELINE.md` records CPU, kernel, rustc. 20% regression budget reads against the same host. No new mitigation. |
-| Python seed and Rust fixture drift over time | Medium long-term | Literal placement-count assertion in both; cross-reference comments; PR template item "did you re-record bench?" already in `solver/CLAUDE.md`. |
+| Python seed and Rust fixture drift over time | Medium long-term | Literal placement-count assertion in both; cross-reference comments; bench-runtime panic if `solution.placements.len()` differs from `expected_hours`. |
 | Bench harness output format change breaks `mise run bench` consumers | Low | Only consumer is `record_solver_bench.sh`, owned in this PR. No external readers. |
-| PR size (estimated ~1500 lines) discourages reviewer | Medium | Seven-commit chain with the first two as pure refactors; reviewer can read 1 and 2 quickly and focus on data + empirics in 3, 5, 7. |
-| Gesamtschule sample size too high (per-iter cost too slow at 200 samples) | Low | Per-fixture sample-size override in the criterion group; document asymmetry in `BASELINE.md`. Back-of-envelope says ~720 µs/iter at 1M placements/sec, so 200 samples ≈ 144 ms total — fine. |
 
 ## Implementation order
 
@@ -128,19 +117,16 @@ gesamtschule\t200\tXXX\tXXX\tXXX\tXXX\t720\t0\t0
 2. **`refactor(solver-core,scripts): row-per-fixture TSV format in bench output and record script`.** Bench emits TSV header + one data row inside the fenced block; `record_solver_bench.sh` parses rows and renders multi-row markdown. Single fixture for now; format supports many.
 3. **`feat(seed): demo_grundschule_zweizuegig seed package`.** Python seed + shape test + solvability test + Typer command. TDD: red on shape test (missing module), green on implementation; same cycle for solvability.
 4. **`feat(solver-core): zweizuegig bench fixture`.** Rust mirror, registered in the criterion group. Bench-runtime asserts use literals shared with the Python solvability test.
-5. **`feat(seed): demo_gesamtschule seed package`.** Python seed + shape test + solvability test + Typer command. Same TDD cycle. If MVP cannot solve cleanly, this is where the iteration happens (additional commits 5a, 5b on the branch).
-6. **`feat(solver-core): gesamtschule bench fixture`.** Rust mirror; same shared-literal pattern.
-7. **`chore(solver-core): record bench baseline across three fixtures`.** `mise run bench:record` on AMD Ryzen 7 3700X; check in regenerated `BASELINE.md`.
+5. **`chore(solver-core): record bench baseline across two fixtures`.** `mise run bench:record` on AMD Ryzen 7 3700X; check in regenerated `BASELINE.md`.
 
-Documentation updates from `/autopilot` step 6 (`OPEN_THINGS.md`, auto-memory, autopilot.md if anything surfaces) ride along on the open commit at finalization time.
+Documentation updates from `/autopilot` step 6 (`OPEN_THINGS.md` deferral note for Gesamtschule, auto-memory, autopilot.md if anything surfaces) ride along on the open commit at finalization time.
 
 ## Acceptance
 
-- `mise run bench` runs three benches; output shows one criterion group with three named functions.
-- `mise run bench:record` produces a three-row `BASELINE.md` with non-zero placements per row, zero hard violations per row, soft_score = 0 per row.
+- `mise run bench` runs two benches; output shows one criterion group with two named functions.
+- `mise run bench:record` produces a two-row `BASELINE.md` with non-zero placements per row, zero hard violations per row, soft_score = 0 per row.
 - `uv run klassenzeit-backend seed-grundschule-zweizuegig` against a fresh dev DB seeds 8 classes, 12 teachers, 11 rooms; running `generate-lessons` then `POST /schedule` yields a feasible timetable with 196 placements.
-- `uv run klassenzeit-backend seed-gesamtschule` against a fresh dev DB seeds 24 classes, 50 teachers, 31 rooms; the schedule view at `/schedule` renders without breakage.
 - Existing bench numbers (Grundschule: ~40 µs p50, ~1M placements/sec) within 5% of pre-PR values, since the Grundschule fixture is unchanged.
 - All existing tests pass (no regression in `mise run test:py`, `mise run test:rust`, `mise run fe:test`).
 - `mise run lint` clean.
-- `OPEN_THINGS.md` updated: item 6 marked shipped with date and PR ref; sprint header note updated to reflect tidy phase complete.
+- `OPEN_THINGS.md` updated: item 6 marked partially shipped (zweizuegig leg) with date and PR ref; gesamtschule leg captured as a new follow-up entry in the sprint or "Acknowledged deferrals" section.
