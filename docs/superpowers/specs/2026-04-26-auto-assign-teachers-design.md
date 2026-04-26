@@ -69,16 +69,19 @@ def auto_assign_teachers_for_lessons(
 The function:
 
 1. Copies `capacity_used_by_teacher` to a local dict so the caller's snapshot is not mutated.
-2. For each `lesson` in `lessons`:
+2. Sorts `lessons` in ascending order of qualified-teacher count for the lesson's subject (`len(qualified_teacher_ids_by_subject.get(lesson.subject_id, set()))`), with input order as the stable tiebreak. This scarcity-first ordering ensures subjects with a single qualified teacher claim that teacher's capacity before broader subjects fill it greedily.
+3. For each `lesson` in the sorted order:
    1. Look up `qualified = qualified_teacher_ids_by_subject.get(lesson.subject_id, set())`.
    2. Walk `teachers` in order. For the first `teacher` where `teacher.id in qualified` and `(teacher.max_hours_per_week - capacity_used_by_teacher[teacher.id]) >= lesson.hours_per_week`:
       - Record `assignments[lesson.id] = teacher.id`.
       - Increment `capacity_used_by_teacher[teacher.id]` by `lesson.hours_per_week`.
       - Stop scanning teachers for this lesson.
    3. If no teacher matches, the lesson is left unassigned (absent from `assignments`).
-3. Return `assignments`.
+4. Return `assignments`.
 
 The function is deterministic given a fixed input ordering. It does not perform I/O, does not raise on missing teachers, and does not touch `Lesson.teacher_id` directly; that is the caller's responsibility.
+
+Why scarcity-first instead of pure input-order: the route's lesson list comes from `select(StundentafelEntry).order_by(StundentafelEntry.subject_id)`, which is deterministic for a fixed DB state but the subject UUIDs are random across runs and across schools. A pure input-order walk would let a subject with many qualified teachers (say `D` with four candidates) consume the only teacher qualified for a single-candidate subject (say `RE` with one) before the single-candidate lesson is processed. On the seeded Grundschule that surfaces as a non-deterministic failure: BEC is the sole RE/MU teacher and shares FÖ with HOF; if FÖ is iterated before RE/MU, BEC's 18h cap fills with FÖ greedily and RE/MU classes lose their only candidate. Scarcity-first removes the dependency on subject UUID order. Sprint PR 7 (FFD ordering) replaces the heuristic wholesale; this is the placeholder version of the same idea.
 
 ### Route wiring
 
@@ -197,7 +200,7 @@ unassigned_count = (
 assert unassigned_count == 0, "auto-assign left some lessons unassigned"
 ```
 
-The hand-checked walk in the brainstorm confirms zero NULLs for the current seed (FIS 28 + MUE 27 + SCH 9 + WEB 6 + BEC 18 + HOF 18 = 106h, every lesson covered). The assertion is the empirical guard.
+The scarcity-first heuristic covers every Grundschule seed lesson (single-qual subjects RE/MU/SP claim BEC and HOF first; broader subjects fall through to the four classroom teachers). The assertion is the empirical guard for any future seed change that trims caps or qualifications below feasibility.
 
 #### Smoke spec: `frontend/e2e/flows/grundschule-smoke.spec.ts`
 
@@ -244,7 +247,7 @@ Each commit is lint-clean and test-clean on its own. The pre-push hook runs the 
 ## Risks
 
 - **Heuristic differs from `TEACHER_ASSIGNMENTS`.** The solver produces a different (but valid) Grundschule schedule. Mitigation: the smoke spec asserts only "Deutsch in 1a's grid", which is robust. The solvability test asserts "zero NULLs after generate-lessons" plus "zero violations from `POST /schedule`", which captures correctness without pinning the exact distribution.
-- **Future seed change leaves NULLs.** If a contributor later trims a teacher's qualifications or caps such that the heuristic can no longer cover all 106 lesson-hours, the solvability test fails. This is intentional: the test should fail when the seed becomes infeasible under the production heuristic. The failure is the right tripwire.
+- **Future seed change leaves NULLs.** If a contributor later trims a teacher's qualifications or caps such that the heuristic can no longer cover the seed's lesson-hours, the solvability test fails. This is intentional: the test should fail when the seed becomes infeasible under the production heuristic. The failure is the right tripwire.
 - **`vulture` flags leftover symbols.** Mitigated by commit 4 making the deletions atomic. If a symbol is missed, the pre-push catches it.
 - **Pre-commit `ty check` and the red-test starting state.** `backend/CLAUDE.md` notes `ty` blocks a "red test that imports a not-yet-created module" pattern (`unresolved-import` gate, no per-file carve-outs). Mitigation: commit 1 imports nothing new; it asserts on the existing endpoint's response shape, which is the simplest red. Commit 2 introduces the new module; the test goes green in the same commit.
 - **Concurrency.** Two simultaneous generate-lessons calls for two different classes both compute spare capacity from the same snapshot, both assign the same teacher beyond cap. Mitigation: out of scope. The class-level concurrency hardening is already deferred in OPEN_THINGS' "Acknowledged deferrals" (advisory lock note).
