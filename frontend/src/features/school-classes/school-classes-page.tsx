@@ -4,16 +4,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
+import { type EntityColumn, EntityListTable } from "@/components/entity-list-table";
+import { EntityPageHead } from "@/components/entity-page-head";
 import { Toolbar } from "@/components/toolbar";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useStundentafeln } from "@/features/stundentafeln/hooks";
 import { useWeekSchemes } from "@/features/week-schemes/hooks";
 import { GenerateLessonsConfirmDialog } from "./generate-lessons-dialog";
@@ -46,9 +40,35 @@ export function SchoolClassesPage() {
   const showEmpty =
     !schoolClasses.isLoading && schoolClasses.data && schoolClasses.data.length === 0 && !q;
 
+  const schoolClassColumns: EntityColumn<SchoolClass>[] = [
+    {
+      key: "name",
+      header: t("schoolClasses.columns.name"),
+      cell: (schoolClass) => schoolClass.name,
+      cellClassName: "font-medium",
+    },
+    {
+      key: "gradeLevel",
+      header: t("schoolClasses.columns.gradeLevel"),
+      cell: (schoolClass) => schoolClass.grade_level,
+      className: "text-right",
+      cellClassName: "font-mono text-[12.5px]",
+    },
+    {
+      key: "stundentafel",
+      header: t("schoolClasses.columns.stundentafel"),
+      cell: (schoolClass) => stundentafelNameById.get(schoolClass.stundentafel_id) ?? "—",
+    },
+    {
+      key: "weekScheme",
+      header: t("schoolClasses.columns.weekScheme"),
+      cell: (schoolClass) => weekSchemeNameById.get(schoolClass.week_scheme_id) ?? "—",
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <SchoolClassesPageHead
+      <EntityPageHead
         title={t("schoolClasses.title")}
         subtitle={t("schoolClasses.subtitle")}
         onCreate={() => setCreating(true)}
@@ -84,58 +104,29 @@ export function SchoolClassesPage() {
               </span>
             }
           />
-          <div className="overflow-x-auto rounded-xl border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="py-2">{t("schoolClasses.columns.name")}</TableHead>
-                  <TableHead className="py-2 text-right">
-                    {t("schoolClasses.columns.gradeLevel")}
-                  </TableHead>
-                  <TableHead className="py-2">{t("schoolClasses.columns.stundentafel")}</TableHead>
-                  <TableHead className="py-2">{t("schoolClasses.columns.weekScheme")}</TableHead>
-                  <TableHead className="w-40 py-2 text-right">
-                    {t("schoolClasses.columns.actions")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((schoolClass) => (
-                  <TableRow key={schoolClass.id}>
-                    <TableCell className="py-1.5 font-medium">{schoolClass.name}</TableCell>
-                    <TableCell className="py-1.5 text-right font-mono text-[12.5px]">
-                      {schoolClass.grade_level}
-                    </TableCell>
-                    <TableCell className="py-1.5">
-                      {stundentafelNameById.get(schoolClass.stundentafel_id) ?? "—"}
-                    </TableCell>
-                    <TableCell className="py-1.5">
-                      {weekSchemeNameById.get(schoolClass.week_scheme_id) ?? "—"}
-                    </TableCell>
-                    <TableCell className="space-x-2 whitespace-nowrap py-1.5 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setGenerateFor(schoolClass)}
-                      >
-                        {t("schoolClasses.generateLessons.action")}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setEditing(schoolClass)}>
-                        {t("common.edit")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => setConfirmDelete(schoolClass)}
-                      >
-                        {t("common.delete")}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <EntityListTable<SchoolClass>
+            rows={rows}
+            rowKey={(schoolClass) => schoolClass.id}
+            columns={schoolClassColumns}
+            actions={(schoolClass) => (
+              <>
+                <Button size="sm" variant="outline" onClick={() => setGenerateFor(schoolClass)}>
+                  {t("schoolClasses.generateLessons.action")}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditing(schoolClass)}>
+                  {t("common.edit")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setConfirmDelete(schoolClass)}
+                >
+                  {t("common.delete")}
+                </Button>
+              </>
+            )}
+            actionsHeader={t("schoolClasses.columns.actions")}
+          />
         </>
       )}
 
@@ -174,34 +165,6 @@ export function SchoolClassesPage() {
           }}
         />
       ) : null}
-    </div>
-  );
-}
-
-function SchoolClassesPageHead({
-  title,
-  subtitle,
-  onCreate,
-  createLabel,
-}: {
-  title: string;
-  subtitle: string;
-  onCreate: () => void;
-  createLabel: string;
-}) {
-  const { t } = useTranslation();
-  return (
-    <div className="flex flex-wrap items-end justify-between gap-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" disabled title={t("sidebar.comingSoon")}>
-          {t("common.import")}
-        </Button>
-        <Button onClick={onCreate}>{createLabel}</Button>
-      </div>
     </div>
   );
 }
