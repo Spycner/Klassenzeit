@@ -1,0 +1,118 @@
+//! Integration test: FFD ordering changes the placement outcome on a fixture
+//! that input-Vec order cannot solve. Lives in `tests/` (not inline) because
+//! the assertion is at the public `solve` boundary, not at `ffd_order`.
+
+use solver_core::{
+    ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId},
+    solve, solve_with_config,
+    types::{
+        Lesson, Problem, Room, RoomSubjectSuitability, SchoolClass, SolveConfig, Subject, Teacher,
+        TeacherQualification, TimeBlock,
+    },
+};
+use uuid::Uuid;
+
+fn ffd_uuid(n: u8) -> Uuid {
+    Uuid::from_bytes([n; 16])
+}
+
+/// 1 time block, 2 rooms (R_general suits all, R_special suits only SP), 2
+/// classes, 2 lessons. Input Vec lists the more permissive SP lesson first;
+/// greedy first-fit takes R_general for SP, leaving DE with no suitable
+/// room. FFD orders DE (1 suitable room) before SP (2 suitable rooms), so DE
+/// takes R_general and SP falls back to R_special.
+fn pessimal_input_problem() -> Problem {
+    Problem {
+        time_blocks: vec![TimeBlock {
+            id: TimeBlockId(ffd_uuid(10)),
+            day_of_week: 0,
+            position: 0,
+        }],
+        teachers: vec![
+            Teacher {
+                id: TeacherId(ffd_uuid(20)),
+                max_hours_per_week: 5,
+            },
+            Teacher {
+                id: TeacherId(ffd_uuid(21)),
+                max_hours_per_week: 5,
+            },
+        ],
+        rooms: vec![
+            Room {
+                id: RoomId(ffd_uuid(30)),
+            },
+            Room {
+                id: RoomId(ffd_uuid(31)),
+            },
+        ],
+        subjects: vec![
+            Subject {
+                id: SubjectId(ffd_uuid(40)),
+            },
+            Subject {
+                id: SubjectId(ffd_uuid(41)),
+            },
+        ],
+        school_classes: vec![
+            SchoolClass {
+                id: SchoolClassId(ffd_uuid(50)),
+            },
+            SchoolClass {
+                id: SchoolClassId(ffd_uuid(51)),
+            },
+        ],
+        lessons: vec![
+            Lesson {
+                id: LessonId(ffd_uuid(61)),
+                school_class_id: SchoolClassId(ffd_uuid(51)),
+                subject_id: SubjectId(ffd_uuid(41)),
+                teacher_id: TeacherId(ffd_uuid(21)),
+                hours_per_week: 1,
+            },
+            Lesson {
+                id: LessonId(ffd_uuid(60)),
+                school_class_id: SchoolClassId(ffd_uuid(50)),
+                subject_id: SubjectId(ffd_uuid(40)),
+                teacher_id: TeacherId(ffd_uuid(20)),
+                hours_per_week: 1,
+            },
+        ],
+        teacher_qualifications: vec![
+            TeacherQualification {
+                teacher_id: TeacherId(ffd_uuid(20)),
+                subject_id: SubjectId(ffd_uuid(40)),
+            },
+            TeacherQualification {
+                teacher_id: TeacherId(ffd_uuid(21)),
+                subject_id: SubjectId(ffd_uuid(41)),
+            },
+        ],
+        teacher_blocked_times: vec![],
+        room_blocked_times: vec![],
+        room_subject_suitabilities: vec![RoomSubjectSuitability {
+            room_id: RoomId(ffd_uuid(31)),
+            subject_id: SubjectId(ffd_uuid(41)),
+        }],
+    }
+}
+
+#[test]
+fn ffd_solve_places_a_lesson_that_input_order_leaves_unplaced() {
+    let problem = pessimal_input_problem();
+    let solution = solve(&problem).expect("solve must not return Err");
+    assert_eq!(solution.placements.len(), 2, "both lessons should place");
+    assert!(
+        solution.violations.is_empty(),
+        "FFD should produce zero violations on this fixture"
+    );
+}
+
+#[test]
+fn ffd_solve_with_config_default_matches_solve() {
+    let problem = pessimal_input_problem();
+    let s_default = solve(&problem).expect("solve");
+    let s_explicit =
+        solve_with_config(&problem, &SolveConfig::default()).expect("solve_with_config");
+    assert_eq!(s_default, s_explicit);
+}

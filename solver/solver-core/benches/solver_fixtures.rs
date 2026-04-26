@@ -1,4 +1,4 @@
-//! Criterion benches for the MVP solver across a fixture matrix.
+//! Criterion benches for the FFD greedy solver across a fixture matrix.
 //!
 //! Two fixture builders live in this file: `grundschule_fixture`
 //! (45 placements, einzügige Grundschule) and `zweizuegig_fixture`
@@ -7,6 +7,10 @@
 //! drift is caught by `assert_eq!(lessons.len(), N)` against literals
 //! shared with the matching Python solvability test. A `gesamtschule_fixture`
 //! is tracked under `docs/superpowers/OPEN_THINGS.md` "Acknowledged deferrals".
+//!
+//! Both fixtures iterate subjects in the natural authoring order; FFD
+//! ordering inside `solve_with_config` sorts lessons by eligibility before
+//! placement so the global solve succeeds regardless of input permutation.
 //!
 //! Output contract: after `group.finish()` we print a tab-separated block
 //! fenced by `---SOLVER-BENCH-BASELINE---` / `---END---` to stderr.
@@ -206,23 +210,12 @@ fn zweizuegig_fixture() -> Problem {
         [7, 7, 7, 10, 7, 1, 10, 11, 11],   // 4b
     ];
 
-    // Iterate subjects in scarcity-first order so the global greedy first-fit
-    // can satisfy the cross-class specialist teachers (BEC, HOF, WIL, RIC)
-    // before the per-class Klassenlehrer fills the early time blocks. With
-    // the natural 0..9 order, RIC (4 b-classes, 20h) lands its hours late
-    // in the schedule and runs out of slots that are also free for class 4b;
-    // pushing specialist subjects first leaves the b-class Klassenlehrer to
-    // fill whatever the specialists leave. The Python solvability test does
-    // not hit this because it solves per-class via /api/classes/{id}/schedule;
-    // the bench solves all 196 placements globally in one solve() call.
-    let subject_order: [usize; 9] = [3, 6, 5, 7, 8, 4, 0, 1, 2];
-
     let mut lessons = Vec::new();
     let mut quals = Vec::new();
     let mut qual_set: HashSet<(TeacherId, SubjectId)> = HashSet::new();
     let mut lesson_idx: u8 = 0;
     for c_idx in 0..classes.len() {
-        for &s_idx in &subject_order {
+        for s_idx in 0..subjects.len() {
             let hours = hours_per_class[c_idx][s_idx];
             if hours == 0 {
                 continue;

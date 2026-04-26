@@ -15,9 +15,6 @@ pub(crate) struct Indexed {
     room_blocked: HashSet<(RoomId, TimeBlockId)>,
 }
 
-// Reason: these methods are consumed by `solve` in task 5; tests cover them
-// already but the non-test build has no caller yet.
-#[cfg_attr(not(test), allow(dead_code))]
 impl Indexed {
     pub(crate) fn new(problem: &Problem) -> Self {
         let mut teacher_subject: HashMap<TeacherId, HashSet<SubjectId>> = HashMap::new();

@@ -1,8 +1,9 @@
-//! Greedy first-fit timetable solver. Iterates lessons, hours, time blocks, rooms
-//! in caller-provided order; commits the first candidate that satisfies every hard
-//! constraint. Placement failures become typed violations (`TeacherOverCapacity`,
-//! `NoFreeTimeBlock`, `NoSuitableRoom`) inside `Solution`; `Err(Error::Input)` is
-//! reserved for structural input errors.
+//! First Fit Decreasing greedy timetable solver. Sorts lessons by
+//! eligibility (most constrained first) via `ordering::ffd_order`, then
+//! commits the first hard-constraint-satisfying (time block, room) for each
+//! lesson-hour. Placement failures become typed violations
+//! (`TeacherOverCapacity`, `NoFreeTimeBlock`, `NoSuitableRoom`) inside
+//! `Solution`; `Err(Error::Input)` is reserved for structural input errors.
 
 use std::collections::{HashMap, HashSet};
 
@@ -40,7 +41,9 @@ pub fn solve_with_config(problem: &Problem, _config: &SolveConfig) -> Result<Sol
         .map(|t| (t.id, t.max_hours_per_week))
         .collect();
 
-    for lesson in &problem.lessons {
+    let order = crate::ordering::ffd_order(problem, &idx);
+    for &lesson_idx in &order {
+        let lesson = &problem.lessons[lesson_idx];
         // Skip placements for lessons with pre-solve violations; `pre_solve_violations`
         // already recorded one violation per hour.
         if !idx.teacher_qualified(lesson.teacher_id, lesson.subject_id) {
