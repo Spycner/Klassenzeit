@@ -14,7 +14,7 @@ STDERR_FILE="$(mktemp)"
 trap 'rm -f "${STDERR_FILE}"' EXIT
 
 cd "${ROOT}"
-cargo bench -p solver-core --bench solver_grundschule 2> "${STDERR_FILE}"
+cargo bench -p solver-core --bench solver_fixtures 2> "${STDERR_FILE}"
 
 BLOCK="$(awk '/^---SOLVER-BENCH-BASELINE---$/{flag=1; next} /^---END---$/{flag=0} flag' "${STDERR_FILE}")"
 if [[ -z "${BLOCK}" ]]; then

@@ -1,10 +1,12 @@
-//! Criterion bench for the MVP solver over a Grundschule-shaped fixture.
+//! Criterion benches for the MVP solver across a fixture matrix.
 //!
-//! The fixture builder below is a deliberate duplicate of
-//! `solver-core/tests/grundschule_smoke.rs::grundschule()`. Sprint item 6
-//! on `docs/superpowers/OPEN_THINGS.md` (benchmark-fixture matrix) will
-//! consolidate both onto a shared builder with pre-assigned teacher ids;
-//! until then this copy is the bench source of truth.
+//! Two fixture builders live in this file: `grundschule_fixture`
+//! (45 placements, einzügige Grundschule) and `zweizuegig_fixture`
+//! (196 placements, two-Zug Grundschule). Each is a hand-coded mirror
+//! of a Python seed in `backend/src/klassenzeit_backend/seed/demo_*.py`;
+//! drift is caught by `assert_eq!(lessons.len(), N)` against literals
+//! shared with the matching Python solvability test. A `gesamtschule_fixture`
+//! is tracked under `docs/superpowers/OPEN_THINGS.md` "Acknowledged deferrals".
 //!
 //! Output contract: after `group.finish()` we print a tab-separated block
 //! fenced by `---SOLVER-BENCH-BASELINE---` / `---END---` to stderr.

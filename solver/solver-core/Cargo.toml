@@ -19,5 +19,5 @@ criterion = { workspace = true }
 proptest  = { workspace = true }
 
 [[bench]]
-name    = "solver_grundschule"
+name    = "solver_fixtures"
 harness = false
