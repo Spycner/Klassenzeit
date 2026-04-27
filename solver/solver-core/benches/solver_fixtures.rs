@@ -350,7 +350,7 @@ fn bench_fixtures(c: &mut Criterion) {
 
     eprintln!("---SOLVER-BENCH-BASELINE---");
     eprint_bench_header();
-    for (name, _) in &fixtures {
+    for (name, problem) in &fixtures {
         let mut collected = samples_by_fixture
             .lock()
             .expect("samples mutex poisoned")
@@ -374,6 +374,10 @@ fn bench_fixtures(c: &mut Criterion) {
         } else {
             (f64::from(expected_hours) / mean.as_secs_f64()) as u64
         };
+        // One extra solve outside the timing loop to capture the deterministic
+        // soft_score for the BASELINE row. The greedy is deterministic so this
+        // always matches the score the timed iterations produced.
+        let solution = solve(problem).expect("solve must succeed on the bench fixture");
         eprint_bench_row(
             name,
             total_samples,
@@ -383,7 +387,7 @@ fn bench_fixtures(c: &mut Criterion) {
             placements_per_sec,
             expected_hours,
             0,
-            0,
+            solution.soft_score,
         );
     }
     eprintln!("---END---");

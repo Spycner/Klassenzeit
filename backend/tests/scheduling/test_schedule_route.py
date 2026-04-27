@@ -110,6 +110,8 @@ async def test_schedule_post_returns_200_with_placements_on_happy_path(
     body = resp.json()
     assert len(body["placements"]) == 1
     assert body["violations"] == []
+    assert "soft_score" in body
+    assert body["soft_score"] >= 0
 
 
 async def test_schedule_post_returns_422_without_time_blocks(

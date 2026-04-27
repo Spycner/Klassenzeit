@@ -88,7 +88,7 @@ def test_filter_solution_for_class_drops_violations_for_other_classes() -> None:
 
 def test_filter_solution_for_class_empty_input() -> None:
     filtered = filter_solution_for_class({"placements": [], "violations": []}, set())
-    assert filtered == {"placements": [], "violations": []}
+    assert filtered == {"placements": [], "violations": [], "soft_score": 0}
 
 
 # ─── build_problem_json tests ──────────────────────────────────────────────

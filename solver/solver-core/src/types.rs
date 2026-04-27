@@ -22,11 +22,21 @@ pub struct SolveConfig {
     pub weights: ConstraintWeights,
 }
 
-/// Soft-constraint weights. Currently empty; populated by the soft-constraint
-/// and local-search PR. Empty curly-brace form (not a unit struct) so adding
-/// fields later is non-breaking.
+/// Soft-constraint weights consumed by `score_solution` and the lowest-delta
+/// greedy in `solve_with_config`. Each field defaults to zero so explicit
+/// `ConstraintWeights::default()` callers get unweighted behaviour. The
+/// no-config `solve()` entry point applies active defaults of `1` per gap.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct ConstraintWeights {}
+pub struct ConstraintWeights {
+    /// Penalty per gap-hour in any class's day. A gap-hour is a position p in
+    /// a `(school_class_id, day_of_week)` partition where the class has
+    /// placements at some position less than p and some position greater than
+    /// p on that day, but no placement at position p.
+    pub class_gap: u32,
+    /// Penalty per gap-hour in any teacher's day. Same definition as
+    /// `class_gap`, partitioned by `(teacher_id, day_of_week)` instead.
+    pub teacher_gap: u32,
+}
 
 /// Complete solver input. Flat `Vec`s of relation pairs mirror the backend's SQL
 /// join tables so serialisation is a 1:1 shape match with the API payload.
@@ -166,6 +176,11 @@ pub struct Solution {
     pub placements: Vec<Placement>,
     /// Violations recorded during solving (e.g., unplaced hours, no qualified teacher).
     pub violations: Vec<Violation>,
+    /// Sum of weighted soft-constraint penalties across `placements`.
+    /// Populated by `solve_with_config` against the caller's
+    /// `ConstraintWeights`. Zero when both weights are zero or when the
+    /// schedule is fully compact.
+    pub soft_score: u32,
 }
 
 /// A single successful placement of one hour of one lesson.
@@ -283,6 +298,7 @@ mod tests {
                 lesson_id: lesson_id(),
                 hour_index: 0,
             }],
+            soft_score: 0,
         };
         let json = serde_json::to_string(&solution).unwrap();
         let parsed: Solution = serde_json::from_str(&json).unwrap();

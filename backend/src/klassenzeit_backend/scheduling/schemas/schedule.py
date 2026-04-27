@@ -36,6 +36,7 @@ class ScheduleResponse(BaseModel):
 
     placements: list[PlacementResponse]
     violations: list[ViolationResponse]
+    soft_score: int = Field(default=0, ge=0)
 
 
 class ScheduleReadResponse(BaseModel):

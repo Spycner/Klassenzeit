@@ -1709,6 +1709,11 @@ export interface components {
             placements: components["schemas"]["PlacementResponse"][];
             /** Violations */
             violations: components["schemas"]["ViolationResponse"][];
+            /**
+             * Soft Score
+             * @default 0
+             */
+            soft_score: number;
         };
         /**
          * SchoolClassCreate

@@ -41,10 +41,20 @@ logger = logging.getLogger(__name__)
 
 
 def filter_solution_for_class(solution: dict, class_lesson_ids: set[UUID]) -> dict:
-    """Keep only placements and violations whose lesson belongs to this class."""
+    """Keep only placements and violations whose lesson belongs to this class.
+
+    The school-wide ``soft_score`` is passed through unchanged so the route
+    response carries the solver's overall quality signal even though the
+    placement list is class-scoped. PR-9c will decide whether to re-score on
+    the filtered subset.
+    """
     placements = [p for p in solution["placements"] if UUID(p["lesson_id"]) in class_lesson_ids]
     violations = [v for v in solution["violations"] if UUID(v["lesson_id"]) in class_lesson_ids]
-    return {"placements": placements, "violations": violations}
+    return {
+        "placements": placements,
+        "violations": violations,
+        "soft_score": solution.get("soft_score", 0),
+    }
 
 
 async def build_problem_json(
@@ -281,6 +291,7 @@ async def run_solve(problem_json: str, school_class_id: UUID, input_counts: dict
             "duration_ms": duration_ms,
             "placements_total": len(solution["placements"]),
             "violations_total": len(solution["violations"]),
+            "soft_score": solution.get("soft_score", 0),
         },
     )
     return solution
