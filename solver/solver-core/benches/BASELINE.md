@@ -4,10 +4,10 @@
 
 | Fixture | Samples | p1 (µs) | p50 (µs) | p99 (µs) | Placements/sec | Placements | Hard violations | Soft score |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| grundschule | 174535 | 41 | 42 | 51 | 1045344 | 45 | 0 | 0 |
-| zweizuegig | 41583 | 183 | 187 | 215 | 1041074 | 196 | 0 | 0 |
+| grundschule | 155735 | 50 | 51 | 66 | 861046 | 45 | 0 | 0 |
+| zweizuegig | 35983 | 239 | 243 | 276 | 798598 | 196 | 0 | 2 |
 
-Refreshed 2026-04-26 on AMD Ryzen 7 3700X 8-Core Processor, Linux 6.8.0-90-generic, rustc 1.93.1 (01f6ddf75 2026-02-11).
+Refreshed 2026-04-27 on AMD Ryzen 7 3700X 8-Core Processor, Linux 6.8.0-90-generic, rustc 1.93.1 (01f6ddf75 2026-02-11).
 
 Refresh with `mise run bench:record` when a PR intentionally changes solver
 performance. An accidental diff here is a review gate, not a feature.
