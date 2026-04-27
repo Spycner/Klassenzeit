@@ -50,6 +50,17 @@ pub fn solve_with_config(problem: &Problem, config: &SolveConfig) -> Result<Solu
         .map(|t| (t.id, t.max_hours_per_week))
         .collect();
 
+    // Iterate time-blocks in (day, position) order and rooms in id order so
+    // the lowest-delta picker can prune later candidates whose tiebreak rank
+    // they could no longer beat. Sorting once amortises across all placements.
+    let mut tb_order: Vec<usize> = (0..problem.time_blocks.len()).collect();
+    tb_order.sort_unstable_by_key(|&i| {
+        let tb = &problem.time_blocks[i];
+        (tb.day_of_week, tb.position, tb.id.0)
+    });
+    let mut room_order: Vec<usize> = (0..problem.rooms.len()).collect();
+    room_order.sort_unstable_by_key(|&i| problem.rooms[i].id.0);
+
     let order = crate::ordering::ffd_order(problem, &idx);
     for &lesson_idx in &order {
         let lesson = &problem.lessons[lesson_idx];
@@ -68,6 +79,8 @@ pub fn solve_with_config(problem: &Problem, config: &SolveConfig) -> Result<Solu
                 &config.weights,
                 &mut state,
                 &mut solution.placements,
+                &tb_order,
+                &room_order,
             );
             if !placed {
                 solution.violations.push(Violation {
@@ -156,17 +169,28 @@ fn gap_count_partition(positions: Option<&Vec<u8>>) -> u32 {
 }
 
 fn gap_count_after_insert(positions: Option<&Vec<u8>>, pos: u8) -> u32 {
-    let mut buf: Vec<u8> = positions.cloned().unwrap_or_default();
-    if let Err(ins) = buf.binary_search(&pos) {
-        buf.insert(ins, pos);
+    let Some(positions) = positions else {
+        return 0;
+    };
+    if positions.is_empty() {
+        return 0;
     }
-    crate::score::gap_count(&buf)
-}
-
-fn better(c: &Candidate, best: &Option<Candidate>) -> bool {
-    let Some(b) = best else { return true };
-    // Lower score wins; tiebreak on (day, position, room.id) for determinism.
-    (c.score, c.day, c.position, c.room_id.0) < (b.score, b.day, b.position, b.room_id.0)
+    let already_present = positions.binary_search(&pos).is_ok();
+    let len_after = if already_present {
+        positions.len()
+    } else {
+        positions.len() + 1
+    };
+    if len_after < 2 {
+        return 0;
+    }
+    let first = *positions.first().unwrap();
+    let last = *positions.last().unwrap();
+    let new_min = first.min(pos);
+    let new_max = last.max(pos);
+    let span = u32::from(new_max - new_min);
+    let count = u32::try_from(len_after).unwrap_or(u32::MAX);
+    span + 1 - count
 }
 
 #[allow(clippy::too_many_arguments)] // Reason: internal helper; refactoring to a struct hurts clarity more than it helps
@@ -178,12 +202,15 @@ fn try_place_hour(
     weights: &ConstraintWeights,
     state: &mut GreedyState,
     placements: &mut Vec<Placement>,
+    tb_order: &[usize],
+    room_order: &[usize],
 ) -> bool {
     let class = lesson.school_class_id;
     let teacher = lesson.teacher_id;
 
     let mut best: Option<Candidate> = None;
-    for tb in &problem.time_blocks {
+    'tb_loop: for &tb_idx in tb_order {
+        let tb = &problem.time_blocks[tb_idx];
         if state.used_teacher.contains(&(teacher, tb.id)) {
             continue;
         }
@@ -201,8 +228,17 @@ fn try_place_hour(
         // tb-level invariant: candidate_score depends only on (day, position),
         // not on room. Compute once per tb.
         let score = candidate_score(state, class, teacher, tb.day_of_week, tb.position, weights);
+        // Pruning: if this tb's score can't beat the current best, the room
+        // tiebreak rule (day, position, room.id) cannot make a higher-score
+        // candidate win, so skip the inner room scan.
+        if let Some(b) = &best {
+            if score >= b.score {
+                continue;
+            }
+        }
 
-        for room in &problem.rooms {
+        for &room_idx in room_order {
+            let room = &problem.rooms[room_idx];
             if state.used_room.contains(&(room.id, tb.id)) {
                 continue;
             }
@@ -212,15 +248,26 @@ fn try_place_hour(
             if idx.room_blocked(room.id, tb.id) {
                 continue;
             }
-            let candidate = Candidate {
+            // Rooms iterated in id order; the first feasible is the lowest
+            // room.id at this tb, so it wins the (day, position, room.id)
+            // tiebreak among any rooms here. Take it and stop scanning.
+            best = Some(Candidate {
                 tb_id: tb.id,
                 room_id: room.id,
                 day: tb.day_of_week,
                 position: tb.position,
                 score,
-            };
-            if better(&candidate, &best) {
-                best = Some(candidate);
+            });
+            break;
+        }
+
+        // Early exit: if we just took a candidate at delta=0 (score equals
+        // the running soft_score), no later tb can beat it. tb_order is
+        // sorted by (day, position, tb.id), so this is the lowest-tiebreak
+        // delta=0 candidate available.
+        if let Some(b) = &best {
+            if b.score == state.soft_score && b.tb_id == tb.id {
+                break 'tb_loop;
             }
         }
     }
