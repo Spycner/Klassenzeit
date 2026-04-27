@@ -28,6 +28,7 @@ pub fn solve_with_config(problem: &Problem, _config: &SolveConfig) -> Result<Sol
     let mut solution = Solution {
         placements: Vec::new(),
         violations: pre_solve_violations(problem),
+        soft_score: 0,
     };
 
     let mut used_teacher: HashSet<(TeacherId, TimeBlockId)> = HashSet::new();
