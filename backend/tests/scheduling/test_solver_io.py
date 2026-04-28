@@ -25,6 +25,8 @@ from klassenzeit_backend.db.models.teacher import (
 )
 from klassenzeit_backend.db.models.week_scheme import TimeBlock, WeekScheme
 from klassenzeit_backend.scheduling.solver_io import (
+    _VIOLATION_KINDS,
+    _count_violations_by_kind,
     build_problem_json,
     filter_solution_for_class,
     run_solve,
@@ -538,6 +540,9 @@ async def test_run_solve_round_trips_and_logs(caplog: pytest.LogCaptureFixture) 
     assert "solver.solve.start" in messages
     assert "solver.solve.done" in messages
 
+    done = next(r for r in caplog.records if r.message == "solver.solve.done")
+    assert done.__dict__["violations_by_kind"] == dict.fromkeys(_VIOLATION_KINDS, 0)
+
 
 async def test_run_solve_logs_error_and_reraises(caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level(logging.ERROR, logger="klassenzeit_backend.scheduling.solver_io")
@@ -546,3 +551,29 @@ async def test_run_solve_logs_error_and_reraises(caplog: pytest.LogCaptureFixtur
         await run_solve("not json", class_id, {"lessons": 0})
     messages = [r.message for r in caplog.records]
     assert "solver.solve.error" in messages
+
+
+def test_count_violations_by_kind_clean_solve_returns_zeros() -> None:
+    counts = _count_violations_by_kind([])
+    assert counts == dict.fromkeys(_VIOLATION_KINDS, 0)
+    assert set(counts) == {
+        "no_qualified_teacher",
+        "teacher_over_capacity",
+        "no_free_time_block",
+        "no_suitable_room",
+    }
+
+
+def test_count_violations_by_kind_aggregates_mixed_kinds() -> None:
+    violations: list[dict] = [
+        {"kind": "no_free_time_block", "lesson_id": "x", "hour_index": 0},
+        {"kind": "no_qualified_teacher", "lesson_id": "y", "hour_index": 0},
+        {"kind": "no_free_time_block", "lesson_id": "z", "hour_index": 0},
+    ]
+    counts = _count_violations_by_kind(violations)
+    assert counts == {
+        "no_qualified_teacher": 1,
+        "teacher_over_capacity": 0,
+        "no_free_time_block": 2,
+        "no_suitable_room": 0,
+    }
