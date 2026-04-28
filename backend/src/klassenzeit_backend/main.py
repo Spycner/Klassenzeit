@@ -10,6 +10,7 @@ import os
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from typing import Literal
 
 from fastapi import APIRouter, FastAPI, Request, Response
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -67,11 +68,30 @@ def build_app(env: str | None) -> FastAPI:
     is unaffected by ``openapi_url=None``: the schema generator runs
     off the registered routes, not the HTTP endpoint.
     """
-    settings = get_settings()
+    # Read log env vars directly from os.environ to keep build_app importable
+    # without a full Settings (and thus KZ_DATABASE_URL). Same rationale as
+    # the KZ_ENV-from-os.environ pattern at module load below. The branchy
+    # form is here because `ty` does not narrow `x in ("a", "b")` to
+    # `Literal["a", "b"]`.
+    log_format_env = os.environ.get("KZ_LOG_FORMAT")
+    log_format: Literal["text", "json"] | None
+    if log_format_env == "json":
+        log_format = "json"
+    elif log_format_env == "text":
+        log_format = "text"
+    else:
+        log_format = None
+    env_for_logging: Literal["dev", "test", "prod"]
+    if env == "prod":
+        env_for_logging = "prod"
+    elif env == "test":
+        env_for_logging = "test"
+    else:
+        env_for_logging = "dev"
     configure_logging(
-        env=settings.env,
-        log_format=settings.log_format,
-        log_level=settings.log_level,
+        env=env_for_logging,
+        log_format=log_format,
+        log_level=os.environ.get("KZ_LOG_LEVEL", "INFO"),
     )
     is_prod = env == "prod"
     new_app = FastAPI(
