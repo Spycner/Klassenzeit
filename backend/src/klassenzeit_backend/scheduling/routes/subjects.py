@@ -59,7 +59,13 @@ async def create_subject_route(
     Raises:
         HTTPException: 409 if name or short_name conflicts with an existing subject.
     """
-    subject = Subject(name=body.name, short_name=body.short_name, color=body.color)
+    subject = Subject(
+        name=body.name,
+        short_name=body.short_name,
+        color=body.color,
+        prefer_early_periods=body.prefer_early_periods,
+        avoid_first_period=body.avoid_first_period,
+    )
     db.add(subject)
     try:
         await db.commit()
@@ -74,6 +80,8 @@ async def create_subject_route(
         name=subject.name,
         short_name=subject.short_name,
         color=subject.color,
+        prefer_early_periods=subject.prefer_early_periods,
+        avoid_first_period=subject.avoid_first_period,
         created_at=subject.created_at,
         updated_at=subject.updated_at,
     )
@@ -100,6 +108,8 @@ async def list_subjects(
             name=s.name,
             short_name=s.short_name,
             color=s.color,
+            prefer_early_periods=s.prefer_early_periods,
+            avoid_first_period=s.avoid_first_period,
             created_at=s.created_at,
             updated_at=s.updated_at,
         )
@@ -132,6 +142,8 @@ async def get_subject(
         name=subject.name,
         short_name=subject.short_name,
         color=subject.color,
+        prefer_early_periods=subject.prefer_early_periods,
+        avoid_first_period=subject.avoid_first_period,
         created_at=subject.created_at,
         updated_at=subject.updated_at,
     )
@@ -166,6 +178,10 @@ async def update_subject(
         subject.short_name = body.short_name
     if body.color is not None:
         subject.color = body.color
+    if body.prefer_early_periods is not None:
+        subject.prefer_early_periods = body.prefer_early_periods
+    if body.avoid_first_period is not None:
+        subject.avoid_first_period = body.avoid_first_period
     try:
         await db.commit()
     except IntegrityError as exc:
@@ -179,6 +195,8 @@ async def update_subject(
         name=subject.name,
         short_name=subject.short_name,
         color=subject.color,
+        prefer_early_periods=subject.prefer_early_periods,
+        avoid_first_period=subject.avoid_first_period,
         created_at=subject.created_at,
         updated_at=subject.updated_at,
     )

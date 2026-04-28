@@ -29,7 +29,7 @@ pub struct SolveConfig {
 /// Soft-constraint weights consumed by `score_solution` and the lowest-delta
 /// greedy in `solve_with_config`. Each field defaults to zero so explicit
 /// `ConstraintWeights::default()` callers get unweighted behaviour. The
-/// no-config `solve()` entry point applies active defaults of `1` per gap.
+/// no-config `solve()` entry point applies active defaults of `1` per axis.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ConstraintWeights {
     /// Penalty per gap-hour in any class's day. A gap-hour is a position p in
@@ -40,6 +40,14 @@ pub struct ConstraintWeights {
     /// Penalty per gap-hour in any teacher's day. Same definition as
     /// `class_gap`, partitioned by `(teacher_id, day_of_week)` instead.
     pub teacher_gap: u32,
+    /// Linear penalty per placement of a `prefer_early_periods` subject:
+    /// `tb.position * prefer_early_period`. Zero when the subject's flag is
+    /// false or when this weight is zero.
+    pub prefer_early_period: u32,
+    /// Constant penalty per placement of an `avoid_first_period` subject at
+    /// `tb.position == 0`. Zero when the subject's flag is false, the weight
+    /// is zero, or the placement is not at position 0.
+    pub avoid_first_period: u32,
 }
 
 /// Complete solver input. Flat `Vec`s of relation pairs mirror the backend's SQL
@@ -105,6 +113,14 @@ pub struct Room {
 pub struct Subject {
     /// Stable identifier for this subject.
     pub id: SubjectId,
+    /// When true, scoring adds `tb.position * weights.prefer_early_period` per
+    /// placement of any lesson teaching this subject. Use for "Hauptfaecher
+    /// frueh" (German: prefer Hauptfaecher in early periods).
+    pub prefer_early_periods: bool,
+    /// When true, scoring adds `weights.avoid_first_period` per placement of
+    /// any lesson teaching this subject at `tb.position == 0`. Use for "Sport
+    /// nicht in der ersten Stunde".
+    pub avoid_first_period: bool,
 }
 
 /// A school class that receives lessons.

@@ -16,6 +16,7 @@ fn lahc_weights() -> ConstraintWeights {
     ConstraintWeights {
         class_gap: 1,
         teacher_gap: 1,
+        ..ConstraintWeights::default()
     }
 }
 
@@ -34,7 +35,7 @@ prop_compose! {
         slots_per_day in 2u8..=5,
     ) -> Problem {
         let subject_a = SubjectId(lahc_id_from(1));
-        let subjects = vec![Subject { id: subject_a }];
+        let subjects = vec![Subject { id: subject_a, prefer_early_periods: false, avoid_first_period: false }];
 
         let teachers: Vec<Teacher> = (0..n_teachers)
             .map(|i| Teacher {

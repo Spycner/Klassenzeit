@@ -2,8 +2,8 @@
 
 use proptest::prelude::*;
 use solver_core::{
-    score_solution, solve_with_config, ConstraintWeights, Lesson, LessonId, Problem, Room, RoomId,
-    SchoolClass, SchoolClassId, SolveConfig, Subject, SubjectId, Teacher, TeacherId,
+    score_solution, solve_with_config, ConstraintWeights, Lesson, LessonId, Placement, Problem,
+    Room, RoomId, SchoolClass, SchoolClassId, SolveConfig, Subject, SubjectId, Teacher, TeacherId,
     TeacherQualification, TimeBlock, TimeBlockId,
 };
 use uuid::Uuid;
@@ -43,6 +43,8 @@ prop_compose! {
 
         let subjects: Vec<Subject> = (0..n_subjects).map(|i| Subject {
             id: SubjectId(id_from(u32::try_from(i).unwrap_or(0) + 4000)),
+            prefer_early_periods: false,
+            avoid_first_period: false,
         }).collect();
 
         let school_classes: Vec<SchoolClass> = (0..n_classes).map(|i| SchoolClass {
@@ -86,7 +88,7 @@ prop_compose! {
 
 prop_compose! {
     fn weights()(class_gap in 0u32..=10, teacher_gap in 0u32..=10) -> ConstraintWeights {
-        ConstraintWeights { class_gap, teacher_gap }
+        ConstraintWeights { class_gap, teacher_gap, ..ConstraintWeights::default() }
     }
 }
 
@@ -111,5 +113,99 @@ proptest! {
         prop_assert_eq!(s1.placements, s2.placements);
         prop_assert_eq!(s1.violations, s2.violations);
         prop_assert_eq!(s1.soft_score, s2.soft_score);
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(64))]
+
+    /// score_solution scales linearly in tb.position for a single
+    /// prefer_early_periods placement when only that weight is non-zero.
+    #[test]
+    fn property_score_solution_linear_in_position_for_prefer_early(
+        position in 0u8..7,
+        weight in 1u32..10,
+    ) {
+        let subject_id = SubjectId(Uuid::from_u128(0xAA));
+        let lesson_id = LessonId(Uuid::from_u128(0xBB));
+        let class_id = SchoolClassId(Uuid::from_u128(0xCC));
+        let teacher_id = TeacherId(Uuid::from_u128(0xDD));
+        let room_id = RoomId(Uuid::from_u128(0xEE));
+        let tb_id = TimeBlockId(Uuid::from_u128(0xFF));
+        let problem = Problem {
+            time_blocks: vec![TimeBlock { id: tb_id, day_of_week: 0, position }],
+            teachers: vec![Teacher { id: teacher_id, max_hours_per_week: 10 }],
+            rooms: vec![Room { id: room_id }],
+            subjects: vec![Subject {
+                id: subject_id,
+                prefer_early_periods: true,
+                avoid_first_period: false,
+            }],
+            school_classes: vec![SchoolClass { id: class_id }],
+            lessons: vec![Lesson {
+                id: lesson_id,
+                school_class_id: class_id,
+                subject_id,
+                teacher_id,
+                hours_per_week: 1,
+            }],
+            teacher_qualifications: vec![TeacherQualification { teacher_id, subject_id }],
+            teacher_blocked_times: vec![],
+            room_blocked_times: vec![],
+            room_subject_suitabilities: vec![],
+        };
+        let placements = [Placement { lesson_id, time_block_id: tb_id, room_id }];
+        let weights = ConstraintWeights {
+            prefer_early_period: weight,
+            ..ConstraintWeights::default()
+        };
+        prop_assert_eq!(
+            score_solution(&problem, &placements, &weights),
+            u32::from(position) * weight
+        );
+    }
+
+    /// score_solution returns weight at position 0 and 0 elsewhere for an
+    /// avoid_first_period subject when only that weight is non-zero.
+    #[test]
+    fn property_score_solution_avoid_first_only_at_position_zero(
+        position in 0u8..7,
+        weight in 1u32..10,
+    ) {
+        let subject_id = SubjectId(Uuid::from_u128(0xAA));
+        let lesson_id = LessonId(Uuid::from_u128(0xBB));
+        let class_id = SchoolClassId(Uuid::from_u128(0xCC));
+        let teacher_id = TeacherId(Uuid::from_u128(0xDD));
+        let room_id = RoomId(Uuid::from_u128(0xEE));
+        let tb_id = TimeBlockId(Uuid::from_u128(0xFF));
+        let problem = Problem {
+            time_blocks: vec![TimeBlock { id: tb_id, day_of_week: 0, position }],
+            teachers: vec![Teacher { id: teacher_id, max_hours_per_week: 10 }],
+            rooms: vec![Room { id: room_id }],
+            subjects: vec![Subject {
+                id: subject_id,
+                prefer_early_periods: false,
+                avoid_first_period: true,
+            }],
+            school_classes: vec![SchoolClass { id: class_id }],
+            lessons: vec![Lesson {
+                id: lesson_id,
+                school_class_id: class_id,
+                subject_id,
+                teacher_id,
+                hours_per_week: 1,
+            }],
+            teacher_qualifications: vec![TeacherQualification { teacher_id, subject_id }],
+            teacher_blocked_times: vec![],
+            room_blocked_times: vec![],
+            room_subject_suitabilities: vec![],
+        };
+        let placements = [Placement { lesson_id, time_block_id: tb_id, room_id }];
+        let weights = ConstraintWeights {
+            avoid_first_period: weight,
+            ..ConstraintWeights::default()
+        };
+        let expected = if position == 0 { weight } else { 0 };
+        prop_assert_eq!(score_solution(&problem, &placements, &weights), expected);
     }
 }

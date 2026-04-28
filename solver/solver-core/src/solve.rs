@@ -18,14 +18,16 @@ use crate::validate::{pre_solve_violations, validate_structural};
 
 /// Solve the timetable problem using lowest-delta greedy placement followed
 /// by a 200ms LAHC local-search pass. Active default soft-constraint weights
-/// are `class_gap = teacher_gap = 1`. Callers wanting greedy-only behaviour
-/// (no LAHC pass) construct their own [`SolveConfig`] with `deadline: None`
-/// and call [`solve_with_config`] directly.
+/// are `class_gap = teacher_gap = prefer_early_period = avoid_first_period = 1`.
+/// Callers wanting greedy-only behaviour (no LAHC pass) construct their own
+/// [`SolveConfig`] with `deadline: None` and call [`solve_with_config`] directly.
 pub fn solve(problem: &Problem) -> Result<Solution, Error> {
     let active_default = SolveConfig {
         weights: ConstraintWeights {
             class_gap: 1,
             teacher_gap: 1,
+            prefer_early_period: 1,
+            avoid_first_period: 1,
         },
         deadline: Some(Duration::from_millis(200)),
         ..SolveConfig::default()
@@ -166,6 +168,7 @@ fn candidate_score(
     day: u8,
     pos: u8,
     weights: &ConstraintWeights,
+    subject_pref: u32,
 ) -> u32 {
     let class_partition = state.class_positions.get(&(class, day));
     let teacher_partition = state.teacher_positions.get(&(teacher, day));
@@ -177,7 +180,7 @@ fn candidate_score(
         .saturating_mul(weights.teacher_gap);
     // Invariant: state.soft_score >= class_old + teacher_old (each partition's
     // contribution is part of the running sum). u32 subtraction is safe.
-    state.soft_score - class_old - teacher_old + class_new + teacher_new
+    state.soft_score - class_old - teacher_old + class_new + teacher_new + subject_pref
 }
 
 fn gap_count_partition(positions: Option<&Vec<u8>>) -> u32 {
@@ -202,6 +205,13 @@ fn try_place_hour(
     let class = lesson.school_class_id;
     let teacher = lesson.teacher_id;
 
+    // Look up the subject once; it does not change across tb iterations.
+    let subject = problem
+        .subjects
+        .iter()
+        .find(|s| s.id == lesson.subject_id)
+        .expect("validate_structural ensures every lesson.subject_id resolves");
+
     let mut best: Option<Candidate> = None;
     'tb_loop: for &tb_idx in tb_order {
         let tb = &problem.time_blocks[tb_idx];
@@ -219,9 +229,18 @@ fn try_place_hour(
         if current.saturating_add(1) > max {
             continue;
         }
+        let subject_pref = crate::score::subject_preference_score(subject, tb, weights);
         // tb-level invariant: candidate_score depends only on (day, position),
         // not on room. Compute once per tb.
-        let score = candidate_score(state, class, teacher, tb.day_of_week, tb.position, weights);
+        let score = candidate_score(
+            state,
+            class,
+            teacher,
+            tb.day_of_week,
+            tb.position,
+            weights,
+            subject_pref,
+        );
         // Pruning: if this tb's score can't beat the current best, the room
         // tiebreak rule (day, position, room.id) cannot make a higher-score
         // candidate win, so skip the inner room scan.
@@ -347,6 +366,7 @@ mod tests {
                 weights: ConstraintWeights {
                     class_gap: 1,
                     teacher_gap: 1,
+                    ..ConstraintWeights::default()
                 },
                 ..SolveConfig::default()
             },
@@ -376,6 +396,8 @@ mod tests {
             }],
             subjects: vec![Subject {
                 id: SubjectId(solve_uuid(40)),
+                prefer_early_periods: false,
+                avoid_first_period: false,
             }],
             school_classes: vec![SchoolClass {
                 id: SchoolClassId(solve_uuid(50)),
@@ -435,6 +457,8 @@ mod tests {
         // subject to keep validation happy. Room now suits no subject we place.
         p.subjects.push(Subject {
             id: SubjectId(solve_uuid(41)),
+            prefer_early_periods: false,
+            avoid_first_period: false,
         });
         p.room_subject_suitabilities.push(RoomSubjectSuitability {
             room_id: RoomId(solve_uuid(30)),
@@ -476,6 +500,8 @@ mod tests {
         // time_block 0 free; the first lesson takes block 0, the second cannot place.
         p.subjects.push(Subject {
             id: SubjectId(solve_uuid(41)),
+            prefer_early_periods: false,
+            avoid_first_period: false,
         });
         p.teacher_qualifications.push(TeacherQualification {
             teacher_id: TeacherId(solve_uuid(20)),
@@ -503,6 +529,8 @@ mod tests {
         let mut p = base_problem();
         p.subjects.push(Subject {
             id: SubjectId(solve_uuid(41)),
+            prefer_early_periods: false,
+            avoid_first_period: false,
         });
         p.teacher_qualifications.push(TeacherQualification {
             teacher_id: TeacherId(solve_uuid(20)),
@@ -596,6 +624,8 @@ mod tests {
         }
         p.subjects.push(Subject {
             id: SubjectId(solve_uuid(41)),
+            prefer_early_periods: false,
+            avoid_first_period: false,
         });
         p.teachers.push(Teacher {
             id: TeacherId(solve_uuid(21)),
@@ -706,5 +736,103 @@ mod tests {
             "lessons should be adjacent under lowest-delta teacher-gap"
         );
         assert_eq!(s.soft_score, 0);
+    }
+
+    #[test]
+    fn greedy_avoids_position_zero_for_avoid_first_subject_when_alternative_exists() {
+        let mut p = base_problem();
+        p.time_blocks.push(TimeBlock {
+            id: TimeBlockId(solve_uuid(12)),
+            day_of_week: 0,
+            position: 2,
+        });
+        // Mark the only subject as avoid_first.
+        p.subjects[0].avoid_first_period = true;
+        // Active default solve(p) uses weight 1 for each axis; lesson should
+        // place at position 1 (the lowest-id non-zero alternative), not 0.
+        let s = solve_with_config(
+            &p,
+            &SolveConfig {
+                weights: ConstraintWeights {
+                    class_gap: 1,
+                    teacher_gap: 1,
+                    prefer_early_period: 1,
+                    avoid_first_period: 1,
+                },
+                ..SolveConfig::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(s.placements.len(), 1);
+        assert_ne!(
+            s.placements[0].time_block_id,
+            TimeBlockId(solve_uuid(10)),
+            "expected the avoid-first subject to skip position 0"
+        );
+    }
+
+    #[test]
+    fn greedy_packs_prefer_early_subject_into_lower_positions_when_multiple_hours() {
+        // Two-hour lesson of a prefer-early subject across a four-block day.
+        // With prefer_early weight = 1, positions 0 and 1 should win over
+        // 2 and 3 because their cumulative position cost (0+1=1) beats
+        // (0+2=2) or any later combination.
+        let mut p = base_problem();
+        p.time_blocks = vec![
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(10)),
+                day_of_week: 0,
+                position: 0,
+            },
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(11)),
+                day_of_week: 0,
+                position: 1,
+            },
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(12)),
+                day_of_week: 0,
+                position: 2,
+            },
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(13)),
+                day_of_week: 0,
+                position: 3,
+            },
+        ];
+        p.lessons[0].hours_per_week = 2;
+        p.subjects[0].prefer_early_periods = true;
+        let s = solve_with_config(
+            &p,
+            &SolveConfig {
+                weights: ConstraintWeights {
+                    class_gap: 1,
+                    teacher_gap: 1,
+                    prefer_early_period: 1,
+                    avoid_first_period: 1,
+                },
+                ..SolveConfig::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(s.placements.len(), 2);
+        let positions: Vec<u8> = s
+            .placements
+            .iter()
+            .map(|pl| {
+                p.time_blocks
+                    .iter()
+                    .find(|tb| tb.id == pl.time_block_id)
+                    .unwrap()
+                    .position
+            })
+            .collect();
+        assert_eq!(
+            positions
+                .iter()
+                .copied()
+                .collect::<std::collections::HashSet<_>>(),
+            std::collections::HashSet::from([0u8, 1u8])
+        );
     }
 }

@@ -188,6 +188,8 @@ mod tests {
         };
         let subject = Subject {
             id: SubjectId(uuid(4)),
+            prefer_early_periods: false,
+            avoid_first_period: false,
         };
         let class = SchoolClass {
             id: SchoolClassId(uuid(5)),

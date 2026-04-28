@@ -78,6 +78,8 @@ mod tests {
             }],
             subjects: vec![Subject {
                 id: SubjectId(json_uuid(40)),
+                prefer_early_periods: false,
+                avoid_first_period: false,
             }],
             school_classes: vec![SchoolClass {
                 id: SchoolClassId(json_uuid(50)),

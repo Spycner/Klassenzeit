@@ -114,6 +114,25 @@ export const FormControl = forwardRef<
 });
 FormControl.displayName = "FormControl";
 
+type FormDescriptionProps = HTMLAttributes<HTMLParagraphElement> & {
+  ref?: Ref<HTMLParagraphElement>;
+};
+
+export const FormDescription = forwardRef<HTMLParagraphElement, FormDescriptionProps>(
+  ({ className, ...props }, ref) => {
+    const { formDescriptionId } = useFormField();
+    return (
+      <p
+        ref={ref}
+        id={formDescriptionId}
+        className={cn("text-sm text-muted-foreground", className)}
+        {...props}
+      />
+    );
+  },
+);
+FormDescription.displayName = "FormDescription";
+
 type FormMessageProps = HTMLAttributes<HTMLParagraphElement> & { ref?: Ref<HTMLParagraphElement> };
 
 export const FormMessage = forwardRef<HTMLParagraphElement, FormMessageProps>(

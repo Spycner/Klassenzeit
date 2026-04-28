@@ -49,7 +49,14 @@ fn grundschule() -> Problem {
     let subject_ids: Vec<SubjectId> = (0..8)
         .map(|i| SubjectId(grundschule_uuid(60 + i)))
         .collect();
-    let subjects: Vec<Subject> = subject_ids.iter().map(|id| Subject { id: *id }).collect();
+    let subjects: Vec<Subject> = subject_ids
+        .iter()
+        .map(|id| Subject {
+            id: *id,
+            prefer_early_periods: false,
+            avoid_first_period: false,
+        })
+        .collect();
 
     // 2 classes: class 1/2 (index 0), class 3/4 (index 1)
     let classes: Vec<SchoolClass> = (0..2)
