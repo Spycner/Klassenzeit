@@ -5,20 +5,24 @@ settings, and rate limiter. They live on ``app.state`` rather than as
 module-level globals so tests can override them.
 """
 
+import logging
 import os
-from collections.abc import AsyncIterator
+import time
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request, Response
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from klassenzeit_backend.auth.rate_limit import LoginRateLimiter
 from klassenzeit_backend.auth.routes import auth_router
-from klassenzeit_backend.core.logging import configure_logging
+from klassenzeit_backend.core.logging import _resolve_request_id, configure_logging
 from klassenzeit_backend.core.settings import get_settings
 from klassenzeit_backend.db.engine import build_engine
 from klassenzeit_backend.scheduling.routes import scheduling_router
 from klassenzeit_backend.testing.mount import include_testing_router_if_enabled
+
+_ACCESS_LOGGER = logging.getLogger("klassenzeit_backend.http.access")
 
 
 @asynccontextmanager
@@ -81,6 +85,30 @@ def build_app(env: str | None) -> FastAPI:
     new_app.include_router(scheduling_router, prefix="/api")
     new_app.include_router(health_router, prefix="/api")
     include_testing_router_if_enabled(new_app, env)
+
+    @new_app.middleware("http")
+    async def log_http_request(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        request_id = _resolve_request_id(request.headers.get("x-request-id"))
+        request.state.request_id = request_id
+        started = time.monotonic()
+        response = await call_next(request)
+        duration_ms = (time.monotonic() - started) * 1000.0
+        response.headers["X-Request-ID"] = request_id
+        _ACCESS_LOGGER.info(
+            "http.request",
+            extra={
+                "method": request.method,
+                "path": request.url.path,
+                "status": response.status_code,
+                "duration_ms": duration_ms,
+                "request_id": request_id,
+            },
+        )
+        return response
+
     return new_app
 
 
