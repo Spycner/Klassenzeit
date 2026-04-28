@@ -98,3 +98,45 @@ def test_env_rejects_unknown_value(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("KZ_ENV", "staging")
     with pytest.raises(ValidationError):
         Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+
+
+def test_settings_log_format_defaults_to_none(monkeypatch) -> None:
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/kz")
+    monkeypatch.delenv("KZ_LOG_FORMAT", raising=False)
+    settings = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+    assert settings.log_format is None
+
+
+def test_settings_log_format_accepts_json(monkeypatch) -> None:
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/kz")
+    monkeypatch.setenv("KZ_LOG_FORMAT", "json")
+    settings = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+    assert settings.log_format == "json"
+
+
+def test_settings_log_format_accepts_text(monkeypatch) -> None:
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/kz")
+    monkeypatch.setenv("KZ_LOG_FORMAT", "text")
+    settings = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+    assert settings.log_format == "text"
+
+
+def test_settings_log_format_rejects_invalid_value(monkeypatch) -> None:
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/kz")
+    monkeypatch.setenv("KZ_LOG_FORMAT", "yaml")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+
+
+def test_settings_log_level_defaults_to_info(monkeypatch) -> None:
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/kz")
+    monkeypatch.delenv("KZ_LOG_LEVEL", raising=False)
+    settings = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+    assert settings.log_level == "INFO"
+
+
+def test_settings_log_level_overrides(monkeypatch) -> None:
+    monkeypatch.setenv("KZ_DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/kz")
+    monkeypatch.setenv("KZ_LOG_LEVEL", "DEBUG")
+    settings = Settings(_env_file=None)  # ty: ignore[missing-argument, unknown-argument]
+    assert settings.log_level == "DEBUG"
