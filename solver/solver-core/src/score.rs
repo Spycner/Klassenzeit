@@ -71,6 +71,63 @@ pub(crate) fn gap_count(positions: &[u8]) -> u32 {
     span + 1 - count
 }
 
+/// Count gap-hours in `positions` after inserting `pos`. Returns 0 when the
+/// resulting slice would have fewer than two distinct positions. When `pos` is
+/// already present the length is unchanged (deduplication); when absent the
+/// length grows by one. Caller must pass a sorted, deduplicated slice.
+pub(crate) fn gap_count_after_insert(positions: Option<&Vec<u8>>, pos: u8) -> u32 {
+    let Some(positions) = positions else {
+        return 0;
+    };
+    if positions.is_empty() {
+        return 0;
+    }
+    let already_present = positions.binary_search(&pos).is_ok();
+    let len_after = if already_present {
+        positions.len()
+    } else {
+        positions.len() + 1
+    };
+    if len_after < 2 {
+        return 0;
+    }
+    let first = *positions.first().unwrap();
+    let last = *positions.last().unwrap();
+    let new_min = first.min(pos);
+    let new_max = last.max(pos);
+    let span = u32::from(new_max - new_min);
+    let count = u32::try_from(len_after).unwrap_or(u32::MAX);
+    span + 1 - count
+}
+
+/// Count gap-hours in `positions` after removing `pos`. Symmetric to
+/// `gap_count_after_insert`. Returns 0 if removal leaves fewer than two
+/// elements; returns `gap_count(positions)` if `pos` is not present
+/// (defensive: LAHC only removes positions it has just placed, so the absent
+/// branch should never fire in production).
+pub(crate) fn gap_count_after_remove(positions: &[u8], pos: u8) -> u32 {
+    let Ok(removed_at) = positions.binary_search(&pos) else {
+        return gap_count(positions);
+    };
+    let len_after = positions.len() - 1;
+    if len_after < 2 {
+        return 0;
+    }
+    let new_first = if removed_at == 0 {
+        positions[1]
+    } else {
+        positions[0]
+    };
+    let new_last = if removed_at == positions.len() - 1 {
+        positions[positions.len() - 2]
+    } else {
+        positions[positions.len() - 1]
+    };
+    let span = u32::from(new_last - new_first);
+    let count = u32::try_from(len_after).unwrap_or(u32::MAX);
+    span + 1 - count
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,5 +282,46 @@ mod tests {
         let weights = ConstraintWeights::default();
         let placements = [place(60, 10), place(60, 12)];
         assert_eq!(score_solution(&p, &placements, &weights), 0);
+    }
+
+    #[test]
+    fn gap_count_after_remove_single_element_returns_zero() {
+        let positions = [3u8];
+        assert_eq!(gap_count_after_remove(&positions, 3), 0);
+    }
+
+    #[test]
+    fn gap_count_after_remove_min_shrinks_span() {
+        // positions = [1, 3, 5]; gap_count = 5 - 1 + 1 - 3 = 2
+        // remove 1 -> [3, 5]; gap_count = 5 - 3 + 1 - 2 = 1
+        let positions = [1u8, 3, 5];
+        assert_eq!(gap_count_after_remove(&positions, 1), 1);
+    }
+
+    #[test]
+    fn gap_count_after_remove_max_shrinks_span() {
+        // positions = [1, 3, 5]; remove 5 -> [1, 3]; gap = 3 - 1 + 1 - 2 = 1
+        let positions = [1u8, 3, 5];
+        assert_eq!(gap_count_after_remove(&positions, 5), 1);
+    }
+
+    #[test]
+    fn gap_count_after_remove_middle_grows_gap() {
+        // positions = [1, 3, 5]; remove 3 -> [1, 5]; gap = 5 - 1 + 1 - 2 = 3
+        let positions = [1u8, 3, 5];
+        assert_eq!(gap_count_after_remove(&positions, 3), 3);
+    }
+
+    #[test]
+    fn gap_count_after_remove_absent_returns_unchanged() {
+        // pos not in slice; defensive return matches gap_count(positions).
+        let positions = [1u8, 3, 5];
+        assert_eq!(gap_count_after_remove(&positions, 7), gap_count(&positions));
+    }
+
+    #[test]
+    fn gap_count_after_remove_two_to_one_returns_zero() {
+        let positions = [1u8, 3];
+        assert_eq!(gap_count_after_remove(&positions, 1), 0);
     }
 }

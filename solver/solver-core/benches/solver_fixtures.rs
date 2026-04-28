@@ -28,10 +28,10 @@ use std::time::{Duration, Instant};
 use criterion::{criterion_group, criterion_main, Criterion, SamplingMode};
 use solver_core::{
     ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId},
-    solve,
+    solve_with_config,
     types::{
-        Lesson, Problem, Room, RoomSubjectSuitability, SchoolClass, Subject, Teacher,
-        TeacherQualification, TimeBlock,
+        ConstraintWeights, Lesson, Problem, Room, RoomSubjectSuitability, SchoolClass, SolveConfig,
+        Subject, Teacher, TeacherQualification, TimeBlock,
     },
 };
 use uuid::Uuid;
@@ -40,7 +40,13 @@ use uuid::Uuid;
 mod percentile;
 use percentile::compute_percentiles;
 
-const BENCH_SAMPLE_COUNT: usize = 200;
+const GREEDY_SAMPLE_COUNT: usize = 200;
+/// LAHC samples are wall-clock-bound by `LAHC_DEADLINE`, so each sample
+/// costs ~200 ms. Drop sample count to keep `mise run bench` runtime sane
+/// while still computing meaningful percentile bands.
+const LAHC_SAMPLE_COUNT: usize = 30;
+const LAHC_DEADLINE: Duration = Duration::from_millis(200);
+const LAHC_SEED: u64 = 42;
 
 fn bench_uuid(n: u8) -> Uuid {
     Uuid::from_bytes([n; 16])
@@ -290,24 +296,51 @@ fn zweizuegig_fixture() -> Problem {
     }
 }
 
+fn bench_greedy_cfg() -> SolveConfig {
+    SolveConfig {
+        weights: ConstraintWeights {
+            class_gap: 1,
+            teacher_gap: 1,
+        },
+        ..SolveConfig::default()
+    }
+}
+
+fn bench_lahc_cfg() -> SolveConfig {
+    SolveConfig {
+        weights: ConstraintWeights {
+            class_gap: 1,
+            teacher_gap: 1,
+        },
+        deadline: Some(LAHC_DEADLINE),
+        seed: LAHC_SEED,
+        ..SolveConfig::default()
+    }
+}
+
+/// (mode_name, sample_count, config_builder) tuple alias. The function-pointer
+/// shape is unique to the bench and not worth factoring out beyond the alias.
+type Mode = (&'static str, usize, fn() -> SolveConfig);
+
 fn bench_fixtures(c: &mut Criterion) {
     let fixtures: [(&str, Problem); 2] = [
         ("grundschule", grundschule_fixture()),
         ("zweizuegig", zweizuegig_fixture()),
     ];
 
-    // `iter_custom`'s closure must be `FnMut`, but criterion owns the
-    // closure environment; a `Mutex` hands us interior mutability that
-    // survives the borrow checker without unsafe or thread-locals.
-    let samples_by_fixture: Mutex<HashMap<&'static str, Vec<Duration>>> =
-        Mutex::new(HashMap::new());
+    // LAHC config is built per sample so the benchmark cannot accidentally
+    // share an RNG sequence across the timed iterations.
+    let modes: [Mode; 2] = [
+        ("greedy", GREEDY_SAMPLE_COUNT, bench_greedy_cfg),
+        ("lahc", LAHC_SAMPLE_COUNT, bench_lahc_cfg),
+    ];
+
+    // Two-key map: (fixture_name, mode_name) -> samples / totals.
+    type Key = (&'static str, &'static str);
+    let samples_by_key: Mutex<HashMap<Key, Vec<Duration>>> = Mutex::new(HashMap::new());
     let totals_by_fixture: Mutex<HashMap<&'static str, u32>> = Mutex::new(HashMap::new());
 
-    let mut group = c.benchmark_group("solver");
-    group.sample_size(BENCH_SAMPLE_COUNT);
-    group.sampling_mode(SamplingMode::Flat);
-
-    for (name, problem) in &fixtures {
+    for (fixture_name, problem) in &fixtures {
         let expected_hours: u32 = problem
             .lessons
             .iter()
@@ -316,86 +349,110 @@ fn bench_fixtures(c: &mut Criterion) {
         totals_by_fixture
             .lock()
             .expect("totals mutex poisoned")
-            .insert(*name, expected_hours);
+            .insert(*fixture_name, expected_hours);
 
-        group.bench_function(*name, |b| {
-            b.iter_custom(|iters| {
-                let mut total = Duration::ZERO;
-                let mut local: Vec<Duration> = Vec::with_capacity(iters as usize);
-                for _ in 0..iters {
-                    let start = Instant::now();
-                    let solution = solve(problem).expect("solve must succeed on the bench fixture");
-                    let elapsed = start.elapsed();
-                    total += elapsed;
-                    local.push(elapsed);
+        for (mode_name, sample_count, build_cfg) in &modes {
+            let mut group = c.benchmark_group(format!("solver_{mode_name}"));
+            group.sample_size(*sample_count);
+            group.sampling_mode(SamplingMode::Flat);
+            // LAHC's 200 ms deadline pushes per-sample wall-clock past
+            // criterion's default 5 s warm-up + measurement target; setting
+            // measurement_time well above sample_count * deadline lets it
+            // fit without warning.
+            if *mode_name == "lahc" {
+                group.measurement_time(Duration::from_secs(20));
+                group.warm_up_time(Duration::from_millis(200));
+            }
+            let cfg = build_cfg();
+            group.bench_function(*fixture_name, |b| {
+                b.iter_custom(|iters| {
+                    let mut total = Duration::ZERO;
+                    let mut local: Vec<Duration> = Vec::with_capacity(iters as usize);
+                    for _ in 0..iters {
+                        let start = Instant::now();
+                        let solution = solve_with_config(problem, &cfg)
+                            .expect("solve must succeed on the bench fixture");
+                        let elapsed = start.elapsed();
+                        total += elapsed;
+                        local.push(elapsed);
 
-                    assert!(solution.violations.is_empty());
-                    assert_eq!(solution.placements.len() as u32, expected_hours);
-                    let mut seen: HashSet<(RoomId, TimeBlockId)> = HashSet::new();
-                    for pl in &solution.placements {
-                        assert!(seen.insert((pl.room_id, pl.time_block_id)));
+                        assert!(solution.violations.is_empty());
+                        assert_eq!(solution.placements.len() as u32, expected_hours);
+                        let mut seen: HashSet<(RoomId, TimeBlockId)> = HashSet::new();
+                        for pl in &solution.placements {
+                            assert!(seen.insert((pl.room_id, pl.time_block_id)));
+                        }
                     }
-                }
-                samples_by_fixture
-                    .lock()
-                    .expect("samples mutex poisoned")
-                    .entry(*name)
-                    .or_default()
-                    .extend(local);
-                total
+                    samples_by_key
+                        .lock()
+                        .expect("samples mutex poisoned")
+                        .entry((*fixture_name, *mode_name))
+                        .or_default()
+                        .extend(local);
+                    total
+                });
             });
-        });
+            group.finish();
+        }
     }
-    group.finish();
 
     eprintln!("---SOLVER-BENCH-BASELINE---");
     eprint_bench_header();
-    for (name, problem) in &fixtures {
-        let mut collected = samples_by_fixture
-            .lock()
-            .expect("samples mutex poisoned")
-            .get(name)
-            .cloned()
-            .expect("samples missing for fixture");
-        let total_samples = collected.len();
-        assert!(
-            total_samples >= BENCH_SAMPLE_COUNT,
-            "criterion produced fewer samples than requested for {name}"
-        );
-        let (p1, p50, p99) = compute_percentiles(&mut collected);
-        let mean = collected.iter().copied().sum::<Duration>() / total_samples as u32;
-        let expected_hours = *totals_by_fixture
-            .lock()
-            .expect("totals mutex poisoned")
-            .get(name)
-            .expect("totals missing for fixture");
-        let placements_per_sec = if mean.is_zero() {
-            0
-        } else {
-            (f64::from(expected_hours) / mean.as_secs_f64()) as u64
-        };
-        // One extra solve outside the timing loop to capture the deterministic
-        // soft_score for the BASELINE row. The greedy is deterministic so this
-        // always matches the score the timed iterations produced.
-        let solution = solve(problem).expect("solve must succeed on the bench fixture");
-        eprint_bench_row(
-            name,
-            total_samples,
-            p1,
-            p50,
-            p99,
-            placements_per_sec,
-            expected_hours,
-            0,
-            solution.soft_score,
-        );
+    for (fixture_name, problem) in &fixtures {
+        for (mode_name, sample_count, build_cfg) in &modes {
+            let mut collected = samples_by_key
+                .lock()
+                .expect("samples mutex poisoned")
+                .get(&(*fixture_name, *mode_name))
+                .cloned()
+                .expect("samples missing for fixture/mode");
+            let total_samples = collected.len();
+            assert!(
+                total_samples >= *sample_count,
+                "criterion produced fewer samples than requested for {fixture_name}/{mode_name}"
+            );
+            let (p1, p50, p99) = compute_percentiles(&mut collected);
+            let mean = collected.iter().copied().sum::<Duration>() / total_samples as u32;
+            let expected_hours = *totals_by_fixture
+                .lock()
+                .expect("totals mutex poisoned")
+                .get(fixture_name)
+                .expect("totals missing for fixture");
+            let placements_per_sec = if mean.is_zero() {
+                0
+            } else {
+                (f64::from(expected_hours) / mean.as_secs_f64()) as u64
+            };
+            // One extra solve outside the timing loop captures the soft_score
+            // for the BASELINE row. Both modes are deterministic under their
+            // configured (seed, max_iterations) pair so this matches what the
+            // timed iterations produced; LAHC determinism additionally
+            // depends on wall-clock for the deadline-only case, but with the
+            // fixed LAHC_DEADLINE the iterations-per-sample variance stays
+            // small enough that the soft score floors at the same value.
+            let cfg = build_cfg();
+            let solution =
+                solve_with_config(problem, &cfg).expect("solve must succeed on the bench fixture");
+            eprint_bench_row(
+                fixture_name,
+                mode_name,
+                total_samples,
+                p1,
+                p50,
+                p99,
+                placements_per_sec,
+                expected_hours,
+                0,
+                solution.soft_score,
+            );
+        }
     }
     eprintln!("---END---");
 }
 
 fn eprint_bench_header() {
     eprintln!(
-        "fixture\tsamples\tp1_us\tp50_us\tp99_us\tplacements_per_sec\ttotal_placements\ttotal_hard_violations\tsoft_score"
+        "fixture\tmode\tsamples\tp1_us\tp50_us\tp99_us\tplacements_per_sec\ttotal_placements\ttotal_hard_violations\tsoft_score"
     );
 }
 
@@ -403,6 +460,7 @@ fn eprint_bench_header() {
 #[allow(clippy::too_many_arguments)]
 fn eprint_bench_row(
     fixture: &str,
+    mode: &str,
     samples: usize,
     p1: std::time::Duration,
     p50: std::time::Duration,
@@ -413,7 +471,7 @@ fn eprint_bench_row(
     soft_score: u32,
 ) {
     eprintln!(
-        "{fixture}\t{samples}\t{p1}\t{p50}\t{p99}\t{placements_per_sec}\t{total_placements}\t{hard_violations}\t{soft_score}",
+        "{fixture}\t{mode}\t{samples}\t{p1}\t{p50}\t{p99}\t{placements_per_sec}\t{total_placements}\t{hard_violations}\t{soft_score}",
         p1 = p1.as_micros(),
         p50 = p50.as_micros(),
         p99 = p99.as_micros(),

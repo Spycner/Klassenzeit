@@ -10,16 +10,20 @@ use std::time::Duration;
 /// the no-config [`crate::solve`] entry point uses [`SolveConfig::default`].
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SolveConfig {
-    /// Optional wall-clock budget. `None` means "no budget enforced". The
-    /// greedy first-fit pass ignores this; a future local-search pass will
-    /// honour it.
+    /// Optional wall-clock budget. `None` means "no LAHC pass; greedy only".
+    /// `Some(d)` triggers the LAHC local-search loop after greedy and bounds
+    /// it to `d` of wall-clock time.
     pub deadline: Option<Duration>,
-    /// Seed for any randomised tiebreak inside the solver. The greedy pass
-    /// is deterministic without it; a future local-search pass will use it
-    /// for reproducible swaps.
+    /// Seed for the RNG used by the LAHC local-search loop. The greedy pass
+    /// is deterministic without it.
     pub seed: u64,
     /// Weights that govern the soft-constraint scoring function.
     pub weights: ConstraintWeights,
+    /// Maximum number of LAHC iterations. `None` means "deadline only".
+    /// Primarily exists so property tests can cap iteration count for
+    /// determinism without depending on wall-clock; production callers
+    /// should leave this `None`.
+    pub max_iterations: Option<u64>,
 }
 
 /// Soft-constraint weights consumed by `score_solution` and the lowest-delta

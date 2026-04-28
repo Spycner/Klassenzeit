@@ -6,6 +6,7 @@ pub mod error;
 pub mod ids;
 pub(crate) mod index;
 pub mod json;
+mod lahc;
 mod ordering;
 pub mod score;
 pub mod solve;

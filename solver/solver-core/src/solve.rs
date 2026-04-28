@@ -6,6 +6,7 @@
 //! `Solution`; `Err(Error::Input)` is reserved for structural input errors.
 
 use std::collections::{HashMap, HashSet};
+use std::time::Duration;
 
 use crate::error::Error;
 use crate::ids::{RoomId, SchoolClassId, TeacherId, TimeBlockId};
@@ -15,14 +16,18 @@ use crate::types::{
 };
 use crate::validate::{pre_solve_violations, validate_structural};
 
-/// Solve the timetable problem using lowest-delta greedy placement with the
-/// active default soft-constraint weights (`class_gap = teacher_gap = 1`).
+/// Solve the timetable problem using lowest-delta greedy placement followed
+/// by a 200ms LAHC local-search pass. Active default soft-constraint weights
+/// are `class_gap = teacher_gap = 1`. Callers wanting greedy-only behaviour
+/// (no LAHC pass) construct their own [`SolveConfig`] with `deadline: None`
+/// and call [`solve_with_config`] directly.
 pub fn solve(problem: &Problem) -> Result<Solution, Error> {
     let active_default = SolveConfig {
         weights: ConstraintWeights {
             class_gap: 1,
             teacher_gap: 1,
         },
+        deadline: Some(Duration::from_millis(200)),
         ..SolveConfig::default()
     };
     solve_with_config(problem, &active_default)
@@ -100,6 +105,19 @@ pub fn solve_with_config(problem: &Problem, config: &SolveConfig) -> Result<Solu
         }
     }
 
+    crate::lahc::run(
+        problem,
+        &idx,
+        config,
+        &mut solution.placements,
+        &mut state.class_positions,
+        &mut state.teacher_positions,
+        &mut state.used_teacher,
+        &mut state.used_class,
+        &mut state.used_room,
+        &mut state.soft_score,
+    );
+
     solution.soft_score = state.soft_score;
     Ok(solution)
 }
@@ -153,9 +171,10 @@ fn candidate_score(
     let teacher_partition = state.teacher_positions.get(&(teacher, day));
     let class_old = gap_count_partition(class_partition).saturating_mul(weights.class_gap);
     let teacher_old = gap_count_partition(teacher_partition).saturating_mul(weights.teacher_gap);
-    let class_new = gap_count_after_insert(class_partition, pos).saturating_mul(weights.class_gap);
-    let teacher_new =
-        gap_count_after_insert(teacher_partition, pos).saturating_mul(weights.teacher_gap);
+    let class_new = crate::score::gap_count_after_insert(class_partition, pos)
+        .saturating_mul(weights.class_gap);
+    let teacher_new = crate::score::gap_count_after_insert(teacher_partition, pos)
+        .saturating_mul(weights.teacher_gap);
     // Invariant: state.soft_score >= class_old + teacher_old (each partition's
     // contribution is part of the running sum). u32 subtraction is safe.
     state.soft_score - class_old - teacher_old + class_new + teacher_new
@@ -166,31 +185,6 @@ fn gap_count_partition(positions: Option<&Vec<u8>>) -> u32 {
         Some(p) => crate::score::gap_count(p),
         None => 0,
     }
-}
-
-fn gap_count_after_insert(positions: Option<&Vec<u8>>, pos: u8) -> u32 {
-    let Some(positions) = positions else {
-        return 0;
-    };
-    if positions.is_empty() {
-        return 0;
-    }
-    let already_present = positions.binary_search(&pos).is_ok();
-    let len_after = if already_present {
-        positions.len()
-    } else {
-        positions.len() + 1
-    };
-    if len_after < 2 {
-        return 0;
-    }
-    let first = *positions.first().unwrap();
-    let last = *positions.last().unwrap();
-    let new_min = first.min(pos);
-    let new_max = last.max(pos);
-    let span = u32::from(new_max - new_min);
-    let count = u32::try_from(len_after).unwrap_or(u32::MAX);
-    span + 1 - count
 }
 
 #[allow(clippy::too_many_arguments)] // Reason: internal helper; refactoring to a struct hurts clarity more than it helps
@@ -343,6 +337,22 @@ mod tests {
         Uuid::from_bytes([n; 16])
     }
 
+    /// Greedy-only invocation. Active default `solve()` adds a 200ms LAHC pass
+    /// that this module's structural unit tests do not benefit from; using a
+    /// fresh `SolveConfig` with `deadline: None` keeps these tests fast.
+    fn greedy_solve(problem: &Problem) -> Result<Solution, Error> {
+        solve_with_config(
+            problem,
+            &SolveConfig {
+                weights: ConstraintWeights {
+                    class_gap: 1,
+                    teacher_gap: 1,
+                },
+                ..SolveConfig::default()
+            },
+        )
+    }
+
     fn base_problem() -> Problem {
         Problem {
             time_blocks: vec![
@@ -389,7 +399,7 @@ mod tests {
 
     #[test]
     fn single_hour_places_into_first_slot_and_room() {
-        let s = solve(&base_problem()).unwrap();
+        let s = greedy_solve(&base_problem()).unwrap();
         assert_eq!(s.placements.len(), 1);
         assert_eq!(s.placements[0].time_block_id, TimeBlockId(solve_uuid(10)));
         assert_eq!(s.placements[0].room_id, RoomId(solve_uuid(30)));
@@ -400,7 +410,7 @@ mod tests {
     fn unqualified_teacher_emits_violation_and_skips_placement() {
         let mut p = base_problem();
         p.teacher_qualifications.clear();
-        let s = solve(&p).unwrap();
+        let s = greedy_solve(&p).unwrap();
         assert!(s.placements.is_empty());
         assert_eq!(s.violations.len(), 1);
         assert_eq!(s.violations[0].kind, ViolationKind::NoQualifiedTeacher);
@@ -413,7 +423,7 @@ mod tests {
             teacher_id: TeacherId(solve_uuid(20)),
             time_block_id: TimeBlockId(solve_uuid(10)),
         });
-        let s = solve(&p).unwrap();
+        let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 1);
         assert_eq!(s.placements[0].time_block_id, TimeBlockId(solve_uuid(11)));
     }
@@ -430,7 +440,7 @@ mod tests {
             room_id: RoomId(solve_uuid(30)),
             subject_id: SubjectId(solve_uuid(41)),
         });
-        let s = solve(&p).unwrap();
+        let s = greedy_solve(&p).unwrap();
         assert!(s.placements.is_empty());
         assert_eq!(s.violations.len(), 1);
         assert_eq!(s.violations[0].kind, ViolationKind::NoSuitableRoom);
@@ -443,7 +453,7 @@ mod tests {
             room_id: RoomId(solve_uuid(30)),
             time_block_id: TimeBlockId(solve_uuid(10)),
         });
-        let s = solve(&p).unwrap();
+        let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 1);
         assert_eq!(s.placements[0].time_block_id, TimeBlockId(solve_uuid(11)));
     }
@@ -452,7 +462,7 @@ mod tests {
     fn teacher_max_hours_cap_emits_teacher_over_capacity() {
         let mut p = base_problem();
         p.teachers[0].max_hours_per_week = 0;
-        let s = solve(&p).unwrap();
+        let s = greedy_solve(&p).unwrap();
         assert!(s.placements.is_empty());
         assert_eq!(s.violations.len(), 1);
         assert_eq!(s.violations[0].kind, ViolationKind::TeacherOverCapacity);
@@ -482,7 +492,7 @@ mod tests {
             teacher_id: TeacherId(solve_uuid(20)),
             time_block_id: TimeBlockId(solve_uuid(11)),
         });
-        let s = solve(&p).unwrap();
+        let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 1);
         assert_eq!(s.violations.len(), 1);
         assert_eq!(s.violations[0].kind, ViolationKind::NoFreeTimeBlock);
@@ -505,7 +515,7 @@ mod tests {
             teacher_id: TeacherId(solve_uuid(20)),
             hours_per_week: 1,
         });
-        let s = solve(&p).unwrap();
+        let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 2);
         assert_ne!(s.placements[0].time_block_id, s.placements[1].time_block_id);
     }
@@ -535,7 +545,7 @@ mod tests {
             teacher_id: TeacherId(solve_uuid(21)),
             hours_per_week: 1,
         });
-        let s = solve(&p).unwrap();
+        let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 2);
         // both placements happened in the first slot but in different rooms
         assert_eq!(s.placements[0].time_block_id, s.placements[1].time_block_id);
@@ -546,7 +556,7 @@ mod tests {
     fn structural_error_returns_err_input() {
         let mut p = base_problem();
         p.time_blocks.clear();
-        let err = solve(&p).unwrap_err();
+        let err = greedy_solve(&p).unwrap_err();
         assert!(matches!(err, Error::Input(_)));
     }
 
@@ -603,7 +613,7 @@ mod tests {
             hours_per_week: 1,
         });
 
-        let s = solve(&p).unwrap();
+        let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 2);
         let lesson_a = s
             .placements
@@ -666,7 +676,7 @@ mod tests {
         });
         p.teachers[0].max_hours_per_week = 10;
 
-        let s = solve(&p).unwrap();
+        let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 2);
         let lesson_a = s
             .placements
