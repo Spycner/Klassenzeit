@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from klassenzeit_backend.auth.rate_limit import LoginRateLimiter
 from klassenzeit_backend.auth.routes import auth_router
+from klassenzeit_backend.core.logging import configure_logging
 from klassenzeit_backend.core.settings import get_settings
 from klassenzeit_backend.db.engine import build_engine
 from klassenzeit_backend.scheduling.routes import scheduling_router
@@ -62,6 +63,12 @@ def build_app(env: str | None) -> FastAPI:
     is unaffected by ``openapi_url=None``: the schema generator runs
     off the registered routes, not the HTTP endpoint.
     """
+    settings = get_settings()
+    configure_logging(
+        env=settings.env,
+        log_format=settings.log_format,
+        log_level=settings.log_level,
+    )
     is_prod = env == "prod"
     new_app = FastAPI(
         title="Klassenzeit",
