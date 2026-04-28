@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     login_max_attempts: int = 5
     login_lockout_minutes: int = 15
 
+    # Logging
+    log_format: Literal["text", "json"] | None = None
+    log_level: str = "INFO"
+
 
 @lru_cache
 def get_settings() -> Settings:

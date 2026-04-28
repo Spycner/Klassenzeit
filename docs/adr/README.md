@@ -39,3 +39,4 @@ sections, and add the new entry to the index below.
 | 0013 | [Typed solver violations](0013-typed-solver-violations.md) | Accepted |
 | 0014 | [SolveConfig API and FFD ordering](0014-solve-config-and-ffd-ordering.md) | Accepted |
 | 0015 | [Solver LAHC local-search loop with seeded RNG](0015-solver-lahc-stochastic-search.md) | Accepted |
+| 0016 | [Structured logging across the backend](0016-structured-logging.md) | Accepted |
