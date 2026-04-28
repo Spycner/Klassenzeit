@@ -79,7 +79,15 @@ fn grundschule_fixture() -> Problem {
         .collect();
 
     let subject_ids: Vec<SubjectId> = (0..8).map(|i| SubjectId(bench_uuid(60 + i))).collect();
-    let subjects: Vec<Subject> = subject_ids.iter().map(|id| Subject { id: *id }).collect();
+    let subjects: Vec<Subject> = subject_ids
+        .iter()
+        .enumerate()
+        .map(|(i, id)| Subject {
+            id: *id,
+            prefer_early_periods: matches!(i, 0 | 1), // index 0 = Deutsch, 1 = Mathematik
+            avoid_first_period: i == 7,               // index 7 = Sport
+        })
+        .collect();
 
     let classes: Vec<SchoolClass> = (0..2)
         .map(|i| SchoolClass {
@@ -173,7 +181,15 @@ fn zweizuegig_fixture() -> Problem {
 
     // 9 subjects: D, M, SU, RE, E, KU, MU, SP, FOE (indices 0..9).
     let subject_ids: Vec<SubjectId> = (0..9u8).map(|i| SubjectId(bench_uuid(80 + i))).collect();
-    let subjects: Vec<Subject> = subject_ids.iter().map(|id| Subject { id: *id }).collect();
+    let subjects: Vec<Subject> = subject_ids
+        .iter()
+        .enumerate()
+        .map(|(i, id)| Subject {
+            id: *id,
+            prefer_early_periods: matches!(i, 0 | 1), // index 0 = Deutsch, 1 = Mathematik
+            avoid_first_period: i == 7,               // index 7 = Sport
+        })
+        .collect();
 
     // 8 classes: 1a..4b. Indices align with grade pairs.
     let classes: Vec<SchoolClass> = (0..8u8)
@@ -301,6 +317,7 @@ fn bench_greedy_cfg() -> SolveConfig {
         weights: ConstraintWeights {
             class_gap: 1,
             teacher_gap: 1,
+            ..ConstraintWeights::default()
         },
         ..SolveConfig::default()
     }
@@ -311,6 +328,7 @@ fn bench_lahc_cfg() -> SolveConfig {
         weights: ConstraintWeights {
             class_gap: 1,
             teacher_gap: 1,
+            ..ConstraintWeights::default()
         },
         deadline: Some(LAHC_DEADLINE),
         seed: LAHC_SEED,

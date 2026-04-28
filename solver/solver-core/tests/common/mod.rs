@@ -56,6 +56,8 @@ pub fn feasible_problem(
     let subjects_vec: Vec<Subject> = (0..subjects)
         .map(|i| Subject {
             id: SubjectId(common_uuid(150 + i)),
+            prefer_early_periods: false,
+            avoid_first_period: false,
         })
         .collect();
     let classes_vec: Vec<SchoolClass> = (0..classes)

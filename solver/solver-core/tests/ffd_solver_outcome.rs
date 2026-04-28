@@ -49,9 +49,13 @@ fn pessimal_input_problem() -> Problem {
         subjects: vec![
             Subject {
                 id: SubjectId(ffd_uuid(40)),
+                prefer_early_periods: false,
+                avoid_first_period: false,
             },
             Subject {
                 id: SubjectId(ffd_uuid(41)),
+                prefer_early_periods: false,
+                avoid_first_period: false,
             },
         ],
         school_classes: vec![
@@ -122,6 +126,8 @@ fn ffd_solve_active_default_weights_match_explicit() {
         weights: ConstraintWeights {
             class_gap: 1,
             teacher_gap: 1,
+            prefer_early_period: 1,
+            avoid_first_period: 1,
         },
         ..SolveConfig::default()
     };

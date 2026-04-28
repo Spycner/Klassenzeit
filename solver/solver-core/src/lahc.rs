@@ -9,10 +9,12 @@ use std::time::Instant;
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 
-use crate::ids::{LessonId, RoomId, SchoolClassId, TeacherId, TimeBlockId};
+use crate::ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId};
 use crate::index::Indexed;
 use crate::score::{gap_count, gap_count_after_insert, gap_count_after_remove};
-use crate::types::{ConstraintWeights, Lesson, Placement, Problem, SolveConfig, TimeBlock};
+use crate::types::{
+    ConstraintWeights, Lesson, Placement, Problem, SolveConfig, Subject, TimeBlock,
+};
 
 /// Length of the LAHC cost-history list. Burke & Bykov 2008 reports the
 /// algorithm is robust to this value within a wide band; 500 matches the
@@ -49,6 +51,8 @@ pub(crate) fn run(
         problem.lessons.iter().map(|l| (l.id, l)).collect();
     let tb_lookup: HashMap<TimeBlockId, &TimeBlock> =
         problem.time_blocks.iter().map(|tb| (tb.id, tb)).collect();
+    let subject_lookup: HashMap<SubjectId, &Subject> =
+        problem.subjects.iter().map(|s| (s.id, s)).collect();
     let max_iter = config.max_iterations.unwrap_or(u64::MAX);
 
     let mut iter: u64 = 0;
@@ -66,6 +70,7 @@ pub(crate) fn run(
             new_tb_idx,
             &lesson_lookup,
             &tb_lookup,
+            &subject_lookup,
             &config.weights,
             placements,
             class_positions,
@@ -97,6 +102,7 @@ fn try_change_move(
     new_tb_idx: usize,
     lesson_lookup: &HashMap<LessonId, &Lesson>,
     tb_lookup: &HashMap<TimeBlockId, &TimeBlock>,
+    subject_lookup: &HashMap<SubjectId, &Subject>,
     weights: &ConstraintWeights,
     placements: &mut [Placement],
     class_positions: &mut HashMap<(SchoolClassId, u8), Vec<u8>>,
@@ -141,6 +147,11 @@ fn try_change_move(
         return false;
     };
 
+    let subject = subject_lookup[&lesson.subject_id];
+    let subject_pref_old = crate::score::subject_preference_score(subject, &old_tb, weights);
+    let subject_pref_new = crate::score::subject_preference_score(subject, &new_tb, weights);
+    let subject_pref_delta = i64::from(subject_pref_new) - i64::from(subject_pref_old);
+
     let delta = score_after_change_move(
         class,
         teacher,
@@ -151,7 +162,7 @@ fn try_change_move(
         class_positions,
         teacher_positions,
         weights,
-    );
+    ) + subject_pref_delta;
 
     let new_score_signed = i64::from(*current_score) + delta;
     debug_assert!(
@@ -454,6 +465,7 @@ mod tests {
             &ConstraintWeights {
                 class_gap: 1,
                 teacher_gap: 1,
+                ..ConstraintWeights::default()
             },
         );
         assert_eq!(delta, -2);
@@ -478,6 +490,7 @@ mod tests {
             &ConstraintWeights {
                 class_gap: 1,
                 teacher_gap: 1,
+                ..ConstraintWeights::default()
             },
         );
         assert_eq!(delta, 0);
@@ -547,6 +560,111 @@ mod tests {
     }
 
     #[test]
+    fn lahc_change_move_reduces_avoid_first_penalty_when_seed_finds_alternative() {
+        use crate::types::{
+            Lesson, Problem, Room, SchoolClass, Subject, Teacher, TeacherQualification,
+        };
+
+        let class = SchoolClassId(lahc_uuid(50));
+        let teacher = TeacherId(lahc_uuid(20));
+        let subject = SubjectId(lahc_uuid(40));
+        let room = RoomId(lahc_uuid(30));
+        let lesson = LessonId(lahc_uuid(60));
+        let tb_zero = TimeBlockId(lahc_uuid(10));
+        let tb_one = TimeBlockId(lahc_uuid(11));
+
+        let problem = Problem {
+            time_blocks: vec![
+                TimeBlock {
+                    id: tb_zero,
+                    day_of_week: 0,
+                    position: 0,
+                },
+                TimeBlock {
+                    id: tb_one,
+                    day_of_week: 0,
+                    position: 1,
+                },
+            ],
+            teachers: vec![Teacher {
+                id: teacher,
+                max_hours_per_week: 10,
+            }],
+            rooms: vec![Room { id: room }],
+            subjects: vec![Subject {
+                id: subject,
+                prefer_early_periods: false,
+                avoid_first_period: true,
+            }],
+            school_classes: vec![SchoolClass { id: class }],
+            lessons: vec![Lesson {
+                id: lesson,
+                school_class_id: class,
+                subject_id: subject,
+                teacher_id: teacher,
+                hours_per_week: 1,
+            }],
+            teacher_qualifications: vec![TeacherQualification {
+                teacher_id: teacher,
+                subject_id: subject,
+            }],
+            teacher_blocked_times: vec![],
+            room_blocked_times: vec![],
+            room_subject_suitabilities: vec![],
+        };
+        let idx = crate::index::Indexed::new(&problem);
+
+        let mut placements = vec![Placement {
+            lesson_id: lesson,
+            time_block_id: tb_zero,
+            room_id: room,
+        }];
+        let mut class_positions: HashMap<(SchoolClassId, u8), Vec<u8>> = HashMap::new();
+        class_positions.insert((class, 0), vec_part(&[0]));
+        let mut teacher_positions: HashMap<(TeacherId, u8), Vec<u8>> = HashMap::new();
+        teacher_positions.insert((teacher, 0), vec_part(&[0]));
+        let mut used_teacher: HashSet<(TeacherId, TimeBlockId)> = HashSet::new();
+        used_teacher.insert((teacher, tb_zero));
+        let mut used_class: HashSet<(SchoolClassId, TimeBlockId)> = HashSet::new();
+        used_class.insert((class, tb_zero));
+        let mut used_room: HashSet<(RoomId, TimeBlockId)> = HashSet::new();
+        used_room.insert((room, tb_zero));
+        let mut current_score: u32 = 1; // avoid_first penalty active at position 0
+
+        let config = SolveConfig {
+            weights: ConstraintWeights {
+                avoid_first_period: 1,
+                ..ConstraintWeights::default()
+            },
+            seed: 0,
+            deadline: Some(std::time::Duration::from_millis(50)),
+            // 600 iterations fill the entire 500-slot LAHC list with the
+            // optimal score (0) so worsening moves are no longer accepted.
+            max_iterations: Some(600),
+        };
+
+        run(
+            &problem,
+            &idx,
+            &config,
+            &mut placements,
+            &mut class_positions,
+            &mut teacher_positions,
+            &mut used_teacher,
+            &mut used_class,
+            &mut used_room,
+            &mut current_score,
+        );
+
+        assert_eq!(placements.len(), 1);
+        assert_eq!(
+            placements[0].time_block_id, tb_one,
+            "LAHC should move the avoid-first lesson off position 0"
+        );
+        assert_eq!(current_score, 0);
+    }
+
+    #[test]
     fn pick_room_reuses_old_room_when_feasible() {
         let subject = SubjectId(lahc_uuid(40));
         let old_room = RoomId(lahc_uuid(30));
@@ -560,7 +678,11 @@ mod tests {
             }],
             teachers: vec![],
             rooms: vec![crate::types::Room { id: old_room }],
-            subjects: vec![crate::types::Subject { id: subject }],
+            subjects: vec![crate::types::Subject {
+                id: subject,
+                prefer_early_periods: false,
+                avoid_first_period: false,
+            }],
             school_classes: vec![],
             lessons: vec![],
             teacher_qualifications: vec![],
@@ -595,7 +717,11 @@ mod tests {
                 crate::types::Room { id: old_room },
                 crate::types::Room { id: alt_room },
             ],
-            subjects: vec![crate::types::Subject { id: subject }],
+            subjects: vec![crate::types::Subject {
+                id: subject,
+                prefer_early_periods: false,
+                avoid_first_period: false,
+            }],
             school_classes: vec![],
             lessons: vec![],
             teacher_qualifications: vec![],
@@ -627,7 +753,11 @@ mod tests {
             }],
             teachers: vec![],
             rooms: vec![crate::types::Room { id: old_room }],
-            subjects: vec![crate::types::Subject { id: subject }],
+            subjects: vec![crate::types::Subject {
+                id: subject,
+                prefer_early_periods: false,
+                avoid_first_period: false,
+            }],
             school_classes: vec![],
             lessons: vec![],
             teacher_qualifications: vec![],

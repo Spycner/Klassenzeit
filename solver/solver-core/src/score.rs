@@ -15,13 +15,19 @@ pub fn score_solution(
     placements: &[Placement],
     weights: &ConstraintWeights,
 ) -> u32 {
-    if weights.class_gap == 0 && weights.teacher_gap == 0 {
+    if weights.class_gap == 0
+        && weights.teacher_gap == 0
+        && weights.prefer_early_period == 0
+        && weights.avoid_first_period == 0
+    {
         return 0;
     }
     let tb_lookup: HashMap<TimeBlockId, &TimeBlock> =
         problem.time_blocks.iter().map(|tb| (tb.id, tb)).collect();
     let lesson_lookup: HashMap<LessonId, &Lesson> =
         problem.lessons.iter().map(|l| (l.id, l)).collect();
+    let subject_lookup: std::collections::HashMap<crate::ids::SubjectId, &crate::types::Subject> =
+        problem.subjects.iter().map(|s| (s.id, s)).collect();
 
     let mut by_class_day: HashMap<(SchoolClassId, u8), Vec<u8>> = HashMap::new();
     let mut by_teacher_day: HashMap<(TeacherId, u8), Vec<u8>> = HashMap::new();
@@ -56,7 +62,21 @@ pub fn score_solution(
         })
         .sum();
 
-    weights.class_gap.saturating_mul(class_gaps) + weights.teacher_gap.saturating_mul(teacher_gaps)
+    let subject_preference: u32 = placements
+        .iter()
+        .map(|p| {
+            let lesson = lesson_lookup[&p.lesson_id];
+            let subject = subject_lookup[&lesson.subject_id];
+            let tb = tb_lookup[&p.time_block_id];
+            subject_preference_score(subject, tb, weights)
+        })
+        .sum();
+
+    weights
+        .class_gap
+        .saturating_mul(class_gaps)
+        .saturating_add(weights.teacher_gap.saturating_mul(teacher_gaps))
+        .saturating_add(subject_preference)
 }
 
 /// Count gap-hours in a sorted, deduplicated `positions` slice. A gap-hour is
@@ -128,6 +148,27 @@ pub(crate) fn gap_count_after_remove(positions: &[u8], pos: u8) -> u32 {
     span + 1 - count
 }
 
+/// Per-placement subject-preference score. Returns
+/// `tb.position * weights.prefer_early_period` (linear) when the subject's
+/// `prefer_early_periods` flag is set, plus `weights.avoid_first_period`
+/// (binary) when the `avoid_first_period` flag is set and `tb.position == 0`.
+/// Pure: depends only on `subject`, `tb`, `weights`. Allocation-free.
+pub(crate) fn subject_preference_score(
+    subject: &crate::types::Subject,
+    tb: &TimeBlock,
+    weights: &ConstraintWeights,
+) -> u32 {
+    let mut score = 0u32;
+    if subject.prefer_early_periods {
+        score = score
+            .saturating_add(u32::from(tb.position).saturating_mul(weights.prefer_early_period));
+    }
+    if subject.avoid_first_period && tb.position == 0 {
+        score = score.saturating_add(weights.avoid_first_period);
+    }
+    score
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -170,6 +211,8 @@ mod tests {
             }],
             subjects: vec![Subject {
                 id: SubjectId(score_uuid(40)),
+                prefer_early_periods: false,
+                avoid_first_period: false,
             }],
             school_classes: vec![SchoolClass {
                 id: SchoolClassId(score_uuid(50)),
@@ -205,6 +248,7 @@ mod tests {
         let weights = ConstraintWeights {
             class_gap: 5,
             teacher_gap: 7,
+            ..ConstraintWeights::default()
         };
         assert_eq!(score_solution(&p, &[], &weights), 0);
     }
@@ -215,6 +259,7 @@ mod tests {
         let weights = ConstraintWeights {
             class_gap: 5,
             teacher_gap: 7,
+            ..ConstraintWeights::default()
         };
         let placements = [place(60, 10)];
         assert_eq!(score_solution(&p, &placements, &weights), 0);
@@ -226,6 +271,7 @@ mod tests {
         let weights = ConstraintWeights {
             class_gap: 5,
             teacher_gap: 7,
+            ..ConstraintWeights::default()
         };
         let placements = [place(60, 10), place(60, 11)];
         assert_eq!(score_solution(&p, &placements, &weights), 0);
@@ -239,6 +285,7 @@ mod tests {
         let weights = ConstraintWeights {
             class_gap: 5,
             teacher_gap: 7,
+            ..ConstraintWeights::default()
         };
         let placements = [place(60, 10), place(60, 12)];
         assert_eq!(score_solution(&p, &placements, &weights), 12);
@@ -251,10 +298,12 @@ mod tests {
         let w1 = ConstraintWeights {
             class_gap: 1,
             teacher_gap: 0,
+            ..ConstraintWeights::default()
         };
         let w2 = ConstraintWeights {
             class_gap: 2,
             teacher_gap: 0,
+            ..ConstraintWeights::default()
         };
         assert_eq!(score_solution(&p, &placements, &w1), 1);
         assert_eq!(score_solution(&p, &placements, &w2), 2);
@@ -271,6 +320,7 @@ mod tests {
         let weights = ConstraintWeights {
             class_gap: 5,
             teacher_gap: 7,
+            ..ConstraintWeights::default()
         };
         let placements = [place(60, 10), place(60, 13)];
         assert_eq!(score_solution(&p, &placements, &weights), 0);
@@ -323,5 +373,207 @@ mod tests {
     fn gap_count_after_remove_two_to_one_returns_zero() {
         let positions = [1u8, 3];
         assert_eq!(gap_count_after_remove(&positions, 1), 0);
+    }
+
+    #[test]
+    fn subject_preference_score_returns_zero_when_flags_off() {
+        let subject = Subject {
+            id: SubjectId(score_uuid(40)),
+            prefer_early_periods: false,
+            avoid_first_period: false,
+        };
+        let tb = TimeBlock {
+            id: TimeBlockId(score_uuid(10)),
+            day_of_week: 0,
+            position: 3,
+        };
+        let weights = ConstraintWeights {
+            prefer_early_period: 5,
+            avoid_first_period: 7,
+            ..ConstraintWeights::default()
+        };
+        assert_eq!(subject_preference_score(&subject, &tb, &weights), 0);
+    }
+
+    #[test]
+    fn subject_preference_score_linear_in_position_when_prefer_early_set() {
+        let subject = Subject {
+            id: SubjectId(score_uuid(40)),
+            prefer_early_periods: true,
+            avoid_first_period: false,
+        };
+        let weights = ConstraintWeights {
+            prefer_early_period: 3,
+            ..ConstraintWeights::default()
+        };
+        for pos in 0u8..7 {
+            let tb = TimeBlock {
+                id: TimeBlockId(score_uuid(10)),
+                day_of_week: 0,
+                position: pos,
+            };
+            assert_eq!(
+                subject_preference_score(&subject, &tb, &weights),
+                u32::from(pos) * 3
+            );
+        }
+    }
+
+    #[test]
+    fn subject_preference_score_constant_at_position_zero_when_avoid_first_set() {
+        let subject = Subject {
+            id: SubjectId(score_uuid(40)),
+            prefer_early_periods: false,
+            avoid_first_period: true,
+        };
+        let weights = ConstraintWeights {
+            avoid_first_period: 9,
+            ..ConstraintWeights::default()
+        };
+        let tb_zero = TimeBlock {
+            id: TimeBlockId(score_uuid(10)),
+            day_of_week: 0,
+            position: 0,
+        };
+        let tb_nonzero = TimeBlock {
+            id: TimeBlockId(score_uuid(11)),
+            day_of_week: 0,
+            position: 1,
+        };
+        assert_eq!(subject_preference_score(&subject, &tb_zero, &weights), 9);
+        assert_eq!(subject_preference_score(&subject, &tb_nonzero, &weights), 0);
+    }
+
+    fn one_class_two_block_problem_with_flagged_subject(
+        prefer_early: bool,
+        avoid_first: bool,
+    ) -> Problem {
+        Problem {
+            time_blocks: vec![
+                TimeBlock {
+                    id: TimeBlockId(score_uuid(10)),
+                    day_of_week: 0,
+                    position: 0,
+                },
+                TimeBlock {
+                    id: TimeBlockId(score_uuid(11)),
+                    day_of_week: 0,
+                    position: 1,
+                },
+            ],
+            teachers: vec![Teacher {
+                id: TeacherId(score_uuid(20)),
+                max_hours_per_week: 10,
+            }],
+            rooms: vec![Room {
+                id: RoomId(score_uuid(30)),
+            }],
+            subjects: vec![Subject {
+                id: SubjectId(score_uuid(40)),
+                prefer_early_periods: prefer_early,
+                avoid_first_period: avoid_first,
+            }],
+            school_classes: vec![SchoolClass {
+                id: SchoolClassId(score_uuid(50)),
+            }],
+            lessons: vec![Lesson {
+                id: LessonId(score_uuid(60)),
+                school_class_id: SchoolClassId(score_uuid(50)),
+                subject_id: SubjectId(score_uuid(40)),
+                teacher_id: TeacherId(score_uuid(20)),
+                hours_per_week: 1,
+            }],
+            teacher_qualifications: vec![TeacherQualification {
+                teacher_id: TeacherId(score_uuid(20)),
+                subject_id: SubjectId(score_uuid(40)),
+            }],
+            teacher_blocked_times: vec![],
+            room_blocked_times: vec![],
+            room_subject_suitabilities: vec![],
+        }
+    }
+
+    #[test]
+    fn score_solution_includes_prefer_early_per_placement() {
+        let p = one_class_two_block_problem_with_flagged_subject(true, false);
+        let weights = ConstraintWeights {
+            prefer_early_period: 2,
+            ..ConstraintWeights::default()
+        };
+        // Lesson placed at position 1: contribution = 1 * 2 = 2.
+        let placements = [Placement {
+            lesson_id: LessonId(score_uuid(60)),
+            time_block_id: TimeBlockId(score_uuid(11)),
+            room_id: RoomId(score_uuid(30)),
+        }];
+        assert_eq!(score_solution(&p, &placements, &weights), 2);
+    }
+
+    #[test]
+    fn score_solution_includes_avoid_first_only_at_position_zero() {
+        let p = one_class_two_block_problem_with_flagged_subject(false, true);
+        let weights = ConstraintWeights {
+            avoid_first_period: 7,
+            ..ConstraintWeights::default()
+        };
+        // At position 0: contribution = 7.
+        let placements_at_zero = [Placement {
+            lesson_id: LessonId(score_uuid(60)),
+            time_block_id: TimeBlockId(score_uuid(10)),
+            room_id: RoomId(score_uuid(30)),
+        }];
+        assert_eq!(score_solution(&p, &placements_at_zero, &weights), 7);
+        // At position 1: contribution = 0.
+        let placements_at_one = [Placement {
+            lesson_id: LessonId(score_uuid(60)),
+            time_block_id: TimeBlockId(score_uuid(11)),
+            room_id: RoomId(score_uuid(30)),
+        }];
+        assert_eq!(score_solution(&p, &placements_at_one, &weights), 0);
+    }
+
+    #[test]
+    fn score_solution_zero_with_subject_flags_off_matches_pre_9c_score() {
+        let p = three_block_one_class_problem();
+        let weights = ConstraintWeights {
+            class_gap: 5,
+            teacher_gap: 7,
+            prefer_early_period: 100,
+            avoid_first_period: 100,
+        };
+        // Subject in three_block_one_class_problem has both flags false (default
+        // after task 1.1's literal updates). The new axes contribute 0; total
+        // matches the pre-9c gap-only score of 12 (one gap each in class + teacher
+        // partitions, weights 5 and 7).
+        let placements = [place(60, 10), place(60, 12)];
+        assert_eq!(score_solution(&p, &placements, &weights), 12);
+    }
+
+    #[test]
+    fn subject_preference_score_sums_when_both_flags_on_at_position_zero() {
+        let subject = Subject {
+            id: SubjectId(score_uuid(40)),
+            prefer_early_periods: true,
+            avoid_first_period: true,
+        };
+        let weights = ConstraintWeights {
+            prefer_early_period: 2,
+            avoid_first_period: 5,
+            ..ConstraintWeights::default()
+        };
+        let tb_zero = TimeBlock {
+            id: TimeBlockId(score_uuid(10)),
+            day_of_week: 0,
+            position: 0,
+        };
+        let tb_two = TimeBlock {
+            id: TimeBlockId(score_uuid(11)),
+            day_of_week: 0,
+            position: 2,
+        };
+        // Position 0: prefer_early contributes 0, avoid_first contributes 5; total 5.
+        assert_eq!(subject_preference_score(&subject, &tb_zero, &weights), 5);
+        // Position 2: prefer_early contributes 4, avoid_first contributes 0; total 4.
+        assert_eq!(subject_preference_score(&subject, &tb_two, &weights), 4);
     }
 }

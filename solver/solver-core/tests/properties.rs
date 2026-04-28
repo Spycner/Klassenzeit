@@ -21,6 +21,7 @@ fn greedy_cfg() -> SolveConfig {
         weights: ConstraintWeights {
             class_gap: 1,
             teacher_gap: 1,
+            ..ConstraintWeights::default()
         },
         ..SolveConfig::default()
     }
