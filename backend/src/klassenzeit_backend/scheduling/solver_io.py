@@ -239,7 +239,14 @@ async def build_problem_json(
             {"id": str(t.id), "max_hours_per_week": t.max_hours_per_week} for t in teachers
         ],
         "rooms": [{"id": str(r.id)} for r in rooms],
-        "subjects": [{"id": str(s.id)} for s in subjects],
+        "subjects": [
+            {
+                "id": str(s.id),
+                "prefer_early_periods": s.prefer_early_periods,
+                "avoid_first_period": s.avoid_first_period,
+            }
+            for s in subjects
+        ],
         "school_classes": [{"id": str(c.id)} for c in involved_classes],
         "lessons": [
             {

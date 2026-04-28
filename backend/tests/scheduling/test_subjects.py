@@ -254,6 +254,72 @@ async def test_subject_requires_admin(client: AsyncClient) -> None:
     assert response.status_code == 401
 
 
+async def test_subject_create_accepts_preference_flags(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /subjects with preference flags stores and returns them."""
+    await create_test_user(email="admin@pref1.com", role="admin")
+    await login_as("admin@pref1.com", "testpassword123")
+    res = await client.post(
+        "/api/subjects",
+        json={
+            "name": "Test prefer early",
+            "short_name": "PE",
+            "color": "chart-1",
+            "prefer_early_periods": True,
+            "avoid_first_period": False,
+        },
+    )
+    assert res.status_code == 201
+    body = res.json()
+    assert body["prefer_early_periods"] is True
+    assert body["avoid_first_period"] is False
+
+
+async def test_subject_create_defaults_preference_flags_to_false(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /subjects without preference flags defaults both to false."""
+    await create_test_user(email="admin@pref2.com", role="admin")
+    await login_as("admin@pref2.com", "testpassword123")
+    res = await client.post(
+        "/api/subjects",
+        json={"name": "Test default", "short_name": "TD", "color": "chart-1"},
+    )
+    assert res.status_code == 201
+    body = res.json()
+    assert body["prefer_early_periods"] is False
+    assert body["avoid_first_period"] is False
+
+
+async def test_subject_update_patches_preference_flags(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """PATCH /subjects/{id} can toggle avoid_first_period without touching prefer_early_periods."""
+    await create_test_user(email="admin@pref3.com", role="admin")
+    await login_as("admin@pref3.com", "testpassword123")
+    res = await client.post(
+        "/api/subjects",
+        json={"name": "Test update", "short_name": "TU", "color": "chart-1"},
+    )
+    subject_id = res.json()["id"]
+
+    res = await client.patch(
+        f"/api/subjects/{subject_id}",
+        json={"avoid_first_period": True},
+    )
+    assert res.status_code == 200
+    assert res.json()["avoid_first_period"] is True
+    # prefer_early stays untouched.
+    assert res.json()["prefer_early_periods"] is False
+
+
 async def test_create_subject_requires_color(
     client: AsyncClient,
     create_test_user: CreateUserFn,
