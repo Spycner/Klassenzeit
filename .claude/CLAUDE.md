@@ -69,6 +69,16 @@ If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, f
 - **`gh pr edit` silently no-ops in this repo** because the GitHub classic-projects deprecation prints a GraphQL warning that gh treats as terminal: the command exits 0 without applying the edit. Workaround: `gh api -X PATCH repos/<owner>/<repo>/pulls/<N> -f title='...'` (and `-f body='...'`). Same shape applies to other gh commands that mutate PRs through GraphQL. Revisit when classic projects are sunset on this repo.
 - **Ad-hoc Python snippets with third-party deps.** The system `python3` has no `pyyaml`, `coloraide`, or similar. For one-off verification or conversion scripts (YAML diffs of workflow permissions, OKLCH to sRGB hex conversion for `frontend/DESIGN.md` updates, etc.), invoke via `uv run --with <pkg1> --with <pkg2> python3 - <<'EOF' ... EOF` so the pinned `uv` provides the dep. Recurring pairs: `--with pyyaml` (YAML parsing), `--with coloraide` (OKLCH ↔ sRGB hex for DESIGN.md / app.css work).
 
+## Simplicity first
+
+Write the minimum code that solves the problem. Nothing speculative.
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
 ## Coding standards
 
 - **No bare catchalls.** No untyped `catch` in TypeScript, no `Result<_, _>` swallowed with `_` in Rust. Catch the specific error you can handle; let the rest propagate. (Python framing lives in `backend/CLAUDE.md`.)
