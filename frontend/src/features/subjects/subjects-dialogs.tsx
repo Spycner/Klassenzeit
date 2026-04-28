@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -45,6 +47,8 @@ export function SubjectFormDialog({
       name: subject?.name ?? "",
       short_name: subject?.short_name ?? "",
       color: subject?.color ?? autoPickColor(""),
+      prefer_early_periods: subject?.prefer_early_periods ?? false,
+      avoid_first_period: subject?.avoid_first_period ?? false,
     },
   });
   const createMutation = useCreateSubject();
@@ -117,6 +121,48 @@ export function SubjectFormDialog({
                     <ColorPicker value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="prefer_early_periods"
+              render={({ field }) => (
+                <FormItem className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Checkbox
+                        id="subject-prefer-early"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel htmlFor="subject-prefer-early">
+                      {t("subjects.fields.preferEarlyPeriods.label")}
+                    </FormLabel>
+                  </div>
+                  <FormDescription>{t("subjects.fields.preferEarlyPeriods.help")}</FormDescription>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="avoid_first_period"
+              render={({ field }) => (
+                <FormItem className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Checkbox
+                        id="subject-avoid-first"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel htmlFor="subject-avoid-first">
+                      {t("subjects.fields.avoidFirstPeriod.label")}
+                    </FormLabel>
+                  </div>
+                  <FormDescription>{t("subjects.fields.avoidFirstPeriod.help")}</FormDescription>
                 </FormItem>
               )}
             />

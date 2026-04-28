@@ -1883,6 +1883,16 @@ export interface components {
             short_name: string;
             /** Color */
             color: string;
+            /**
+             * Prefer Early Periods
+             * @default false
+             */
+            prefer_early_periods: boolean;
+            /**
+             * Avoid First Period
+             * @default false
+             */
+            avoid_first_period: boolean;
         };
         /**
          * SubjectResponse
@@ -1900,6 +1910,10 @@ export interface components {
             short_name: string;
             /** Color */
             color: string;
+            /** Prefer Early Periods */
+            prefer_early_periods: boolean;
+            /** Avoid First Period */
+            avoid_first_period: boolean;
             /**
              * Created At
              * Format: date-time
@@ -1922,6 +1936,10 @@ export interface components {
             short_name?: string | null;
             /** Color */
             color?: string | null;
+            /** Prefer Early Periods */
+            prefer_early_periods?: boolean | null;
+            /** Avoid First Period */
+            avoid_first_period?: boolean | null;
         };
         /**
          * SuitabilityReplaceRequest
