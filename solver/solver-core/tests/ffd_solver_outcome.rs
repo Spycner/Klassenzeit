@@ -6,8 +6,8 @@ use solver_core::{
     ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId},
     solve, solve_with_config,
     types::{
-        Lesson, Problem, Room, RoomSubjectSuitability, SchoolClass, SolveConfig, Subject, Teacher,
-        TeacherQualification, TimeBlock,
+        ConstraintWeights, Lesson, Problem, Room, RoomSubjectSuitability, SchoolClass, SolveConfig,
+        Subject, Teacher, TeacherQualification, TimeBlock,
     },
 };
 use uuid::Uuid;
@@ -109,10 +109,22 @@ fn ffd_solve_places_a_lesson_that_input_order_leaves_unplaced() {
 }
 
 #[test]
-fn ffd_solve_with_config_default_matches_solve() {
+fn ffd_solve_active_default_weights_match_explicit() {
+    // `solve()` carries active default `class_gap = teacher_gap = 1` plus a
+    // 200ms LAHC deadline. The fixture has one time-block, so LAHC has no
+    // legal Change move and the placements coincide with the greedy result.
+    // This test asserts the structural equivalence: greedy with active
+    // weights (1, 1) and no deadline produces the same Solution as `solve()`
+    // on this LAHC-degenerate fixture.
     let problem = pessimal_input_problem();
     let s_default = solve(&problem).expect("solve");
-    let s_explicit =
-        solve_with_config(&problem, &SolveConfig::default()).expect("solve_with_config");
+    let greedy_cfg = SolveConfig {
+        weights: ConstraintWeights {
+            class_gap: 1,
+            teacher_gap: 1,
+        },
+        ..SolveConfig::default()
+    };
+    let s_explicit = solve_with_config(&problem, &greedy_cfg).expect("solve_with_config");
     assert_eq!(s_default, s_explicit);
 }

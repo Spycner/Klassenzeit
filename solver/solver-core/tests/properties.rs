@@ -7,11 +7,24 @@ use std::collections::{HashMap, HashSet};
 use proptest::prelude::*;
 use solver_core::{
     ids::{RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId},
-    solve,
-    types::{Problem, Solution, ViolationKind},
+    solve_with_config,
+    types::{ConstraintWeights, Problem, Solution, SolveConfig, ViolationKind},
 };
 
 use common::feasible_problem;
+
+/// Greedy-only `SolveConfig` (no LAHC pass). The hard-constraint and
+/// byte-determinism properties belong to greedy; LAHC determinism is covered
+/// by `lahc_property.rs` under a paired `(seed, max_iterations)` cap.
+fn greedy_cfg() -> SolveConfig {
+    SolveConfig {
+        weights: ConstraintWeights {
+            class_gap: 1,
+            teacher_gap: 1,
+        },
+        ..SolveConfig::default()
+    }
+}
 
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
@@ -26,7 +39,7 @@ proptest! {
         hours in 1u8..=3,
     ) {
         let p = feasible_problem(classes, teachers, rooms, blocks, subjects, hours);
-        let s = solve(&p).unwrap();
+        let s = solve_with_config(&p, &greedy_cfg()).unwrap();
         assert_every_placement_is_feasible_and_no_double_booking(&p, &s);
         assert_teacher_hours_respected(&p, &s);
         assert_total_hours_accounted_for(&p, &s);
@@ -42,8 +55,8 @@ proptest! {
         hours in 1u8..=3,
     ) {
         let p = feasible_problem(classes, teachers, rooms, blocks, subjects, hours);
-        let a = serde_json::to_string(&solve(&p).unwrap()).unwrap();
-        let b = serde_json::to_string(&solve(&p).unwrap()).unwrap();
+        let a = serde_json::to_string(&solve_with_config(&p, &greedy_cfg()).unwrap()).unwrap();
+        let b = serde_json::to_string(&solve_with_config(&p, &greedy_cfg()).unwrap()).unwrap();
         assert_eq!(a, b, "same input must produce byte-identical output");
     }
 }

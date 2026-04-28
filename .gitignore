@@ -39,3 +39,6 @@ frontend/test-results/
 # Deployment secrets, real .env.staging lives on the VPS, not in git.
 /deploy/.env.*
 !/deploy/.env.*.example
+
+# Local Claude Code scheduled-tasks lock file (per-machine state).
+.claude/scheduled_tasks.lock
