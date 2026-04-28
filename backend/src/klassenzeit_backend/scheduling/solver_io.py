@@ -10,7 +10,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, get_args
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -31,13 +31,35 @@ from klassenzeit_backend.db.models.teacher import (
     TeacherQualification,
 )
 from klassenzeit_backend.db.models.week_scheme import TimeBlock
-from klassenzeit_backend.scheduling.schemas.schedule import PlacementResponse
+from klassenzeit_backend.scheduling.schemas.schedule import (
+    PlacementResponse,
+    ViolationResponse,
+)
 from klassenzeit_solver import solve_json as _solve_json
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
+
+_VIOLATION_KINDS: tuple[str, ...] = get_args(ViolationResponse.model_fields["kind"].annotation)
+
+
+def _count_violations_by_kind(violations: list[dict]) -> dict[str, int]:
+    """Aggregate a solver-output violation list into per-kind counts.
+
+    Always returns one entry per known ``ViolationKind``. Defensively drops
+    unknown kinds so a Rust-only addition cannot crash the log path; an
+    unknown kind would already be rejected at the API boundary by Pydantic
+    Literal validation, so this guard exists only to keep ``logger.info``
+    from raising ``KeyError`` in a hypothetical desync.
+    """
+    counts = dict.fromkeys(_VIOLATION_KINDS, 0)
+    for violation in violations:
+        kind = violation["kind"]
+        if kind in counts:
+            counts[kind] += 1
+    return counts
 
 
 def filter_solution_for_class(solution: dict, class_lesson_ids: set[UUID]) -> dict:
@@ -291,6 +313,7 @@ async def run_solve(problem_json: str, school_class_id: UUID, input_counts: dict
             "duration_ms": duration_ms,
             "placements_total": len(solution["placements"]),
             "violations_total": len(solution["violations"]),
+            "violations_by_kind": _count_violations_by_kind(solution["violations"]),
             "soft_score": solution.get("soft_score", 0),
         },
     )
