@@ -485,7 +485,7 @@ async def test_generate_lessons_from_stundentafel(
     )
     await client.post(
         f"/api/stundentafeln/{tafel_id}/entries",
-        json={"subject_id": subj2_id, "hours_per_week": 3, "preferred_block_size": 2},
+        json={"subject_id": subj2_id, "hours_per_week": 4, "preferred_block_size": 2},
     )
 
     class_id = await _create_school_class(client, "7a-L10", 7, tafel_id, scheme_id)
@@ -500,7 +500,7 @@ async def test_generate_lessons_from_stundentafel(
 
     hours_by_subject = {lesson["subject"]["id"]: lesson["hours_per_week"] for lesson in body}
     assert hours_by_subject[subj1_id] == 2
-    assert hours_by_subject[subj2_id] == 3
+    assert hours_by_subject[subj2_id] == 4
 
 
 async def test_generate_lessons_skips_existing(
@@ -694,3 +694,64 @@ async def test_lesson_requires_admin(client: AsyncClient) -> None:
 
     resp = await client.post(f"/api/classes/{uuid.uuid4()}/generate-lessons")
     assert resp.status_code == 401
+
+
+async def test_create_lesson_rejects_odd_hours_with_block_size_two(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /lessons returns 422 when hours_per_week is not divisible by preferred_block_size."""
+    await create_test_user(email="admin@les-dop1.com", role="admin")
+    await login_as("admin@les-dop1.com", "testpassword123")
+
+    subject_id = await _create_subject(client, "Sport", "Sp")
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme Dop1")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel Dop1", 5)
+    class_id = await _create_school_class(client, "5a-Dop1", 5, tafel_id, scheme_id)
+
+    resp = await client.post(
+        "/api/lessons",
+        json={
+            "school_class_id": class_id,
+            "subject_id": subject_id,
+            "hours_per_week": 3,
+            "preferred_block_size": 2,
+        },
+    )
+    assert resp.status_code == 422, resp.text
+    assert "preferred_block_size" in resp.text
+
+
+async def test_update_lesson_rejects_block_size_change_breaking_divisibility(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """PATCH /lessons/{id} returns 422 when the merged row would have h % n != 0."""
+    await create_test_user(email="admin@les-dop2.com", role="admin")
+    await login_as("admin@les-dop2.com", "testpassword123")
+
+    subject_id = await _create_subject(client, "Sport", "Sp")
+    scheme_id = await _setup_week_scheme_for_lessons(client, "Scheme Dop2")
+    tafel_id = await _setup_stundentafel_for_lessons(client, "Tafel Dop2", 5)
+    class_id = await _create_school_class(client, "5b-Dop2", 5, tafel_id, scheme_id)
+
+    create = await client.post(
+        "/api/lessons",
+        json={
+            "school_class_id": class_id,
+            "subject_id": subject_id,
+            "hours_per_week": 3,
+            "preferred_block_size": 1,
+        },
+    )
+    assert create.status_code == 201, create.text
+    lesson_id = create.json()["id"]
+
+    update = await client.patch(
+        f"/api/lessons/{lesson_id}",
+        json={"preferred_block_size": 2},
+    )
+    assert update.status_code == 422, update.text
+    assert "preferred_block_size" in update.text

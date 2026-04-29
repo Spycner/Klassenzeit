@@ -220,6 +220,11 @@ async def update_lesson(
         lesson.hours_per_week = body.hours_per_week
     if body.preferred_block_size is not None:
         lesson.preferred_block_size = body.preferred_block_size
+    if lesson.hours_per_week % lesson.preferred_block_size != 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="hours_per_week must be divisible by preferred_block_size",
+        )
     await db.commit()
     await db.refresh(lesson)
     return await _build_lesson_response(db, lesson)
