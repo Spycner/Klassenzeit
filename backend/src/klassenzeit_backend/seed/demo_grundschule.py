@@ -98,6 +98,14 @@ _GRADE_3_4_HOURS: dict[str, int] = {
 }
 
 
+# Subjects taught as Doppelstunden in the Hessen Grundschule. Maps subject
+# short_name -> preferred_block_size. Subjects not listed default to 1.
+# Hessen pedagogy: Sachunterricht is typically a Doppelstunde for the
+# experiment-heavy lessons in Klasse 3/4; in Klasse 1/2 it's lighter but
+# the flip simplifies the seed and stays divisibility-clean (2h = 1 block).
+_DOPPEL_SUBJECTS: dict[str, int] = {"SU": 2}
+
+
 class _TeacherSpec(NamedTuple):
     first_name: str
     last_name: str
@@ -213,7 +221,7 @@ async def seed_demo_grundschule(session: AsyncSession) -> None:
                     stundentafel_id=tafel.id,
                     subject_id=subjects_by_short[subject_short].id,
                     hours_per_week=hours,
-                    preferred_block_size=1,
+                    preferred_block_size=_DOPPEL_SUBJECTS.get(subject_short, 1),
                 )
             )
     await session.flush()
