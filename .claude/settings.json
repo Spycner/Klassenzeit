@@ -38,6 +38,7 @@
       "Bash(cargo check:*)",
       "Bash(cargo clippy:*)",
       "Bash(cargo nextest:*)",
+      "Bash(cargo nextest *)",
       "Bash(mise exec -- pnpm exec tsc --noEmit)",
       "Bash(mise exec -- pnpm vitest run *)",
       "Bash(mise exec -- pnpm biome check)",

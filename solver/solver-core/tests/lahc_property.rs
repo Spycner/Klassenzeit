@@ -85,6 +85,7 @@ prop_compose! {
                 subject_id: subject_a,
                 teacher_id: teachers[i % teachers.len()].id,
                 hours_per_week: 2,
+                preferred_block_size: 1,
             })
             .collect();
 

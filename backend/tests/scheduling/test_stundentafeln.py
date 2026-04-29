@@ -284,11 +284,11 @@ async def test_update_entry(
     entry_id = entry_resp.json()["id"]
     response = await client.patch(
         f"/api/stundentafeln/{tafel_id}/entries/{entry_id}",
-        json={"hours_per_week": 5, "preferred_block_size": 2},
+        json={"hours_per_week": 4, "preferred_block_size": 2},
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["hours_per_week"] == 5
+    assert body["hours_per_week"] == 4
     assert body["preferred_block_size"] == 2
     assert body["subject"]["id"] == subject_id
 
@@ -368,3 +368,61 @@ async def test_stundentafel_requires_admin(client: AsyncClient) -> None:
     """
     response = await client.get("/api/stundentafeln")
     assert response.status_code == 401
+
+
+async def test_create_stundentafel_entry_rejects_odd_hours_with_block_size_two(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """POST /stundentafeln/{id}/entries returns 422 when h is not divisible by n."""
+    await create_test_user(email="admin@stf-dop1.com", role="admin")
+    await login_as("admin@stf-dop1.com", "testpassword123")
+    subj_resp = await client.post(
+        "/api/subjects",
+        json={"name": "Sport STDop1", "short_name": "SpDop1", "color": "chart-1"},
+    )
+    subject_id = subj_resp.json()["id"]
+    tafel_resp = await client.post(
+        "/api/stundentafeln", json={"name": "Tafel Dop Entry", "grade_level": 5}
+    )
+    tafel_id = tafel_resp.json()["id"]
+
+    response = await client.post(
+        f"/api/stundentafeln/{tafel_id}/entries",
+        json={"subject_id": subject_id, "hours_per_week": 3, "preferred_block_size": 2},
+    )
+    assert response.status_code == 422, response.text
+    assert "preferred_block_size" in response.text
+
+
+async def test_update_stundentafel_entry_rejects_block_size_change_breaking_divisibility(
+    client: AsyncClient,
+    create_test_user: CreateUserFn,
+    login_as: LoginFn,
+) -> None:
+    """PATCH entry returns 422 when the merged row's hours are not divisible by block size."""
+    await create_test_user(email="admin@stf-dop2.com", role="admin")
+    await login_as("admin@stf-dop2.com", "testpassword123")
+    subj_resp = await client.post(
+        "/api/subjects",
+        json={"name": "Sport STDop2", "short_name": "SpDop2", "color": "chart-2"},
+    )
+    subject_id = subj_resp.json()["id"]
+    tafel_resp = await client.post(
+        "/api/stundentafeln", json={"name": "Tafel Dop Entry Update", "grade_level": 6}
+    )
+    tafel_id = tafel_resp.json()["id"]
+    entry_resp = await client.post(
+        f"/api/stundentafeln/{tafel_id}/entries",
+        json={"subject_id": subject_id, "hours_per_week": 3, "preferred_block_size": 1},
+    )
+    assert entry_resp.status_code == 201, entry_resp.text
+    entry_id = entry_resp.json()["id"]
+
+    response = await client.patch(
+        f"/api/stundentafeln/{tafel_id}/entries/{entry_id}",
+        json={"preferred_block_size": 2},
+    )
+    assert response.status_code == 422, response.text
+    assert "preferred_block_size" in response.text

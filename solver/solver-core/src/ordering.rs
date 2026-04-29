@@ -147,6 +147,7 @@ mod tests {
             subject_id: SubjectId(ord_uuid(40)),
             teacher_id: TeacherId(ord_uuid(20)),
             hours_per_week: 1,
+            preferred_block_size: 1,
         });
         problem.lessons.push(Lesson {
             id: LessonId(ord_uuid(71)),
@@ -154,6 +155,7 @@ mod tests {
             subject_id: SubjectId(ord_uuid(41)),
             teacher_id: TeacherId(ord_uuid(21)),
             hours_per_week: 1,
+            preferred_block_size: 1,
         });
         let idx = Indexed::new(&problem);
         assert_eq!(ffd_order(&problem, &idx), vec![0, 1]);
@@ -174,6 +176,7 @@ mod tests {
             subject_id: SubjectId(ord_uuid(40)),
             teacher_id: TeacherId(ord_uuid(20)),
             hours_per_week: 1,
+            preferred_block_size: 1,
         });
         problem.lessons.push(Lesson {
             id: LessonId(ord_uuid(80)),
@@ -181,6 +184,7 @@ mod tests {
             subject_id: SubjectId(ord_uuid(41)),
             teacher_id: TeacherId(ord_uuid(21)),
             hours_per_week: 1,
+            preferred_block_size: 1,
         });
         let idx = Indexed::new(&problem);
         // Both lessons have eligibility 2 * 2 = 4. Lower id (80) sorts first
@@ -198,6 +202,7 @@ mod tests {
                 subject_id: SubjectId(ord_uuid(40)),
                 teacher_id: TeacherId(ord_uuid(20)),
                 hours_per_week: 1,
+                preferred_block_size: 1,
             });
         }
         let idx = Indexed::new(&problem);
@@ -230,6 +235,7 @@ mod tests {
             subject_id: SubjectId(ord_uuid(41)),
             teacher_id: TeacherId(ord_uuid(20)),
             hours_per_week: 1,
+            preferred_block_size: 1,
         });
         let idx = Indexed::new(&problem);
         let order = ffd_order(&problem, &idx);

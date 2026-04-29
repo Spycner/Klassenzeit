@@ -4,12 +4,12 @@
 
 | Fixture | Mode | Samples | p1 (µs) | p50 (µs) | p99 (µs) | Placements/sec | Placements | Hard violations | Soft score |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| grundschule | greedy | 157335 | 50 | 51 | 67 | 865884 | 45 | 0 | 0 |
-| grundschule | lahc | 121 | 200059 | 200066 | 200084 | 224 | 45 | 0 | 0 |
-| zweizuegig | greedy | 35783 | 238 | 243 | 305 | 798464 | 196 | 0 | 2 |
-| zweizuegig | lahc | 121 | 200258 | 200268 | 200331 | 978 | 196 | 0 | 2 |
+| grundschule | greedy | 157535 | 49 | 50 | 63 | 879335 | 45 | 0 | 0 |
+| grundschule | lahc | 121 | 200058 | 200067 | 200082 | 224 | 45 | 0 | 0 |
+| zweizuegig | greedy | 35183 | 251 | 256 | 288 | 759575 | 196 | 0 | 2 |
+| zweizuegig | lahc | 121 | 200267 | 200276 | 200335 | 978 | 196 | 0 | 2 |
 
-Refreshed 2026-04-28 on AMD Ryzen 7 3700X 8-Core Processor, Linux 6.8.0-90-generic, rustc 1.93.1 (01f6ddf75 2026-02-11).
+Refreshed 2026-04-29 on AMD Ryzen 7 3700X 8-Core Processor, Linux 6.8.0-90-generic, rustc 1.93.1 (01f6ddf75 2026-02-11).
 
 Refresh with `mise run bench:record` when a PR intentionally changes solver
 performance. An accidental diff here is a review gate, not a feature.

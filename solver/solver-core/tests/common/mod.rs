@@ -77,6 +77,7 @@ pub fn feasible_problem(
                 subject_id: subject.id,
                 teacher_id: teacher.id,
                 hours_per_week: hours_per_lesson,
+                preferred_block_size: 1,
             });
         }
     }

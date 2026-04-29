@@ -92,6 +92,7 @@ fn grundschule() -> Problem {
                 subject_id: subject.id,
                 teacher_id: teacher.id,
                 hours_per_week: hours,
+                preferred_block_size: 1,
             });
             lesson_idx += 1;
             quals.push(TeacherQualification {

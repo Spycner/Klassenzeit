@@ -113,6 +113,9 @@ fn grundschule_fixture() -> Problem {
                 subject_id: subject.id,
                 teacher_id: teacher.id,
                 hours_per_week: hours,
+                // SU (Sachunterricht) is taught as a Doppelstunde, mirroring the
+                // demo_grundschule seed; all other subjects are length-1.
+                preferred_block_size: if s_idx == 2 { 2 } else { 1 },
             });
             lesson_idx += 1;
             quals.push(TeacherQualification {
@@ -251,6 +254,7 @@ fn zweizuegig_fixture() -> Problem {
                 subject_id: subject.id,
                 teacher_id: teacher.id,
                 hours_per_week: hours,
+                preferred_block_size: 1,
             });
             lesson_idx += 1;
             // Deduplicate qualifications: a teacher qualified for D appears

@@ -145,6 +145,18 @@ pub struct Lesson {
     pub teacher_id: TeacherId,
     /// Number of hours of this lesson to place per week.
     pub hours_per_week: u8,
+    /// Preferred block size for placement. `1` means single-hour placements;
+    /// `n > 1` means each block is `n` consecutive same-day positions in one
+    /// room. The solver places `hours_per_week / preferred_block_size` blocks
+    /// per lesson. Must be `>= 1` and must divide `hours_per_week`; otherwise
+    /// `validate_structural` returns `Err(Error::Input(...))`. Defaults to 1
+    /// when the JSON field is omitted, keeping the wire format additive.
+    #[serde(default = "default_preferred_block_size")]
+    pub preferred_block_size: u8,
+}
+
+fn default_preferred_block_size() -> u8 {
+    1
 }
 
 /// A single (teacher, subject) qualification pair.
@@ -290,19 +302,29 @@ mod tests {
     }
 
     #[test]
-    fn lesson_rejects_unknown_preferred_block_size_field() {
+    fn lesson_accepts_preferred_block_size_field() {
         let json = format!(
-            r#"{{"id":"{}","school_class_id":"{}","subject_id":"{}","teacher_id":"{}","hours_per_week":1,"preferred_block_size":2}}"#,
+            r#"{{"id":"{}","school_class_id":"{}","subject_id":"{}","teacher_id":"{}","hours_per_week":4,"preferred_block_size":2}}"#,
             Uuid::nil(),
             Uuid::nil(),
             Uuid::nil(),
             Uuid::nil()
         );
-        let err = serde_json::from_str::<Lesson>(&json).unwrap_err();
-        assert!(
-            err.to_string().contains("preferred_block_size"),
-            "error should name the unknown field: {err}"
+        let lesson: Lesson = serde_json::from_str(&json).unwrap();
+        assert_eq!(lesson.preferred_block_size, 2);
+    }
+
+    #[test]
+    fn lesson_defaults_preferred_block_size_to_one_when_field_omitted() {
+        let json = format!(
+            r#"{{"id":"{}","school_class_id":"{}","subject_id":"{}","teacher_id":"{}","hours_per_week":1}}"#,
+            Uuid::nil(),
+            Uuid::nil(),
+            Uuid::nil(),
+            Uuid::nil()
         );
+        let lesson: Lesson = serde_json::from_str(&json).unwrap();
+        assert_eq!(lesson.preferred_block_size, 1);
     }
 
     #[test]

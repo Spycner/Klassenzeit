@@ -73,6 +73,7 @@ fn pessimal_input_problem() -> Problem {
                 subject_id: SubjectId(ffd_uuid(41)),
                 teacher_id: TeacherId(ffd_uuid(21)),
                 hours_per_week: 1,
+                preferred_block_size: 1,
             },
             Lesson {
                 id: LessonId(ffd_uuid(60)),
@@ -80,6 +81,7 @@ fn pessimal_input_problem() -> Problem {
                 subject_id: SubjectId(ffd_uuid(40)),
                 teacher_id: TeacherId(ffd_uuid(20)),
                 hours_per_week: 1,
+                preferred_block_size: 1,
             },
         ],
         teacher_qualifications: vec![

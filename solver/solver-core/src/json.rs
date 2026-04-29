@@ -90,6 +90,7 @@ mod tests {
                 subject_id: SubjectId(json_uuid(40)),
                 teacher_id: TeacherId(json_uuid(20)),
                 hours_per_week: 1,
+                preferred_block_size: 1,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: TeacherId(json_uuid(20)),

@@ -255,6 +255,7 @@ async def build_problem_json(
                 "subject_id": str(lesson.subject_id),
                 "teacher_id": str(lesson.teacher_id),
                 "hours_per_week": lesson.hours_per_week,
+                "preferred_block_size": lesson.preferred_block_size,
             }
             for lesson in lessons
         ],

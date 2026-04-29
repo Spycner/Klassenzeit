@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class LessonCreate(BaseModel):
@@ -14,6 +14,12 @@ class LessonCreate(BaseModel):
     teacher_id: uuid.UUID | None = None
     hours_per_week: int = Field(ge=1)
     preferred_block_size: int = Field(default=1, ge=1, le=2)
+
+    @model_validator(mode="after")
+    def _lesson_hours_divisible_by_block_size(self) -> "LessonCreate":
+        if self.hours_per_week % self.preferred_block_size != 0:
+            raise ValueError("hours_per_week must be divisible by preferred_block_size")
+        return self
 
 
 class LessonUpdate(BaseModel):

@@ -598,6 +598,49 @@ def test_count_violations_by_kind_clean_solve_returns_zeros() -> None:
     }
 
 
+async def test_build_problem_json_includes_preferred_block_size(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    """``preferred_block_size`` is forwarded to the solver per lesson."""
+    subject = await create_subject()
+    scheme = await create_week_scheme()
+    await create_time_block(week_scheme_id=scheme.id, position=1)
+    await create_time_block(
+        week_scheme_id=scheme.id,
+        position=2,
+        start_time=time(8, 45),
+        end_time=time(9, 30),
+    )
+    await create_room()
+    teacher = await create_teacher()
+    tafel = await create_stundentafel()
+    cls = await create_school_class(stundentafel_id=tafel.id, week_scheme_id=scheme.id)
+    lesson = Lesson(
+        school_class_id=cls.id,
+        subject_id=subject.id,
+        teacher_id=teacher.id,
+        hours_per_week=2,
+        preferred_block_size=2,
+    )
+    db_session.add(lesson)
+    await db_session.flush()
+    db_session.add(TeacherQualification(teacher_id=teacher.id, subject_id=subject.id))
+    await db_session.flush()
+
+    problem_json, _, _ = await build_problem_json(db_session, cls.id)
+    problem = json.loads(problem_json)
+
+    assert len(problem["lessons"]) == 1
+    assert problem["lessons"][0]["preferred_block_size"] == 2
+
+
 def test_count_violations_by_kind_aggregates_mixed_kinds() -> None:
     violations: list[dict] = [
         {"kind": "no_free_time_block", "lesson_id": "x", "hour_index": 0},

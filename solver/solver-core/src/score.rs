@@ -223,6 +223,7 @@ mod tests {
                 subject_id: SubjectId(score_uuid(40)),
                 teacher_id: TeacherId(score_uuid(20)),
                 hours_per_week: 2,
+                preferred_block_size: 1,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: TeacherId(score_uuid(20)),
@@ -482,6 +483,7 @@ mod tests {
                 subject_id: SubjectId(score_uuid(40)),
                 teacher_id: TeacherId(score_uuid(20)),
                 hours_per_week: 1,
+                preferred_block_size: 1,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: TeacherId(score_uuid(20)),

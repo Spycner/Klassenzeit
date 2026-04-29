@@ -326,6 +326,11 @@ async def update_stundentafel_entry(
         entry.hours_per_week = body.hours_per_week
     if body.preferred_block_size is not None:
         entry.preferred_block_size = body.preferred_block_size
+    if entry.hours_per_week % entry.preferred_block_size != 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="hours_per_week must be divisible by preferred_block_size",
+        )
     await db.commit()
     await db.refresh(entry)
     subj = await db.get(Subject, entry.subject_id)
