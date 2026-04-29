@@ -77,10 +77,13 @@ pub fn solve_with_config(problem: &Problem, config: &SolveConfig) -> Result<Solu
             continue;
         }
 
-        for hour_index in 0..lesson.hours_per_week {
-            let placed = try_place_hour(
+        let n = lesson.preferred_block_size;
+        let block_count = lesson.hours_per_week / n;
+        for block_index in 0..block_count {
+            let placed = try_place_block(
                 problem,
                 lesson,
+                n,
                 &idx,
                 &teacher_max,
                 &config.weights,
@@ -101,7 +104,7 @@ pub fn solve_with_config(problem: &Problem, config: &SolveConfig) -> Result<Solu
                         &state.hours_by_teacher,
                     ),
                     lesson_id: lesson.id,
-                    hour_index,
+                    hour_index: block_index * n,
                 });
             }
         }
@@ -153,47 +156,43 @@ impl GreedyState {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct Candidate {
-    tb_id: TimeBlockId,
-    room_id: RoomId,
+struct BlockCandidate {
+    outer_pos: usize,
     day: u8,
-    position: u8,
+    start_pos: u8,
+    end_pos: u8,
+    room_id: RoomId,
     score: u32,
 }
 
-fn candidate_score(
-    state: &GreedyState,
-    class: SchoolClassId,
-    teacher: TeacherId,
-    day: u8,
-    pos: u8,
-    weights: &ConstraintWeights,
-    subject_pref: u32,
-) -> u32 {
-    let class_partition = state.class_positions.get(&(class, day));
-    let teacher_partition = state.teacher_positions.get(&(teacher, day));
-    let class_old = gap_count_partition(class_partition).saturating_mul(weights.class_gap);
-    let teacher_old = gap_count_partition(teacher_partition).saturating_mul(weights.teacher_gap);
-    let class_new = crate::score::gap_count_after_insert(class_partition, pos)
-        .saturating_mul(weights.class_gap);
-    let teacher_new = crate::score::gap_count_after_insert(teacher_partition, pos)
-        .saturating_mul(weights.teacher_gap);
-    // Invariant: state.soft_score >= class_old + teacher_old (each partition's
-    // contribution is part of the running sum). u32 subtraction is safe.
-    state.soft_score - class_old - teacher_old + class_new + teacher_new + subject_pref
-}
-
-fn gap_count_partition(positions: Option<&Vec<u8>>) -> u32 {
-    match positions {
-        Some(p) => crate::score::gap_count(p),
-        None => 0,
+/// Gap-count after inserting positions `start..=end` (inclusive) into a sorted
+/// slice. Caller guarantees `[start, end]` is disjoint from `positions`.
+/// Allocation-free: reads `v.first()` and `v.last()`, computes the new span
+/// and length, and returns the gap-count without copying the slice.
+fn gap_count_after_window_insert(positions: Option<&Vec<u8>>, start: u8, end: u8) -> u32 {
+    let n_added = u32::from(end - start + 1);
+    let Some(v) = positions else {
+        return 0;
+    };
+    if v.is_empty() {
+        return 0;
     }
+    let v_min = *v.first().unwrap();
+    let v_max = *v.last().unwrap();
+    let new_min = v_min.min(start);
+    let new_max = v_max.max(end);
+    let len_after = u32::try_from(v.len())
+        .unwrap_or(u32::MAX)
+        .saturating_add(n_added);
+    let span = u32::from(new_max - new_min) + 1;
+    span.saturating_sub(len_after)
 }
 
 #[allow(clippy::too_many_arguments)] // Reason: internal helper; refactoring to a struct hurts clarity more than it helps
-fn try_place_hour(
+fn try_place_block(
     problem: &Problem,
     lesson: &Lesson,
+    n: u8,
     idx: &Indexed,
     teacher_max: &HashMap<TeacherId, u8>,
     weights: &ConstraintWeights,
@@ -204,84 +203,126 @@ fn try_place_hour(
 ) -> bool {
     let class = lesson.school_class_id;
     let teacher = lesson.teacher_id;
-
-    // Look up the subject once; it does not change across tb iterations.
     let subject = problem
         .subjects
         .iter()
         .find(|s| s.id == lesson.subject_id)
         .expect("validate_structural ensures every lesson.subject_id resolves");
+    let n_usize = n as usize;
 
-    let mut best: Option<Candidate> = None;
-    'tb_loop: for &tb_idx in tb_order {
-        let tb = &problem.time_blocks[tb_idx];
-        if state.used_teacher.contains(&(teacher, tb.id)) {
-            continue;
+    let mut best: Option<BlockCandidate> = None;
+    'outer: for outer_pos in 0..tb_order.len() {
+        if outer_pos + n_usize > tb_order.len() {
+            break;
         }
-        if state.used_class.contains(&(class, tb.id)) {
-            continue;
+        let first_tb = &problem.time_blocks[tb_order[outer_pos]];
+
+        // Window contiguity: every position in the window must sit on the
+        // same day at first_tb.position + k. Since tb_order is sorted by
+        // (day, position, id), a non-contiguous neighbour means this start
+        // cannot anchor an n-block window.
+        for k in 1..n_usize {
+            let nb = &problem.time_blocks[tb_order[outer_pos + k]];
+            if nb.day_of_week != first_tb.day_of_week
+                || nb.position != first_tb.position + (k as u8)
+            {
+                continue 'outer;
+            }
         }
-        if idx.teacher_blocked(teacher, tb.id) {
-            continue;
+
+        // Hard-feasibility for every position in the window.
+        for k in 0..n_usize {
+            let tb = &problem.time_blocks[tb_order[outer_pos + k]];
+            if state.used_teacher.contains(&(teacher, tb.id))
+                || state.used_class.contains(&(class, tb.id))
+                || idx.teacher_blocked(teacher, tb.id)
+            {
+                continue 'outer;
+            }
         }
         let current = state.hours_by_teacher.get(&teacher).copied().unwrap_or(0);
         let max = teacher_max.get(&teacher).copied().unwrap_or(0);
-        if current.saturating_add(1) > max {
+        if current.saturating_add(n) > max {
             continue;
         }
-        let subject_pref = crate::score::subject_preference_score(subject, tb, weights);
-        // tb-level invariant: candidate_score depends only on (day, position),
-        // not on room. Compute once per tb.
-        let score = candidate_score(
-            state,
-            class,
-            teacher,
-            tb.day_of_week,
-            tb.position,
-            weights,
-            subject_pref,
-        );
-        // Pruning: if this tb's score can't beat the current best, the room
-        // tiebreak rule (day, position, room.id) cannot make a higher-score
-        // candidate win, so skip the inner room scan.
+
+        // Score: analytical window-delta plus subject_pref summed over n tbs.
+        let start_pos = first_tb.position;
+        let end_pos = start_pos + n - 1;
+        let class_partition = state.class_positions.get(&(class, first_tb.day_of_week));
+        let teacher_partition = state
+            .teacher_positions
+            .get(&(teacher, first_tb.day_of_week));
+        let class_old = match class_partition {
+            Some(p) => crate::score::gap_count(p),
+            None => 0,
+        };
+        let teacher_old = match teacher_partition {
+            Some(p) => crate::score::gap_count(p),
+            None => 0,
+        };
+        let class_new = gap_count_after_window_insert(class_partition, start_pos, end_pos);
+        let teacher_new = gap_count_after_window_insert(teacher_partition, start_pos, end_pos);
+        let mut subject_pref = 0u32;
+        for k in 0..n_usize {
+            let tb = &problem.time_blocks[tb_order[outer_pos + k]];
+            subject_pref = subject_pref
+                .saturating_add(crate::score::subject_preference_score(subject, tb, weights));
+        }
+        let class_delta_w = (i64::from(class_new) - i64::from(class_old))
+            .saturating_mul(i64::from(weights.class_gap));
+        let teacher_delta_w = (i64::from(teacher_new) - i64::from(teacher_old))
+            .saturating_mul(i64::from(weights.teacher_gap));
+        let new_signed = i64::from(state.soft_score)
+            .saturating_add(class_delta_w)
+            .saturating_add(teacher_delta_w)
+            .saturating_add(i64::from(subject_pref));
+        let score = u32::try_from(new_signed.max(0)).unwrap_or(u32::MAX);
+
+        // Pruning: skip the room scan if this score cannot beat the current
+        // best. Room tiebreak (day, start_pos, room.id) cannot rescue a
+        // higher-score window; tb_order's sort means subsequent windows have
+        // weakly larger (day, position) so the tiebreak rule never reorders
+        // a tied later window above an earlier one already chosen.
         if let Some(b) = &best {
             if score >= b.score {
                 continue;
             }
         }
 
-        for &room_idx in room_order {
+        // Pick the lowest-id room feasible across the full window.
+        let mut chosen_room: Option<RoomId> = None;
+        'rooms: for &room_idx in room_order {
             let room = &problem.rooms[room_idx];
-            if state.used_room.contains(&(room.id, tb.id)) {
-                continue;
-            }
             if !idx.room_suits_subject(room.id, lesson.subject_id) {
                 continue;
             }
-            if idx.room_blocked(room.id, tb.id) {
-                continue;
+            for k in 0..n_usize {
+                let tb = &problem.time_blocks[tb_order[outer_pos + k]];
+                if state.used_room.contains(&(room.id, tb.id)) || idx.room_blocked(room.id, tb.id) {
+                    continue 'rooms;
+                }
             }
-            // Rooms iterated in id order; the first feasible is the lowest
-            // room.id at this tb, so it wins the (day, position, room.id)
-            // tiebreak among any rooms here. Take it and stop scanning.
-            best = Some(Candidate {
-                tb_id: tb.id,
-                room_id: room.id,
-                day: tb.day_of_week,
-                position: tb.position,
-                score,
-            });
+            chosen_room = Some(room.id);
             break;
         }
+        let Some(room_id) = chosen_room else {
+            continue;
+        };
 
-        // Early exit: if we just took a candidate at delta=0 (score equals
-        // the running soft_score), no later tb can beat it. tb_order is
-        // sorted by (day, position, tb.id), so this is the lowest-tiebreak
-        // delta=0 candidate available.
-        if let Some(b) = &best {
-            if b.score == state.soft_score && b.tb_id == tb.id {
-                break 'tb_loop;
-            }
+        best = Some(BlockCandidate {
+            outer_pos,
+            day: first_tb.day_of_week,
+            start_pos,
+            end_pos,
+            room_id,
+            score,
+        });
+
+        // Early exit: a delta=0 window at the lowest (day, position, id)
+        // tiebreak is unbeatable by later windows, so stop scanning.
+        if score == state.soft_score {
+            break;
         }
     }
 
@@ -289,26 +330,29 @@ fn try_place_hour(
         return false;
     };
 
-    placements.push(Placement {
-        lesson_id: lesson.id,
-        time_block_id: c.tb_id,
-        room_id: c.room_id,
-    });
-    state.used_teacher.insert((teacher, c.tb_id));
-    state.used_class.insert((class, c.tb_id));
-    state.used_room.insert((c.room_id, c.tb_id));
-    *state.hours_by_teacher.entry(teacher).or_insert(0) += 1;
+    for k in 0..n_usize {
+        let tb = &problem.time_blocks[tb_order[c.outer_pos + k]];
+        placements.push(Placement {
+            lesson_id: lesson.id,
+            time_block_id: tb.id,
+            room_id: c.room_id,
+        });
+        state.used_teacher.insert((teacher, tb.id));
+        state.used_class.insert((class, tb.id));
+        state.used_room.insert((c.room_id, tb.id));
+    }
+    *state.hours_by_teacher.entry(teacher).or_insert(0) += n;
 
-    let class_positions = state.class_positions.entry((class, c.day)).or_default();
-    let ins = class_positions
-        .binary_search(&c.position)
-        .unwrap_or_else(|i| i);
-    class_positions.insert(ins, c.position);
-    let teacher_positions = state.teacher_positions.entry((teacher, c.day)).or_default();
-    let ins = teacher_positions
-        .binary_search(&c.position)
-        .unwrap_or_else(|i| i);
-    teacher_positions.insert(ins, c.position);
+    let class_part = state.class_positions.entry((class, c.day)).or_default();
+    for pos in c.start_pos..=c.end_pos {
+        let ins = class_part.binary_search(&pos).unwrap_or_else(|i| i);
+        class_part.insert(ins, pos);
+    }
+    let teacher_part = state.teacher_positions.entry((teacher, c.day)).or_default();
+    for pos in c.start_pos..=c.end_pos {
+        let ins = teacher_part.binary_search(&pos).unwrap_or_else(|i| i);
+        teacher_part.insert(ins, pos);
+    }
     state.soft_score = c.score;
     true
 }
@@ -774,6 +818,136 @@ mod tests {
             s.placements[0].time_block_id,
             TimeBlockId(solve_uuid(10)),
             "expected the avoid-first subject to skip position 0"
+        );
+    }
+
+    #[test]
+    fn block_lesson_places_n_consecutive_positions_in_one_room() {
+        let mut p = base_problem();
+        p.time_blocks = vec![
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(10)),
+                day_of_week: 0,
+                position: 0,
+            },
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(11)),
+                day_of_week: 0,
+                position: 1,
+            },
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(12)),
+                day_of_week: 0,
+                position: 2,
+            },
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(13)),
+                day_of_week: 0,
+                position: 3,
+            },
+        ];
+        p.lessons[0].hours_per_week = 2;
+        p.lessons[0].preferred_block_size = 2;
+
+        let s = greedy_solve(&p).unwrap();
+        assert_eq!(s.placements.len(), 2);
+        let mut positions: Vec<u8> = s
+            .placements
+            .iter()
+            .map(|pl| {
+                p.time_blocks
+                    .iter()
+                    .find(|tb| tb.id == pl.time_block_id)
+                    .unwrap()
+                    .position
+            })
+            .collect();
+        positions.sort_unstable();
+        assert_eq!(
+            positions[1] - positions[0],
+            1,
+            "positions must be consecutive"
+        );
+        assert_eq!(s.placements[0].room_id, s.placements[1].room_id);
+    }
+
+    #[test]
+    fn block_lesson_does_not_cross_day_boundary() {
+        let mut p = base_problem();
+        p.time_blocks = vec![
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(10)),
+                day_of_week: 0,
+                position: 0,
+            },
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(11)),
+                day_of_week: 0,
+                position: 1,
+            },
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(12)),
+                day_of_week: 1,
+                position: 0,
+            },
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(13)),
+                day_of_week: 1,
+                position: 1,
+            },
+        ];
+        p.teacher_blocked_times.push(TeacherBlockedTime {
+            teacher_id: TeacherId(solve_uuid(20)),
+            time_block_id: TimeBlockId(solve_uuid(10)),
+        });
+        p.lessons[0].hours_per_week = 2;
+        p.lessons[0].preferred_block_size = 2;
+
+        let s = greedy_solve(&p).unwrap();
+        assert_eq!(s.placements.len(), 2, "block must place on day 1");
+        let days: Vec<u8> = s
+            .placements
+            .iter()
+            .map(|pl| {
+                p.time_blocks
+                    .iter()
+                    .find(|tb| tb.id == pl.time_block_id)
+                    .unwrap()
+                    .day_of_week
+            })
+            .collect();
+        assert!(days.iter().all(|&d| d == days[0]), "all positions same day");
+    }
+
+    #[test]
+    fn block_lesson_emits_one_violation_per_failed_block() {
+        let mut p = base_problem();
+        p.time_blocks = vec![
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(10)),
+                day_of_week: 0,
+                position: 0,
+            },
+            TimeBlock {
+                id: TimeBlockId(solve_uuid(11)),
+                day_of_week: 0,
+                position: 1,
+            },
+        ];
+        p.lessons[0].hours_per_week = 4;
+        p.lessons[0].preferred_block_size = 2;
+        p.teachers[0].max_hours_per_week = 4;
+
+        let s = greedy_solve(&p).unwrap();
+        assert_eq!(s.placements.len(), 2, "first block places");
+        assert_eq!(
+            s.violations.len(),
+            1,
+            "exactly one violation per failed block"
+        );
+        assert_eq!(
+            s.violations[0].hour_index, 2,
+            "second block starts at hour 2"
         );
     }
 
