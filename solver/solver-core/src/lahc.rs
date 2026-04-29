@@ -603,6 +603,7 @@ mod tests {
                 subject_id: subject,
                 teacher_id: teacher,
                 hours_per_week: 1,
+                preferred_block_size: 1,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: teacher,

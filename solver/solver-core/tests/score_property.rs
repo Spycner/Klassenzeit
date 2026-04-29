@@ -68,6 +68,7 @@ prop_compose! {
                 subject_id: subjects[si].id,
                 teacher_id: teachers[i % n_teachers].id,
                 hours_per_week: h,
+                preferred_block_size: 1,
             })
         }).collect();
 
@@ -148,6 +149,7 @@ proptest! {
                 subject_id,
                 teacher_id,
                 hours_per_week: 1,
+                preferred_block_size: 1,
             }],
             teacher_qualifications: vec![TeacherQualification { teacher_id, subject_id }],
             teacher_blocked_times: vec![],
@@ -194,6 +196,7 @@ proptest! {
                 subject_id,
                 teacher_id,
                 hours_per_week: 1,
+                preferred_block_size: 1,
             }],
             teacher_qualifications: vec![TeacherQualification { teacher_id, subject_id }],
             teacher_blocked_times: vec![],

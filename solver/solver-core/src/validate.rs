@@ -43,6 +43,18 @@ pub fn validate_structural(problem: &Problem) -> Result<(), Error> {
                 lesson.id.0
             )));
         }
+        if lesson.preferred_block_size == 0 {
+            return Err(Error::Input(format!(
+                "lesson {} has preferred_block_size = 0",
+                lesson.id.0
+            )));
+        }
+        if lesson.hours_per_week % lesson.preferred_block_size != 0 {
+            return Err(Error::Input(format!(
+                "lesson {}: hours_per_week ({}) is not divisible by preferred_block_size ({})",
+                lesson.id.0, lesson.hours_per_week, lesson.preferred_block_size
+            )));
+        }
         if !teacher_ids.contains(&lesson.teacher_id) {
             return Err(Error::Input(format!(
                 "lesson {} references unknown teacher {}",
@@ -149,11 +161,13 @@ pub fn pre_solve_violations(problem: &Problem) -> Vec<Violation> {
         if qualified.contains(&(lesson.teacher_id, lesson.subject_id)) {
             continue;
         }
-        for hour_index in 0..lesson.hours_per_week {
+        let n = lesson.preferred_block_size;
+        let block_count = lesson.hours_per_week / n;
+        for block_index in 0..block_count {
             out.push(Violation {
                 kind: ViolationKind::NoQualifiedTeacher,
                 lesson_id: lesson.id,
-                hour_index,
+                hour_index: block_index * n,
             });
         }
     }
@@ -200,6 +214,7 @@ mod tests {
             subject_id: subject.id,
             teacher_id: teacher.id,
             hours_per_week: 1,
+            preferred_block_size: 1,
         };
         Problem {
             time_blocks: vec![tb],
@@ -253,6 +268,41 @@ mod tests {
         p.lessons[0].hours_per_week = 0;
         let err = validate_structural(&p).unwrap_err();
         assert!(matches!(err, Error::Input(msg) if msg.contains("hours_per_week")));
+    }
+
+    #[test]
+    fn lesson_with_zero_block_size_is_input_error() {
+        let mut p = minimal_problem();
+        p.lessons[0].preferred_block_size = 0;
+        let err = validate_structural(&p).unwrap_err();
+        assert!(matches!(err, Error::Input(msg) if msg.contains("preferred_block_size")));
+    }
+
+    #[test]
+    fn lesson_with_non_divisible_hours_is_input_error() {
+        let mut p = minimal_problem();
+        p.lessons[0].hours_per_week = 3;
+        p.lessons[0].preferred_block_size = 2;
+        let err = validate_structural(&p).unwrap_err();
+        assert!(
+            matches!(err, Error::Input(msg) if msg.contains("divisible by preferred_block_size"))
+        );
+    }
+
+    #[test]
+    fn block_size_one_with_any_hours_is_valid() {
+        let mut p = minimal_problem();
+        p.lessons[0].hours_per_week = 7;
+        p.lessons[0].preferred_block_size = 1;
+        validate_structural(&p).unwrap();
+    }
+
+    #[test]
+    fn block_size_two_with_even_hours_is_valid() {
+        let mut p = minimal_problem();
+        p.lessons[0].hours_per_week = 4;
+        p.lessons[0].preferred_block_size = 2;
+        validate_structural(&p).unwrap();
     }
 
     #[test]

@@ -408,6 +408,7 @@ mod tests {
                 subject_id: SubjectId(solve_uuid(40)),
                 teacher_id: TeacherId(solve_uuid(20)),
                 hours_per_week: 1,
+                preferred_block_size: 1,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: TeacherId(solve_uuid(20)),
@@ -513,6 +514,7 @@ mod tests {
             subject_id: SubjectId(solve_uuid(41)),
             teacher_id: TeacherId(solve_uuid(20)),
             hours_per_week: 1,
+            preferred_block_size: 1,
         });
         p.teacher_blocked_times.push(TeacherBlockedTime {
             teacher_id: TeacherId(solve_uuid(20)),
@@ -542,6 +544,7 @@ mod tests {
             subject_id: SubjectId(solve_uuid(41)),
             teacher_id: TeacherId(solve_uuid(20)),
             hours_per_week: 1,
+            preferred_block_size: 1,
         });
         let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 2);
@@ -572,6 +575,7 @@ mod tests {
             subject_id: SubjectId(solve_uuid(40)),
             teacher_id: TeacherId(solve_uuid(21)),
             hours_per_week: 1,
+            preferred_block_size: 1,
         });
         let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 2);
@@ -641,6 +645,7 @@ mod tests {
             subject_id: SubjectId(solve_uuid(41)),
             teacher_id: TeacherId(solve_uuid(21)),
             hours_per_week: 1,
+            preferred_block_size: 1,
         });
 
         let s = greedy_solve(&p).unwrap();
@@ -703,6 +708,7 @@ mod tests {
             subject_id: SubjectId(solve_uuid(40)),
             teacher_id: TeacherId(solve_uuid(20)),
             hours_per_week: 1,
+            preferred_block_size: 1,
         });
         p.teachers[0].max_hours_per_week = 10;
 
