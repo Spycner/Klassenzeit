@@ -116,6 +116,13 @@ fn try_change_move(
 ) -> bool {
     let p = placements[placement_idx].clone();
     let lesson = lesson_lookup[&p.lesson_id];
+    // LAHC's single-cell Change move would fragment a Doppelstunde mid-search.
+    // Skip block placements; the two random_range draws in `run` are already
+    // consumed before this check, so the determinism RNG-budget invariant
+    // (lahc_property.rs) holds.
+    if lesson.preferred_block_size > 1 {
+        return false;
+    }
     let old_tb = tb_lookup[&p.time_block_id].clone();
     let new_tb = problem.time_blocks[new_tb_idx].clone();
 
@@ -663,6 +670,133 @@ mod tests {
             "LAHC should move the avoid-first lesson off position 0"
         );
         assert_eq!(current_score, 0);
+    }
+
+    #[test]
+    fn lahc_does_not_move_block_placements() {
+        use crate::types::{
+            Lesson, Problem, Room, SchoolClass, Subject, Teacher, TeacherQualification,
+        };
+
+        let class = SchoolClassId(lahc_uuid(50));
+        let teacher = TeacherId(lahc_uuid(20));
+        let subject = SubjectId(lahc_uuid(40));
+        let room = RoomId(lahc_uuid(30));
+        let lesson = LessonId(lahc_uuid(60));
+        let tb_zero = TimeBlockId(lahc_uuid(10));
+        let tb_one = TimeBlockId(lahc_uuid(11));
+        let tb_two = TimeBlockId(lahc_uuid(12));
+        let tb_three = TimeBlockId(lahc_uuid(13));
+
+        let problem = Problem {
+            time_blocks: vec![
+                TimeBlock {
+                    id: tb_zero,
+                    day_of_week: 0,
+                    position: 0,
+                },
+                TimeBlock {
+                    id: tb_one,
+                    day_of_week: 0,
+                    position: 1,
+                },
+                TimeBlock {
+                    id: tb_two,
+                    day_of_week: 0,
+                    position: 2,
+                },
+                TimeBlock {
+                    id: tb_three,
+                    day_of_week: 0,
+                    position: 3,
+                },
+            ],
+            teachers: vec![Teacher {
+                id: teacher,
+                max_hours_per_week: 10,
+            }],
+            rooms: vec![Room { id: room }],
+            subjects: vec![Subject {
+                id: subject,
+                prefer_early_periods: false,
+                avoid_first_period: true,
+            }],
+            school_classes: vec![SchoolClass { id: class }],
+            lessons: vec![Lesson {
+                id: lesson,
+                school_class_id: class,
+                subject_id: subject,
+                teacher_id: teacher,
+                hours_per_week: 2,
+                preferred_block_size: 2,
+            }],
+            teacher_qualifications: vec![TeacherQualification {
+                teacher_id: teacher,
+                subject_id: subject,
+            }],
+            teacher_blocked_times: vec![],
+            room_blocked_times: vec![],
+            room_subject_suitabilities: vec![],
+        };
+        let idx = crate::index::Indexed::new(&problem);
+
+        // Seed a block placement at positions 0, 1 (touches avoid_first at pos 0).
+        let mut placements = vec![
+            Placement {
+                lesson_id: lesson,
+                time_block_id: tb_zero,
+                room_id: room,
+            },
+            Placement {
+                lesson_id: lesson,
+                time_block_id: tb_one,
+                room_id: room,
+            },
+        ];
+        let mut class_positions: HashMap<(SchoolClassId, u8), Vec<u8>> = HashMap::new();
+        class_positions.insert((class, 0), vec_part(&[0, 1]));
+        let mut teacher_positions: HashMap<(TeacherId, u8), Vec<u8>> = HashMap::new();
+        teacher_positions.insert((teacher, 0), vec_part(&[0, 1]));
+        let mut used_teacher: HashSet<(TeacherId, TimeBlockId)> = HashSet::new();
+        used_teacher.insert((teacher, tb_zero));
+        used_teacher.insert((teacher, tb_one));
+        let mut used_class: HashSet<(SchoolClassId, TimeBlockId)> = HashSet::new();
+        used_class.insert((class, tb_zero));
+        used_class.insert((class, tb_one));
+        let mut used_room: HashSet<(RoomId, TimeBlockId)> = HashSet::new();
+        used_room.insert((room, tb_zero));
+        used_room.insert((room, tb_one));
+        let mut current_score: u32 = 1; // avoid_first penalty active at position 0
+
+        let config = SolveConfig {
+            weights: ConstraintWeights {
+                avoid_first_period: 1,
+                ..ConstraintWeights::default()
+            },
+            seed: 0,
+            deadline: Some(std::time::Duration::from_millis(50)),
+            max_iterations: Some(2000),
+        };
+
+        run(
+            &problem,
+            &idx,
+            &config,
+            &mut placements,
+            &mut class_positions,
+            &mut teacher_positions,
+            &mut used_teacher,
+            &mut used_class,
+            &mut used_room,
+            &mut current_score,
+        );
+
+        let tb_ids: HashSet<TimeBlockId> = placements.iter().map(|p| p.time_block_id).collect();
+        assert!(
+            tb_ids.contains(&tb_zero) && tb_ids.contains(&tb_one),
+            "block placement must not be moved by LAHC; got {:?}",
+            tb_ids
+        );
     }
 
     #[test]
