@@ -149,3 +149,139 @@ fn assert_total_hours_accounted_for(p: &Problem, s: &Solution) {
         .count() as u32;
     assert_eq!(placed + unplaced_hour_violations, total_required);
 }
+
+proptest! {
+    #![proptest_config(ProptestConfig::with_cases(32))]
+
+    #[test]
+    fn block_lessons_place_n_consecutive_same_day_same_room(seed in 0u64..16u64) {
+        use solver_core::ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId};
+        use solver_core::types::{
+            Lesson, Placement, Problem, Room, SchoolClass, Subject, Teacher,
+            TeacherQualification, TimeBlock,
+        };
+        use uuid::Uuid;
+
+        // Single class / single teacher / single room / 7-position day.
+        // Three lessons: length-1 (h=1), Doppelstunde (n=2, h=2),
+        // Doppelstunde (n=2, h=4). Total hours: 1 + 2 + 4 = 7. Capacity matches.
+        let day_blocks: Vec<TimeBlock> = (0u8..7)
+            .map(|pos| TimeBlock {
+                id: TimeBlockId(Uuid::from_bytes([100 + pos; 16])),
+                day_of_week: 0,
+                position: pos,
+            })
+            .collect();
+        let teacher = Teacher {
+            id: TeacherId(Uuid::from_bytes([20; 16])),
+            max_hours_per_week: 10,
+        };
+        let room = Room {
+            id: RoomId(Uuid::from_bytes([30; 16])),
+        };
+        let subject = Subject {
+            id: SubjectId(Uuid::from_bytes([40; 16])),
+            prefer_early_periods: false,
+            avoid_first_period: false,
+        };
+        let class = SchoolClass {
+            id: SchoolClassId(Uuid::from_bytes([50; 16])),
+        };
+        let qual = TeacherQualification {
+            teacher_id: teacher.id,
+            subject_id: subject.id,
+        };
+        let lessons = vec![
+            Lesson {
+                id: LessonId(Uuid::from_bytes([60; 16])),
+                school_class_id: class.id,
+                subject_id: subject.id,
+                teacher_id: teacher.id,
+                hours_per_week: 1,
+                preferred_block_size: 1,
+            },
+            Lesson {
+                id: LessonId(Uuid::from_bytes([61; 16])),
+                school_class_id: class.id,
+                subject_id: subject.id,
+                teacher_id: teacher.id,
+                hours_per_week: 2,
+                preferred_block_size: 2,
+            },
+            Lesson {
+                id: LessonId(Uuid::from_bytes([62; 16])),
+                school_class_id: class.id,
+                subject_id: subject.id,
+                teacher_id: teacher.id,
+                hours_per_week: 4,
+                preferred_block_size: 2,
+            },
+        ];
+        let block_lesson_ids: HashSet<LessonId> = lessons
+            .iter()
+            .filter(|l| l.preferred_block_size > 1)
+            .map(|l| l.id)
+            .collect();
+
+        let problem = Problem {
+            time_blocks: day_blocks,
+            teachers: vec![teacher],
+            rooms: vec![room],
+            subjects: vec![subject],
+            school_classes: vec![class],
+            lessons,
+            teacher_qualifications: vec![qual],
+            teacher_blocked_times: vec![],
+            room_blocked_times: vec![],
+            room_subject_suitabilities: vec![],
+        };
+
+        let s = solve_with_config(
+            &problem,
+            &SolveConfig { seed, ..SolveConfig::default() },
+        ).unwrap();
+
+        let tb_lookup: HashMap<TimeBlockId, &TimeBlock> = problem
+            .time_blocks
+            .iter()
+            .map(|tb| (tb.id, tb))
+            .collect();
+        let mut by_lesson: HashMap<LessonId, Vec<&Placement>> = HashMap::new();
+        for p in &s.placements {
+            by_lesson.entry(p.lesson_id).or_default().push(p);
+        }
+
+        for lesson_id in block_lesson_ids {
+            let placements = match by_lesson.get(&lesson_id) {
+                Some(v) => v,
+                None => continue, // unplaced block: violation case, not contradicted by this property
+            };
+            let lesson = problem
+                .lessons
+                .iter()
+                .find(|l| l.id == lesson_id)
+                .unwrap();
+            let n = lesson.preferred_block_size as usize;
+            let mut by_window: HashMap<(u8, RoomId), Vec<u8>> = HashMap::new();
+            for p in placements {
+                let tb = tb_lookup[&p.time_block_id];
+                by_window
+                    .entry((tb.day_of_week, p.room_id))
+                    .or_default()
+                    .push(tb.position);
+            }
+            let total: usize = by_window.values().map(|v| v.len()).sum();
+            prop_assert_eq!(total, lesson.hours_per_week as usize);
+            for (_, mut positions) in by_window {
+                prop_assert_eq!(positions.len() % n, 0);
+                positions.sort();
+                for chunk in positions.chunks(n) {
+                    prop_assert_eq!(chunk.len(), n);
+                    for k in 1..n {
+                        prop_assert_eq!(chunk[k], chunk[0] + k as u8);
+                    }
+                }
+            }
+        }
+    }
+}
