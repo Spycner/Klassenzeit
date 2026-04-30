@@ -28,6 +28,7 @@ A school timetabling system with a FastAPI backend, a Rust solver exposed to Pyt
 | `mise run dev`      | Run the backend with auto-reload. |
 | `mise run fe:dev`   | Run the frontend dev server on `http://localhost:5173` (proxies API calls to the backend). |
 | `mise run test`     | Run all Rust, Python, and frontend tests. |
+| `mise run test:py:parallel` | Run Python tests in parallel via pytest-xdist (`-n auto`). Mirrors the CI invocation. |
 | `mise run lint`     | Lint Rust (fmt, clippy, machete), Python (ruff, ty, vulture), and frontend (Biome). |
 | `mise run fmt`      | Auto-format Rust, Python, and frontend. |
 | `mise run cov`      | Produce Rust and Python coverage reports. |

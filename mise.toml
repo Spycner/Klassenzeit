@@ -48,6 +48,10 @@ run = "cargo nextest run --workspace"
 description = "Run Python tests (backend + solver-py bindings)"
 run = "uv run pytest"
 
+[tasks."test:py:parallel"]
+description = "Run Python tests in parallel (mirrors the CI -n auto invocation)"
+run = "uv run pytest -n auto"
+
 [tasks.bench]
 description = "Run solver-core benches"
 run = "cargo bench -p solver-core"
