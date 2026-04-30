@@ -60,6 +60,7 @@ If every quality item in OPEN_THINGS.md is blocked or out of scope for one PR, f
 - `mise run fmt` — auto-format everything
 - `mise run fe:types` — regenerate frontend OpenAPI types from the backend
 - `mise run db:up` / `db:stop` / `db:reset` / `db:migrate` — Postgres lifecycle
+- `mise run bench:tests` — time the backend pytest suite, compare to `.test-duration-budget` (PR-2 ratchet, mirrors `.coverage-baseline`). CI runs `pytest --durations=30` plus a budget gate; budget tightens once two or three master runs land at the new floor.
 
 - **Rust toolchain** is a hard prerequisite (required for the PyO3 bindings and for the dev tools below).
 - **Git hook runner:** [Lefthook](https://github.com/evilmartians/lefthook). Config lives at `.config/lefthook.yaml` (lefthook auto-discovers this path).
