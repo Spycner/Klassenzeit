@@ -14,6 +14,12 @@ import pytest
 
 from klassenzeit_solver import solve_json, solve_json_with_config
 
+# Greedy-only deadline used by the GIL contract test below. The test asserts
+# that the binding releases the GIL during the call; LAHC's wall-clock
+# deadline (200 ms by default) is irrelevant to that contract and would
+# otherwise dominate the test's wall time at 4 x 2000 x 200 ms = 26 minutes.
+_GREEDY_ONLY: int | None = None
+
 
 def _uuid(n: int) -> str:
     return str(uuid.UUID(bytes=bytes([n]) * 16))
@@ -75,8 +81,10 @@ def test_solve_json_releases_gil() -> None:
         # Iteration count chosen so solve work dominates thread-spawn overhead
         # (single-solve is ~55us on the minimal problem; 2000 iterations gives
         # ~100ms of measurable work per thread, well above scheduler jitter).
+        # Use greedy-only here (deadline_ms=None): the GIL contract is what
+        # the test asserts, and LAHC's wall-clock deadline only obscures it.
         for _ in range(2000):
-            solve_json(problem_json)
+            solve_json_with_config(problem_json, _GREEDY_ONLY)
 
     # Warm up to exclude maturin/binding import overhead.
     _solve_once()
