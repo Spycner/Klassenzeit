@@ -12,7 +12,7 @@ import uuid
 
 import pytest
 
-from klassenzeit_solver import solve_json
+from klassenzeit_solver import solve_json, solve_json_with_config
 
 
 def _uuid(n: int) -> str:
@@ -97,3 +97,35 @@ def test_solve_json_releases_gil() -> None:
         f"parallel solves took {parallel_duration:.3f}s vs single {single_duration:.3f}s; "
         "GIL likely not released"
     )
+
+
+def _trivially_empty_problem_json() -> str:
+    """Smallest problem that passes structural validation: 1 time_block, 1
+    room, no lessons. Greedy and LAHC both produce empty placements."""
+    return json.dumps(
+        {
+            "time_blocks": [{"id": _uuid(10), "day_of_week": 0, "position": 0}],
+            "teachers": [],
+            "rooms": [{"id": _uuid(30)}],
+            "subjects": [],
+            "school_classes": [],
+            "lessons": [],
+            "teacher_qualifications": [],
+            "teacher_blocked_times": [],
+            "room_blocked_times": [],
+            "room_subject_suitabilities": [],
+        }
+    )
+
+
+def test_solve_json_with_config_none_returns_greedy() -> None:
+    result = json.loads(solve_json_with_config(_trivially_empty_problem_json(), None))
+    assert result["placements"] == []
+    assert result["violations"] == []
+
+
+def test_solve_json_with_config_some_matches_default_solve_json() -> None:
+    problem = _trivially_empty_problem_json()
+    a = json.loads(solve_json_with_config(problem, 200))
+    b = json.loads(solve_json(problem))
+    assert a == b
