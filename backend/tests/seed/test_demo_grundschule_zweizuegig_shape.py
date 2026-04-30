@@ -40,7 +40,7 @@ async def seeded_zweizuegig(db_session: AsyncSession) -> AsyncSession:
 async def test_zweizuegig_creates_expected_entity_counts(
     seeded_zweizuegig: AsyncSession,
 ) -> None:
-    assert await _count_zw(seeded_zweizuegig, Subject) == 9
+    assert await _count_zw(seeded_zweizuegig, Subject) == 11
     assert await _count_zw(seeded_zweizuegig, WeekScheme) == 1
     assert await _count_zw(seeded_zweizuegig, TimeBlock) == 5 * 7  # 5 days x 7 periods
     assert await _count_zw(seeded_zweizuegig, Stundentafel) == 4
@@ -110,7 +110,7 @@ async def test_zweizuegig_klassenraeume_suit_general_subjects(
         .all()
     )
     assert len(rooms) == 8
-    expected_subject_count = 6  # D, M, SU, RE, E, FOE
+    expected_subject_count = 8  # D, M, SU, RK, RE, ETH, E, FOE
     for room in rooms:
         suit_count = await seeded_zweizuegig.scalar(
             select(func.count())

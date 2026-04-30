@@ -61,7 +61,9 @@ _SUBJECTS: tuple[_SubjectSpec, ...] = (
     _SubjectSpec("Deutsch", "D", "chart-1", prefer_early_periods=True),
     _SubjectSpec("Mathematik", "M", "chart-2", prefer_early_periods=True),
     _SubjectSpec("Sachunterricht", "SU", "chart-3"),
-    _SubjectSpec("Religion / Ethik", "RE", "chart-4"),
+    _SubjectSpec("Religion (kath.)", "RK", "chart-4"),
+    _SubjectSpec("Religion (ev.)", "RE", "chart-4"),
+    _SubjectSpec("Ethik", "ETH", "chart-4"),
     _SubjectSpec("Englisch", "E", "chart-5"),
     _SubjectSpec("Kunst", "KU", "chart-1"),
     _SubjectSpec("Musik", "MU", "chart-3"),
@@ -78,7 +80,7 @@ _GRADE_1_2_HOURS: dict[str, int] = {
     "D": 6,
     "M": 5,
     "SU": 2,
-    "RE": 2,
+    "ETH": 2,
     "KU": 2,
     "MU": 1,
     "SP": 3,
@@ -90,7 +92,7 @@ _GRADE_3_4_HOURS: dict[str, int] = {
     "M": 5,
     "SU": 4,
     "E": 2,
-    "RE": 2,
+    "ETH": 2,
     "KU": 2,
     "MU": 1,
     "SP": 3,
@@ -119,7 +121,7 @@ _TEACHERS: tuple[_TeacherSpec, ...] = (
     _TeacherSpec("Beate", "Schmidt", "SCH", 28, ("D", "M", "SU", "KU")),
     _TeacherSpec("Carsten", "Weber", "WEB", 28, ("D", "M", "SU", "E")),
     _TeacherSpec("Dana", "Fischer", "FIS", 28, ("D", "M", "SU", "E")),
-    _TeacherSpec("Eva", "Becker", "BEC", 18, ("RE", "MU", "FÖ")),
+    _TeacherSpec("Eva", "Becker", "BEC", 18, ("RK", "RE", "ETH", "MU", "FÖ")),
     _TeacherSpec("Frank", "Hoffmann", "HOF", 21, ("SP", "KU", "FÖ")),
 )
 
@@ -131,7 +133,7 @@ class _RoomSpec(NamedTuple):
     suitable_subject_short_names: tuple[str, ...]
 
 
-_KLASSENRAUM_SUITABLE_SUBJECTS: tuple[str, ...] = ("D", "M", "SU", "RE", "E", "FÖ")
+_KLASSENRAUM_SUITABLE_SUBJECTS: tuple[str, ...] = ("D", "M", "SU", "RK", "RE", "ETH", "E", "FÖ")
 
 _ROOMS: tuple[_RoomSpec, ...] = (
     _RoomSpec("Klasse 1a", "1a", 25, _KLASSENRAUM_SUITABLE_SUBJECTS),

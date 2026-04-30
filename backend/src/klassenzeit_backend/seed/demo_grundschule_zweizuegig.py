@@ -67,9 +67,9 @@ _TEACHERS_ZWEIZUEGIG: tuple[_TeacherSpec, ...] = (
     _TeacherSpec("Frieda", "Lange", "LAN", 28, ("D", "M", "SU", "KU")),
     _TeacherSpec("Gustav", "Neumann", "NEU", 28, ("D", "M", "SU", "E")),
     _TeacherSpec("Helga", "Otto", "OTT", 28, ("D", "M", "SU", "E")),
-    _TeacherSpec("Eva", "Becker", "BEC", 18, ("RE", "MU", "FÖ")),
+    _TeacherSpec("Eva", "Becker", "BEC", 18, ("RK", "RE", "ETH", "MU", "FÖ")),
     _TeacherSpec("Frank", "Hoffmann", "HOF", 21, ("SP", "KU", "FÖ")),
-    _TeacherSpec("Iris", "Wilhelm", "WIL", 14, ("RE", "MU")),
+    _TeacherSpec("Iris", "Wilhelm", "WIL", 14, ("RK", "RE", "ETH", "MU")),
     _TeacherSpec("Juergen", "Richter", "RIC", 21, ("SP", "FÖ")),
 )
 
@@ -104,29 +104,33 @@ _SCHOOL_CLASSES_ZWEIZUEGIG: tuple[_SchoolClassSpec, ...] = (
 
 # Authored ``(class_name, subject_short)`` -> teacher ``short_code`` mapping.
 # Walks subjects in scarcity order per class, capacity-fitting greedily.
+# Every class takes ETH (single-Zug demos can't model the kath/ev/Ethik split;
+# the dreizuegig seed is the first variant that exercises RK / RE / ETH per
+# class). The substitution RE -> ETH is hour-neutral (still 2h per class), so
+# per-teacher totals match the previous einzuegig-style pattern exactly.
 # Per-teacher hour totals (verified against ``_TEACHERS_ZWEIZUEGIG.max_hours_per_week``):
-#   MUE = 1a D+M+SU+KU (6+5+2+2) + 2b KU (2) + 4a KU (2)               = 19h <= 28
-#   SCH = 1b D+M+SU+KU (6+5+2+2) + 4b KU (2)                            = 17h <= 28
-#   WEB = 2a D+M+SU (6+5+2)      + 3a E  (2)                            = 15h <= 28
-#   FIS = 2b D+M+SU (6+5+2)      + 3b E  (2)                            = 15h <= 28
-#   KAI = 3a D+M+SU+KU (5+5+4+2)                                        = 16h <= 28
-#   LAN = 3b D+M+SU+KU (5+5+4+2)                                        = 16h <= 28
-#   NEU = 4a D+M+SU+E  (5+5+4+2)                                        = 16h <= 28
-#   OTT = 4b D+M+SU+E  (5+5+4+2)                                        = 16h <= 28
-#   BEC = 1a RE+MU (2+1) + 2a RE+MU+FOE (2+1+2) + 3a RE+MU+FOE (2+1+2)
-#         + 4a RE+MU (2+1)                                              = 16h <= 18
+#   MUE = 1a D+M+SU+KU (6+5+2+2) + 2b KU (2) + 4a KU (2)                 = 19h <= 28
+#   SCH = 1b D+M+SU+KU (6+5+2+2) + 4b KU (2)                             = 17h <= 28
+#   WEB = 2a D+M+SU (6+5+2)      + 3a E  (2)                             = 15h <= 28
+#   FIS = 2b D+M+SU (6+5+2)      + 3b E  (2)                             = 15h <= 28
+#   KAI = 3a D+M+SU+KU (5+5+4+2)                                         = 16h <= 28
+#   LAN = 3b D+M+SU+KU (5+5+4+2)                                         = 16h <= 28
+#   NEU = 4a D+M+SU+E  (5+5+4+2)                                         = 16h <= 28
+#   OTT = 4b D+M+SU+E  (5+5+4+2)                                         = 16h <= 28
+#   BEC = 1a ETH+MU (2+1) + 2a ETH+MU+FOE (2+1+2) + 3a ETH+MU+FOE (2+1+2)
+#         + 4a ETH+MU (2+1)                                              = 16h <= 18
 #   HOF = 1a SP+FOE (3+2) + 2a KU+SP (2+3) + 3a SP (3) + 4a SP+FOE (3+2) = 18h <= 21
-#   WIL = 1b RE+MU (2+1) + 2b RE+MU (2+1) + 3b RE+MU (2+1)
-#         + 4b RE+MU (2+1)                                              = 12h <= 14
+#   WIL = 1b ETH+MU (2+1) + 2b ETH+MU (2+1) + 3b ETH+MU (2+1)
+#         + 4b ETH+MU (2+1)                                              = 12h <= 14
 #   RIC = 1b SP+FOE (3+2) + 2b SP+FOE (3+2) + 3b SP+FOE (3+2)
-#         + 4b SP+FOE (3+2)                                             = 20h <= 21
+#         + 4b SP+FOE (3+2)                                              = 20h <= 21
 _TEACHER_ASSIGNMENTS_ZWEIZUEGIG: dict[tuple[str, str], str] = {
-    # Class 1a (grade 1: D6 + M5 + SU2 + RE2 + KU2 + MU1 + SP3 + FOE2 = 23h)
+    # Class 1a (grade 1: D6 + M5 + SU2 + ETH2 + KU2 + MU1 + SP3 + FOE2 = 23h)
     ("1a", "D"): "MUE",
     ("1a", "M"): "MUE",
     ("1a", "SU"): "MUE",
     ("1a", "KU"): "MUE",
-    ("1a", "RE"): "BEC",
+    ("1a", "ETH"): "BEC",
     ("1a", "MU"): "BEC",
     ("1a", "SP"): "HOF",
     ("1a", "FÖ"): "HOF",
@@ -135,7 +139,7 @@ _TEACHER_ASSIGNMENTS_ZWEIZUEGIG: dict[tuple[str, str], str] = {
     ("1b", "M"): "SCH",
     ("1b", "SU"): "SCH",
     ("1b", "KU"): "SCH",
-    ("1b", "RE"): "WIL",
+    ("1b", "ETH"): "WIL",
     ("1b", "MU"): "WIL",
     ("1b", "SP"): "RIC",
     ("1b", "FÖ"): "RIC",
@@ -144,7 +148,7 @@ _TEACHER_ASSIGNMENTS_ZWEIZUEGIG: dict[tuple[str, str], str] = {
     ("2a", "M"): "WEB",
     ("2a", "SU"): "WEB",
     ("2a", "KU"): "HOF",
-    ("2a", "RE"): "BEC",
+    ("2a", "ETH"): "BEC",
     ("2a", "MU"): "BEC",
     ("2a", "SP"): "HOF",
     ("2a", "FÖ"): "BEC",
@@ -153,17 +157,17 @@ _TEACHER_ASSIGNMENTS_ZWEIZUEGIG: dict[tuple[str, str], str] = {
     ("2b", "M"): "FIS",
     ("2b", "SU"): "FIS",
     ("2b", "KU"): "MUE",
-    ("2b", "RE"): "WIL",
+    ("2b", "ETH"): "WIL",
     ("2b", "MU"): "WIL",
     ("2b", "SP"): "RIC",
     ("2b", "FÖ"): "RIC",
-    # Class 3a (grade 3: D5 + M5 + SU4 + E2 + RE2 + KU2 + MU1 + SP3 + FOE2 = 26h)
+    # Class 3a (grade 3: D5 + M5 + SU4 + E2 + ETH2 + KU2 + MU1 + SP3 + FOE2 = 26h)
     ("3a", "D"): "KAI",
     ("3a", "M"): "KAI",
     ("3a", "SU"): "KAI",
     ("3a", "KU"): "KAI",
     ("3a", "E"): "WEB",
-    ("3a", "RE"): "BEC",
+    ("3a", "ETH"): "BEC",
     ("3a", "MU"): "BEC",
     ("3a", "SP"): "HOF",
     ("3a", "FÖ"): "BEC",
@@ -173,7 +177,7 @@ _TEACHER_ASSIGNMENTS_ZWEIZUEGIG: dict[tuple[str, str], str] = {
     ("3b", "SU"): "LAN",
     ("3b", "KU"): "LAN",
     ("3b", "E"): "FIS",
-    ("3b", "RE"): "WIL",
+    ("3b", "ETH"): "WIL",
     ("3b", "MU"): "WIL",
     ("3b", "SP"): "RIC",
     ("3b", "FÖ"): "RIC",
@@ -183,7 +187,7 @@ _TEACHER_ASSIGNMENTS_ZWEIZUEGIG: dict[tuple[str, str], str] = {
     ("4a", "SU"): "NEU",
     ("4a", "E"): "NEU",
     ("4a", "KU"): "MUE",
-    ("4a", "RE"): "BEC",
+    ("4a", "ETH"): "BEC",
     ("4a", "MU"): "BEC",
     ("4a", "SP"): "HOF",
     ("4a", "FÖ"): "HOF",
@@ -193,7 +197,7 @@ _TEACHER_ASSIGNMENTS_ZWEIZUEGIG: dict[tuple[str, str], str] = {
     ("4b", "SU"): "OTT",
     ("4b", "E"): "OTT",
     ("4b", "KU"): "SCH",
-    ("4b", "RE"): "WIL",
+    ("4b", "ETH"): "WIL",
     ("4b", "MU"): "WIL",
     ("4b", "SP"): "RIC",
     ("4b", "FÖ"): "RIC",
