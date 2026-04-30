@@ -42,3 +42,4 @@ sections, and add the new entry to the index below.
 | 0016 | [Structured logging across the backend](0016-structured-logging.md) | Accepted |
 | 0017 | [Subject-level pedagogy preferences](0017-subject-preferences.md) | Accepted |
 | 0018 | [Solver Doppelstunden support](0018-solver-doppelstunden.md) | Accepted |
+| 0019 | [Backend pytest-xdist with per-worker test databases](0019-backend-pytest-xdist.md) | Accepted |
