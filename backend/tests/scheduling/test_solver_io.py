@@ -565,7 +565,10 @@ async def test_run_solve_round_trips_and_logs(caplog: pytest.LogCaptureFixture) 
     caplog.set_level(logging.INFO, logger="klassenzeit_backend.scheduling.solver_io")
     class_id = uuid4()
     solution = await run_solve(
-        json.dumps(_minimal_runnable_problem()), class_id, {"lessons": 1, "time_blocks": 1}
+        json.dumps(_minimal_runnable_problem()),
+        class_id,
+        {"lessons": 1, "time_blocks": 1},
+        deadline_ms=200,
     )
     assert len(solution["placements"]) == 1
     assert solution["violations"] == []
@@ -582,9 +585,42 @@ async def test_run_solve_logs_error_and_reraises(caplog: pytest.LogCaptureFixtur
     caplog.set_level(logging.ERROR, logger="klassenzeit_backend.scheduling.solver_io")
     class_id = uuid4()
     with pytest.raises(ValueError):
-        await run_solve("not json", class_id, {"lessons": 0})
+        await run_solve("not json", class_id, {"lessons": 0}, deadline_ms=200)
     messages = [r.message for r in caplog.records]
     assert "solver.solve.error" in messages
+
+
+async def test_run_solve_passes_deadline_ms_to_binding(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: dict[str, object] = {}
+
+    def fake_solve_json_with_config(problem_json: str, deadline_ms: int | None) -> str:
+        seen["deadline_ms"] = deadline_ms
+        return '{"placements": [], "violations": [], "soft_score": 0}'
+
+    monkeypatch.setattr(
+        "klassenzeit_backend.scheduling.solver_io._solve_json_with_config",
+        fake_solve_json_with_config,
+    )
+
+    await run_solve(
+        '{"teachers":[]}',
+        uuid.uuid4(),
+        {
+            "lessons": 0,
+            "teachers": 0,
+            "rooms": 0,
+            "subjects": 0,
+            "school_classes": 0,
+            "teacher_qualifications": 0,
+            "teacher_blocked_times": 0,
+            "room_blocked_times": 0,
+            "room_subject_suitabilities": 0,
+        },
+        deadline_ms=0,
+    )
+    assert seen["deadline_ms"] == 0
 
 
 def test_count_violations_by_kind_clean_solve_returns_zeros() -> None:

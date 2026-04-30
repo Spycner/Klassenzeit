@@ -2,20 +2,44 @@
 //! sprint. Input errors are wrapped in a tagged envelope; success emits the
 //! `Solution` JSON directly.
 
+use std::time::Duration;
+
 use serde::Serialize;
 
 use crate::error::Error;
-use crate::solve::solve;
-use crate::types::Problem;
+use crate::solve::solve_with_config;
+use crate::types::{ConstraintWeights, Problem, SolveConfig};
 
 /// Solve a timetable problem supplied as a JSON string and return the resulting
-/// `Solution` serialised as JSON. Malformed input JSON and serialisation
-/// failures are mapped to [`Error::Input`] so callers can distinguish client
-/// mistakes from solver-internal issues.
+/// `Solution` serialised as JSON. Uses the production-default 200 ms LAHC
+/// deadline; equivalent to [`solve_json_with_config`] with `Some(200)`.
+/// Malformed input JSON and serialisation failures are mapped to
+/// [`Error::Input`] so callers can distinguish client mistakes from
+/// solver-internal issues.
 pub fn solve_json(json: &str) -> Result<String, Error> {
+    solve_json_with_config(json, Some(200))
+}
+
+/// Solve a timetable problem supplied as a JSON string with an explicit LAHC
+/// wall-clock deadline (milliseconds). `None` skips the LAHC pass entirely
+/// and returns the greedy result; `Some(n)` runs LAHC for `n` milliseconds.
+/// Soft-constraint weights are the production active defaults
+/// (`class_gap = teacher_gap = prefer_early_period = avoid_first_period = 1`)
+/// so that the only knob exposed via the JSON adapter is the deadline.
+pub fn solve_json_with_config(json: &str, deadline_ms: Option<u64>) -> Result<String, Error> {
     let problem: Problem =
         serde_json::from_str(json).map_err(|e| Error::Input(format!("json: {e}")))?;
-    let solution = solve(&problem)?;
+    let config = SolveConfig {
+        weights: ConstraintWeights {
+            class_gap: 1,
+            teacher_gap: 1,
+            prefer_early_period: 1,
+            avoid_first_period: 1,
+        },
+        deadline: deadline_ms.map(Duration::from_millis),
+        ..SolveConfig::default()
+    };
+    let solution = solve_with_config(&problem, &config)?;
     serde_json::to_string(&solution).map_err(|e| Error::Input(format!("serialize: {e}")))
 }
 
@@ -123,5 +147,45 @@ mod tests {
         let parsed: serde_json::Value = serde_json::from_str(&env).unwrap();
         assert_eq!(parsed["kind"], "input");
         assert_eq!(parsed["reason"], "no time_blocks");
+    }
+
+    fn trivially_empty_json() -> String {
+        let p = Problem {
+            time_blocks: vec![TimeBlock {
+                id: TimeBlockId(json_uuid(10)),
+                day_of_week: 0,
+                position: 0,
+            }],
+            teachers: vec![],
+            rooms: vec![Room {
+                id: RoomId(json_uuid(30)),
+            }],
+            subjects: vec![],
+            school_classes: vec![],
+            lessons: vec![],
+            teacher_qualifications: vec![],
+            teacher_blocked_times: vec![],
+            room_blocked_times: vec![],
+            room_subject_suitabilities: vec![],
+        };
+        serde_json::to_string(&p).unwrap()
+    }
+
+    #[test]
+    fn solve_json_with_config_none_skips_lahc_and_returns_greedy() {
+        let out = solve_json_with_config(&trivially_empty_json(), None).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(parsed["placements"].as_array().unwrap().len(), 0);
+        assert_eq!(parsed["violations"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn solve_json_with_config_some_matches_solve_json_for_default_deadline() {
+        let problem = trivially_empty_json();
+        let with_config = solve_json_with_config(&problem, Some(200)).unwrap();
+        let default = solve_json(&problem).unwrap();
+        let with_config_parsed: serde_json::Value = serde_json::from_str(&with_config).unwrap();
+        let default_parsed: serde_json::Value = serde_json::from_str(&default).unwrap();
+        assert_eq!(with_config_parsed, default_parsed);
     }
 }

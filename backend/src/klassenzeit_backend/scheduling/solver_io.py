@@ -35,7 +35,7 @@ from klassenzeit_backend.scheduling.schemas.schedule import (
     PlacementResponse,
     ViolationResponse,
 )
-from klassenzeit_solver import solve_json as _solve_json
+from klassenzeit_solver import solve_json_with_config as _solve_json_with_config
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -291,7 +291,13 @@ async def build_problem_json(
     return json.dumps(problem), class_lesson_ids, counts
 
 
-async def run_solve(problem_json: str, school_class_id: UUID, input_counts: dict[str, int]) -> dict:
+async def run_solve(
+    problem_json: str,
+    school_class_id: UUID,
+    input_counts: dict[str, int],
+    *,
+    deadline_ms: int | None,
+) -> dict:
     """Run the solver off the event loop, emit structured log events, return the Solution dict."""
     logger.info(
         "solver.solve.start",
@@ -299,7 +305,7 @@ async def run_solve(problem_json: str, school_class_id: UUID, input_counts: dict
     )
     started = time.monotonic()
     try:
-        solution_json = await asyncio.to_thread(_solve_json, problem_json)
+        solution_json = await asyncio.to_thread(_solve_json_with_config, problem_json, deadline_ms)
     except (ValueError, RuntimeError) as exc:
         duration_ms = (time.monotonic() - started) * 1000.0
         logger.error(

@@ -50,7 +50,9 @@ jobs:
         run: mise run test:rust
       - name: Run Python tests with coverage
         run: |
-          uv run pytest -n auto --dist=worksteal --cov=klassenzeit_backend --cov=klassenzeit_solver --cov-report=term | tee /tmp/pytest-cov.txt
+          uv run pytest -n auto --dist=worksteal --durations=30 \
+            --cov=klassenzeit_backend --cov=klassenzeit_solver --cov-report=term \
+            | tee /tmp/pytest-cov.txt
       - name: Check Python coverage ratchet
         run: |
           ACTUAL=$(grep '^TOTAL' /tmp/pytest-cov.txt | awk '{print int($NF)}')
@@ -66,5 +68,20 @@ jobs:
           fi
           if [ "$ACTUAL" -lt "$BASELINE" ]; then
             echo "::error::Coverage ${ACTUAL}% is below the ratchet baseline of ${BASELINE}%. Run 'mise run cov:update-baseline' if this drop is intentional."
+            exit 1
+          fi
+      - name: Check Python test wall-clock budget
+        run: |
+          # Result line shape: "==== N passed, M warnings in 1215.61s (0:20:15) ===="
+          ACTUAL=$(grep -oE 'in [0-9]+\.?[0-9]*s' /tmp/pytest-cov.txt | tail -1 \
+                   | grep -oE '[0-9]+\.?[0-9]*' | awk '{print int($1)}')
+          BUDGET=$(cat .test-duration-budget)
+          if [ -z "$ACTUAL" ]; then
+            echo "::error::Could not extract pytest duration from output"
+            exit 1
+          fi
+          echo "Pytest wall-clock: ${ACTUAL}s (budget: ${BUDGET}s)"
+          if [ "$ACTUAL" -gt "$BUDGET" ]; then
+            echo "::error::Test wall-clock ${ACTUAL}s exceeds the .test-duration-budget of ${BUDGET}s. Investigate or update the budget."
             exit 1
           fi

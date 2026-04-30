@@ -12,7 +12,13 @@ import uuid
 
 import pytest
 
-from klassenzeit_solver import solve_json
+from klassenzeit_solver import solve_json, solve_json_with_config
+
+# Greedy-only deadline used by the GIL contract test below. The test asserts
+# that the binding releases the GIL during the call; LAHC's wall-clock
+# deadline (200 ms by default) is irrelevant to that contract and would
+# otherwise dominate the test's wall time at 4 x 2000 x 200 ms = 26 minutes.
+_GREEDY_ONLY: int | None = None
 
 
 def _uuid(n: int) -> str:
@@ -75,8 +81,10 @@ def test_solve_json_releases_gil() -> None:
         # Iteration count chosen so solve work dominates thread-spawn overhead
         # (single-solve is ~55us on the minimal problem; 2000 iterations gives
         # ~100ms of measurable work per thread, well above scheduler jitter).
+        # Use greedy-only here (deadline_ms=None): the GIL contract is what
+        # the test asserts, and LAHC's wall-clock deadline only obscures it.
         for _ in range(2000):
-            solve_json(problem_json)
+            solve_json_with_config(problem_json, _GREEDY_ONLY)
 
     # Warm up to exclude maturin/binding import overhead.
     _solve_once()
@@ -97,3 +105,35 @@ def test_solve_json_releases_gil() -> None:
         f"parallel solves took {parallel_duration:.3f}s vs single {single_duration:.3f}s; "
         "GIL likely not released"
     )
+
+
+def _trivially_empty_problem_json() -> str:
+    """Smallest problem that passes structural validation: 1 time_block, 1
+    room, no lessons. Greedy and LAHC both produce empty placements."""
+    return json.dumps(
+        {
+            "time_blocks": [{"id": _uuid(10), "day_of_week": 0, "position": 0}],
+            "teachers": [],
+            "rooms": [{"id": _uuid(30)}],
+            "subjects": [],
+            "school_classes": [],
+            "lessons": [],
+            "teacher_qualifications": [],
+            "teacher_blocked_times": [],
+            "room_blocked_times": [],
+            "room_subject_suitabilities": [],
+        }
+    )
+
+
+def test_solve_json_with_config_none_returns_greedy() -> None:
+    result = json.loads(solve_json_with_config(_trivially_empty_problem_json(), None))
+    assert result["placements"] == []
+    assert result["violations"] == []
+
+
+def test_solve_json_with_config_some_matches_default_solve_json() -> None:
+    problem = _trivially_empty_problem_json()
+    a = json.loads(solve_json_with_config(problem, 200))
+    b = json.loads(solve_json(problem))
+    assert a == b

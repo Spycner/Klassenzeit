@@ -4,7 +4,7 @@ import logging
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.auth.dependencies import require_admin
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 @router.post("/classes/{class_id}/schedule")
 async def generate_schedule_for_class(
     class_id: uuid.UUID,
+    request: Request,
     _admin: Annotated[User, Depends(require_admin)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> ScheduleResponse:
@@ -27,6 +28,8 @@ async def generate_schedule_for_class(
 
     Args:
         class_id: UUID path parameter identifying the school class.
+        request: The FastAPI request, used to read ``solve_deadline_ms`` from
+            ``app.state.settings``.
         _admin: Injected admin user (enforces authentication).
         db: Injected async database session.
 
@@ -39,7 +42,10 @@ async def generate_schedule_for_class(
             different week_scheme, or if the rooms table is empty.
     """
     problem_json, class_lesson_ids, input_counts = await solver_io.build_problem_json(db, class_id)
-    solution = await solver_io.run_solve(problem_json, class_id, input_counts)
+    deadline_ms = request.app.state.settings.solve_deadline_ms
+    solution = await solver_io.run_solve(
+        problem_json, class_id, input_counts, deadline_ms=deadline_ms
+    )
     filtered = solver_io.filter_solution_for_class(solution, class_lesson_ids)
     logger.info(
         "solver.solve.filtered",
