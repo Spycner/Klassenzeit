@@ -1,11 +1,17 @@
 """Unit tests for backend/tests/_xdist_db.py."""
 
+import os
+import uuid as _uuid
 from pathlib import Path
 
+import psycopg
 import pytest
 
 from tests._xdist_db import (
     admin_libpq_url,
+    clone_database_from_template,
+    drop_database_if_exists,
+    ensure_template_database,
     parse_dbname,
     read_env_test_database_url,
     worker_database_url,
@@ -49,3 +55,31 @@ def test_read_env_test_database_url_raises_when_missing(tmp_path: Path):
     env.write_text("KZ_ENV=test\n")
     with pytest.raises(RuntimeError, match="KZ_DATABASE_URL not found"):
         read_env_test_database_url(env)
+
+
+def test_template_workflow_creates_clone_with_same_alembic_head() -> None:
+    """Round-trip the template helper against the local Postgres."""
+    backend_root = Path(__file__).resolve().parent.parent
+    raw_url = os.environ.get("KZ_DATABASE_URL") or read_env_test_database_url(
+        backend_root / ".env.test"
+    )
+    # Strip any per-worker suffix (gw0/gw1/...) so we test against the base URL.
+    base_url = raw_url.rsplit("_", 1)[0] if raw_url.rsplit("_", 1)[-1].startswith("gw") else raw_url
+    suffix = _uuid.uuid4().hex[:8]
+    template_url = f"{base_url}_template_{suffix}"
+    clone_url = f"{base_url}_clone_{suffix}"
+    template_name = template_url.rsplit("/", 1)[1]
+    clone_name = clone_url.rsplit("/", 1)[1]
+
+    try:
+        ensure_template_database(template_url, alembic_cwd=str(backend_root))
+        clone_database_from_template(base_url=clone_url, template_name=template_name)
+        with (
+            psycopg.connect(admin_libpq_url(clone_url), autocommit=True) as conn,
+            conn.cursor() as cur,
+        ):
+            cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (clone_name,))
+            assert cur.fetchone() is not None
+    finally:
+        drop_database_if_exists(clone_url)
+        drop_database_if_exists(template_url)

@@ -32,6 +32,7 @@ Implementation notes:
   private access — that breaks the fixture.
 """
 
+import logging
 import os
 import subprocess
 import sys
@@ -50,7 +51,10 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 from tests._xdist_db import (
+    clone_database_from_template,
     ensure_database_exists,
+    ensure_template_database,
+    parse_dbname,
     read_env_test_database_url,
     worker_database_url,
 )
@@ -114,17 +118,32 @@ async def engine(settings: Settings) -> AsyncIterator[AsyncEngine]:
 
 @pytest.fixture(scope="session", autouse=True)
 def apply_migrations(settings: Settings) -> None:
-    """Run downgrade → upgrade once per pytest session in a subprocess.
+    """Migrate the per-worker database via a template DB cache.
 
-    The migration is executed in a subprocess so the ``asyncio.run()`` call
-    inside alembic's ``env.py`` does not leave stale asyncpg / event-loop
-    state that can poison subsequent tests.  Observed in CI on Python 3.14
-    as spurious "Future attached to a different loop" errors after many
-    tests had run.
+    First worker creates and migrates ``klassenzeit_test_template`` under
+    an advisory lock; subsequent workers ``CREATE DATABASE ... TEMPLATE``
+    from it (single-digit ms in Postgres). Falls back to the per-worker
+    alembic flow if the template path raises (locale mismatch, permission
+    error, etc.).
     """
-    ensure_database_exists(str(settings.database_url))
+    base_url = read_env_test_database_url(_ENV_TEST)
+    target_url = str(settings.database_url)
+    template_url = f"{base_url}_template"
+    template_name = parse_dbname(template_url)
+
+    try:
+        ensure_template_database(template_url, alembic_cwd=str(_BACKEND_ROOT))
+        clone_database_from_template(base_url=target_url, template_name=template_name)
+        return
+    except Exception as exc:  # opportunistic fallback to per-worker alembic
+        logging.getLogger(__name__).warning(
+            "template_db.fallback",
+            extra={"reason": type(exc).__name__, "detail": str(exc)},
+        )
+
+    ensure_database_exists(target_url)
     env = os.environ.copy()
-    env["KZ_DATABASE_URL"] = str(settings.database_url)
+    env["KZ_DATABASE_URL"] = target_url
     # Downgrade, then upgrade, each in a separate subprocess for clean state.
     for args in (["downgrade", "base"], ["upgrade", "head"]):
         subprocess.run(  # noqa: S603
