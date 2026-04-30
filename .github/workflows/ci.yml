@@ -46,15 +46,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-mise
-      - name: Create klassenzeit_test database
-        env:
-          PGPASSWORD: klassenzeit
-        run: psql -h localhost -p 5433 -U klassenzeit -d klassenzeit_dev -c 'CREATE DATABASE klassenzeit_test OWNER klassenzeit;'
       - name: Run Rust tests
         run: mise run test:rust
       - name: Run Python tests with coverage
         run: |
-          uv run pytest --cov=klassenzeit_backend --cov=klassenzeit_solver --cov-report=term | tee /tmp/pytest-cov.txt
+          uv run pytest -n auto --cov=klassenzeit_backend --cov=klassenzeit_solver --cov-report=term | tee /tmp/pytest-cov.txt
       - name: Check Python coverage ratchet
         run: |
           ACTUAL=$(grep '^TOTAL' /tmp/pytest-cov.txt | awk '{print int($NF)}')
