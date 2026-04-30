@@ -83,6 +83,7 @@ Run from repo root unless noted.
 - **No color-only signaling** for errors or success. Pair with icon or text.
 - **No dialogs without `DialogTitle` / `DialogDescription`.** shadcn's `Dialog` requires them for screen readers.
 - **No dynamic content without `aria-live`** for toasts, form-level root errors, and async status.
+- **Checkbox lists need `htmlFor` to keep labels clickable.** Biome's `noLabelWithoutControl` rejects a `<label>` that wraps a `<Checkbox>` without an explicit association. Pattern: assign an `id` to the Checkbox and render the label as a sibling `<label htmlFor={id}>`. Naked `<div>` + `aria-label` on the Checkbox passes lint but silently drops the click-on-name affordance. Pattern: `frontend/src/features/lessons/lessons-dialogs.tsx` (school-class checkbox group).
 
 ## TypeScript
 
