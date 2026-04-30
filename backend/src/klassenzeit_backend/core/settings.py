@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     log_format: Literal["text", "json"] | None = None
     log_level: str = "INFO"
 
+    # Solver
+    solve_deadline_ms: int | None = 200
+
 
 @lru_cache
 def get_settings() -> Settings:
