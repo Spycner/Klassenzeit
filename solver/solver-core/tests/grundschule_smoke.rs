@@ -88,11 +88,12 @@ fn grundschule() -> Problem {
             let teacher = &teachers[(c_idx * 4 + s_idx) % teachers.len()];
             lessons.push(Lesson {
                 id: LessonId(grundschule_uuid(200 + lesson_idx)),
-                school_class_id: class.id,
+                school_class_ids: vec![class.id],
                 subject_id: subject.id,
                 teacher_id: teacher.id,
                 hours_per_week: hours,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             });
             lesson_idx += 1;
             quals.push(TeacherQualification {

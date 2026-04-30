@@ -110,11 +110,12 @@ mod tests {
             }],
             lessons: vec![Lesson {
                 id: LessonId(json_uuid(60)),
-                school_class_id: SchoolClassId(json_uuid(50)),
+                school_class_ids: vec![SchoolClassId(json_uuid(50))],
                 subject_id: SubjectId(json_uuid(40)),
                 teacher_id: TeacherId(json_uuid(20)),
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: TeacherId(json_uuid(20)),

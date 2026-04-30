@@ -201,7 +201,7 @@ fn try_place_block(
     tb_order: &[usize],
     room_order: &[usize],
 ) -> bool {
-    let class = lesson.school_class_id;
+    let class_ids: &[SchoolClassId] = &lesson.school_class_ids;
     let teacher = lesson.teacher_id;
     let subject = problem
         .subjects
@@ -230,14 +230,18 @@ fn try_place_block(
             }
         }
 
-        // Hard-feasibility for every position in the window.
+        // Hard-feasibility for every position in the window. A multi-class
+        // lesson must be free in every member class's slot.
         for k in 0..n_usize {
             let tb = &problem.time_blocks[tb_order[outer_pos + k]];
-            if state.used_teacher.contains(&(teacher, tb.id))
-                || state.used_class.contains(&(class, tb.id))
-                || idx.teacher_blocked(teacher, tb.id)
+            if state.used_teacher.contains(&(teacher, tb.id)) || idx.teacher_blocked(teacher, tb.id)
             {
                 continue 'outer;
+            }
+            for class in class_ids {
+                if state.used_class.contains(&(*class, tb.id)) {
+                    continue 'outer;
+                }
             }
         }
         let current = state.hours_by_teacher.get(&teacher).copied().unwrap_or(0);
@@ -246,22 +250,27 @@ fn try_place_block(
             continue;
         }
 
-        // Score: analytical window-delta plus subject_pref summed over n tbs.
+        // Score: analytical window-delta summed across every member class,
+        // plus the teacher half once, plus subject_pref summed over n tbs.
         let start_pos = first_tb.position;
         let end_pos = start_pos + n - 1;
-        let class_partition = state.class_positions.get(&(class, first_tb.day_of_week));
+        let mut class_delta_sum: i64 = 0;
+        for class in class_ids {
+            let class_partition = state.class_positions.get(&(*class, first_tb.day_of_week));
+            let class_old = match class_partition {
+                Some(p) => crate::score::gap_count(p),
+                None => 0,
+            };
+            let class_new = gap_count_after_window_insert(class_partition, start_pos, end_pos);
+            class_delta_sum += i64::from(class_new) - i64::from(class_old);
+        }
         let teacher_partition = state
             .teacher_positions
             .get(&(teacher, first_tb.day_of_week));
-        let class_old = match class_partition {
-            Some(p) => crate::score::gap_count(p),
-            None => 0,
-        };
         let teacher_old = match teacher_partition {
             Some(p) => crate::score::gap_count(p),
             None => 0,
         };
-        let class_new = gap_count_after_window_insert(class_partition, start_pos, end_pos);
         let teacher_new = gap_count_after_window_insert(teacher_partition, start_pos, end_pos);
         let mut subject_pref = 0u32;
         for k in 0..n_usize {
@@ -269,8 +278,7 @@ fn try_place_block(
             subject_pref = subject_pref
                 .saturating_add(crate::score::subject_preference_score(subject, tb, weights));
         }
-        let class_delta_w = (i64::from(class_new) - i64::from(class_old))
-            .saturating_mul(i64::from(weights.class_gap));
+        let class_delta_w = class_delta_sum.saturating_mul(i64::from(weights.class_gap));
         let teacher_delta_w = (i64::from(teacher_new) - i64::from(teacher_old))
             .saturating_mul(i64::from(weights.teacher_gap));
         let new_signed = i64::from(state.soft_score)
@@ -338,15 +346,19 @@ fn try_place_block(
             room_id: c.room_id,
         });
         state.used_teacher.insert((teacher, tb.id));
-        state.used_class.insert((class, tb.id));
+        for class in class_ids {
+            state.used_class.insert((*class, tb.id));
+        }
         state.used_room.insert((c.room_id, tb.id));
     }
     *state.hours_by_teacher.entry(teacher).or_insert(0) += n;
 
-    let class_part = state.class_positions.entry((class, c.day)).or_default();
-    for pos in c.start_pos..=c.end_pos {
-        let ins = class_part.binary_search(&pos).unwrap_or_else(|i| i);
-        class_part.insert(ins, pos);
+    for class in class_ids {
+        let class_part = state.class_positions.entry((*class, c.day)).or_default();
+        for pos in c.start_pos..=c.end_pos {
+            let ins = class_part.binary_search(&pos).unwrap_or_else(|i| i);
+            class_part.insert(ins, pos);
+        }
     }
     let teacher_part = state.teacher_positions.entry((teacher, c.day)).or_default();
     for pos in c.start_pos..=c.end_pos {
@@ -377,8 +389,11 @@ fn unplaced_kind(
 
     let any_slot_open = problem.time_blocks.iter().any(|tb| {
         !used_teacher.contains(&(lesson.teacher_id, tb.id))
-            && !used_class.contains(&(lesson.school_class_id, tb.id))
             && !idx.teacher_blocked(lesson.teacher_id, tb.id)
+            && lesson
+                .school_class_ids
+                .iter()
+                .all(|class| !used_class.contains(&(*class, tb.id)))
     });
     if !any_slot_open {
         return ViolationKind::NoFreeTimeBlock;
@@ -448,11 +463,12 @@ mod tests {
             }],
             lessons: vec![Lesson {
                 id: LessonId(solve_uuid(60)),
-                school_class_id: SchoolClassId(solve_uuid(50)),
+                school_class_ids: vec![SchoolClassId(solve_uuid(50))],
                 subject_id: SubjectId(solve_uuid(40)),
                 teacher_id: TeacherId(solve_uuid(20)),
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: TeacherId(solve_uuid(20)),
@@ -554,11 +570,12 @@ mod tests {
         });
         p.lessons.push(Lesson {
             id: LessonId(solve_uuid(61)),
-            school_class_id: SchoolClassId(solve_uuid(50)),
+            school_class_ids: vec![SchoolClassId(solve_uuid(50))],
             subject_id: SubjectId(solve_uuid(41)),
             teacher_id: TeacherId(solve_uuid(20)),
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         });
         p.teacher_blocked_times.push(TeacherBlockedTime {
             teacher_id: TeacherId(solve_uuid(20)),
@@ -584,11 +601,12 @@ mod tests {
         });
         p.lessons.push(Lesson {
             id: LessonId(solve_uuid(61)),
-            school_class_id: SchoolClassId(solve_uuid(50)),
+            school_class_ids: vec![SchoolClassId(solve_uuid(50))],
             subject_id: SubjectId(solve_uuid(41)),
             teacher_id: TeacherId(solve_uuid(20)),
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         });
         let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 2);
@@ -615,11 +633,12 @@ mod tests {
         });
         p.lessons.push(Lesson {
             id: LessonId(solve_uuid(61)),
-            school_class_id: SchoolClassId(solve_uuid(51)),
+            school_class_ids: vec![SchoolClassId(solve_uuid(51))],
             subject_id: SubjectId(solve_uuid(40)),
             teacher_id: TeacherId(solve_uuid(21)),
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         });
         let s = greedy_solve(&p).unwrap();
         assert_eq!(s.placements.len(), 2);
@@ -685,11 +704,12 @@ mod tests {
         });
         p.lessons.push(Lesson {
             id: LessonId(solve_uuid(61)),
-            school_class_id: SchoolClassId(solve_uuid(50)),
+            school_class_ids: vec![SchoolClassId(solve_uuid(50))],
             subject_id: SubjectId(solve_uuid(41)),
             teacher_id: TeacherId(solve_uuid(21)),
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         });
 
         let s = greedy_solve(&p).unwrap();
@@ -748,11 +768,12 @@ mod tests {
         });
         p.lessons.push(Lesson {
             id: LessonId(solve_uuid(61)),
-            school_class_id: SchoolClassId(solve_uuid(51)),
+            school_class_ids: vec![SchoolClassId(solve_uuid(51))],
             subject_id: SubjectId(solve_uuid(40)),
             teacher_id: TeacherId(solve_uuid(20)),
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         });
         p.teachers[0].max_hours_per_week = 10;
 
@@ -949,6 +970,68 @@ mod tests {
             s.violations[0].hour_index, 2,
             "second block starts at hour 2"
         );
+    }
+
+    #[test]
+    fn multi_class_lesson_blocks_each_class_independently() {
+        // Single time block, single room. The multi-class lesson covers
+        // classes 50 and 51 simultaneously. A second lesson, single-class for
+        // class 51, must fail to place because class 51's only candidate slot
+        // is now booked by the multi-class lesson. The greedy must record
+        // that booking against every member class, not just the first.
+        let mut p = base_problem();
+        p.time_blocks = vec![TimeBlock {
+            id: TimeBlockId(solve_uuid(10)),
+            day_of_week: 0,
+            position: 0,
+        }];
+        p.school_classes.push(SchoolClass {
+            id: SchoolClassId(solve_uuid(51)),
+        });
+        p.teachers.push(Teacher {
+            id: TeacherId(solve_uuid(21)),
+            max_hours_per_week: 10,
+        });
+        p.teacher_qualifications.push(TeacherQualification {
+            teacher_id: TeacherId(solve_uuid(21)),
+            subject_id: SubjectId(solve_uuid(40)),
+        });
+        p.rooms.push(Room {
+            id: RoomId(solve_uuid(31)),
+        });
+        // Make lesson 60 multi-class (classes 50 + 51).
+        p.lessons[0].school_class_ids =
+            vec![SchoolClassId(solve_uuid(50)), SchoolClassId(solve_uuid(51))];
+        p.lessons.push(Lesson {
+            id: LessonId(solve_uuid(61)),
+            school_class_ids: vec![SchoolClassId(solve_uuid(51))],
+            subject_id: SubjectId(solve_uuid(40)),
+            teacher_id: TeacherId(solve_uuid(21)),
+            hours_per_week: 1,
+            preferred_block_size: 1,
+            lesson_group_id: None,
+        });
+
+        let s = greedy_solve(&p).unwrap();
+        let placed_60: Vec<_> = s
+            .placements
+            .iter()
+            .filter(|pl| pl.lesson_id == LessonId(solve_uuid(60)))
+            .collect();
+        let placed_61: Vec<_> = s
+            .placements
+            .iter()
+            .filter(|pl| pl.lesson_id == LessonId(solve_uuid(61)))
+            .collect();
+        assert_eq!(placed_60.len(), 1, "multi-class lesson places once");
+        assert_eq!(
+            placed_61.len(),
+            0,
+            "single-class lesson cannot share class 51's only slot"
+        );
+        assert_eq!(s.violations.len(), 1);
+        assert_eq!(s.violations[0].lesson_id, LessonId(solve_uuid(61)));
+        assert_eq!(s.violations[0].kind, ViolationKind::NoFreeTimeBlock);
     }
 
     #[test]

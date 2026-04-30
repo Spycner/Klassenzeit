@@ -130,14 +130,16 @@ fn try_change_move(
         return false;
     }
 
-    let class = lesson.school_class_id;
+    let class_ids: &[SchoolClassId] = &lesson.school_class_ids;
     let teacher = lesson.teacher_id;
 
     if used_teacher.contains(&(teacher, new_tb.id)) {
         return false;
     }
-    if used_class.contains(&(class, new_tb.id)) {
-        return false;
+    for class in class_ids {
+        if used_class.contains(&(*class, new_tb.id)) {
+            return false;
+        }
     }
     if idx.teacher_blocked(teacher, new_tb.id) {
         return false;
@@ -160,7 +162,7 @@ fn try_change_move(
     let subject_pref_delta = i64::from(subject_pref_new) - i64::from(subject_pref_old);
 
     let delta = score_after_change_move(
-        class,
+        class_ids,
         teacher,
         old_tb.day_of_week,
         old_tb.position,
@@ -192,7 +194,7 @@ fn try_change_move(
         old_tb,
         new_tb,
         new_room_id,
-        class,
+        class_ids,
         teacher,
         placements,
         class_positions,
@@ -243,11 +245,13 @@ fn pick_room(
 }
 
 /// Compute the soft-score delta produced by moving a placement from
-/// `(old_day, old_pos)` to `(new_day, new_pos)` for `(class, teacher)`.
-/// Pure function over the partition maps; does not mutate.
+/// `(old_day, old_pos)` to `(new_day, new_pos)` for the given member classes
+/// and teacher. Class-side delta sums across every member of `class_ids`;
+/// teacher half is unchanged. Pure function over the partition maps; does
+/// not mutate.
 #[allow(clippy::too_many_arguments)] // Reason: internal helper
 fn score_after_change_move(
-    class: SchoolClassId,
+    class_ids: &[SchoolClassId],
     teacher: TeacherId,
     old_day: u8,
     old_pos: u8,
@@ -257,13 +261,13 @@ fn score_after_change_move(
     teacher_positions: &HashMap<(TeacherId, u8), Vec<u8>>,
     weights: &ConstraintWeights,
 ) -> i64 {
-    let class_delta = partition_delta(
-        class_positions.get(&(class, old_day)),
-        class_positions.get(&(class, new_day)),
+    let class_delta = class_partitions_delta_sum(
+        class_ids,
         old_day,
         new_day,
         old_pos,
         new_pos,
+        class_positions,
     );
     let teacher_delta = partition_delta(
         teacher_positions.get(&(teacher, old_day)),
@@ -274,6 +278,30 @@ fn score_after_change_move(
         new_pos,
     );
     i64::from(weights.class_gap) * class_delta + i64::from(weights.teacher_gap) * teacher_delta
+}
+
+/// Sum of `partition_delta` across every member class. Helper unique to LAHC;
+/// the greedy loop in `solve.rs` walks `school_class_ids` directly.
+fn class_partitions_delta_sum(
+    class_ids: &[SchoolClassId],
+    old_day: u8,
+    new_day: u8,
+    old_pos: u8,
+    new_pos: u8,
+    class_positions: &HashMap<(SchoolClassId, u8), Vec<u8>>,
+) -> i64 {
+    let mut sum = 0i64;
+    for class in class_ids {
+        sum += partition_delta(
+            class_positions.get(&(*class, old_day)),
+            class_positions.get(&(*class, new_day)),
+            old_day,
+            new_day,
+            old_pos,
+            new_pos,
+        );
+    }
+    sum
 }
 
 /// Compute the gap-count delta for a single (entity, day) partition pair
@@ -346,7 +374,9 @@ fn gap_count_after_swap(positions: &[u8], old_pos: u8, new_pos: u8) -> u32 {
 }
 
 /// Apply the accepted move's mutations: rewrite the placement entry,
-/// update the partition maps, swap the used-* set entries.
+/// update the partition maps, swap the used-* set entries. For multi-class
+/// lessons, every member of `class_ids` has its partition and `used_class`
+/// entries updated.
 #[allow(clippy::too_many_arguments)] // Reason: internal helper
 fn apply_change_move(
     placement_idx: usize,
@@ -354,7 +384,7 @@ fn apply_change_move(
     old_tb: TimeBlock,
     new_tb: TimeBlock,
     new_room_id: RoomId,
-    class: SchoolClassId,
+    class_ids: &[SchoolClassId],
     teacher: TeacherId,
     placements: &mut [Placement],
     class_positions: &mut HashMap<(SchoolClassId, u8), Vec<u8>>,
@@ -369,20 +399,22 @@ fn apply_change_move(
         room_id: new_room_id,
     };
 
-    if let Some(part) = class_positions.get_mut(&(class, old_tb.day_of_week)) {
-        if let Ok(i) = part.binary_search(&old_tb.position) {
-            part.remove(i);
+    for class in class_ids {
+        if let Some(part) = class_positions.get_mut(&(*class, old_tb.day_of_week)) {
+            if let Ok(i) = part.binary_search(&old_tb.position) {
+                part.remove(i);
+            }
+            if part.is_empty() {
+                class_positions.remove(&(*class, old_tb.day_of_week));
+            }
         }
-        if part.is_empty() {
-            class_positions.remove(&(class, old_tb.day_of_week));
+        let part = class_positions
+            .entry((*class, new_tb.day_of_week))
+            .or_default();
+        let ins = part.binary_search(&new_tb.position).unwrap_or_else(|i| i);
+        if part.get(ins).copied() != Some(new_tb.position) {
+            part.insert(ins, new_tb.position);
         }
-    }
-    let part = class_positions
-        .entry((class, new_tb.day_of_week))
-        .or_default();
-    let ins = part.binary_search(&new_tb.position).unwrap_or_else(|i| i);
-    if part.get(ins).copied() != Some(new_tb.position) {
-        part.insert(ins, new_tb.position);
     }
 
     if let Some(part) = teacher_positions.get_mut(&(teacher, old_tb.day_of_week)) {
@@ -403,8 +435,10 @@ fn apply_change_move(
 
     used_teacher.remove(&(teacher, old_tb.id));
     used_teacher.insert((teacher, new_tb.id));
-    used_class.remove(&(class, old_tb.id));
-    used_class.insert((class, new_tb.id));
+    for class in class_ids {
+        used_class.remove(&(*class, old_tb.id));
+        used_class.insert((*class, new_tb.id));
+    }
     used_room.remove(&(old_p.room_id, old_tb.id));
     used_room.insert((new_room_id, new_tb.id));
 }
@@ -461,7 +495,7 @@ mod tests {
         let teacher_positions: HashMap<(TeacherId, u8), Vec<u8>> = HashMap::new();
         let teacher = TeacherId(lahc_uuid(20));
         let delta = score_after_change_move(
-            class,
+            &[class],
             teacher,
             0,
             4,
@@ -486,7 +520,7 @@ mod tests {
         class_positions.insert((class, 0), vec_part(&[0, 1]));
         let teacher_positions: HashMap<(TeacherId, u8), Vec<u8>> = HashMap::new();
         let delta = score_after_change_move(
-            class,
+            &[class],
             teacher,
             0,
             1,
@@ -545,7 +579,7 @@ mod tests {
             old_tb,
             new_tb,
             new_room,
-            class,
+            &[class],
             teacher,
             &mut placements,
             &mut class_positions,
@@ -606,11 +640,12 @@ mod tests {
             school_classes: vec![SchoolClass { id: class }],
             lessons: vec![Lesson {
                 id: lesson,
-                school_class_id: class,
+                school_class_ids: vec![class],
                 subject_id: subject,
                 teacher_id: teacher,
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: teacher,
@@ -724,11 +759,12 @@ mod tests {
             school_classes: vec![SchoolClass { id: class }],
             lessons: vec![Lesson {
                 id: lesson,
-                school_class_id: class,
+                school_class_ids: vec![class],
                 subject_id: subject,
                 teacher_id: teacher,
                 hours_per_week: 2,
                 preferred_block_size: 2,
+                lesson_group_id: None,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: teacher,

@@ -3,7 +3,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::ids::{LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId};
+use crate::ids::{
+    LessonGroupId, LessonId, RoomId, SchoolClassId, SubjectId, TeacherId, TimeBlockId,
+};
 use std::time::Duration;
 
 /// Tunables for one solver invocation. Pass via [`crate::solve_with_config`];
@@ -137,8 +139,11 @@ pub struct SchoolClass {
 pub struct Lesson {
     /// Stable identifier for this lesson.
     pub id: LessonId,
-    /// Receiving school class.
-    pub school_class_id: SchoolClassId,
+    /// Receiving school classes. A single-class lesson has one entry; a
+    /// cross-class lesson (e.g. a parallel Religionsmodell trio) has the full
+    /// set of participating classes. Must be non-empty and contain no
+    /// duplicates; `validate_structural` rejects violations.
+    pub school_class_ids: Vec<SchoolClassId>,
     /// Subject taught in this lesson.
     pub subject_id: SubjectId,
     /// Teacher assigned to this lesson.
@@ -153,6 +158,12 @@ pub struct Lesson {
     /// when the JSON field is omitted, keeping the wire format additive.
     #[serde(default = "default_preferred_block_size")]
     pub preferred_block_size: u8,
+    /// Optional group identifier; lessons sharing a non-null `lesson_group_id`
+    /// are co-placed by the lesson-group constraint. Read-only in this PR (the
+    /// constraint that consumes it ships with the algorithm-phase PR); a
+    /// `None` value means the lesson is independent.
+    #[serde(default)]
+    pub lesson_group_id: Option<LessonGroupId>,
 }
 
 fn default_preferred_block_size() -> u8 {
@@ -304,7 +315,7 @@ mod tests {
     #[test]
     fn lesson_accepts_preferred_block_size_field() {
         let json = format!(
-            r#"{{"id":"{}","school_class_id":"{}","subject_id":"{}","teacher_id":"{}","hours_per_week":4,"preferred_block_size":2}}"#,
+            r#"{{"id":"{}","school_class_ids":["{}"],"subject_id":"{}","teacher_id":"{}","hours_per_week":4,"preferred_block_size":2}}"#,
             Uuid::nil(),
             Uuid::nil(),
             Uuid::nil(),
@@ -317,7 +328,7 @@ mod tests {
     #[test]
     fn lesson_defaults_preferred_block_size_to_one_when_field_omitted() {
         let json = format!(
-            r#"{{"id":"{}","school_class_id":"{}","subject_id":"{}","teacher_id":"{}","hours_per_week":1}}"#,
+            r#"{{"id":"{}","school_class_ids":["{}"],"subject_id":"{}","teacher_id":"{}","hours_per_week":1}}"#,
             Uuid::nil(),
             Uuid::nil(),
             Uuid::nil(),
@@ -325,6 +336,61 @@ mod tests {
         );
         let lesson: Lesson = serde_json::from_str(&json).unwrap();
         assert_eq!(lesson.preferred_block_size, 1);
+    }
+
+    #[test]
+    fn lesson_accepts_school_class_ids_with_one_element() {
+        let class_id = Uuid::from_bytes([1; 16]);
+        let json = format!(
+            r#"{{"id":"{}","school_class_ids":["{}"],"subject_id":"{}","teacher_id":"{}","hours_per_week":1}}"#,
+            Uuid::nil(),
+            class_id,
+            Uuid::nil(),
+            Uuid::nil()
+        );
+        let lesson: Lesson = serde_json::from_str(&json).unwrap();
+        assert_eq!(lesson.school_class_ids.len(), 1);
+        assert_eq!(lesson.school_class_ids[0], SchoolClassId(class_id));
+        assert!(lesson.lesson_group_id.is_none());
+    }
+
+    #[test]
+    fn lesson_accepts_school_class_ids_with_three_elements() {
+        let c1 = Uuid::from_bytes([1; 16]);
+        let c2 = Uuid::from_bytes([2; 16]);
+        let c3 = Uuid::from_bytes([3; 16]);
+        let json = format!(
+            r#"{{"id":"{}","school_class_ids":["{}","{}","{}"],"subject_id":"{}","teacher_id":"{}","hours_per_week":1}}"#,
+            Uuid::nil(),
+            c1,
+            c2,
+            c3,
+            Uuid::nil(),
+            Uuid::nil()
+        );
+        let lesson: Lesson = serde_json::from_str(&json).unwrap();
+        assert_eq!(lesson.school_class_ids.len(), 3);
+        assert_eq!(lesson.school_class_ids[0], SchoolClassId(c1));
+        assert_eq!(lesson.school_class_ids[1], SchoolClassId(c2));
+        assert_eq!(lesson.school_class_ids[2], SchoolClassId(c3));
+    }
+
+    #[test]
+    fn lesson_round_trips_lesson_group_id_when_present() {
+        let group_id = Uuid::from_bytes([7; 16]);
+        let json = format!(
+            r#"{{"id":"{}","school_class_ids":["{}"],"subject_id":"{}","teacher_id":"{}","hours_per_week":1,"lesson_group_id":"{}"}}"#,
+            Uuid::nil(),
+            Uuid::nil(),
+            Uuid::nil(),
+            Uuid::nil(),
+            group_id
+        );
+        let lesson: Lesson = serde_json::from_str(&json).unwrap();
+        assert_eq!(lesson.lesson_group_id, Some(LessonGroupId(group_id)));
+        let reserialised = serde_json::to_string(&lesson).unwrap();
+        let parsed_again: Lesson = serde_json::from_str(&reserialised).unwrap();
+        assert_eq!(parsed_again, lesson);
     }
 
     #[test]

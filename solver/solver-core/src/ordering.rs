@@ -143,19 +143,21 @@ mod tests {
         });
         problem.lessons.push(Lesson {
             id: LessonId(ord_uuid(70)),
-            school_class_id: SchoolClassId(ord_uuid(50)),
+            school_class_ids: vec![SchoolClassId(ord_uuid(50))],
             subject_id: SubjectId(ord_uuid(40)),
             teacher_id: TeacherId(ord_uuid(20)),
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         });
         problem.lessons.push(Lesson {
             id: LessonId(ord_uuid(71)),
-            school_class_id: SchoolClassId(ord_uuid(51)),
+            school_class_ids: vec![SchoolClassId(ord_uuid(51))],
             subject_id: SubjectId(ord_uuid(41)),
             teacher_id: TeacherId(ord_uuid(21)),
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         });
         let idx = Indexed::new(&problem);
         assert_eq!(ffd_order(&problem, &idx), vec![0, 1]);
@@ -172,19 +174,21 @@ mod tests {
         let mut problem = two_blocks_two_rooms();
         problem.lessons.push(Lesson {
             id: LessonId(ord_uuid(81)),
-            school_class_id: SchoolClassId(ord_uuid(50)),
+            school_class_ids: vec![SchoolClassId(ord_uuid(50))],
             subject_id: SubjectId(ord_uuid(40)),
             teacher_id: TeacherId(ord_uuid(20)),
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         });
         problem.lessons.push(Lesson {
             id: LessonId(ord_uuid(80)),
-            school_class_id: SchoolClassId(ord_uuid(51)),
+            school_class_ids: vec![SchoolClassId(ord_uuid(51))],
             subject_id: SubjectId(ord_uuid(41)),
             teacher_id: TeacherId(ord_uuid(21)),
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         });
         let idx = Indexed::new(&problem);
         // Both lessons have eligibility 2 * 2 = 4. Lower id (80) sorts first
@@ -198,11 +202,12 @@ mod tests {
         for k in 0..6u8 {
             problem.lessons.push(Lesson {
                 id: LessonId(ord_uuid(90 + k)),
-                school_class_id: SchoolClassId(ord_uuid(50)),
+                school_class_ids: vec![SchoolClassId(ord_uuid(50))],
                 subject_id: SubjectId(ord_uuid(40)),
                 teacher_id: TeacherId(ord_uuid(20)),
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             });
         }
         let idx = Indexed::new(&problem);
@@ -231,11 +236,12 @@ mod tests {
         // solve time, but ffd_order treats it like any other lesson.
         problem.lessons.push(Lesson {
             id: LessonId(ord_uuid(95)),
-            school_class_id: SchoolClassId(ord_uuid(50)),
+            school_class_ids: vec![SchoolClassId(ord_uuid(50))],
             subject_id: SubjectId(ord_uuid(41)),
             teacher_id: TeacherId(ord_uuid(20)),
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         });
         let idx = Indexed::new(&problem);
         let order = ffd_order(&problem, &idx);
