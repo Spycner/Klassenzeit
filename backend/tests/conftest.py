@@ -33,13 +33,6 @@ Implementation notes:
 """
 
 import os
-
-# Must precede any ``from klassenzeit_backend`` import. ``get_settings()`` is
-# lru_cache'd and ``main.py`` mounts routers at module-load time based on the
-# Settings instance it constructs. ``KZ_ENV=test`` needs to be in the process
-# env before that happens so the testing router (Tasks 3-5) is mounted.
-os.environ.setdefault("KZ_ENV", "test")
-
 import subprocess
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -56,19 +49,42 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import NullPool
 
-from klassenzeit_backend.auth.passwords import hash_password
-from klassenzeit_backend.auth.rate_limit import LoginRateLimiter
-from klassenzeit_backend.core.settings import Settings
-from klassenzeit_backend.db.models.user import User
-from klassenzeit_backend.db.session import get_session
-from klassenzeit_backend.main import app
+from tests._xdist_db import (
+    ensure_database_exists,
+    read_env_test_database_url,
+    worker_database_url,
+)
+
+# Must precede any ``from klassenzeit_backend`` import. ``get_settings()`` is
+# lru_cache'd and ``main.py`` mounts routers at module-load time based on the
+# Settings instance it constructs. ``KZ_ENV=test`` needs to be in the process
+# env before that happens so the testing router (Tasks 3-5) is mounted.
+os.environ.setdefault("KZ_ENV", "test")
+
+# Per-worker test DB isolation for pytest-xdist. ``PYTEST_XDIST_WORKER`` is
+# set to ``gw0``/``gw1``/... inside each worker process and ``master`` in the
+# coordinator (or absent when running without xdist). The base URL comes from
+# ``backend/.env.test``; we suffix the dbname with the worker name and write
+# it back to the env so pydantic-settings (which reads env vars over dotenv
+# files by default) and the subprocess alembic both see the per-worker URL.
+_BACKEND_ROOT = Path(__file__).resolve().parent.parent  # repo/backend
+_ENV_TEST = _BACKEND_ROOT / ".env.test"
+_WORKER = os.environ.get("PYTEST_XDIST_WORKER", "master")
+if _WORKER != "master":
+    os.environ["KZ_DATABASE_URL"] = worker_database_url(
+        read_env_test_database_url(_ENV_TEST), _WORKER
+    )
+
+from klassenzeit_backend.auth.passwords import hash_password  # noqa: E402
+from klassenzeit_backend.auth.rate_limit import LoginRateLimiter  # noqa: E402
+from klassenzeit_backend.core.settings import Settings  # noqa: E402
+from klassenzeit_backend.db.models.user import User  # noqa: E402
+from klassenzeit_backend.db.session import get_session  # noqa: E402
+from klassenzeit_backend.main import app  # noqa: E402
 
 # Type aliases for the auth factory callables
 type CreateUserFn = Callable[..., Awaitable[tuple[User, str]]]
 type LoginFn = Callable[[str, str], Awaitable[None]]
-
-BACKEND_ROOT = Path(__file__).resolve().parent.parent  # repo/backend
-ENV_TEST = BACKEND_ROOT / ".env.test"
 
 
 # ─── Layer 1: engine ────────────────────────────────────────────────────────
@@ -76,7 +92,7 @@ ENV_TEST = BACKEND_ROOT / ".env.test"
 
 @pytest.fixture(scope="session")
 def settings() -> Settings:
-    return Settings(_env_file=str(ENV_TEST))  # ty: ignore[missing-argument, unknown-argument]
+    return Settings(_env_file=str(_ENV_TEST))  # ty: ignore[missing-argument, unknown-argument]
 
 
 @pytest.fixture
@@ -106,6 +122,7 @@ def apply_migrations(settings: Settings) -> None:
     as spurious "Future attached to a different loop" errors after many
     tests had run.
     """
+    ensure_database_exists(str(settings.database_url))
     env = os.environ.copy()
     env["KZ_DATABASE_URL"] = str(settings.database_url)
     # Downgrade, then upgrade, each in a separate subprocess for clean state.
@@ -113,7 +130,7 @@ def apply_migrations(settings: Settings) -> None:
         subprocess.run(  # noqa: S603
             [sys.executable, "-m", "alembic", *args],
             check=True,
-            cwd=str(BACKEND_ROOT),
+            cwd=str(_BACKEND_ROOT),
             env=env,
         )
 
