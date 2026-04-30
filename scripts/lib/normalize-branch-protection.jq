@@ -36,3 +36,21 @@ del(.url)
 | (if .required_status_checks.contexts?
      then .required_status_checks.contexts |= sort
      else . end)
+
+# Unwrap enforce_admins: GET returns {"enabled": bool}, PUT takes a bare bool.
+| (if .enforce_admins? | type == "object"
+     then .enforce_admins = .enforce_admins.enabled
+     else . end)
+
+# required_signatures is GET-only ({"enabled": bool, "url": "..."}); absent from PUT.
+| del(.required_signatures)
+
+# required_status_checks.checks is GET-only (list of {app_id, context} objects).
+| del(.required_status_checks?.checks)
+
+# required_status_checks.contexts_url is a GET-only URL field not caught by the walk above.
+| del(.required_status_checks?.contexts_url)
+
+# restrictions: null in PUT payload; key absent in GET when no restrictions set.
+# Normalise both to: key absent.
+| if (.restrictions // null) == null then del(.restrictions) else . end
