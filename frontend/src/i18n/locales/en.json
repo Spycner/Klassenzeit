@@ -396,7 +396,7 @@
     "new": "New lesson",
     "loadError": "Could not load lessons.",
     "columns": {
-      "schoolClass": "Class",
+      "classes": "Classes",
       "subject": "Subject",
       "teacher": "Teacher",
       "hoursPerWeek": "Hours / week",
@@ -410,9 +410,11 @@
       "step2": "Add teachers",
       "step3": "Create a lesson"
     },
+    "form": {
+      "classes": "Classes",
+      "classesRequired": "Select at least one class"
+    },
     "fields": {
-      "schoolClassLabel": "Class",
-      "schoolClassPlaceholder": "Select a class",
       "subjectLabel": "Subject",
       "subjectPlaceholder": "Select a subject",
       "teacherLabel": "Teacher",

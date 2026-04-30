@@ -26,7 +26,8 @@ export function LessonsPage() {
     const teacherName = row.teacher
       ? `${row.teacher.first_name} ${row.teacher.last_name} ${row.teacher.short_code}`
       : "";
-    return `${row.school_class.name} ${row.subject.name} ${row.subject.short_name} ${teacherName}`
+    const classNames = row.school_classes.map((c) => c.name).join(" ");
+    return `${classNames} ${row.subject.name} ${row.subject.short_name} ${teacherName}`
       .toLowerCase()
       .includes(needle);
   });
@@ -34,9 +35,9 @@ export function LessonsPage() {
 
   const lessonColumns: EntityColumn<Lesson>[] = [
     {
-      key: "schoolClass",
-      header: t("lessons.columns.schoolClass"),
-      cell: (lesson) => lesson.school_class.name,
+      key: "schoolClasses",
+      header: t("lessons.columns.classes"),
+      cell: (lesson) => lesson.school_classes.map((c) => c.name).join(", "),
       cellClassName: "font-medium",
     },
     {

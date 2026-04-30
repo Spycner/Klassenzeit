@@ -396,7 +396,7 @@
     "new": "Neuer Unterricht",
     "loadError": "Unterricht konnte nicht geladen werden.",
     "columns": {
-      "schoolClass": "Klasse",
+      "classes": "Klassen",
       "subject": "Fach",
       "teacher": "Lehrkraft",
       "hoursPerWeek": "Stunden / Woche",
@@ -410,9 +410,11 @@
       "step2": "Lehrkräfte hinzufügen",
       "step3": "Unterricht anlegen"
     },
+    "form": {
+      "classes": "Klassen",
+      "classesRequired": "Mindestens eine Klasse auswählen"
+    },
     "fields": {
-      "schoolClassLabel": "Klasse",
-      "schoolClassPlaceholder": "Klasse auswählen",
       "subjectLabel": "Fach",
       "subjectPlaceholder": "Fach auswählen",
       "teacherLabel": "Lehrkraft",
