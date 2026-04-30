@@ -22,6 +22,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.db.models.lesson import Lesson
+from klassenzeit_backend.db.models.lesson_school_class import LessonSchoolClass
 from klassenzeit_backend.db.models.school_class import SchoolClass
 from klassenzeit_backend.db.models.subject import Subject
 from klassenzeit_backend.db.models.teacher import Teacher
@@ -93,7 +94,11 @@ async def test_seeded_grundschule_zweizuegig_solves_with_zero_violations(
         await db_session.execute(
             update(Lesson)
             .where(
-                Lesson.school_class_id == school_class.id,
+                Lesson.id.in_(
+                    select(LessonSchoolClass.lesson_id).where(
+                        LessonSchoolClass.school_class_id == school_class.id
+                    )
+                ),
                 Lesson.subject_id == subjects_by_short[subject_short].id,
             )
             .values(teacher_id=teachers_by_short[teacher_short].id)

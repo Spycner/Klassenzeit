@@ -10,6 +10,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.db.models.lesson import Lesson
+from klassenzeit_backend.db.models.lesson_school_class import LessonSchoolClass
 from klassenzeit_backend.db.models.room import Room
 from klassenzeit_backend.db.models.school_class import SchoolClass
 from klassenzeit_backend.db.models.teacher import TeacherQualification
@@ -55,15 +56,15 @@ async def _seed_solvable_class(
         week_scheme_id=week_scheme.id,
     )
     db_session.add(TeacherQualification(teacher_id=teacher.id, subject_id=subject.id))
-    db_session.add(
-        Lesson(
-            school_class_id=cls.id,
-            subject_id=subject.id,
-            teacher_id=teacher.id,
-            hours_per_week=1,
-            preferred_block_size=1,
-        )
+    lesson = Lesson(
+        subject_id=subject.id,
+        teacher_id=teacher.id,
+        hours_per_week=1,
+        preferred_block_size=1,
     )
+    db_session.add(lesson)
+    await db_session.flush()
+    db_session.add(LessonSchoolClass(lesson_id=lesson.id, school_class_id=cls.id))
     await db_session.flush()
     return cls, week_scheme
 
@@ -220,15 +221,15 @@ async def test_schedule_post_filters_out_other_classes_placements(
         stundentafel_id=tafel_b.id,
         week_scheme_id=scheme.id,
     )
-    db_session.add(
-        Lesson(
-            school_class_id=cls_b.id,
-            subject_id=subject_b.id,
-            teacher_id=teacher_b.id,
-            hours_per_week=1,
-            preferred_block_size=1,
-        )
+    lesson_b = Lesson(
+        subject_id=subject_b.id,
+        teacher_id=teacher_b.id,
+        hours_per_week=1,
+        preferred_block_size=1,
     )
+    db_session.add(lesson_b)
+    await db_session.flush()
+    db_session.add(LessonSchoolClass(lesson_id=lesson_b.id, school_class_id=cls_b.id))
     await db_session.flush()
     resp = await client.post(f"/api/classes/{cls_a.id}/schedule")
     assert resp.status_code == 200, resp.text
@@ -236,7 +237,11 @@ async def test_schedule_post_filters_out_other_classes_placements(
     class_a_lesson_ids = {
         str(lesson.id)
         for lesson in (
-            await db_session.execute(select(Lesson).where(Lesson.school_class_id == cls_a.id))
+            await db_session.execute(
+                select(Lesson)
+                .join(LessonSchoolClass, LessonSchoolClass.lesson_id == Lesson.id)
+                .where(LessonSchoolClass.school_class_id == cls_a.id)
+            )
         )
         .scalars()
         .all()

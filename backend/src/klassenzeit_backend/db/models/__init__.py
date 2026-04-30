@@ -8,6 +8,7 @@ autogenerate.
 
 from klassenzeit_backend.db.models.class_group import ClassGroup
 from klassenzeit_backend.db.models.lesson import Lesson
+from klassenzeit_backend.db.models.lesson_school_class import LessonSchoolClass
 from klassenzeit_backend.db.models.room import Room, RoomAvailability, RoomSubjectSuitability
 from klassenzeit_backend.db.models.scheduled_lesson import ScheduledLesson
 from klassenzeit_backend.db.models.school_class import SchoolClass
@@ -21,6 +22,7 @@ from klassenzeit_backend.db.models.week_scheme import TimeBlock, WeekScheme
 __all__ = [
     "ClassGroup",
     "Lesson",
+    "LessonSchoolClass",
     "Room",
     "RoomAvailability",
     "RoomSubjectSuitability",
