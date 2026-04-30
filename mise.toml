@@ -60,6 +60,10 @@ run = "cargo bench -p solver-core"
 description = "Re-run the solver bench and regenerate solver/solver-core/benches/BASELINE.md"
 run         = "./scripts/record_solver_bench.sh"
 
+[tasks."bench:tests"]
+description = "Time the backend pytest suite and compare to .test-duration-budget"
+run         = "./scripts/bench_pytest.sh"
+
 # ─── Solver rebuild ─────────────────────────────────────────────────────────
 # Escape hatch for the maturin rebuild step. Plain `uv sync` picks up Rust
 # edits to solver-py, but `maturin develop` is faster on the inner loop.
