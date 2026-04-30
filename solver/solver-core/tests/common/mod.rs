@@ -73,11 +73,12 @@ pub fn feasible_problem(
             let teacher = &teachers_vec[(c_idx + s_idx) % teachers_vec.len()];
             lessons.push(Lesson {
                 id: LessonId(common_big_uuid((c_idx as u8) + 1, s_idx as u8)),
-                school_class_id: class.id,
+                school_class_ids: vec![class.id],
                 subject_id: subject.id,
                 teacher_id: teacher.id,
                 hours_per_week: hours_per_lesson,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             });
         }
     }

@@ -664,6 +664,8 @@ export interface paths {
          *
          *     Args:
          *         class_id: UUID path parameter identifying the school class.
+         *         request: The FastAPI request, used to read ``solve_deadline_ms`` from
+         *             ``app.state.settings``.
          *         _admin: Injected admin user (enforces authentication).
          *         db: Injected async database session.
          *
@@ -1159,9 +1161,10 @@ export interface paths {
          *     Args:
          *         _admin: Injected admin user (enforces authentication).
          *         db: Injected async database session.
-         *         class_id: Optional filter — only lessons for this school class.
-         *         teacher_id: Optional filter — only lessons assigned to this teacher.
-         *         subject_id: Optional filter — only lessons for this subject.
+         *         class_id: Optional filter; only lessons that include this school
+         *             class in their memberships.
+         *         teacher_id: Optional filter; only lessons assigned to this teacher.
+         *         subject_id: Optional filter; only lessons for this subject.
          *
          *     Returns:
          *         List of lessons matching the applied filters.
@@ -1170,7 +1173,7 @@ export interface paths {
         put?: never;
         /**
          * Create Lesson
-         * @description Create a new lesson linking a class, subject and optional teacher.
+         * @description Create a new lesson with one or more class memberships.
          *
          *     Args:
          *         body: Fields for the new lesson.
@@ -1181,7 +1184,8 @@ export interface paths {
          *         The created lesson as a LessonResponse.
          *
          *     Raises:
-         *         HTTPException: 409 if a lesson for this class+subject pair already exists.
+         *         HTTPException: 409 if a lesson for any (class, subject) pair in the
+         *             request already exists.
          */
         post: operations["create_lesson_api_lessons_post"];
         delete?: never;
@@ -1232,7 +1236,7 @@ export interface paths {
         head?: never;
         /**
          * Update Lesson
-         * @description Partially update a lesson's teacher, hours or preferred block size.
+         * @description Partially update a lesson's memberships, teacher, hours or block size.
          *
          *     Args:
          *         lesson_id: UUID path parameter identifying the lesson to patch.
@@ -1244,7 +1248,8 @@ export interface paths {
          *         The updated lesson as a LessonResponse.
          *
          *     Raises:
-         *         HTTPException: 404 if no lesson with that ID exists.
+         *         HTTPException: 404 if no lesson with that ID exists; 409 if the new
+         *             membership set collides with another lesson on the same subject.
          */
         patch: operations["update_lesson_api_lessons__lesson_id__patch"];
         trace?: never;
@@ -1263,7 +1268,8 @@ export interface paths {
          * @description Bulk-create lessons for a class from its associated Stundentafel.
          *
          *     Only creates lessons for subjects not already assigned to the class.
-         *     Subjects that already have a lesson are silently skipped.
+         *     Subjects that already have a lesson (single- or multi-class) which
+         *     includes this class as a member are silently skipped.
          *
          *     Args:
          *         class_id: UUID path parameter identifying the school class.
@@ -1432,11 +1438,8 @@ export interface components {
          * @description Request body for creating a lesson.
          */
         LessonCreate: {
-            /**
-             * School Class Id
-             * Format: uuid
-             */
-            school_class_id: string;
+            /** School Class Ids */
+            school_class_ids: string[];
             /**
              * Subject Id
              * Format: uuid
@@ -1451,6 +1454,8 @@ export interface components {
              * @default 1
              */
             preferred_block_size: number;
+            /** Lesson Group Id */
+            lesson_group_id?: string | null;
         };
         /**
          * LessonResponse
@@ -1462,13 +1467,16 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            school_class: components["schemas"]["LessonClassResponse"];
+            /** School Classes */
+            school_classes: components["schemas"]["LessonClassResponse"][];
             subject: components["schemas"]["LessonSubjectResponse"];
             teacher: components["schemas"]["LessonTeacherResponse"] | null;
             /** Hours Per Week */
             hours_per_week: number;
             /** Preferred Block Size */
             preferred_block_size: number;
+            /** Lesson Group Id */
+            lesson_group_id: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1517,12 +1525,16 @@ export interface components {
          * @description Request body for patching a lesson.
          */
         LessonUpdate: {
+            /** School Class Ids */
+            school_class_ids?: string[] | null;
             /** Teacher Id */
             teacher_id?: string | null;
             /** Hours Per Week */
             hours_per_week?: number | null;
             /** Preferred Block Size */
             preferred_block_size?: number | null;
+            /** Lesson Group Id */
+            lesson_group_id?: string | null;
         };
         /**
          * LoginRequest

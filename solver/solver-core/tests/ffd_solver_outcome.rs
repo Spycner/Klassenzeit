@@ -69,19 +69,21 @@ fn pessimal_input_problem() -> Problem {
         lessons: vec![
             Lesson {
                 id: LessonId(ffd_uuid(61)),
-                school_class_id: SchoolClassId(ffd_uuid(51)),
+                school_class_ids: vec![SchoolClassId(ffd_uuid(51))],
                 subject_id: SubjectId(ffd_uuid(41)),
                 teacher_id: TeacherId(ffd_uuid(21)),
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             },
             Lesson {
                 id: LessonId(ffd_uuid(60)),
-                school_class_id: SchoolClassId(ffd_uuid(50)),
+                school_class_ids: vec![SchoolClassId(ffd_uuid(50))],
                 subject_id: SubjectId(ffd_uuid(40)),
                 teacher_id: TeacherId(ffd_uuid(20)),
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             },
         ],
         teacher_qualifications: vec![

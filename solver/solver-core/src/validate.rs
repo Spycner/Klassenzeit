@@ -67,11 +67,26 @@ pub fn validate_structural(problem: &Problem) -> Result<(), Error> {
                 lesson.id.0, lesson.subject_id.0
             )));
         }
-        if !class_ids.contains(&lesson.school_class_id) {
+        if lesson.school_class_ids.is_empty() {
             return Err(Error::Input(format!(
-                "lesson {} references unknown school_class {}",
-                lesson.id.0, lesson.school_class_id.0
+                "lesson {} has empty school_class_ids",
+                lesson.id.0
             )));
+        }
+        let mut seen_classes: HashSet<SchoolClassId> = HashSet::new();
+        for class_id in &lesson.school_class_ids {
+            if !seen_classes.insert(*class_id) {
+                return Err(Error::Input(format!(
+                    "lesson {} has duplicate school_class {} in school_class_ids",
+                    lesson.id.0, class_id.0
+                )));
+            }
+            if !class_ids.contains(class_id) {
+                return Err(Error::Input(format!(
+                    "lesson {} references unknown school_class {}",
+                    lesson.id.0, class_id.0
+                )));
+            }
         }
     }
     for q in &problem.teacher_qualifications {
@@ -210,11 +225,12 @@ mod tests {
         };
         let lesson = Lesson {
             id: LessonId(uuid(6)),
-            school_class_id: class.id,
+            school_class_ids: vec![class.id],
             subject_id: subject.id,
             teacher_id: teacher.id,
             hours_per_week: 1,
             preferred_block_size: 1,
+            lesson_group_id: None,
         };
         Problem {
             time_blocks: vec![tb],
@@ -311,6 +327,31 @@ mod tests {
         p.lessons[0].teacher_id = TeacherId(uuid(99));
         let err = validate_structural(&p).unwrap_err();
         assert!(matches!(err, Error::Input(msg) if msg.contains("unknown teacher")));
+    }
+
+    #[test]
+    fn validate_structural_rejects_empty_school_class_ids() {
+        let mut p = minimal_problem();
+        p.lessons[0].school_class_ids.clear();
+        let err = validate_structural(&p).unwrap_err();
+        assert!(matches!(err, Error::Input(msg) if msg.contains("empty school_class_ids")));
+    }
+
+    #[test]
+    fn validate_structural_rejects_duplicate_school_class_ids() {
+        let mut p = minimal_problem();
+        let class_id = p.lessons[0].school_class_ids[0];
+        p.lessons[0].school_class_ids.push(class_id);
+        let err = validate_structural(&p).unwrap_err();
+        assert!(matches!(err, Error::Input(msg) if msg.contains("duplicate school_class")));
+    }
+
+    #[test]
+    fn validate_structural_rejects_unknown_school_class_id_in_set() {
+        let mut p = minimal_problem();
+        p.lessons[0].school_class_ids.push(SchoolClassId(uuid(99)));
+        let err = validate_structural(&p).unwrap_err();
+        assert!(matches!(err, Error::Input(msg) if msg.contains("unknown school_class")));
     }
 
     #[test]

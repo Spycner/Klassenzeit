@@ -24,12 +24,15 @@ const lesson: Lesson = {
     last_name: "Müller",
     short_code: "MUE",
   },
-  school_class: {
-    id: "44444444-4444-4444-4444-444444444444",
-    name: "1a",
-  },
+  school_classes: [
+    {
+      id: "44444444-4444-4444-4444-444444444444",
+      name: "1a",
+    },
+  ],
   hours_per_week: 5,
   preferred_block_size: 1,
+  lesson_group_id: null,
   created_at: "2026-04-25T00:00:00Z",
   updated_at: "2026-04-25T00:00:00Z",
 };

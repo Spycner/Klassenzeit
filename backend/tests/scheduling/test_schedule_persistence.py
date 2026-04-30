@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.db.models.lesson import Lesson
+from klassenzeit_backend.db.models.lesson_school_class import LessonSchoolClass
 from klassenzeit_backend.db.models.scheduled_lesson import ScheduledLesson
 from klassenzeit_backend.scheduling.solver_io import (
     persist_solution_for_class,
@@ -54,13 +55,14 @@ async def _seed_class_with_lesson(
         week_scheme_id=week_scheme.id,
     )
     lesson = Lesson(
-        school_class_id=cls.id,
         subject_id=subject.id,
         teacher_id=teacher.id,
         hours_per_week=1,
         preferred_block_size=1,
     )
     db_session.add(lesson)
+    await db_session.flush()
+    db_session.add(LessonSchoolClass(lesson_id=lesson.id, school_class_id=cls.id))
     await db_session.flush()
     return cls.id, lesson.id, tb.id, room.id
 

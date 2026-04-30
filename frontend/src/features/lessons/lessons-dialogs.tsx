@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +49,10 @@ interface LessonFormDialogProps {
   lesson?: Lesson;
 }
 
+function joinLessonClassNames(lesson: Lesson): string {
+  return lesson.school_classes.map((c) => c.name).join(", ");
+}
+
 export function LessonFormDialog({
   open,
   onOpenChange,
@@ -62,7 +67,7 @@ export function LessonFormDialog({
   const form = useForm<LessonFormValues>({
     resolver: zodResolver(LessonFormSchema),
     defaultValues: {
-      school_class_id: lesson?.school_class.id ?? "",
+      school_class_ids: lesson?.school_classes.map((c) => c.id) ?? [],
       subject_id: lesson?.subject.id ?? "",
       teacher_id: lesson?.teacher?.id ?? UNASSIGNED,
       hours_per_week: lesson?.hours_per_week ?? 1,
@@ -84,7 +89,7 @@ export function LessonFormDialog({
   const title = lesson ? t("lessons.dialog.editTitle") : t("lessons.dialog.createTitle");
   const description = lesson
     ? t("lessons.dialog.editDescription", {
-        className: lesson.school_class.name,
+        className: joinLessonClassNames(lesson),
         subjectName: lesson.subject.name,
       })
     : t("lessons.dialog.createDescription");
@@ -92,7 +97,7 @@ export function LessonFormDialog({
   async function handleLessonSubmit(values: LessonFormValues) {
     const teacherId = values.teacher_id === UNASSIGNED ? null : values.teacher_id;
     const createBody: LessonCreate = {
-      school_class_id: values.school_class_id,
+      school_class_ids: values.school_class_ids,
       subject_id: values.subject_id,
       teacher_id: teacherId,
       hours_per_week: values.hours_per_week,
@@ -160,25 +165,40 @@ export function LessonFormDialog({
           <form className="space-y-4" onSubmit={form.handleSubmit(handleLessonSubmit)}>
             <FormField
               control={form.control}
-              name="school_class_id"
+              name="school_class_ids"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("lessons.fields.schoolClassLabel")}</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("lessons.fields.schoolClassPlaceholder")} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {classOptions.map((option) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          {option.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
+                  <FormLabel>{t("lessons.form.classes")}</FormLabel>
+                  <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border p-2">
+                    {classOptions.map((cls) => {
+                      const checked = field.value.includes(cls.id);
+                      const checkboxId = `lesson-class-${cls.id}`;
+                      return (
+                        <div key={cls.id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={checkboxId}
+                            checked={checked}
+                            onCheckedChange={(next) => {
+                              if (next === true && !checked) {
+                                field.onChange([...field.value, cls.id]);
+                              } else if (next !== true && checked) {
+                                field.onChange(field.value.filter((id: string) => id !== cls.id));
+                              }
+                            }}
+                            aria-label={cls.name}
+                          />
+                          <label htmlFor={checkboxId} className="cursor-pointer">
+                            {cls.name}
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {form.formState.errors.school_class_ids ? (
+                    <p role="alert" className="text-sm font-medium text-destructive">
+                      {t("lessons.form.classesRequired")}
+                    </p>
+                  ) : null}
                 </FormItem>
               )}
             />
@@ -312,7 +332,7 @@ export function DeleteLessonDialog({ lesson, onClose }: DeleteLessonDialogProps)
       onClose={onClose}
       title={t("lessons.dialog.deleteTitle")}
       description={t("lessons.dialog.deleteDescription", {
-        className: lesson.school_class.name,
+        className: joinLessonClassNames(lesson),
         subjectName: lesson.subject.name,
       })}
       isPending={mutation.isPending}

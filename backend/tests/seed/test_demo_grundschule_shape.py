@@ -37,16 +37,16 @@ async def seeded_session(db_session: AsyncSession) -> AsyncSession:
 async def test_seed_creates_expected_entity_counts(
     seeded_session: AsyncSession,
 ) -> None:
-    assert await _count(seeded_session, Subject) == 9
+    assert await _count(seeded_session, Subject) == 11
     assert await _count(seeded_session, WeekScheme) == 1
     assert await _count(seeded_session, TimeBlock) == 35
     assert await _count(seeded_session, Stundentafel) == 4
     assert await _count(seeded_session, StundentafelEntry) == 34
     assert await _count(seeded_session, SchoolClass) == 4
     assert await _count(seeded_session, Teacher) == 6
-    assert await _count(seeded_session, TeacherQualification) == 22
+    assert await _count(seeded_session, TeacherQualification) == 24
     assert await _count(seeded_session, Room) == 7
-    assert await _count(seeded_session, RoomSubjectSuitability) == 27
+    assert await _count(seeded_session, RoomSubjectSuitability) == 35
 
 
 async def test_time_blocks_span_five_days_seven_periods_forty_five_minutes(
@@ -141,7 +141,7 @@ async def test_room_suitabilities_encode_specialty_split(
     pairs = {(r[0], r[1]) for r in rows}
 
     for klassenraum in ("1a", "2a", "3a", "4a"):
-        for subject in ("D", "M", "SU", "RE", "E", "FÖ"):
+        for subject in ("D", "M", "SU", "RK", "RE", "ETH", "E", "FÖ"):
             assert (klassenraum, subject) in pairs, (klassenraum, subject)
 
     assert ("TH", "SP") in pairs

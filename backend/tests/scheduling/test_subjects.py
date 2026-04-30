@@ -235,7 +235,7 @@ async def test_delete_subject_referenced_by_lesson(
     await client.post(
         "/api/lessons",
         json={
-            "school_class_id": class_resp.json()["id"],
+            "school_class_ids": [class_resp.json()["id"]],
             "subject_id": subject_id,
             "hours_per_week": 4,
         },

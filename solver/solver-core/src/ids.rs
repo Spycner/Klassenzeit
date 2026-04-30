@@ -29,6 +29,10 @@ define_id!(RoomId, "Identifier for a room entity.");
 define_id!(TimeBlockId, "Identifier for a time-block entity.");
 define_id!(SubjectId, "Identifier for a subject entity.");
 define_id!(SchoolClassId, "Identifier for a school-class entity.");
+define_id!(
+    LessonGroupId,
+    "Stable identifier for a lesson group (set of co-placed lessons). Ships in this PR for wire-format completeness; the lesson-group co-placement constraint that consumes it is added by the algorithm-phase PR that follows."
+);
 
 #[cfg(test)]
 mod tests {
@@ -40,6 +44,14 @@ mod tests {
         let json = serde_json::to_string(&id).unwrap();
         assert_eq!(json, "\"00000000-0000-0000-0000-000000000000\"");
         let parsed: LessonId = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, id);
+    }
+
+    #[test]
+    fn lesson_group_id_round_trips_through_json() {
+        let id = LessonGroupId(uuid::Uuid::nil());
+        let s = serde_json::to_string(&id).unwrap();
+        let parsed: LessonGroupId = serde_json::from_str(&s).unwrap();
         assert_eq!(parsed, id);
     }
 

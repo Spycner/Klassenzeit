@@ -5,12 +5,12 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.auth.dependencies import require_admin
 from klassenzeit_backend.db.models.lesson import Lesson
+from klassenzeit_backend.db.models.lesson_school_class import LessonSchoolClass
 from klassenzeit_backend.db.models.school_class import SchoolClass
 from klassenzeit_backend.db.models.stundentafel import StundentafelEntry
 from klassenzeit_backend.db.models.subject import Subject
@@ -55,19 +55,39 @@ async def _get_lesson(db: AsyncSession, lesson_id: uuid.UUID) -> Lesson:
 
 
 async def _build_lesson_response(db: AsyncSession, lesson: Lesson) -> LessonResponse:
-    """Construct a LessonResponse by loading related class, subject and teacher.
+    """Construct a LessonResponse with eager-loaded class memberships.
 
     Args:
         db: Active async database session.
         lesson: The Lesson ORM instance to build a response for.
 
     Returns:
-        A fully populated LessonResponse including nested entities.
+        A fully populated LessonResponse including nested entities. School
+        classes are sorted by name for stable response ordering.
     """
-    class_result = await db.execute(
-        select(SchoolClass).where(SchoolClass.id == lesson.school_class_id)
+    membership_rows = (
+        (
+            await db.execute(
+                select(LessonSchoolClass).where(LessonSchoolClass.lesson_id == lesson.id)
+            )
+        )
+        .scalars()
+        .all()
     )
-    school_class = class_result.scalar_one()
+    class_ids = [row.school_class_id for row in membership_rows]
+    classes: list[SchoolClass] = []
+    if class_ids:
+        classes = list(
+            (
+                await db.execute(
+                    select(SchoolClass)
+                    .where(SchoolClass.id.in_(class_ids))
+                    .order_by(SchoolClass.name)
+                )
+            )
+            .scalars()
+            .all()
+        )
 
     subj_result = await db.execute(select(Subject).where(Subject.id == lesson.subject_id))
     subject = subj_result.scalar_one()
@@ -85,7 +105,7 @@ async def _build_lesson_response(db: AsyncSession, lesson: Lesson) -> LessonResp
 
     return LessonResponse(
         id=lesson.id,
-        school_class=LessonClassResponse(id=school_class.id, name=school_class.name),
+        school_classes=[LessonClassResponse(id=c.id, name=c.name) for c in classes],
         subject=LessonSubjectResponse(
             id=subject.id,
             name=subject.name,
@@ -94,9 +114,41 @@ async def _build_lesson_response(db: AsyncSession, lesson: Lesson) -> LessonResp
         teacher=teacher_resp,
         hours_per_week=lesson.hours_per_week,
         preferred_block_size=lesson.preferred_block_size,
+        lesson_group_id=lesson.lesson_group_id,
         created_at=lesson.created_at,
         updated_at=lesson.updated_at,
     )
+
+
+async def _check_subject_class_collision(
+    db: AsyncSession,
+    subject_id: uuid.UUID,
+    school_class_ids: list[uuid.UUID],
+    *,
+    excluding_lesson_id: uuid.UUID | None = None,
+) -> None:
+    """Raise 409 if any existing Lesson teaches the same subject for any of the given classes.
+
+    Replaces the dropped ``(school_class_id, subject_id)`` UNIQUE constraint.
+    A class can host at most one lesson per subject; a lesson with multiple
+    memberships still cannot collide with a single-class lesson on the same
+    ``(class, subject)`` pair.
+    """
+    stmt = (
+        select(Lesson.id)
+        .join(LessonSchoolClass, LessonSchoolClass.lesson_id == Lesson.id)
+        .where(
+            Lesson.subject_id == subject_id,
+            LessonSchoolClass.school_class_id.in_(school_class_ids),
+        )
+    )
+    if excluding_lesson_id is not None:
+        stmt = stmt.where(Lesson.id != excluding_lesson_id)
+    if (await db.execute(stmt)).first() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A lesson for one of these classes and subject already exists.",
+        )
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -105,7 +157,7 @@ async def create_lesson(
     _admin: Annotated[User, Depends(require_admin)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> LessonResponse:
-    """Create a new lesson linking a class, subject and optional teacher.
+    """Create a new lesson with one or more class memberships.
 
     Args:
         body: Fields for the new lesson.
@@ -116,23 +168,26 @@ async def create_lesson(
         The created lesson as a LessonResponse.
 
     Raises:
-        HTTPException: 409 if a lesson for this class+subject pair already exists.
+        HTTPException: 409 if a lesson for any (class, subject) pair in the
+            request already exists.
     """
+    await _check_subject_class_collision(db, body.subject_id, body.school_class_ids)
     lesson = Lesson(
-        school_class_id=body.school_class_id,
         subject_id=body.subject_id,
         teacher_id=body.teacher_id,
         hours_per_week=body.hours_per_week,
         preferred_block_size=body.preferred_block_size,
+        lesson_group_id=body.lesson_group_id,
     )
     db.add(lesson)
-    try:
-        await db.commit()
-    except IntegrityError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A lesson for this class and subject already exists.",
-        ) from exc
+    await db.flush()
+    db.add_all(
+        [
+            LessonSchoolClass(lesson_id=lesson.id, school_class_id=class_id)
+            for class_id in body.school_class_ids
+        ]
+    )
+    await db.commit()
     await db.refresh(lesson)
     return await _build_lesson_response(db, lesson)
 
@@ -150,16 +205,19 @@ async def list_lessons(
     Args:
         _admin: Injected admin user (enforces authentication).
         db: Injected async database session.
-        class_id: Optional filter — only lessons for this school class.
-        teacher_id: Optional filter — only lessons assigned to this teacher.
-        subject_id: Optional filter — only lessons for this subject.
+        class_id: Optional filter; only lessons that include this school
+            class in their memberships.
+        teacher_id: Optional filter; only lessons assigned to this teacher.
+        subject_id: Optional filter; only lessons for this subject.
 
     Returns:
         List of lessons matching the applied filters.
     """
     stmt = select(Lesson)
     if class_id is not None:
-        stmt = stmt.where(Lesson.school_class_id == class_id)
+        stmt = stmt.join(LessonSchoolClass, LessonSchoolClass.lesson_id == Lesson.id).where(
+            LessonSchoolClass.school_class_id == class_id
+        )
     if teacher_id is not None:
         stmt = stmt.where(Lesson.teacher_id == teacher_id)
     if subject_id is not None:
@@ -199,7 +257,7 @@ async def update_lesson(
     _admin: Annotated[User, Depends(require_admin)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> LessonResponse:
-    """Partially update a lesson's teacher, hours or preferred block size.
+    """Partially update a lesson's memberships, teacher, hours or block size.
 
     Args:
         lesson_id: UUID path parameter identifying the lesson to patch.
@@ -211,15 +269,32 @@ async def update_lesson(
         The updated lesson as a LessonResponse.
 
     Raises:
-        HTTPException: 404 if no lesson with that ID exists.
+        HTTPException: 404 if no lesson with that ID exists; 409 if the new
+            membership set collides with another lesson on the same subject.
     """
     lesson = await _get_lesson(db, lesson_id)
+    if body.school_class_ids is not None:
+        await _check_subject_class_collision(
+            db,
+            lesson.subject_id,
+            body.school_class_ids,
+            excluding_lesson_id=lesson.id,
+        )
+        await db.execute(delete(LessonSchoolClass).where(LessonSchoolClass.lesson_id == lesson.id))
+        db.add_all(
+            [
+                LessonSchoolClass(lesson_id=lesson.id, school_class_id=class_id)
+                for class_id in body.school_class_ids
+            ]
+        )
     if body.teacher_id is not None:
         lesson.teacher_id = body.teacher_id
     if body.hours_per_week is not None:
         lesson.hours_per_week = body.hours_per_week
     if body.preferred_block_size is not None:
         lesson.preferred_block_size = body.preferred_block_size
+    if body.lesson_group_id is not None:
+        lesson.lesson_group_id = body.lesson_group_id
     if lesson.hours_per_week % lesson.preferred_block_size != 0:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -260,7 +335,8 @@ async def generate_lessons_from_stundentafel(
     """Bulk-create lessons for a class from its associated Stundentafel.
 
     Only creates lessons for subjects not already assigned to the class.
-    Subjects that already have a lesson are silently skipped.
+    Subjects that already have a lesson (single- or multi-class) which
+    includes this class as a member are silently skipped.
 
     Args:
         class_id: UUID path parameter identifying the school class.
@@ -286,7 +362,9 @@ async def generate_lessons_from_stundentafel(
     entries = entries_result.scalars().all()
 
     existing_result = await db.execute(
-        select(Lesson.subject_id).where(Lesson.school_class_id == class_id)
+        select(Lesson.subject_id)
+        .join(LessonSchoolClass, LessonSchoolClass.lesson_id == Lesson.id)
+        .where(LessonSchoolClass.school_class_id == class_id)
     )
     existing_subject_ids = {row[0] for row in existing_result.all()}
 
@@ -295,7 +373,6 @@ async def generate_lessons_from_stundentafel(
         if entry.subject_id in existing_subject_ids:
             continue
         lesson = Lesson(
-            school_class_id=class_id,
             subject_id=entry.subject_id,
             teacher_id=None,
             hours_per_week=entry.hours_per_week,
@@ -304,6 +381,11 @@ async def generate_lessons_from_stundentafel(
         db.add(lesson)
         created.append(lesson)
 
+    await db.flush()
+
+    db.add_all(
+        [LessonSchoolClass(lesson_id=lesson.id, school_class_id=class_id) for lesson in created]
+    )
     await db.flush()
 
     teachers_result = await db.execute(

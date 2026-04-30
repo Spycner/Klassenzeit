@@ -14,6 +14,7 @@ from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from klassenzeit_backend.db.models.lesson import Lesson
+from klassenzeit_backend.db.models.lesson_school_class import LessonSchoolClass
 from klassenzeit_backend.db.models.room import Room, RoomAvailability
 from klassenzeit_backend.db.models.school_class import SchoolClass
 from klassenzeit_backend.db.models.stundentafel import Stundentafel
@@ -129,7 +130,6 @@ async def _seed_minimal_school(
     tafel = await create_stundentafel()
     cls = await create_school_class(stundentafel_id=tafel.id, week_scheme_id=scheme.id)
     lesson = Lesson(
-        school_class_id=cls.id,
         subject_id=subject.id,
         teacher_id=teacher.id,
         hours_per_week=1,
@@ -137,6 +137,7 @@ async def _seed_minimal_school(
     )
     db_session.add(lesson)
     await db_session.flush()
+    db_session.add(LessonSchoolClass(lesson_id=lesson.id, school_class_id=cls.id))
     qualification = TeacherQualification(teacher_id=teacher.id, subject_id=subject.id)
     db_session.add(qualification)
     await db_session.flush()
@@ -323,13 +324,14 @@ async def test_build_problem_json_raises_422_on_mixed_week_schemes(
     cls_b = await create_school_class(stundentafel_id=tafel.id, week_scheme_id=scheme_y.id)
     subject_b = await create_subject()
     lesson_b = Lesson(
-        school_class_id=cls_b.id,
         subject_id=subject_b.id,
         teacher_id=teacher.id,
         hours_per_week=1,
         preferred_block_size=1,
     )
     db_session.add(lesson_b)
+    await db_session.flush()
+    db_session.add(LessonSchoolClass(lesson_id=lesson_b.id, school_class_id=cls_b.id))
     await db_session.flush()
 
     with pytest.raises(HTTPException) as excinfo:
@@ -514,7 +516,7 @@ def _minimal_runnable_problem() -> dict:
         "lessons": [
             {
                 "id": lesson,
-                "school_class_id": klass,
+                "school_class_ids": [klass],
                 "subject_id": subject,
                 "teacher_id": teacher,
                 "hours_per_week": 1,
@@ -659,7 +661,6 @@ async def test_build_problem_json_includes_preferred_block_size(
     tafel = await create_stundentafel()
     cls = await create_school_class(stundentafel_id=tafel.id, week_scheme_id=scheme.id)
     lesson = Lesson(
-        school_class_id=cls.id,
         subject_id=subject.id,
         teacher_id=teacher.id,
         hours_per_week=2,
@@ -667,6 +668,7 @@ async def test_build_problem_json_includes_preferred_block_size(
     )
     db_session.add(lesson)
     await db_session.flush()
+    db_session.add(LessonSchoolClass(lesson_id=lesson.id, school_class_id=cls.id))
     db_session.add(TeacherQualification(teacher_id=teacher.id, subject_id=subject.id))
     await db_session.flush()
 
@@ -690,3 +692,74 @@ def test_count_violations_by_kind_aggregates_mixed_kinds() -> None:
         "no_free_time_block": 2,
         "no_suitable_room": 0,
     }
+
+
+async def test_build_problem_json_emits_school_class_ids_array_for_multi_class_lesson(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    """A lesson with two memberships round-trips as a two-element school_class_ids array."""
+    subject = await create_subject()
+    scheme = await create_week_scheme()
+    await create_time_block(week_scheme_id=scheme.id, position=1)
+    await create_room()
+    teacher = await create_teacher()
+    tafel = await create_stundentafel()
+    cls_a = await create_school_class(stundentafel_id=tafel.id, week_scheme_id=scheme.id)
+    cls_b = await create_school_class(stundentafel_id=tafel.id, week_scheme_id=scheme.id)
+    group_id = uuid4()
+    lesson = Lesson(
+        subject_id=subject.id,
+        teacher_id=teacher.id,
+        hours_per_week=1,
+        preferred_block_size=1,
+        lesson_group_id=group_id,
+    )
+    db_session.add(lesson)
+    await db_session.flush()
+    db_session.add(LessonSchoolClass(lesson_id=lesson.id, school_class_id=cls_a.id))
+    db_session.add(LessonSchoolClass(lesson_id=lesson.id, school_class_id=cls_b.id))
+    db_session.add(TeacherQualification(teacher_id=teacher.id, subject_id=subject.id))
+    await db_session.flush()
+
+    problem_json, class_lesson_ids, _ = await build_problem_json(db_session, cls_a.id)
+    problem = json.loads(problem_json)
+
+    assert len(problem["lessons"]) == 1
+    serialized = problem["lessons"][0]
+    assert set(serialized["school_class_ids"]) == {str(cls_a.id), str(cls_b.id)}
+    assert serialized["lesson_group_id"] == str(group_id)
+    # The lesson belongs to the requested class via membership.
+    assert lesson.id in class_lesson_ids
+
+
+async def test_build_problem_json_emits_null_lesson_group_id_when_unset(
+    db_session: AsyncSession,
+    create_subject: CreateSubjectFn,
+    create_week_scheme: CreateWeekSchemeFn,
+    create_time_block: CreateTimeBlockFn,
+    create_room: CreateRoomFn,
+    create_teacher: CreateTeacherFn,
+    create_stundentafel: CreateStundentafelFn,
+    create_school_class: CreateSchoolClassFn,
+) -> None:
+    """A lesson with no lesson_group_id serialises ``lesson_group_id: null``."""
+    seeded = await _seed_minimal_school(
+        db_session,
+        create_subject=create_subject,
+        create_week_scheme=create_week_scheme,
+        create_time_block=create_time_block,
+        create_room=create_room,
+        create_teacher=create_teacher,
+        create_stundentafel=create_stundentafel,
+        create_school_class=create_school_class,
+    )
+    problem_json, _, _ = await build_problem_json(db_session, seeded.cls.id)
+    problem = json.loads(problem_json)
+    assert problem["lessons"][0]["lesson_group_id"] is None

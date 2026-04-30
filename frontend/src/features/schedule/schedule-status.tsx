@@ -46,7 +46,7 @@ export function ScheduleStatus({
                     subject: lesson?.subject.name ?? fallback,
                     hour: v.hour_index + 1,
                     teacher: lesson?.teacher?.last_name ?? fallback,
-                    class: lesson?.school_class.name ?? fallback,
+                    class: lesson ? lesson.school_classes.map((c) => c.name).join(", ") : fallback,
                   })}
                 </li>
               );

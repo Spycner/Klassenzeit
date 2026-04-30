@@ -117,11 +117,12 @@ mod tests {
             }],
             lessons: vec![Lesson {
                 id: LessonId(u(8)),
-                school_class_id: SchoolClassId(u(7)),
+                school_class_ids: vec![SchoolClassId(u(7))],
                 subject_id: SubjectId(u(5)),
                 teacher_id: TeacherId(u(2)),
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: TeacherId(u(2)),

@@ -102,10 +102,12 @@ fn assert_every_placement_is_feasible_and_no_double_booking(p: &Problem, s: &Sol
             teacher_slot.insert((lesson.teacher_id, pl.time_block_id)),
             "teacher double-book"
         );
-        assert!(
-            class_slot.insert((lesson.school_class_id, pl.time_block_id)),
-            "class double-book"
-        );
+        for class_id in &lesson.school_class_ids {
+            assert!(
+                class_slot.insert((*class_id, pl.time_block_id)),
+                "class double-book"
+            );
+        }
         assert!(
             room_slot.insert((pl.room_id, pl.time_block_id)),
             "room double-book"
@@ -194,27 +196,30 @@ proptest! {
         let lessons = vec![
             Lesson {
                 id: LessonId(Uuid::from_bytes([60; 16])),
-                school_class_id: class.id,
+                school_class_ids: vec![class.id],
                 subject_id: subject.id,
                 teacher_id: teacher.id,
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             },
             Lesson {
                 id: LessonId(Uuid::from_bytes([61; 16])),
-                school_class_id: class.id,
+                school_class_ids: vec![class.id],
                 subject_id: subject.id,
                 teacher_id: teacher.id,
                 hours_per_week: 2,
                 preferred_block_size: 2,
+                lesson_group_id: None,
             },
             Lesson {
                 id: LessonId(Uuid::from_bytes([62; 16])),
-                school_class_id: class.id,
+                school_class_ids: vec![class.id],
                 subject_id: subject.id,
                 teacher_id: teacher.id,
                 hours_per_week: 4,
                 preferred_block_size: 2,
+                lesson_group_id: None,
             },
         ];
         let block_lesson_ids: HashSet<LessonId> = lessons

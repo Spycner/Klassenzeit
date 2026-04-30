@@ -139,10 +139,12 @@ export const violationsByClassId: Record<string, components["schemas"]["Violatio
 export const initialLessons = [
   {
     id: "55555555-5555-5555-5555-555555555555",
-    school_class: {
-      id: "88888888-8888-8888-8888-888888888888",
-      name: "1a",
-    },
+    school_classes: [
+      {
+        id: "88888888-8888-8888-8888-888888888888",
+        name: "1a",
+      },
+    ],
     subject: {
       id: "11111111-1111-1111-1111-111111111111",
       name: "Mathematik",
@@ -156,6 +158,7 @@ export const initialLessons = [
     },
     hours_per_week: 4,
     preferred_block_size: 1,
+    lesson_group_id: null,
     created_at: "2026-04-20T00:00:00Z",
     updated_at: "2026-04-20T00:00:00Z",
   },
@@ -595,11 +598,12 @@ export const defaultHandlers = [
       [
         {
           id: "gen-0000-0000-0000-0000-000000000001",
-          school_class: { id: schoolClass.id, name: schoolClass.name },
+          school_classes: [{ id: schoolClass.id, name: schoolClass.name }],
           subject: { id: subject.id, name: subject.name, short_name: subject.short_name },
           teacher: null,
           hours_per_week: 4,
           preferred_block_size: 1,
+          lesson_group_id: null,
           created_at: "2026-04-20T00:00:00Z",
           updated_at: "2026-04-20T00:00:00Z",
         },
@@ -610,13 +614,16 @@ export const defaultHandlers = [
   http.get(`${BASE}/api/lessons`, () => HttpResponse.json(initialLessons)),
   http.post(`${BASE}/api/lessons`, async ({ request }) => {
     const body = (await request.json()) as {
-      school_class_id: string;
+      school_class_ids: string[];
       subject_id: string;
       teacher_id: string | null;
       hours_per_week: number;
       preferred_block_size: number;
     };
-    const schoolClass = initialSchoolClasses.find((c) => c.id === body.school_class_id);
+    const schoolClasses = body.school_class_ids.map((id) => {
+      const match = initialSchoolClasses.find((c) => c.id === id);
+      return match ? { id: match.id, name: match.name } : { id, name: "Unknown class" };
+    });
     const subject = initialSubjects.find((s) => s.id === body.subject_id);
     const teacher =
       body.teacher_id === null
@@ -625,9 +632,7 @@ export const defaultHandlers = [
     return HttpResponse.json(
       {
         id: "66666666-6666-6666-6666-666666666666",
-        school_class: schoolClass
-          ? { id: schoolClass.id, name: schoolClass.name }
-          : { id: body.school_class_id, name: "Unknown class" },
+        school_classes: schoolClasses,
         subject: subject
           ? { id: subject.id, name: subject.name, short_name: subject.short_name }
           : { id: body.subject_id, name: "Unknown subject", short_name: "??" },
@@ -641,6 +646,7 @@ export const defaultHandlers = [
           : null,
         hours_per_week: body.hours_per_week,
         preferred_block_size: body.preferred_block_size,
+        lesson_group_id: null,
         created_at: "2026-04-20T00:00:00Z",
         updated_at: "2026-04-20T00:00:00Z",
       },

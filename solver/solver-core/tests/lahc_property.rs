@@ -81,11 +81,12 @@ prop_compose! {
             .enumerate()
             .map(|(i, sc)| Lesson {
                 id: LessonId(lahc_id_from(5000 + i as u32)),
-                school_class_id: sc.id,
+                school_class_ids: vec![sc.id],
                 subject_id: subject_a,
                 teacher_id: teachers[i % teachers.len()].id,
                 hours_per_week: 2,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             })
             .collect();
 

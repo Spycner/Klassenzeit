@@ -17,6 +17,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import delete, select
 
 from klassenzeit_backend.db.models.lesson import Lesson
+from klassenzeit_backend.db.models.lesson_school_class import LessonSchoolClass
 from klassenzeit_backend.db.models.room import (
     Room,
     RoomAvailability,
@@ -114,7 +115,20 @@ async def build_problem_json(
         (await db.execute(select(Lesson).where(Lesson.teacher_id.is_not(None)))).scalars().all()
     )
 
-    involved_class_ids = {lesson.school_class_id for lesson in lessons} | {requested_class.id}
+    lesson_ids = [lesson.id for lesson in lessons]
+    memberships: list[LessonSchoolClass] = []
+    if lesson_ids:
+        membership_result = await db.execute(
+            select(LessonSchoolClass).where(LessonSchoolClass.lesson_id.in_(lesson_ids))
+        )
+        memberships = list(membership_result.scalars().all())
+    classes_by_lesson: dict[UUID, list[UUID]] = {}
+    for row in memberships:
+        classes_by_lesson.setdefault(row.lesson_id, []).append(row.school_class_id)
+
+    involved_class_ids = {cid for cids in classes_by_lesson.values() for cid in cids} | {
+        requested_class.id
+    }
     involved_classes = (
         (await db.execute(select(SchoolClass).where(SchoolClass.id.in_(involved_class_ids))))
         .scalars()
@@ -251,11 +265,14 @@ async def build_problem_json(
         "lessons": [
             {
                 "id": str(lesson.id),
-                "school_class_id": str(lesson.school_class_id),
+                "school_class_ids": [str(cid) for cid in classes_by_lesson.get(lesson.id, [])],
                 "subject_id": str(lesson.subject_id),
                 "teacher_id": str(lesson.teacher_id),
                 "hours_per_week": lesson.hours_per_week,
                 "preferred_block_size": lesson.preferred_block_size,
+                "lesson_group_id": (
+                    str(lesson.lesson_group_id) if lesson.lesson_group_id else None
+                ),
             }
             for lesson in lessons
         ],
@@ -272,7 +289,9 @@ async def build_problem_json(
     }
 
     class_lesson_ids = {
-        lesson.id for lesson in lessons if lesson.school_class_id == requested_class.id
+        lesson.id
+        for lesson in lessons
+        if requested_class.id in classes_by_lesson.get(lesson.id, [])
     }
 
     counts = {
@@ -353,7 +372,11 @@ async def persist_solution_for_class(
             :func:`filter_solution_for_class`. Only ``filtered["placements"]``
             is read; violations are ignored.
     """
-    lesson_ids_subquery = select(Lesson.id).where(Lesson.school_class_id == class_id)
+    lesson_ids_subquery = (
+        select(Lesson.id)
+        .join(LessonSchoolClass, LessonSchoolClass.lesson_id == Lesson.id)
+        .where(LessonSchoolClass.school_class_id == class_id)
+    )
     delete_result = await db.execute(
         delete(ScheduledLesson).where(ScheduledLesson.lesson_id.in_(lesson_ids_subquery))
     )
@@ -409,7 +432,8 @@ async def read_schedule_for_class(
             await db.execute(
                 select(ScheduledLesson)
                 .join(Lesson, Lesson.id == ScheduledLesson.lesson_id)
-                .where(Lesson.school_class_id == class_id)
+                .join(LessonSchoolClass, LessonSchoolClass.lesson_id == Lesson.id)
+                .where(LessonSchoolClass.school_class_id == class_id)
             )
         )
         .scalars()

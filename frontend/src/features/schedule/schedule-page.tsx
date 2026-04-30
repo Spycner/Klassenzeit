@@ -92,7 +92,9 @@ export function SchedulePage() {
   const roomById = new Map((rooms.data ?? []).map((r) => [r.id, r]));
   const timeBlockById = new Map((weekScheme.data?.time_blocks ?? []).map((b) => [b.id, b]));
 
-  const classLessons = (lessons.data ?? []).filter((l) => l.school_class.id === classId);
+  const classLessons = (lessons.data ?? []).filter((l) =>
+    l.school_classes.some((c) => c.id === classId),
+  );
   const expectedHours = classLessons.reduce((sum, l) => sum + l.hours_per_week, 0);
 
   const cells: ScheduleCell[] = placements

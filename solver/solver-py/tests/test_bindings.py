@@ -41,7 +41,7 @@ def _minimal_problem() -> dict:
         "lessons": [
             {
                 "id": lesson,
-                "school_class_id": class_id,
+                "school_class_ids": [class_id],
                 "subject_id": subject,
                 "teacher_id": teacher,
                 "hours_per_week": 1,

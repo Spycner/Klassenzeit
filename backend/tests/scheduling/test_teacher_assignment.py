@@ -23,7 +23,6 @@ def _teacher(short_code: str, max_hours: int, teacher_id: uuid.UUID | None = Non
 def _lesson(subject_id: uuid.UUID, hours: int, lesson_id: uuid.UUID | None = None) -> Lesson:
     return Lesson(
         id=lesson_id or uuid.uuid4(),
-        school_class_id=uuid.uuid4(),
         subject_id=subject_id,
         teacher_id=None,
         hours_per_week=hours,

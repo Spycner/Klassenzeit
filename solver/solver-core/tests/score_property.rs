@@ -64,11 +64,12 @@ prop_compose! {
             }
             Some(Lesson {
                 id: LessonId(id_from(u32::try_from(i).unwrap_or(0) + 6000)),
-                school_class_id: school_classes[ci].id,
+                school_class_ids: vec![school_classes[ci].id],
                 subject_id: subjects[si].id,
                 teacher_id: teachers[i % n_teachers].id,
                 hours_per_week: h,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             })
         }).collect();
 
@@ -145,11 +146,12 @@ proptest! {
             school_classes: vec![SchoolClass { id: class_id }],
             lessons: vec![Lesson {
                 id: lesson_id,
-                school_class_id: class_id,
+                school_class_ids: vec![class_id],
                 subject_id,
                 teacher_id,
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             }],
             teacher_qualifications: vec![TeacherQualification { teacher_id, subject_id }],
             teacher_blocked_times: vec![],
@@ -192,11 +194,12 @@ proptest! {
             school_classes: vec![SchoolClass { id: class_id }],
             lessons: vec![Lesson {
                 id: lesson_id,
-                school_class_id: class_id,
+                school_class_ids: vec![class_id],
                 subject_id,
                 teacher_id,
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             }],
             teacher_qualifications: vec![TeacherQualification { teacher_id, subject_id }],
             teacher_blocked_times: vec![],

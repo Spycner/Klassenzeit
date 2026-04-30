@@ -63,6 +63,17 @@ klassenzeit/
   it proxies API prefixes to the backend for same-origin cookies. See
   ADR 0007.
 
+## Domain notes
+
+- **Lessons span one or more school classes.** A `Lesson` has a many-to-many
+  relationship to `SchoolClass` via the `lesson_school_classes` join table
+  (association object). Most lessons map to a single class (the join row is
+  one entry); cross-class lessons such as a Jahrgang-level Religion group
+  span multiple classes. The solver's wire format mirrors this with
+  `school_class_ids: list[UUID]` per lesson. A nullable
+  `Lesson.lesson_group_id: UUID` marks lesson groups that the algorithm
+  layer co-places into one time-block. See [ADR 0021](../adr/0021-multi-class-lessons.md).
+
 ## Decisions
 
 Every load-bearing architectural decision has an entry in

@@ -8,8 +8,10 @@ use crate::types::{ConstraintWeights, Lesson, Placement, Problem, TimeBlock};
 
 /// Compute the total weighted soft-score for a placement set.
 ///
-/// Partitions `placements` by `(school_class_id, day_of_week)` and
+/// Partitions `placements` by `(school_class, day_of_week)` and
 /// `(teacher_id, day_of_week)`, then sums weighted gap-hours per partition.
+/// Multi-class lessons contribute one entry per member class to the
+/// class-day partition.
 pub fn score_solution(
     problem: &Problem,
     placements: &[Placement],
@@ -35,10 +37,12 @@ pub fn score_solution(
     for p in placements {
         let tb = tb_lookup[&p.time_block_id];
         let lesson = lesson_lookup[&p.lesson_id];
-        by_class_day
-            .entry((lesson.school_class_id, tb.day_of_week))
-            .or_default()
-            .push(tb.position);
+        for class_id in &lesson.school_class_ids {
+            by_class_day
+                .entry((*class_id, tb.day_of_week))
+                .or_default()
+                .push(tb.position);
+        }
         by_teacher_day
             .entry((lesson.teacher_id, tb.day_of_week))
             .or_default()
@@ -219,11 +223,12 @@ mod tests {
             }],
             lessons: vec![Lesson {
                 id: LessonId(score_uuid(60)),
-                school_class_id: SchoolClassId(score_uuid(50)),
+                school_class_ids: vec![SchoolClassId(score_uuid(50))],
                 subject_id: SubjectId(score_uuid(40)),
                 teacher_id: TeacherId(score_uuid(20)),
                 hours_per_week: 2,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: TeacherId(score_uuid(20)),
@@ -479,11 +484,12 @@ mod tests {
             }],
             lessons: vec![Lesson {
                 id: LessonId(score_uuid(60)),
-                school_class_id: SchoolClassId(score_uuid(50)),
+                school_class_ids: vec![SchoolClassId(score_uuid(50))],
                 subject_id: SubjectId(score_uuid(40)),
                 teacher_id: TeacherId(score_uuid(20)),
                 hours_per_week: 1,
                 preferred_block_size: 1,
+                lesson_group_id: None,
             }],
             teacher_qualifications: vec![TeacherQualification {
                 teacher_id: TeacherId(score_uuid(20)),
