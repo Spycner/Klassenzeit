@@ -4,11 +4,27 @@ Running log of items deferred or noted as tech debt during spec/plan work. The t
 
 Items trace back to the specs that introduced them: the [project scaffolding design](specs/2026-04-11-project-scaffolding-design.md), the [frontend theming / i18n / ratchet design](specs/2026-04-17-frontend-theming-i18n-design.md), the [entity CRUD pages batch 1 design](specs/2026-04-17-frontend-entity-crud-pages-design.md), and the [frontend design implementation](specs/2026-04-19-frontend-design-implementation-design.md).
 
-## Active sprint: solver quality + tidy
+## Active sprint: DX / CI infra hardening
+
+Goal: graduate CI from 8-12 min PR turnaround to under 4 min, and close drift-check + locale-pin tidy debts while in the neighbourhood. Tiers reflect drop-order if the sprint runs long (P0 = must land; P1 = should land; P2 = drop if time).
+
+### Tidy phase
+
+1. **Backend pytest-xdist parallelism.** `[P0]` This PR. `pytest-xdist` with `-n auto` in CI; per-worker postgres database (`klassenzeit_test_<worker>`) auto-created idempotently by the conftest; sequential local default unchanged. ADR 0019. Wall-clock target: backend test step under 4 min on the standard 4-vCPU runner.
+2. **Drift-check mode for `repo:apply-settings`.** `[P1]` Expose a `--check` flag on `scripts/apply-github-settings.sh` (readback-and-diff only, no apply). Wire into `audit.yml` as a nightly drift-check job.
+3. **Pin Playwright locale explicitly.** `[P1]` Add `locale: "en-US"` to `use` in `frontend/playwright.config.ts` so tests do not rely on Chromium's default locale and i18n's English fallback.
+
+### Algorithm phase
+
+4. **Structured-logging follow-ups (deferred).** `[P2]` From `feat/structured-logging-backend` (ADR 0016): contextvars-based request_id propagation, uvicorn access-log dedup, body / Content-Length logging, GCP / ECS field renames, `solver-py` Rust-side mirror, CRUD route handler instrumentation. Land selectively if this sprint has capacity after PRs 1-3.
+
+## Completed sprints
+
+### Solver quality + tidy (shipped 2026-04-29)
 
 Goal: graduate the solver from "produces a schedule" to "produces a *good* schedule" against a broader fixture set, and close specific tidy debts while in the neighbourhood. Tiers reflect drop-order if the sprint runs long (P0 = must land; P1 = should land; P2 = drop if time). Phase ordering reflects the prerequisite chain: tidy prereqs and catchup first, then algorithm arc.
 
-### Tidy phase (prereqs + catchup)
+#### Tidy phase (prereqs + catchup)
 
 1. **Criterion benchmarks for the solver.** `[P0]` ✅ Shipped 2026-04-24. `mise run bench` runs a criterion harness against the Grundschule fixture (2 classes, 15 lessons, 45 placements); `mise run bench:record` regenerates [`solver/solver-core/benches/BASELINE.md`](../../solver/solver-core/benches/BASELINE.md). Sprint items 7 to 9 cite this file and must stay within 20% of the MVP baseline after FFD + LAHC ship. Follow-up (not sprint): move bench execution onto the self-hosted runner with a dedicated workflow.
 2. **Structured violation taxonomy.** `[P0]` ✅ Shipped 2026-04-25. PR `feat/typed-violations`: `ViolationKind` becomes `{ NoQualifiedTeacher, TeacherOverCapacity, NoFreeTimeBlock, NoSuitableRoom }`; `Violation.message: String` removed; FastAPI `ViolationResponse` mirrors with a `Literal[...]`; frontend renders via `frontend/src/i18n/violation-keys.ts` and per-kind i18n entries in en + de. ADR 0013 records the decision.
@@ -17,7 +33,7 @@ Goal: graduate the solver from "produces a schedule" to "produces a *good* sched
 5. **Shared `EntityListTable` primitive.** `[P1]` ✅ Shipped 2026-04-25. PR `refactor/entity-list-table`: new `frontend/src/components/entity-list-table.tsx` (column-driven `<EntityListTable<T>>` with optional `actions` render prop) plus `frontend/src/components/entity-page-head.tsx` collapsing seven hand-rolled `*PageHead` helpers into one shared component. Six entity pages migrated; WeekSchemes uses the head only (master/detail body left alone). All seven existing per-entity tests pass without modification. Net diff -213 lines across feature pages. Follow-ups (not sprint, see below): collapse the loading/error/empty + Toolbar wrapper next, collapse `<entity>.columns.actions` keys into one `common.actions` key.
 6. **Benchmark-fixture matrix.** `[P2]` Partially shipped 2026-04-26. PR `feat/bench-fixture-matrix`: adds `demo_grundschule_zweizuegig` (8 classes, 12 teachers, 12 rooms, 196 placements; pre-assigned `teacher_id` per Lesson via `_TEACHER_ASSIGNMENTS_ZWEIZUEGIG`) plus the multi-fixture bench infrastructure (renamed `solver_grundschule.rs` → `solver_fixtures.rs`, row-per-fixture TSV inside the existing `---SOLVER-BENCH-BASELINE---` fence, `Soft score` column reserved at 0 for PR 9 LAHC). `mise run bench` now runs both fixtures inside one criterion group; `BASELINE.md` renders two rows. Spec: [`2026-04-26-bench-fixture-matrix-design.md`](specs/2026-04-26-bench-fixture-matrix-design.md). Remaining (deferred): `demo_gesamtschule` (24 classes, ~50 teachers, ~700 placements) and the optional synthetic generator at 100+ classes; both tracked under "Acknowledged deferrals" below.
 
-### Algorithm phase
+#### Algorithm phase
 
 7. **FFD ordering + `SolveConfig` struct.** `[P0]` ✅ Shipped 2026-04-26. PR `feat/ffd-solve-config`: introduces `pub struct SolveConfig { deadline, seed, weights }` and `pub struct ConstraintWeights {}` (both `Default`-derived), plus `pub fn solve_with_config`. `solve` becomes a one-line delegate over `solve_with_config(p, &SolveConfig::default())`. Adds `solver-core/src/ordering.rs` with `ffd_order(problem, idx) -> Vec<usize>` (eligibility = free-teacher-blocks × suitable-rooms; tiebreak on `LessonId` byte order). Drops the scarcity-first workaround in the zweizuegig bench fixture and the matching paragraph in `solver/CLAUDE.md`; `BASELINE.md` refreshed (grundschule p50 41 to 42 µs, +2.4%; zweizuegig p50 172 to 187 µs, +8.7%). ADR 0014 records the API decision. Sprint PR 9 (LAHC + soft constraints) becomes the next P0; PR 8 (Doppelstunden) stays P2.
 8. **Doppelstunden (`preferred_block_size > 1`) support.** `[P2]` ✅ Shipped 2026-04-29. PR `feat/solver-doppelstunden`: Rust `Lesson` gains `preferred_block_size: u8` with `#[serde(default)]` (additive wire format); `validate_structural` rejects `n == 0` and `h % n != 0`; `solve_with_config` places `h / n` contiguous n-block windows per lesson with same room and same day across the window via a new `try_place_block` helper plus an allocation-free `gap_count_after_window_insert` window-delta. Violations are emitted one-per-block with `hour_index = block_index * n` (existing taxonomy reused, no new variant). LAHC's Change move skips block placements via a one-line guard placed AFTER the two `random_range` draws so the determinism property test invariant holds. Backend `build_problem_json` includes the field; Pydantic `LessonCreate`/`EntryCreate` add a `model_validator` for divisibility plus route-level merge checks on `LessonUpdate`/`EntryUpdate`. Demo seed flips Sachunterricht (SU) to `n=2` for all grades via a `_DOPPEL_SUBJECTS = {"SU": 2}` lookup; bench fixture mirrors the flip on the grundschule fixture (zweizuegig untouched). `BASELINE.md` refreshed: grundschule p50 51 → 50 µs greedy (no regression), zweizuegig p50 243 → 256 µs greedy (within 20% budget). Soft scores unchanged on both fixtures. ADR 0018 records the load-bearing decisions.
@@ -76,6 +92,7 @@ Items deliberately out of scope of any active sprint, with rationale for when to
 - **Visual merge of adjacent same-lesson cells in the schedule grid.** `frontend/src/routes/schedule.tsx` renders one cell per `Placement` with no cross-cell awareness. Two adjacent same-lesson cells convey "Doppelstunde" pedagogically but a `rowspan`-merged single cell with one label is the polish. Requires teaching the grid renderer about lesson identity across cells. Surfaced during PR-8.
 - **Mixed block sizes inside one lesson.** Today `validate_structural` requires `h % n == 0`. Allowing `h=3, n=2` to mean "one Doppel plus one Einzel" needs per-hour metadata about which hour was the remainder; the violation taxonomy and the schedule view both leak the distinction. Users currently model the two shapes as two separate Lessons. Surfaced during PR-8.
 - **`preferred_block_size > 2`.** Pydantic constrains `le=2`. The Rust algorithm in `try_place_block` is generic in `n`, but the API caps it at 2 until a real ask surfaces (e.g., `n=3` for Sport am Nachmittag in three consecutive hours). Surfaced during PR-8.
+- **Coverage split (master-only job).** OPEN_THINGS option (b) from the original CI-slowness entry. Move coverage instrumentation into a master-only CI job so PR runs use bare pytest. Defer until a representative PR shows wall-clock above 4 min after PR-1 ships. Surfaced during PR-1.
 
 ## Backlog
 
@@ -116,7 +133,7 @@ Everything below is queued for later. Ordered roughly by importance within each 
 
 ### CI / repo automation
 
-- **Backend CI Python-test step takes 8-12 min and dominates wall time.** `Run Python tests with coverage` is the long-pole step on every PR; the rest of the workflow (lint, frontend, Playwright, Rust) finishes in 1-2 min. Coverage instrumentation runs ~2-3x slower than bare pytest, async DB tests dominate, and the seed solvability tests boot the solver per fixture. Options to investigate, in priority order: **(a) parallelise pytest** with `pytest-xdist` plus per-worker test schemas (the same pattern the Playwright deferral already names); **(b) split coverage off into a separate job that runs only on master** so PR runs use bare pytest and merge gating uses the coverage ratchet on master; **(c) prune the slowest seed solvability tests** by replacing solver-boots with cached fixtures where the solver behaviour is not under test; **(d) precompile `solver-py` once per workflow** (today the `mise run solver:rebuild` cost is paid by the test step on a cold venv). Quickest win is probably (a). File when next sprint planning happens or whenever a contributor first notices a >15 min PR turnaround.
+- **Backend CI Python-test wall-clock optimisation.** ✅ Shipped 2026-04-30 in PR-1 of the DX/CI sprint via pytest-xdist parallelism (option a). If wall-clock remains above 4 min after PR-1 ships, the "Coverage split (master-only job)" deferral below is the next lever.
 - **Drift-check mode for `repo:apply-settings`.** The readback-and-diff logic in `scripts/apply-github-settings.sh` is factored into its own block, so exposing a `--check` flag (readback without apply) is a small addition. Wire it into `audit.yml` as a nightly drift-check job once the first real drift incident justifies the noise; the auto-issue-on-failure path (as of PR #audit-issue-on-failure) already takes care of routing failures to a tracking issue.
 - **Dependabot for the Python/uv ecosystem.** Dependabot doesn't natively understand `uv.lock` as of mid-2025; the `pip` adapter desyncs the lockfile and violates the `uv add`-only rule. Revisit when dependabot ships first-class uv support, or switch to Renovate (which already supports uv).
 
