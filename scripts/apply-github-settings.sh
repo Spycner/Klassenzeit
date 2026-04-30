@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Apply GitHub repo + branch-protection settings from docs/superpowers/*.json.
 # See docs/superpowers/specs/2026-04-22-apply-github-settings-script-design.md
+# and docs/superpowers/specs/2026-04-30-repo-settings-drift-check-design.md
 # for rationale.
 set -euo pipefail
 
@@ -8,25 +9,30 @@ cd "$(dirname "$0")/.."
 
 DRY_RUN=0
 SKIP_VERIFY=0
+CHECK=0
 
 usage() {
   cat <<'EOF'
-Usage: scripts/apply-github-settings.sh [--dry-run] [--skip-verify] [--help]
+Usage: scripts/apply-github-settings.sh [--check | --dry-run | --skip-verify] [--help]
 
 Applies docs/superpowers/repo-settings.json via PATCH /repos/:owner/:repo, then
 docs/superpowers/branch-protection.json via PUT /repos/:owner/:repo/branches/:default/protection.
 Reads branch protection back and diffs the normalized result against the source
 JSON. Exits non-zero on drift.
 
-Flags:
+Flags (mutually exclusive):
+  --check         Read branch protection back and diff against branch-protection.json.
+                  Do not apply. Exit 5 on drift, 0 on match.
   --dry-run       Print the gh api commands that would run, do not mutate.
   --skip-verify   Apply settings but skip the readback + drift diff.
+
   --help          Show this message and exit.
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --check) CHECK=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     --skip-verify) SKIP_VERIFY=1; shift ;;
     --help|-h) usage; exit 0 ;;
@@ -34,6 +40,12 @@ while [[ $# -gt 0 ]]; do
     *)   echo "unexpected positional argument: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
+
+if (( DRY_RUN + SKIP_VERIFY + CHECK > 1 )); then
+  echo "--check, --dry-run, and --skip-verify are mutually exclusive" >&2
+  usage >&2
+  exit 2
+fi
 
 # --- Preflight ----------------------------------------------------------------
 command -v gh >/dev/null || { echo "gh is required; install https://cli.github.com/" >&2; exit 2; }
@@ -57,6 +69,36 @@ BRANCH_PROTECTION=docs/superpowers/branch-protection.json
 
 echo "target: $OWNER_REPO (branch: $DEFAULT_BRANCH)"
 
+# --- Verifier ----------------------------------------------------------------
+verify_branch_protection() {
+  echo "→ verifying branch protection"
+  local actual_raw actual_norm expected_norm
+  actual_raw=$(mktemp)
+  actual_norm=$(mktemp)
+  expected_norm=$(mktemp)
+  trap 'rm -f "$actual_raw" "$actual_norm" "$expected_norm"' RETURN
+
+  gh api "/repos/$OWNER_REPO/branches/$DEFAULT_BRANCH/protection" > "$actual_raw"
+
+  local filter=scripts/lib/normalize-branch-protection.jq
+  jq -S -f "$filter" "$actual_raw"        > "$actual_norm"
+  jq -S -f "$filter" "$BRANCH_PROTECTION" > "$expected_norm"
+
+  if diff -u "$expected_norm" "$actual_norm" >&2; then
+    echo "✔ branch protection matches branch-protection.json"
+    return 0
+  else
+    echo "✖ drift detected between branch-protection.json and GitHub" >&2
+    return 5
+  fi
+}
+
+# --- Check-only path ----------------------------------------------------------
+if [[ "$CHECK" == "1" ]]; then
+  verify_branch_protection
+  exit $?
+fi
+
 # --- Apply or describe --------------------------------------------------------
 if [[ "$DRY_RUN" == "1" ]]; then
   echo "→ would run: gh api --method PATCH /repos/$OWNER_REPO --input $REPO_SETTINGS"
@@ -77,23 +119,5 @@ if [[ "$SKIP_VERIFY" == "1" ]]; then
   exit 0
 fi
 
-# --- Verify: readback + drift diff --------------------------------------------
-echo "→ verifying branch protection"
-ACTUAL_RAW=$(mktemp)
-ACTUAL_NORM=$(mktemp)
-EXPECTED_NORM=$(mktemp)
-trap 'rm -f "$ACTUAL_RAW" "$ACTUAL_NORM" "$EXPECTED_NORM"' EXIT
-
-gh api "/repos/$OWNER_REPO/branches/$DEFAULT_BRANCH/protection" > "$ACTUAL_RAW"
-
-FILTER=scripts/lib/normalize-branch-protection.jq
-jq -S -f "$FILTER" "$ACTUAL_RAW"         > "$ACTUAL_NORM"
-jq -S -f "$FILTER" "$BRANCH_PROTECTION"  > "$EXPECTED_NORM"
-
-if diff -u "$EXPECTED_NORM" "$ACTUAL_NORM" >&2; then
-  echo "✔ branch protection matches branch-protection.json"
-  exit 0
-else
-  echo "✖ drift detected between branch-protection.json and GitHub" >&2
-  exit 5
-fi
+verify_branch_protection
+exit $?

@@ -69,3 +69,43 @@ jobs:
           timestamp="$(date -u '+%Y-%m-%d %H:%M UTC')"
           gh issue comment "$ISSUE_NUMBER" \
             --body "Scheduled audit failed again on ${timestamp}. Run: ${RUN_URL}"
+
+  drift-check:
+    name: GitHub repo settings drift
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-mise
+      - name: Check repo settings drift
+        run: bash scripts/apply-github-settings.sh --check
+
+      - name: Open or reuse tracking issue
+        id: tracking-issue
+        if: ${{ failure() && github.event_name == 'schedule' }}
+        uses: JasonEtco/create-an-issue@1b14a70e4d8dc185e5cc76d3bec9eab20257b2c5 # v2.9.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          TRIGGER_EVENT: ${{ github.event_name }}
+        with:
+          filename: .github/drift-check-failure-issue.md
+          update_existing: true
+
+      - name: Append run link as comment
+        if: ${{ failure() && github.event_name == 'schedule' && steps.tracking-issue.outputs.number != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ steps.tracking-issue.outputs.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          timestamp="$(date -u '+%Y-%m-%d %H:%M UTC')"
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "Scheduled drift-check failed again on ${timestamp}. Run: ${RUN_URL}"
