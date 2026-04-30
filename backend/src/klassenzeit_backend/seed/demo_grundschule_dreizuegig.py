@@ -34,6 +34,7 @@ pinned by the seed itself via ``Lesson.teacher_id``.
 """
 
 import uuid
+from datetime import time
 from typing import NamedTuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,6 +52,7 @@ from klassenzeit_backend.seed.demo_grundschule import (
     _KLASSENRAUM_SUITABLE_SUBJECTS,
     _PERIODS,
     _SUBJECTS,
+    _PeriodTimes,
     _RoomSpec,
     _SchoolClassSpec,
     _TeacherSpec,
@@ -58,12 +60,22 @@ from klassenzeit_backend.seed.demo_grundschule import (
 
 WEEK_SCHEME_NAME = "Grundschule (dreizuegig) Zeitraster"
 WEEK_SCHEME_DESCRIPTION = (
-    "Hessen Grundschule, drei Zuege pro Jahrgang: 5 Tage, 7 Stunden a 45 Minuten, "
-    "Hofpausen nach der 2. und 4. Stunde. Stunde 7 dient als Ganztags- / "
-    "AG-Zeitfenster und gibt dem Solver Slack fuer volle Stundentafeln. "
-    "Religion wird als jahrgangsweite Dreiergruppe (RK/RE/ETH) via "
-    "lesson_group_id erteilt; die Stundentafel enthaelt deshalb keine "
-    "ETH-Zeile."
+    "Hessen Grundschule, drei Zuege pro Jahrgang: 5 Tage, 8 Stunden a 45 Minuten, "
+    "Hofpausen nach der 2. und 4. Stunde. Stunden 7 und 8 dienen als Ganztags- / "
+    "AG-Zeitfenster und geben dem Solver Slack fuer drei Zuege plus die "
+    "jahrgangsweite Religionsdreiergruppe (RK/RE/ETH via lesson_group_id). "
+    "Die Stundentafel enthaelt deshalb keine ETH-Zeile."
+)
+
+
+# Dreizuegig extends the einzuegig 7-period grid with an eighth ganztags
+# period so the FFD greedy can place all 12 classes' Stundentafel-driven
+# lessons plus the cross-class Religion trio (3 lessons per Jahrgang, each
+# spanning 3 classes) without UUID-tiebreak-dependent flakiness. The 8th
+# period (14:05 to 14:50) follows the existing 7-period pattern.
+_PERIODS_DREIZUEGIG: tuple[_PeriodTimes, ...] = (
+    *_PERIODS,
+    _PeriodTimes(8, time(14, 5), time(14, 50)),
 )
 
 
@@ -352,7 +364,7 @@ async def seed_demo_grundschule_dreizuegig(session: AsyncSession) -> None:
     await session.flush()
 
     for day in _DAYS_MON_TO_FRI:
-        for period in _PERIODS:
+        for period in _PERIODS_DREIZUEGIG:
             session.add(
                 TimeBlock(
                     week_scheme_id=week_scheme.id,
