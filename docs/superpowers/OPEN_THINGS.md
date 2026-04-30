@@ -8,10 +8,6 @@ Items trace back to the specs that introduced them: the [project scaffolding des
 
 Goal: graduate the demo from "every class scheduled in isolation" to "real Hessen Grundschule alltag", anchored by a dreizügige (3-Zug) Grundschule fixture that exercises the parallel-Religion-with-cross-class-merging pattern (kath / ev / Ethik split where one Religion group pulls kids from multiple Klassen into one teacher's room). The same fixture seeds the next round of solver-quality work: home-room preference, avoid-last-period, and per-subject weight configurability. Tiers reflect drop-order if the sprint runs long (P0 = must land; P1 = should land; P2 = drop if time). Phase ordering reflects the prerequisite chain: tidy catchup first, then schema and seed prereqs, then the solver work that consumes them.
 
-### Tidy phase (catchup from prior DX/CI sprint)
-
-1. **Pin Playwright locale explicitly.** `[P1]` Carried over from DX/CI sprint. Add `locale: "en-US"` to `use` in `frontend/playwright.config.ts` so tests do not rely on Chromium's default locale and i18n's English fallback.
-
 ### Data + schema phase
 
 2. **Many-to-many `Lesson` ↔ `SchoolClass`.** `[P0]` Replace `Lesson.school_class_id` (single FK) with a `lesson_school_classes` join table so a Lesson can serve multiple Klassen at once. Existing per-class lessons become a one-row join. ORM, Pydantic, Zod, frontend (the lesson edit dialog gains a multi-select); CRUD endpoints adapt; `build_problem_json` emits `school_class_ids: [UUID]` per lesson. Solver's existing per-class hard constraint generalises: "no class in the lesson's class set can be double-booked at the lesson's time-block". ADR records the decision (single FK was load-bearing in the prototype to keep the prototype simple). Schema migration backfills every existing Lesson with its single class as a one-element membership.
