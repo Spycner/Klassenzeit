@@ -263,3 +263,29 @@ def test_skip_verify_skips_readback_get(mock_gh):
     ]
     assert len(protection_lines) == 1, protection_lines
     assert "--method PUT" in protection_lines[0]
+
+
+def test_check_skips_apply_calls(mock_gh):
+    run_script(mock_gh, "--check", expect_exit=0)
+    log = read_log(mock_gh)
+    assert not any("--method PATCH" in line for line in log), log
+    assert not any("--method PUT" in line for line in log), log
+
+
+def test_check_clean_readback_exits_zero(mock_gh):
+    result = run_script(mock_gh, "--check", expect_exit=0)
+    assert "matches" in result.stdout.lower() or "✔" in result.stdout
+
+
+def test_check_drift_exits_5(mock_gh):
+    rb_path = mock_gh["responses"] / "readback.json"
+    readback = json.loads(rb_path.read_text())
+    readback["required_linear_history"] = {"enabled": False}
+    rb_path.write_text(json.dumps(readback))
+    result = run_script(mock_gh, "--check", expect_exit=5)
+    assert "drift" in result.stderr.lower() or "required_linear_history" in result.stderr
+
+
+def test_check_and_dry_run_are_mutually_exclusive(mock_gh):
+    result = run_script(mock_gh, "--check", "--dry-run", expect_exit=2)
+    assert "mutually exclusive" in result.stderr.lower() or "cannot" in result.stderr.lower()
