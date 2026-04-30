@@ -18,6 +18,7 @@ export default defineConfig({
   reporter: [["list"], ["html", { outputFolder: "../playwright-report", open: "never" }]],
   use: {
     baseURL: FRONTEND_URL,
+    locale: "en-US",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
   },
